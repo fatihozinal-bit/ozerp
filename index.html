@@ -987,7 +987,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-12-r112</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-12-r113</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2409,6 +2409,16 @@ Dikkat edilmesi gereken 2 nokta:
   // Oturum yoksa giriş ekranını gösterir, giriş yapılınca çözülür.
   // Davet / şifre yenileme bağlantısıyla gelinirse (adreste type=invite / recovery) kişi önce kendi şifresini belirler.
   // Böylece yönetici çalışanı Supabase panelinden yalnız e-postasıyla davet eder; şifreyi kimse başkası adına yazmaz.
+  // Davet / yenileme bağlantısındaki anahtarlar, kütüphane adres çubuğunu temizlemeden önce saklanır (oturum kaybolursa yeniden kurmak için)
+  var _ilkAdresParcasi = (function(){ try { var q = new URLSearchParams(String(location.hash || '').replace(/^#/, '')); return { tur: q.get('type') || '', at: q.get('access_token') || '', rt: q.get('refresh_token') || '' }; } catch(e){ return { tur: '', at: '', rt: '' }; } })();
+  function supabaseHataMetni(err){
+    var m = String((err && (err.message || err.msg)) || err || '');
+    if (/different from the old/i.test(m)) return 'Yeni şifre eskisiyle aynı olamaz.';
+    if (/at least|too short|weak|password should/i.test(m)) return 'Şifre yeterince güçlü değil (en az 8 karakter; harf ve rakam karışık olsun).';
+    if (/session missing|not authenticated|jwt|expired/i.test(m)) return 'Bağlantının süresi dolmuş ya da oturum açılamadı. Giriş ekranında "Şifremi unuttum" ile yeni bağlantı isteyin ve e-postadaki en son bağlantıyı kullanın.';
+    if (/fetch|network|load failed/i.test(m)) return 'İnternet bağlantısı kurulamadı, tekrar deneyin.';
+    return m || 'bilinmeyen hata';
+  }
   function supabaseSifreBelirle(sb, session, yenileme){
     return new Promise(function(resolve){
       var overlay = byId('girisOverlay'), msg = byId('girisMsg'), btn = byId('girisYeniBtn');
@@ -2419,22 +2429,27 @@ Dikkat edilmesi gereken 2 nokta:
         var p1 = byId('girisYeni1').value, p2 = byId('girisYeni2').value;
         if (p1.length < 8){ msg.textContent = 'Şifre en az 8 karakter olmalı.'; return; }
         if (p1 !== p2){ msg.textContent = 'Şifreler aynı değil.'; return; }
-        btn.disabled = true; msg.textContent = '';
-        sb.auth.updateUser({ password: p1 }).then(function(g){
+        btn.disabled = true; msg.textContent = 'Kaydediliyor…';
+        // Oturum kaybolduysa bağlantıdaki anahtarlarla yeniden kurulur, sonra şifre yazılır
+        sb.auth.getSession().then(function(r){
+          if (r && r.data && r.data.session) return null;
+          if (_ilkAdresParcasi.at && _ilkAdresParcasi.rt) return sb.auth.setSession({ access_token: _ilkAdresParcasi.at, refresh_token: _ilkAdresParcasi.rt });
+          return null;
+        }).then(function(){ return sb.auth.updateUser({ password: p1 }); }).then(function(g){
           btn.disabled = false;
-          if (g.error){ msg.textContent = 'Şifre kaydedilemedi: ' + g.error.message; return; }
+          if (g.error){ console.warn('Supabase şifre hatası', g.error); msg.textContent = 'Şifre kaydedilemedi: ' + supabaseHataMetni(g.error); return; }
           byId('girisYeni1').value = ''; byId('girisYeni2').value = '';
           history.replaceState(null, '', location.pathname + location.search);
           overlay.classList.remove('open'); byId('girisNormal').style.display = 'flex'; byId('girisSifreBelirle').style.display = 'none';
           resolve(session);
-        });
+        }).catch(function(e){ btn.disabled = false; console.warn('Supabase şifre hatası', e); msg.textContent = 'Şifre kaydedilemedi: ' + supabaseHataMetni(e); });
       }
       btn.addEventListener('click', kaydet);
       byId('girisYeni2').addEventListener('keydown', function(e){ if (e.key === 'Enter') kaydet(); });
     });
   }
   function supabaseGiris(sb){
-    var tur = (/[#&?]type=(invite|recovery|signup|magiclink)/.exec(location.hash) || [])[1];
+    var tur = (/[#&?]type=(invite|recovery|signup|magiclink)/.exec(location.hash) || [])[1] || (/^(invite|recovery|signup|magiclink)$/.test(_ilkAdresParcasi.tur) ? _ilkAdresParcasi.tur : undefined);
     return sb.auth.getSession().then(function(r){
       if (r.data && r.data.session && (tur === 'invite' || tur === 'recovery')) return supabaseSifreBelirle(sb, r.data.session, tur === 'recovery');
       if (tur) history.replaceState(null, '', location.pathname + location.search);
@@ -2452,7 +2467,7 @@ Dikkat edilmesi gereken 2 nokta:
           btn.disabled = true; msg.textContent = '';
           sb.auth.signInWithPassword({ email: eposta, password: sifre }).then(function(g){
             btn.disabled = false;
-            if (g.error){ msg.textContent = g.error.message === 'Invalid login credentials' ? 'E-posta veya şifre hatalı.' : 'Giriş yapılamadı: '+g.error.message; return; }
+            if (g.error){ msg.textContent = g.error.message === 'Invalid login credentials' ? 'E-posta veya şifre hatalı. Şifrenizi bilmiyorsanız "Şifremi unuttum" deyin.' : 'Giriş yapılamadı: '+supabaseHataMetni(g.error); return; }
             document.getElementById('girisSifre').value = '';
             overlay.classList.remove('open');
             resolve(g.data.session);
