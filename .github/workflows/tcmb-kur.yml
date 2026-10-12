@@ -1,0 +1,43 @@
+# TCMB günlük kur bülteni → kur.json (OzERP bulutta bu dosyadan € / $ kurunu alır)
+# Her gün 06:00 ve 16:45 (Türkiye saati) çalışır; elle de çalıştırılabilir (Actions › TCMB kur › Run workflow).
+name: TCMB kur
+on:
+  schedule:
+    - cron: '0 3 * * *'
+    - cron: '45 13 * * 1-5'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  kur:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: TCMB bültenini oku
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request, xml.etree.ElementTree as ET, datetime
+          req = urllib.request.Request("https://www.tcmb.gov.tr/kurlar/today.xml", headers={"User-Agent": "OzERP"})
+          kok = ET.fromstring(urllib.request.urlopen(req, timeout=30).read())
+          g, a, y = kok.get("Tarih").split(".")
+          s = {"tarih": f"{y}-{a}-{g}", "bulten": kok.get("Bulten_No", ""), "alindi": datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z"}
+          for c in kok.findall("Currency"):
+              if c.get("Kod") in ("EUR", "USD"):
+                  b = float(c.findtext("Unit") or 1)
+                  s[c.get("Kod")] = {"alis": round(float(c.findtext("ForexBuying")) / b, 4), "satis": round(float(c.findtext("ForexSelling")) / b, 4)}
+          assert "EUR" in s and "USD" in s
+          eski = {}
+          try: eski = json.load(open("kur.json"))
+          except Exception: pass
+          if {k: v for k, v in eski.items() if k != "alindi"} != {k: v for k, v in s.items() if k != "alindi"}:
+              json.dump(s, open("kur.json", "w"), ensure_ascii=False, indent=1)
+              print("güncellendi", s)
+          else:
+              print("değişiklik yok", s)
+          PY
+      - name: Kaydet
+        run: |
+          if [ -n "$(git status --porcelain kur.json)" ]; then
+            git config user.name "OzERP kur"; git config user.email "actions@users.noreply.github.com"
+            git add kur.json && git commit -m "TCMB kur $(date -u +%F)" && git push
+          fi
