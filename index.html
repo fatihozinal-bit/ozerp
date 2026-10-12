@@ -987,12 +987,12 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-12-r113</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-12-r114</div>
   </nav>
   <main>
     <div class="topbar">
       <div class="arama-wrap"><input type="search" id="globalArama" autocomplete="off" placeholder="Ara: kod, belge no, müşteri, lot… (Ctrl+K) — QR / barkod okuyucu da buraya yazar"><div id="aramaSonuc" class="arama-sonuc"></div></div>
-      <div class="kur-box" title="Bu kur, € tutarların ₺ karşılığını göstermek için kullanılır. Klasör modunda her gün ilk açılışta TCMB döviz satış kuru otomatik alınır; elle de değiştirilebilir."><span>1 € = ₺</span><input type="number" step="0.01" id="gKur" min="0" placeholder="55,00" aria-label="1 Euro kaç TL"><span class="kur-tarih" id="gKurBilgi"></span><button class="kur-btn" id="gKurKaydet">Kaydet</button></div>
+      <div class="kur-box" title="Bu kur, € tutarların ₺ karşılığını göstermek için kullanılır. Her gün ilk açılışta TCMB döviz satış kuru otomatik alınır; elle de değiştirilebilir."><span>1 € = ₺</span><input type="number" step="0.01" id="gKur" min="0" placeholder="55,00" aria-label="1 Euro kaç TL"><span class="kur-tarih" id="gKurBilgi"></span><button class="kur-btn" id="gKurKaydet">Kaydet</button></div>
       <button class="btn secondary small" id="qrKameraBtn" title="Kamera ile QR okut">📷 QR</button>
       <button class="btn secondary small" id="uyariBtn" title="Uyarı merkezi">🔔 <span id="uyariSayi">0</span></button>
     </div>
@@ -15963,12 +15963,18 @@ Dikkat edilmesi gereken 2 nokta:
       configWrite({ usdTryKuru: kur, usdKuruTarihi: todayISO(), usdKurGecmisi: g }).then(function(){ toast('$ kuru güncellendi: 1$ = ₺' + fmt2(kur)); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
     });
   })();
-  // ---------- TCMB kuru (yalnız klasör modunda: sunucu.py TCMB'nin günlük bültenini okur) ----------
-  // Döviz satış kuru kullanılır (faturada yaygın kullanılan); bülten iş günü 15:30'da çıkar, öncesinde son bülten gelir.
+  // ---------- TCMB kuru ----------
+  // Bu Mac'te (klasör modu) sunucu.py TCMB'nin günlük bültenini okur. Bulutta (yayındaki adres) TCMB tarayıcıya ve
+  // Supabase sunucusuna kapalı olduğundan, GitHub'daki zamanlanmış görev her sabah 06:00'da bülteni okuyup programın
+  // yanına kur.json olarak koyar; program aynı adresten okur. Döviz satış kuru kullanılır.
   var _tcmbDenendi = false;
+  function tcmbKaynak(){ return klasorModu ? '/api/tcmb-kur' : (supabaseModu && !yerelAdres() ? 'kur.json' : ''); }
   function tcmbKurAl(sessiz){
     if (!db){ if (!sessiz) toast('Veri bağlantısı yok.', true); return Promise.resolve(); }
-    return fetch('/api/tcmb-kur', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(d){
+    var kaynak = tcmbKaynak();
+    if (!kaynak){ if (!sessiz) toast('Bu açılışta TCMB kuru alınamıyor; kuru elle girin.', true); return Promise.resolve(); }
+    return fetch(kaynak + (kaynak === 'kur.json' ? '?t=' + Date.now() : ''), { cache: 'no-store' }).then(function(r){ if (!r.ok) throw new Error('kur dosyası yok (' + r.status + ')'); return r.json(); }).then(function(d){
+      if (d && d.EUR && d.USD && d.ok == null) d.ok = true;
       if (!d || !d.ok) throw new Error((d && d.hata) || 'yanıt yok');
       var eur = Math.round(d.EUR.satis * 10000) / 10000, usd = Math.round(d.USD.satis * 10000) / 10000, bugun = todayISO(), c = state.config || {};
       function gec(l, kur){ l = (l || []).filter(function(x){ return x.tarih !== bugun; }); l.push({ tarih: bugun, kur: kur, kaynak: 'TCMB ' + d.tarih }); return l.length > 120 ? l.slice(-120) : l; }
@@ -15984,9 +15990,9 @@ Dikkat edilmesi gereken 2 nokta:
     kutu.appendChild(b);
   })();
   EK_HER_ZAMAN.push(function(){
-    var b = byId('gTcmbBtn'); if (b) b.style.display = klasorModu ? '' : 'none';
+    var b = byId('gTcmbBtn'); if (b) b.style.display = tcmbKaynak() ? '' : 'none';
     // Günde bir kez, o gün kur girilmemişse otomatik al
-    if (_tcmbDenendi || !klasorModu || !db || !state.config) return;
+    if (_tcmbDenendi || !tcmbKaynak() || !db || !state.config) return;
     _tcmbDenendi = true;
     if (state.config.kuruTarihi !== todayISO()) tcmbKurAl(true);
   });

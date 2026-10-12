@@ -1,10 +1,9 @@
 # TCMB günlük kur bülteni → kur.json (OzERP bulutta bu dosyadan € / $ kurunu alır)
-# Her gün 06:00 ve 16:45 (Türkiye saati) çalışır; elle de çalıştırılabilir (Actions › TCMB kur › Run workflow).
+# Her gün 06:00 (Türkiye saati) çalışır: o saatte bir önceki iş gününün bülteni alınır (faturada kullanılan kur); elle de çalıştırılabilir (Actions › TCMB kur › Run workflow).
 name: TCMB kur
 on:
   schedule:
     - cron: '0 3 * * *'
-    - cron: '45 13 * * 1-5'
   workflow_dispatch:
 permissions:
   contents: write
