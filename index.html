@@ -966,6 +966,61 @@
   .gantt-cubuk.gec { background:var(--bad); }
   .gantt-cubuk.acil { box-shadow:inset 0 0 0 2px #eb6834; }
   .gantt-cubuk:hover, .gantt-cubuk:focus { filter:brightness(1.1); outline:2px solid var(--ink); outline-offset:1px; }
+  /* Kalem fiyat seçici */
+  .kf-fiyat { display:flex; align-items:center; gap:2px; }
+  .kf-fiyat input { flex:1; min-width:0; }
+  .kf-fiyat-sec { border:1px solid var(--border); background:var(--surface-alt); border-radius:3px; padding:2px 5px; font-size:11px; cursor:pointer; color:var(--ink); }
+  .kf-fiyat-sec:hover { background:var(--accent-soft); }
+  .kf-fiyat-menu { position:fixed; z-index:400; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 28px rgba(21,32,43,.22); min-width:280px; max-width:380px; max-height:60vh; overflow:auto; padding:4px 0; font-size:12.5px; }
+  .kf-fm-bas { padding:6px 10px; font-weight:600; border-bottom:1px solid var(--border); }
+  .kf-fm-grup { padding:6px 10px 2px; font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; }
+  .kf-fiyat-menu button { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:left; border:none; background:none; padding:6px 10px; cursor:pointer; color:var(--ink); }
+  .kf-fiyat-menu button:hover, .kf-fiyat-menu button:focus { background:var(--accent-soft); outline:none; }
+  .kf-fiyat-menu button small { display:block; color:var(--ink-soft); font-size:10.5px; }
+  .kf-fm-bos { padding:8px 10px; color:var(--ink-soft); }
+  /* Ürün teknik kartı (rota / ağaç / kontrol) */
+  .ut-ust { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:flex-end; padding:10px 12px; margin-bottom:10px; background:var(--surface); border:1px solid var(--border); box-shadow:0 2px 8px rgba(21,32,43,.06); }
+  .ut-ust select { width:100%; }
+  .ut-ust > .field { min-width:min(100%, 340px); }
+  .ut-ozet { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12px; align-items:center; }
+  .ut-dugmeler { display:flex; gap:8px; align-items:center; margin-left:auto; font-size:12px; }
+  .ut-gecis { display:flex; gap:16px; margin:0 0 10px; font-size:12.5px; }
+  .ut-gecis a { color:var(--accent); text-decoration:none; border-bottom:1px dashed var(--accent); }
+  .ut-bolum { scroll-margin-top:90px; }
+  .ut-tablo { width:100%; table-layout:auto; }
+  .ut-tablo td { padding:4px 6px; }
+  .ut-tablo input, .ut-tablo select { width:100%; min-width:0; box-sizing:border-box; }
+  @media (max-width: 860px) { .ut-ust { position:static; } .ut-dugmeler { margin-left:0; } }
+  /* Kârlılık › Ürünler & satış */
+  .kv-urun-tablo th { white-space:nowrap; vertical-align:bottom; }
+  .kv-urun-tablo th .muted { font-weight:400; font-size:10px; }
+  .kv-urun-tablo td:first-child { min-width:0; width:22px; text-align:center; }
+  .kv-urun-tablo td:nth-child(2) { min-width:170px; }
+  .kv-urun-tablo input[type=number] { min-width:64px; text-align:right; }
+  .kv-urun-tablo input[type=month] { min-width:112px; }
+  .kv-satis-plan th.kv-sp-ad, .kv-satis-plan td { vertical-align:middle; }
+  .kv-urun-tablo td.num { white-space:nowrap; font-variant-numeric:tabular-nums; font-size:12px; }
+  .kv-urun-tablo tfoot td { font-size:12px; border-top:2px solid var(--border); }
+  .kv-urun-bos { border:1px dashed var(--border); border-radius:3px; padding:16px; font-size:12.5px; color:var(--ink-soft); line-height:1.6; }
+  .kv-mb { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap:8px; margin-bottom:10px; }
+  .kv-mb-k { border:1px solid var(--border); border-radius:3px; padding:8px 10px; background:var(--surface-alt); display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .kv-mb-k span { font-size:11px; color:var(--ink-soft); }
+  .kv-mb-k b { font-family:'Space Grotesk',sans-serif; font-size:18px; font-variant-numeric:tabular-nums; }
+  .kv-mb-k small { font-size:10.5px; color:var(--ink-soft); }
+  .kv-mb-not { font-size:12px; line-height:1.7; margin:0 0 10px; }
+  .kv-satis-plan th.kv-sp-ad { position:sticky; left:0; z-index:1; background:var(--surface); text-align:left; min-width:140px; max-width:220px; white-space:normal; font-weight:600; font-size:12px; }
+  .kv-satis-plan td.kv-sp-h { padding:3px 4px; text-align:right; vertical-align:middle; }
+  .kv-sp-h input { width:78px; text-align:right; padding:3px 5px; font-size:12px; font-variant-numeric:tabular-nums; }
+  .kv-sp-h span { display:block; font-size:10.5px; color:var(--ink-soft); white-space:nowrap; margin-top:1px; }
+  .kv-sp-h.elle input { border-color:var(--accent); background:var(--accent-soft); }
+  .kv-sp-h.sinir input { border-color:var(--warn); }
+  .kv-sp-h.fazla input { border-color:var(--bad); box-shadow:inset 0 -2px 0 var(--bad); }
+  .kv-sp-h.bekliyor input { opacity:.45; }
+  .kv-lej.sinir { border-color:var(--warn); }
+  .kv-ay-urun input { min-width:64px; text-align:right; }
+  .kv-ay-urun td:first-child { min-width:110px; font-size:12px; }
+  .kv-ay-urun tfoot td { font-size:12px; border-top:2px solid var(--border); white-space:nowrap; }
+  .kv-ay-makine { font-size:12.5px; padding:6px 0; }
 </style>
 </head>
 <body>
@@ -1033,6 +1088,7 @@
     <button class="navbtn" data-grup="SATINALMA" data-tab="gidenfason"><svg class="navicon" viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></svg>Giden Fason</button>
     <div class="navlabel" data-grup="STOK & DEPO"><span class="nl-ad"><svg class="navgicon" viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>STOK &amp; DEPO</span></div>
     <button class="navbtn" data-grup="STOK & DEPO" data-tab="stok"><svg class="navicon" viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Stok Kartları</button>
+    <button class="navbtn" data-grup="STOK & DEPO" data-tab="urunteknik"><svg class="navicon" viewBox="0 0 24 24"><path d="M12 3v5M12 8l-6 5M12 8l6 5M6 13v4M18 13v4"/><circle cx="12" cy="3" r="1.5"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg>Ürün Ağacı &amp; Rota</button>
     <button class="navbtn" data-grup="STOK & DEPO" data-tab="stokhareket"><svg class="navicon" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>Stok Hareketleri</button>
     <button class="navbtn" data-grup="STOK & DEPO" data-tab="irsaliyeler"><svg class="navicon" viewBox="0 0 24 24"><path d="M6 2h12v20H6z"/><path d="M9 7h6M9 11h6"/><path d="M9 16l2 2 4-4"/></svg>İrsaliyeler</button>
     <button class="navbtn" data-grup="STOK & DEPO" data-tab="lotlar"><svg class="navicon" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></svg>Lot / Heat</button>
@@ -1090,7 +1146,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-13-r126</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-14-r129</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1225,6 +1281,11 @@
           <div class="recordlist" id="cariListe"></div>
         </div>
       </div>
+    </section>
+
+    <section class="panel" id="panel-urunteknik">
+      <div class="pagehead"><h1>Ürün rotası, ağacı ve kontrol planı</h1><p>Bir ürünün operasyon sırası (rota), malzeme listesi (ürün ağacı) ve ölçü kontrol planı — tek ekranda, geniş tablolarla.</p></div>
+      <div id="urunteknikIcerik"></div>
     </section>
 
     <section class="panel" id="panel-stok">
@@ -4010,7 +4071,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<td class="kf-stok"><input type="text" list="kfStokListe" data-kc="stok" value="' + escAttr(stokLbl(st)) + '" placeholder="Stok kodu ya da adı yazın"></td>' +
         '<td><input type="number" step="any" class="num" data-kc="miktar" value="' + (k.miktar || '') + '"></td>' +
         '<td class="kf-birim">' + esc(k.birim || (st && st.birim) || '') + '</td>' +
-        '<td><input type="number" step="any" class="num" data-kc="listeFiyat" value="' + (k.listeFiyat || '') + '"></td>' +
+        '<td><div class="kf-fiyat"><input type="number" step="any" class="num" data-kc="listeFiyat" value="' + (k.listeFiyat || '') + '"><button type="button" class="kf-fiyat-sec" data-kffiyat="' + i + '" title="Fiyat seç: fiyat listesi, stok kartı, son fiyatlar" aria-label="Fiyat seç">▾</button></div></td>' +
         '<td><input type="number" step="any" class="num kf-dar" data-kc="iskonto" value="' + (k.iskonto || '') + '" placeholder="0"></td>' +
         '<td class="num kf-net">' + fmt2(net(k)) + '</td>' +
         '<td><select data-kc="kdvOrani" class="kf-dar">' + KF_KDV_ORANLARI.map(function(o){ return '<option value="' + o + '"' + (Number(k.kdvOrani) === o ? ' selected' : '') + '>%' + o + '</option>'; }).join('') + '</select></td>' +
@@ -4070,6 +4131,56 @@ Dikkat edilmesi gereken 2 nokta:
       tr.querySelector('.kf-tutar').innerHTML = '<b>' + fmt2(tutar(k)) + '</b>';
       byId('kfToplam').innerHTML = toplamHtml();
     }
+    // Fiyat seçici (▾): fiyat listesi (müşteriye özel / genel, kademeler), stok kartı satış fiyatı, maliyetten önerilen,
+    // bu cariye son teklif / sipariş fiyatları; satınalmada stok maliyeti ve bu tedarikçiye son satınalma fiyatları.
+    // € kaynaklar ve başka para birimli eski belgeler bugünkü kurla belgenin para birimine çevrilir.
+    var alisModu = cariEtiket === 'Tedarikçi';
+    function pbCevir(v, kaynakPb){ var h = pb(); if ((kaynakPb || 'EUR') === h) return v; var a = pbKur(kaynakPb || 'EUR', todayISO()), b = pbKur(h, todayISO()); return a && b ? Math.round(v * a / b * 10000) / 10000 : null; }
+    function fiyatSecenekleri(k){
+      var l = [], st = stokKart(k.stokId), bugun = todayISO(); if (!st) return l;
+      var ekle = function(grup, ad, v, kaynakPb, not){ v = Number(v); if (!(v > 0)) return; var c = pbCevir(v, kaynakPb); if (c == null) return; l.push({ grup: grup, ad: ad, v: c, not: (kaynakPb || 'EUR') !== pb() ? pbFmt(v, kaynakPb || 'EUR') + ' çevrildi' : (not || '') }); };
+      if (!alisModu){
+        fiyatKayitlari().filter(function(f){ return f.stokId === k.stokId && (!f.cariId || f.cariId === init.musteriId) && (!f.baslangic || f.baslangic <= bugun) && (!f.bitis || f.bitis >= bugun); })
+          .sort(function(a, b){ return (b.cariId ? 1 : 0) - (a.cariId ? 1 : 0) || (Number(a.minMiktar) || 0) - (Number(b.minMiktar) || 0); })
+          .forEach(function(f){ ekle('Fiyat listesi', (f.cariId ? 'Bu müşteriye özel' : 'Genel liste') + (Number(f.minMiktar) ? ' · ' + fmt(f.minMiktar) + '+ ' + (st.birim || 'adet') : ''), f.fiyat, 'EUR', f.not_); });
+        ekle('Stok kartı', 'Satış fiyatı', st.birimFiyat, 'EUR');
+        if (maliyetGorur()){ var h = stokHesapla(st); ekle('Stok kartı', 'Önerilen (maliyet + %' + fmt(h.marj) + ' kâr)', Math.round(h.onerilen * 100) / 100, 'EUR', 'maliyet ' + euro(h.toplamMaliyet)); }
+      } else {
+        ekle('Stok kartı', 'Maliyet (son alış)', st.maliyet, 'EUR', st.maliyetTarihi ? kvTarihTR(st.maliyetTarihi) : '');
+      }
+      var belgeler = alisModu ? (state.satinalmaSiparisleri || []).filter(function(d){ return d.tedarikciId === init.musteriId; }).map(function(d){ return { d: d, no: d.no, tur: 'Satınalma' }; })
+        : state.siparisler.filter(function(d){ return d.musteriId === init.musteriId; }).map(function(d){ return { d: d, no: d.siparisNo, tur: 'Sipariş' }; })
+          .concat(state.teklifler.filter(function(d){ return d.musteriId === init.musteriId && d.durum !== 'Reddedildi'; }).map(function(d){ return { d: d, no: d.teklifNo, tur: 'Teklif' }; }));
+      var son = [];
+      belgeler.forEach(function(x){ (x.d.kalemler || []).forEach(function(kk){ if (kk.stokId === k.stokId) son.push({ x: x, kk: kk }); }); });
+      son.sort(function(a, b){ return String(b.x.d.tarih || '').localeCompare(String(a.x.d.tarih || '')); });
+      son.slice(0, 5).forEach(function(y){ var v = y.kk.listeFiyat != null ? y.kk.listeFiyat : y.kk.birimFiyat;
+        ekle(alisModu ? 'Bu tedarikçiye son fiyatlar' : 'Bu müşteriye son fiyatlar', y.x.tur + ' ' + (y.x.no || '') + ' · ' + kvTarihTR(y.x.d.tarih || '') + (Number(y.kk.iskonto) ? ' · isk. %' + fmt2(y.kk.iskonto) : ''), v, belgePB(y.x.d)); });
+      return l;
+    }
+    function fiyatMenusuKapat(){ var m = byId('kfFiyatMenu'); if (m) m.remove(); }
+    function fiyatMenusuAc(i, dugme){
+      fiyatMenusuKapat();
+      var k = K[i];
+      if (!k.stokId){ toast('Önce satırda stok seçin.', true); return; }
+      var l = fiyatSecenekleri(k), m = document.createElement('div'); m.id = 'kfFiyatMenu'; m.className = 'kf-fiyat-menu';
+      var grup = '';
+      m.innerHTML = '<div class="kf-fm-bas">' + esc(stokEtiket(k.stokId)) + ' — fiyat seçin (' + esc(pb()) + ')</div>' + (l.length ? l.map(function(o, j){
+        var g = o.grup !== grup ? '<div class="kf-fm-grup">' + esc(o.grup) + '</div>' : ''; grup = o.grup;
+        return g + '<button type="button" data-kffm="' + j + '"><span>' + esc(o.ad) + (o.not ? '<small>' + esc(o.not) + '</small>' : '') + '</span><b>' + esc(pbFmt(o.v, pb())) + '</b></button>';
+      }).join('') : '<div class="kf-fm-bos">Bu ürün için kayıtlı fiyat yok — fiyatı kutuya yazın. ' + (alisModu ? '' : 'Kalıcı fiyat için Kartlar › Fiyat Listesi.') + '</div>');
+      document.body.appendChild(m);
+      var rc = dugme.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight;
+      m.style.left = Math.max(8, Math.min(rc.right - w, document.documentElement.clientWidth - w - 8)) + 'px';
+      m.style.top = (rc.bottom + 4 + h > window.innerHeight ? Math.max(8, rc.top - h - 4) : rc.bottom + 4) + 'px';
+      m.addEventListener('click', function(ev){
+        var b = ev.target.closest('[data-kffm]'); if (!b) return;
+        var o = l[Number(b.dataset.kffm)]; k.listeFiyat = o.v; k.otoFiyat = false;
+        var inp = fieldsEl.querySelector('[data-kr="' + i + '"] [data-kc="listeFiyat"]'); if (inp){ inp.value = o.v; inp.focus(); }
+        satirGuncelle(i); fiyatMenusuKapat();
+      });
+      setTimeout(function(){ document.addEventListener('mousedown', function kapa(ev){ if (!ev.target.closest('#kfFiyatMenu')){ fiyatMenusuKapat(); document.removeEventListener('mousedown', kapa); } }); }, 0);
+    }
     function fiyatYenile(i, zorla){
       var k = K[i]; if (!k.stokId || !(zorla || k.otoFiyat)) return;
       var f = otoFiyat(k); if (f == null) return;
@@ -4115,6 +4226,7 @@ Dikkat edilmesi gereken 2 nokta:
     }
     function onTik(e){
       var b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.kffiyat != null){ fiyatMenusuAc(Number(b.dataset.kffiyat), b); return; }
       if (b.dataset.kfdel != null){ K.splice(Number(b.dataset.kfdel), 1); if (!K.length) K.push(bosSatir()); yenidenCiz(); return; }
       if (b.id === 'kfKalemEkle'){ satirEkle(); return; }
       if (b.id === 'kfMusteriYeniBtn' || b.id === 'kfUrunYeniBtn'){ var m = byId(b.id === 'kfMusteriYeniBtn' ? 'kfMusteriMini' : 'kfUrunMini'); var ac = m.style.display === 'none'; m.style.display = ac ? '' : 'none'; if (ac) m.querySelector('input').focus(); return; }
@@ -6282,10 +6394,10 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Yetki (rol) ----------
   var ROLLER = ['Yönetici','Planlama','Operatör','Kalite','Muhasebe'];
   var ROL_SEKMELER = {
-    'Planlama': ['ozet','musteriler','fiyatlar','maliyethesap','teklifler','gorusmeler','siparisler','satisiade','satinalmatalep','satinalmasiparis','stok','stokhareket','lotlar',
+    'Planlama': ['ozet','musteriler','fiyatlar','maliyethesap','teklifler','gorusmeler','siparisler','satisiade','satinalmatalep','satinalmasiparis','stok','urunteknik','stokhareket','lotlar',
       'uretimplani','isemirleri','operator','uretim','kayitlar','duruslar','vardiyadevir','musterimali','gidenfason','kalitekontrol','ncr','sevkiyat','irsaliyeler','bakim','projeler','raporlar','dokumanlar','cikti'],
     'Operatör': ['operator','uretim','kayitlar','isemirleri','duruslar','vardiyadevir','kalitekontrol','bakim','dokumanlar'],
-    'Kalite': ['ozet','kalitekontrol','ncr','olcualetleri','lotlar','stok','stokhareket','isemirleri','kayitlar','duruslar','sevkiyat','irsaliyeler','musterimali','satisiade','raporlar','dokumanlar','operator','cikti'],
+    'Kalite': ['ozet','kalitekontrol','ncr','olcualetleri','lotlar','stok','urunteknik','stokhareket','isemirleri','kayitlar','duruslar','sevkiyat','irsaliyeler','musterimali','satisiade','raporlar','dokumanlar','operator','cikti'],
     'Muhasebe': ['ozet','musteriler','fiyatlar','teklifler','gorusmeler','siparisler','sevkiyat','faturalar','carihesap','kasabanka','giderler','ceksenet','finansrapor','karlilik','alisfatura',
       'satinalmasiparis','satisiade','stok','raporlar','puantaj','dokumanlar','musterimali','irsaliyeler','cikti',
       'muhfis','hesapplani','defterler','mizan','malitablolar','kdvbeyan','kurfarki','amortisman','donemsonu','edefter','bordro','vergiodeme']
@@ -7036,76 +7148,7 @@ Dikkat edilmesi gereken 2 nokta:
     } });
   }
 
-  // ---------- Rota / ürün ağacı / kontrol planı düzenleyici ----------
-  function openRotaAgacForm(stokId){
-    var s = stokKart(stokId); if (!s) return;
-    var d = {
-      rota: (s.rota||[]).map(function(x){ return Object.assign({}, x); }),
-      bom: (s.bom||[]).map(function(x){ return Object.assign({}, x); }),
-      kontrolPlani: (s.kontrolPlani||[]).map(function(x){ return Object.assign({}, x); })
-    };
-    if (!d.rota.length) d.rota = OPERASYONLAR.map(function(o){ return {operasyon:o, makineId:'', hazirlikDk:0, cevrimDk:0, programNo:'', takimlar:''}; });
-    var sekme = 'rota';
-    var KOLON = {
-      rota: [ {k:'operasyon', b:'Operasyon', t:'op'}, {k:'makineId', b:'Makine', t:'makine'}, {k:'hazirlikDk', b:'Hazırlık (dk)', t:'n'}, {k:'cevrimDk', b:'Çevrim (dk/adet)', t:'n'}, {k:'programNo', b:'CNC program no', t:'s'}, {k:'takimlar', b:'Takımlar', t:'s'} ],
-      bom: [ {k:'stokId', b:'Malzeme', t:'stok'}, {k:'miktar', b:'Miktar / adet', t:'n'}, {k:'birim', b:'Birim', t:'s'}, {k:'boyMm', b:'Adet başı boy (mm)', t:'n'}, {k:'birimAgirlikKg', b:'Birim ağırlık (kg)', t:'n'}, {k:'fireYuzde', b:'Fire %', t:'n'}, {k:'not', b:'Not', t:'s'} ],
-      kontrolPlani: [ {k:'karakteristik', b:'Karakteristik', t:'s'}, {k:'nominal', b:'Nominal', t:'n'}, {k:'alt', b:'Min', t:'n'}, {k:'ust', b:'Max', t:'n'}, {k:'alet', b:'Ölçü aleti', t:'s'}, {k:'siklik', b:'Sıklık', t:'s'}, {k:'operasyon', b:'Operasyon', t:'op'} ]
-    };
-    var BOS = {
-      rota: {operasyon: OPERASYONLAR[0]||'', makineId:'', hazirlikDk:0, cevrimDk:0, programNo:'', takimlar:''},
-      bom: {stokId:'', miktar:1, birim:'', boyMm:0, birimAgirlikKg:0, fireYuzde:0, not:''},
-      kontrolPlani: {karakteristik:'', nominal:0, alt:0, ust:0, alet:'', siklik:'her 50 adette 1', operasyon:''}
-    };
-    function hucre(c, v, i){
-      var at = 'data-rk="'+c.k+'" data-ri="'+i+'"';
-      if (c.t === 'op') return '<select '+at+'><option value="">-</option>'+OPERASYONLAR.map(function(o){ return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select>';
-      if (c.t === 'makine') return '<select '+at+'><option value="">-</option>'+state.makineler.map(function(m){ return '<option value="'+m.id+'"'+(v===m.id?' selected':'')+'>'+esc(m.ad)+'</option>'; }).join('')+'</select>';
-      if (c.t === 'stok') return '<select '+at+'><option value="">-</option>'+state.stok.filter(function(x){ return x.id !== stokId && x.tip !== 'Mamul'; }).map(function(x){ return '<option value="'+x.id+'"'+(v===x.id?' selected':'')+'>'+esc((x.kod?x.kod+' · ':'')+x.ad)+'</option>'; }).join('')+'</select>';
-      return '<input type="'+(c.t==='n'?'number':'text')+'" '+(c.t==='n'?'step="any"':'')+' '+at+' value="'+escAttr(v==null?'':v)+'">';
-    }
-    function ciz(el){
-      var satirlar = d[sekme];
-      var kol = KOLON[sekme];
-      var toplamCevrim = d.rota.reduce(function(a, r){ return a + (Number(r.cevrimDk)||0); }, 0);
-      el.innerHTML =
-        '<div class="sekme-bar">'+[['rota','Ürün rotası'],['bom','Ürün ağacı (BOM)'],['kontrolPlani','Kontrol planı']].map(function(x){ return '<button type="button" data-rsekme="'+x[0]+'" class="'+(sekme===x[0]?'aktif':'')+'">'+x[1]+' ('+d[x[0]].length+')</button>'; }).join('')+'</div>'+
-        '<div class="tablewrap"><table class="edit-tablo"><thead><tr><th>#</th>'+kol.map(function(c){ return '<th>'+c.b+'</th>'; }).join('')+'<th></th></tr></thead><tbody>'+
-        satirlar.map(function(r, i){ return '<tr><td class="muted">'+(i+1)+'</td>'+kol.map(function(c){ return '<td>'+hucre(c, r[c.k], i)+'</td>'; }).join('')+
-          '<td style="white-space:nowrap"><button type="button" class="btn secondary small" data-ryukari="'+i+'">↑</button> <button type="button" class="btn danger" data-rsil="'+i+'">Sil</button></td></tr>'; }).join('')+
-        '</tbody></table></div>'+
-        '<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><button type="button" class="btn secondary small" id="rSatirEkle">+ Satır ekle</button>'+
-        (sekme==='rota' ? '<span class="muted">Toplam çevrim: <b>'+fmt2(toplamCevrim)+' dk/adet</b> — kaydedince kartın üretim süresi olarak yazılır.</span>' : '')+
-        (sekme==='bom' ? '<span class="muted">Hammadde için "adet başı boy" (kesme payı dahil) veya "birim ağırlık" girin; iş emrinde gerekli malzeme buradan hesaplanır.</span>' : '')+
-        (sekme==='kontrolPlani' ? '<span class="muted">Min / Max mutlak sınırlardır (ör. Ø12.00 için 11.95 – 12.05). Kontrol formunda bu satırlar otomatik gelir.</span>' : '')+'</div>'+
-        (sekme==='bom' ? bomAgacHtml(s.id, d.bom.filter(function(r){ return r.stokId; }), d.maliyetYaz) : '');
-      el.querySelectorAll('[data-rsekme]').forEach(function(b){ b.addEventListener('click', function(){ sekme = b.dataset.rsekme; ciz(el); }); });
-      el.querySelectorAll('[data-rk]').forEach(function(inp){
-        var h = function(){ var r = d[sekme][Number(inp.dataset.ri)]; var c = kol.find(function(x){ return x.k === inp.dataset.rk; }); r[inp.dataset.rk] = c.t === 'n' ? (inp.value === '' ? 0 : Number(inp.value)) : inp.value;
-          if (sekme === 'bom' && inp.dataset.rk === 'stokId'){ var st = stokKart(inp.value); if (st && !r.birim) { r.birim = st.birim || ''; ciz(el); } } };
-        inp.addEventListener('input', h); inp.addEventListener('change', h);
-      });
-      el.querySelectorAll('[data-rsil]').forEach(function(b){ b.addEventListener('click', function(){ d[sekme].splice(Number(b.dataset.rsil), 1); ciz(el); }); });
-      el.querySelectorAll('[data-ryukari]').forEach(function(b){ b.addEventListener('click', function(){ var i = Number(b.dataset.ryukari); if (i > 0){ var t = d[sekme][i-1]; d[sekme][i-1] = d[sekme][i]; d[sekme][i] = t; ciz(el); } }); });
-      byId('rSatirEkle').addEventListener('click', function(){ d[sekme].push(Object.assign({}, BOS[sekme])); ciz(el); });
-      var my = byId('bomMaliyetYaz'); if (my) my.addEventListener('click', function(){ d.maliyetYaz = muhR2(bomMaliyet(s.id, d.bom.filter(function(r){ return r.stokId; })) * 10000) / 10000; ciz(el); });
-    }
-    modalAc({ title: 'Rota / ağaç / kontrol planı — '+(s.kod?s.kod+' · ':'')+s.ad, genislik:'genis',
-      onOpen: function(el){ ciz(el); },
-      onSave: function(){
-        var rota = d.rota.filter(function(r){ return r.operasyon; });
-        var bom = d.bom.filter(function(r){ return r.stokId; });
-        // Döngü: kart kendini ya da kendisini içeren bir yarı mamulü içeremez (MRP ve maliyet sonsuza gider)
-        var dongu = bom.find(function(b){ return b.stokId === s.id || bomIceriyorMu(b.stokId, s.id); });
-        if (dongu){ toast('Ürün ağacında döngü: '+stokEtiket(dongu.stokId)+' bu kartı (alt seviyede) zaten içeriyor. O satırı kaldırın.', true); return false; }
-        var kp = d.kontrolPlani.filter(function(r){ return r.karakteristik; });
-        var veri = { rota: rota, bom: bom, kontrolPlani: kp };
-        if (d.maliyetYaz != null){ veri.maliyet = d.maliyetYaz; veri.maliyetTarihi = todayISO(); }
-        var top = rota.reduce(function(a, r){ return a + (Number(r.cevrimDk)||0); }, 0);
-        if (top > 0){ veri.uretimSuresiDk = Math.round(top*1000)/1000; veri.iscilikSabit = null; }
-        kayitGuncelle('stok', s.id, veri).then(function(){ toast('✓ Rota / ağaç / kontrol planı kaydedildi'); }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
-        return true;
-      } });
-  }
+  // Rota / ürün ağacı / kontrol planı düzenleyici: ayrı geniş sayfa (m22_urun_teknik: urunTeknikAc, openRotaAgacForm)
 
   // ---------- Çok seviyeli ürün ağacı: tüm seviyeler, döngü kontrolü, ağaçtan malzeme maliyeti ----------
   function bomIceriyorMu(kokId, arananId, ziyaret){
@@ -11968,7 +12011,10 @@ Dikkat edilmesi gereken 2 nokta:
       finansmanTutar: 0, finansFaizYillik: 0, geriOdemeBaslangicAy: '', geriOdemeAylik: 0,
       // Ay ay elle girilen değerler ve yapılacaklar
       aylik: {}, yapilacak: { bitti: {}, ozel: [] },
-      urunler: [] // [{ad, fiyat, adet, pay}] — kaydedilirken ortalama fiyat ve gündüz adedine çevrilir
+      // Ürünler / işler: her biri kendi fiyatı, kendine ayrılan makine sayısı ve makine başı adediyle ayrı hesaplanır.
+      // [{id, ad, fiyat, makine, adet (gündüz / makine), gece (boş = saatle orantılı), sinir (aylık satış üst sınırı, boş = üretilen kadar),
+      //   degisken (₺/adet uç-takım-malzeme, boş = genel uç bedeli), basla ('YYYY-AA', boş = plan başından)}]
+      urunler: [], urunSurum: 0
     }; }
     // r41 ve öncesinde kaydedilen planlar sadece bu varsayılanlardan farklı değerleri sakladı; o planlar açılırken bunlar esas alınır
     var ESKI_VARSAYILAN = { aktifMakine: 3, gunduzAdet: 200, geceVardiya: true, cumartesiKisi: 2, hurdaYuzde: 2.5, fiyat: 55, fiyatArtisOcak: 25, tahsilatGun: 30,
@@ -11977,7 +12023,7 @@ Dikkat edilmesi gereken 2 nokta:
       smmmAylik: 12000, sigortaAylik: 4000, osgbAylik: 6000, kkdAylik: 1500, suIletisimAylik: 3000, ofisAylik: 3000, eBelgeAylik: 1000, bankaAylik: 500, beklenmeyenAylik: 10000,
       kalibrasyonAylik: 1000, osbAidatAylik: 3000, giderArtisOcak: 25, makine: 5500000, nakliye: 200000, kurulus: 35000, ilkTakim: 50000, saglikRapor: 8000 };
     var VARSAYIM_SURUMU = 2;
-    var KALICI = ['personel','fiyat','kira','aktifMakine','geceVardiya','gunduzAdet','geceAdet'];
+    var KALICI = ['personel','kira','geceVardiya','urun'];
 
     function ayEkle(ay, n){ var y = Number(ay.slice(0,4)), m = Number(ay.slice(5,7)) - 1 + n; y += Math.floor(m/12); m = ((m%12)+12)%12; return y+'-'+String(m+1).padStart(2,'0'); }
     function ayGunSayisi(ay){ var y = Number(ay.slice(0,4)), m = Number(ay.slice(5,7)); return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
@@ -12042,10 +12088,83 @@ Dikkat edilmesi gereken 2 nokta:
       return r;
     }
     function sayi(v){ return v === '' || v == null || isNaN(Number(v)) ? null : Number(v); }
+    function yuv(x, n){ var k = Math.pow(10, n == null ? 2 : n); return Math.round((Number(x) || 0) * k) / k; }
+    // Ürün kimlikleri: u1, u2… (ay ay ürün değerleri P.aylik[ay].urun[id] altında bu kimlikle durur)
+    function urunIdleri(l){
+      var max = 0, gor = {};
+      l.forEach(function(u){ var m = /^u(\d+)$/.exec(u.id || ''); if (m) max = Math.max(max, Number(m[1])); });
+      l.forEach(function(u){ if (!u.id || gor[u.id]) u.id = 'u' + (++max); gor[u.id] = 1; });
+    }
+    // r128 ve öncesinin planı tek ortalama fiyat / adet, tek makine sayısı ve ürünlerin makine zamanı payıyla (%) çalışıyordu.
+    // Bir kez ürün başına makineye çevrilir: makine = eski makine × pay; ay ay girilen makine / adet / fiyat ürünlere aynı oranda yazılır.
+    // Toplam üretim ve ciro dönüşümden önceki hesapla aynı kalır.
+    function urunNormalize(P){
+      if (!Array.isArray(P.urunler)) P.urunler = [];
+      if (!P.aylik || typeof P.aylik !== 'object' || Array.isArray(P.aylik)) P.aylik = {};
+      if (!(Number(P.urunSurum) >= 2)){
+        var mk = Number(P.aktifMakine) || 0, gA = Number(P.gunduzAdet) || 0, gG = Number(P.geceAdet) || 0, fO = Number(P.fiyat) || 0;
+        var gOran = gG > 0 && gA > 0 ? gG / gA : 0;
+        var ESKI_AY = ['aktifMakine', 'gunduzAdet', 'geceAdet', 'fiyat'];
+        var ayVar = Object.keys(P.aylik).some(function(ay){ var o = P.aylik[ay] || {}; return ESKI_AY.some(function(k){ return sayi(o[k]) != null; }); });
+        var eski = P.urunler.filter(function(u){ return u && ((Number(u.fiyat) || 0) > 0 || (Number(u.adet) || 0) > 0); });
+        var yeni;
+        if (!eski.length) yeni = (mk > 0 || fO > 0 || gA > 0 || ayVar) ? [{ ad: 'Ürün / iş 1', fiyat: fO, makine: mk, adet: gA, gece: gG > 0 ? gG : '' }] : [];
+        else {
+          var topPay = eski.reduce(function(t, u){ return t + (Number(u.pay) || 0); }, 0), dagit = 0;
+          yeni = eski.map(function(u, i){
+            var w = topPay > 0 ? (Number(u.pay) || 0) / topPay : 1 / eski.length, ad = Number(u.adet) || 0;
+            var m = i === eski.length - 1 ? yuv(mk - dagit) : yuv(mk * w); dagit += m;
+            return { ad: u.ad || ('Ürün / iş ' + (i + 1)), fiyat: Number(u.fiyat) || 0, makine: Math.max(0, m), adet: ad, gece: gOran ? yuv(ad * gOran) : '' };
+          });
+        }
+        yeni.forEach(function(u){ u.sinir = ''; u.degisken = ''; u.basla = ''; });
+        urunIdleri(yeni);
+        var bazMk = yeni.map(function(u){ return u.makine; }), bazAdet = yeni.map(function(u){ return u.adet; }), bazFiyat = yeni.map(function(u){ return u.fiyat; });
+        var curAdet = bazAdet.slice(), curOrt = gA;
+        Object.keys(P.aylik).sort().forEach(function(ay){
+          var o = P.aylik[ay]; if (!o || typeof o !== 'object') return;
+          var ou = {};
+          var yaz = function(i, f, v){ var id = yeni[i].id; (ou[id] = ou[id] || {})[f] = v; };
+          if (sayi(o.aktifMakine) != null){ var m = sayi(o.aktifMakine), d2 = 0;
+            yeni.forEach(function(u, i){ var v = mk > 0 ? (i === yeni.length - 1 ? yuv(m - d2) : yuv(bazMk[i] * m / mk)) : (i === 0 ? m : 0); d2 += v; yaz(i, 'makine', Math.max(0, v)); }); }
+          if (sayi(o.gunduzAdet) != null){ var g = sayi(o.gunduzAdet); curOrt = g;
+            yeni.forEach(function(u, i){ curAdet[i] = gA > 0 ? yuv(bazAdet[i] * g / gA) : g; yaz(i, 'adet', curAdet[i]); }); }
+          if (sayi(o.geceAdet) != null){ var ge = sayi(o.geceAdet);
+            yeni.forEach(function(u, i){ yaz(i, 'gece', ge > 0 && curOrt > 0 ? yuv(curAdet[i] * ge / curOrt) : 0); }); }
+          if (sayi(o.fiyat) != null){ var f = sayi(o.fiyat);
+            yeni.forEach(function(u, i){ yaz(i, 'fiyat', fO > 0 ? yuv(bazFiyat[i] * f / fO, 4) : f); }); }
+          ESKI_AY.forEach(function(k){ delete o[k]; });
+          if (Object.keys(ou).length) o.urun = Object.assign(o.urun && typeof o.urun === 'object' ? o.urun : {}, ou);
+          if (!Object.keys(o).length) delete P.aylik[ay];
+        });
+        P.urunler = yeni; P.urunSurum = 2;
+      }
+      P.urunler = P.urunler.filter(function(u){ return u && typeof u === 'object'; });
+      urunIdleri(P.urunler);
+      // Eski ekranların okuduğu özet değerler (hesap bunları kullanmaz): toplam makine, makine başı ortalama adet, ortalama fiyat
+      var tm = 0, ta = 0, tc = 0;
+      P.urunler.forEach(function(u){ var m = Number(u.makine) || 0, a = Number(u.adet) || 0; tm += m; ta += m * a; tc += m * a * (Number(u.fiyat) || 0); });
+      P.aktifMakine = yuv(tm); P.gunduzAdet = tm > 0 ? yuv(ta / tm) : 0; P.geceAdet = 0;
+      P.fiyat = ta > 0 ? yuv(tc / ta, 4) : (P.urunler[0] ? Number(P.urunler[0].fiyat) || 0 : 0);
+      return P;
+    }
+    // Ürün değerlerini (plan + ay ay girilenler) oranla değiştirir: k = { fiyat, makine, adet, sinir } çarpanları
+    function urunOlcekle(P, k){
+      var Q = JSON.parse(JSON.stringify({ urunler: P.urunler || [], aylik: P.aylik || {} }));
+      var c = function(x, f, kat, n){ if (kat == null || kat === 1) return; var v = sayi(x[f]); if (v != null) x[f] = yuv(v * kat, n); };
+      Q.urunler.forEach(function(u){ c(u, 'fiyat', k.fiyat, 4); c(u, 'makine', k.makine); c(u, 'adet', k.adet); c(u, 'gece', k.adet); c(u, 'sinir', k.sinir, 0); });
+      Object.keys(Q.aylik).forEach(function(ay){
+        var o = Q.aylik[ay]; if (!o || typeof o !== 'object') return;
+        c(o, 'adet', k.adet, 0);
+        Object.keys(o.urun || {}).forEach(function(id){ var x = o.urun[id]; c(x, 'fiyat', k.fiyat, 4); c(x, 'makine', k.makine); c(x, 'adet', k.adet); c(x, 'gece', k.adet); c(x, 'satis', k.adet, 0); });
+      });
+      return Q;
+    }
 
     // Finansman tutarı 0 (otomatik) ise: yatırım + işletme sermayesi ihtiyacını (faiz dahil) karşılayan en küçük tutar, 100 bin ₺'ye yuvarlanır
     function hesapla(Pin){
-      var P = Object.assign(varsayilan(), Pin || {});
+      var P = Object.assign(varsayilan(), JSON.parse(JSON.stringify(Pin || {})));
+      urunNormalize(P);
       if ((Number(P.finansmanTutar) || 0) > 0){ var rr = hesaplaIc(P, Number(P.finansmanTutar)); rr.finansmanOto = false; return rr; }
       var yuvarla = function(x){ return Math.ceil(Math.max(0, x) / 100000) * 100000; };
       var r = hesaplaIc(P, 0), F = yuvarla(-r.minKasa);
@@ -12071,7 +12190,10 @@ Dikkat edilmesi gereken 2 nokta:
       var netDefterDegeri = amortismanaTabi;
       // Kalıcı değerler (girildiği aydan itibaren geçerli)
       var persAktif = P.personel.map(function(p){ return { ad: p.ad, net: Number(p.net)||0 }; });
-      var fiyatAktif = P.fiyat, kiraAktif = P.kira, makineAktif = P.aktifMakine, geceAktif = P.geceVardiya, gunduzAktif = P.gunduzAdet, geceElle = Number(P.geceAdet) || 0;
+      var kiraAktif = P.kira, geceAktif = P.geceVardiya;
+      // Ürünler: fiyat / makine / adet / gece adedi girildiği aydan itibaren geçerli (ay ay P.aylik[ay].urun[id])
+      var UA = P.urunler.map(function(u){ return { id: u.id, ad: String(u.ad || '').trim() || 'Ürün', fiyat: Math.max(0, Number(u.fiyat) || 0), makine: Math.max(0, Number(u.makine) || 0),
+        adet: Math.max(0, Number(u.adet) || 0), gece: Math.max(0, Number(u.gece) || 0), sinir: sayi(u.sinir), degisken: sayi(u.degisken), basla: /^\d{4}-\d{2}$/.test(u.basla || '') ? u.basla : '' }; });
       var borc = finansman, tahT = (Number(P.kdvTevkifat)||0) / 10;
       var bosHafta = P.cumartesi;
       for (var i = 0; i < P.sureAy; i++){
@@ -12081,13 +12203,13 @@ Dikkat edilmesi gereken 2 nokta:
         var o = A[ay] || {};
         // Ocak artışları (ilk ay hariç)
         if (i > 0 && ayNo === 1){
-          fiyatAktif *= 1 + P.fiyatArtisOcak/100;
+          UA.forEach(function(u){ u.fiyat *= 1 + P.fiyatArtisOcak/100; });
           kiraAktif *= 1 + P.kiraArtisOcak/100;
           persAktif = persAktif.map(function(p){ return { ad: p.ad, net: p.net * (1 + P.maasArtisOcak/100) }; });
         }
-        if (sayi(o.fiyat) != null) fiyatAktif = sayi(o.fiyat);
+        var OU = o.urun && typeof o.urun === 'object' ? o.urun : {};
+        UA.forEach(function(u){ var x = OU[u.id]; if (!x) return; ['fiyat', 'makine', 'adet', 'gece'].forEach(function(f){ if (sayi(x[f]) != null) u[f] = Math.max(0, sayi(x[f])); }); });
         if (sayi(o.kira) != null) kiraAktif = sayi(o.kira);
-        if (sayi(o.aktifMakine) != null) makineAktif = sayi(o.aktifMakine);
         if (o.geceVardiya === true || o.geceVardiya === false) geceAktif = o.geceVardiya;
         if (o.personel && o.personel.length >= 0 && Array.isArray(o.personel)) persAktif = o.personel.map(function(p){ return { ad: p.ad || 'Personel', net: Number(p.net)||0 }; });
         var giderKatsayi = Math.pow(1 + P.giderArtisOcak/100, yilIndex);
@@ -12097,20 +12219,35 @@ Dikkat edilmesi gereken 2 nokta:
         Y.ay++;
         // --- Üretim
         var gunler = isGunu(ay, bosHafta, P.pazar, o.gunler);
-        if (sayi(o.gunduzAdet) != null) gunduzAktif = sayi(o.gunduzAdet);
-        if (sayi(o.geceAdet) != null) geceElle = sayi(o.geceAdet);
         var verim = (i < (P.rampa||[]).length ? P.rampa[i] : P.kararliVerim) / 100;
-        var geceAdet = geceElle > 0 ? geceElle : Math.round(gunduzAktif * P.geceSaat / P.gunduzSaat);
-        var gunlukMakine = gunduzAktif + (geceAktif ? geceAdet : 0);
         // Hafta sonu: gündüz ekibinin saatlik hızıyla, ayarlanan saat kadar
-        var saatHiz = P.gunduzSaat > 0 ? gunduzAktif / P.gunduzSaat : 0;
         var hsSaat = gunler.cumartesi * P.cumartesiSaat + gunler.pazar * P.pazarSaat;
-        var kapasiteBrut = makineAktif * verim * (gunler.hafta * gunlukMakine + hsSaat * saatHiz);
-        var hesapAdet = Math.floor(kapasiteBrut * (1 - P.hurdaYuzde/100));
-        var adet = sayi(o.adet) != null ? Math.max(0, Math.round(sayi(o.adet))) : hesapAdet;
-        var brutAdet = adet / Math.max(0.01, 1 - P.hurdaYuzde/100);
-        var fiyat = fiyatAktif;
-        var satis = adet * fiyat;
+        var hurdaK = Math.max(0.01, 1 - P.hurdaYuzde/100);
+        // Her ürün: makine × verim × (iş günü × makine başı günlük adet + hafta sonu saati × saatlik adet) − hurda; satış sınırı varsa en fazla o kadar
+        var US = UA.map(function(u){
+          var mk = (!u.basla || ay >= u.basla) ? u.makine : 0;
+          var gece = u.gece > 0 ? u.gece : (P.gunduzSaat > 0 ? Math.round(u.adet * P.geceSaat / P.gunduzSaat) : 0);
+          var saatHiz = P.gunduzSaat > 0 ? u.adet / P.gunduzSaat : 0;
+          var kap = mk * verim * (gunler.hafta * (u.adet + (geceAktif ? gece : 0)) + hsSaat * saatHiz);
+          var hesap = Math.floor(kap * (1 - P.hurdaYuzde/100));
+          var plan = u.sinir != null ? Math.min(hesap, Math.max(0, Math.round(u.sinir))) : hesap;
+          var elle = sayi((OU[u.id] || {}).satis), sat = elle != null ? Math.max(0, Math.round(elle)) : plan;
+          return { id: u.id, ad: u.ad, makine: mk, adet: u.adet, gece: gece, geceElle: u.gece > 0, fiyat: u.fiyat, degisken: u.degisken, basla: u.basla, bekliyor: mk === 0 && u.makine > 0,
+            kapasite: kap, hesap: hesap, plan: plan, satis: sat, elle: elle != null, sinirli: plan < hesap, kullanim: hesap > 0 ? Math.min(1, sat / hesap) : 1 };
+        });
+        var kapasiteBrut = 0, hesapAdet = 0, urunAdet = 0, makineAktif = 0, makineEtkin = 0, mkAdet = 0, mkGece = 0;
+        US.forEach(function(s){ kapasiteBrut += s.kapasite; hesapAdet += s.hesap; urunAdet += s.satis; makineAktif += s.makine; makineEtkin += s.makine * s.kullanim; mkAdet += s.makine * s.adet; mkGece += s.makine * s.gece; });
+        var gunduzAktif = makineAktif > 0 ? mkAdet / makineAktif : (US[0] ? US[0].adet : 0), geceAdet = makineAktif > 0 ? mkGece / makineAktif : (US[0] ? US[0].gece : 0);
+        // Toplam satış elle girildiyse (ör. ERP'den alınan üretim) ürünlere planlanan satışları oranında dağıtılır
+        var adet = sayi(o.adet) != null ? Math.max(0, Math.round(sayi(o.adet))) : urunAdet;
+        if (sayi(o.adet) != null){
+          var taban = urunAdet > 0 ? urunAdet : hesapAdet;
+          US.forEach(function(s){ s.satis = taban > 0 ? adet * (urunAdet > 0 ? s.satis : s.hesap) / taban : adet / US.length; });
+        }
+        var brutAdet = adet / hurdaK;
+        var satis = 0, ucUrun = 0;
+        US.forEach(function(s){ s.ciro = s.satis * s.fiyat; satis += s.ciro; s.uc = s.satis / hurdaK * (s.degisken != null ? s.degisken : P.ucAdet) * giderKatsayi; ucUrun += s.uc; });
+        var fiyat = adet > 0 ? satis / adet : (function(){ var h = 0, c = 0; US.forEach(function(s){ var w = s.hesap || s.makine * s.adet; h += w; c += w * s.fiyat; }); return h > 0 ? c / h : (US[0] ? US[0].fiyat : 0); })();
         var ekler = Array.isArray(o.ek) ? o.ek : [];
         var ekGelir = ekler.filter(function(e){ return e.tur === 'gelir'; }).reduce(function(s,e){ return s + (Number(e.tutar)||0); }, 0);
         var ekGiderKdvli = ekler.filter(function(e){ return e.tur === 'gider'; }).reduce(function(s,e){ return s + (Number(e.tutar)||0); }, 0);
@@ -12147,10 +12284,10 @@ Dikkat edilmesi gereken 2 nokta:
         var kidem = P.kidemKarsilik ? pers.reduce(function(s,b){ return s + b.brut/12; }, 0) : 0;
         // --- İşletme giderleri
         var calismaSaat = gunler.hafta * (P.gunduzSaat + (geceAktif ? P.geceSaat : 0)) + hsSaat;
-        var kwh = calismaSaat * (makineAktif * verim * P.kwMakine + P.kwGenel);
+        var kwh = calismaSaat * (makineEtkin * verim * P.kwMakine + P.kwGenel); // satış sınırıyla boşta kalan makine elektrik harcamaz
         var elektrikHesap = kwh * P.elektrikFiyat * elektrikKatsayi;
         var elektrik = sayi(o.elektrik) != null ? sayi(o.elektrik) : elektrikHesap;
-        var ucHesap = brutAdet * P.ucAdet * giderKatsayi;
+        var ucHesap = US.length ? ucUrun : brutAdet * P.ucAdet * giderKatsayi;
         var uc = sayi(o.uc) != null ? sayi(o.uc) : ucHesap;
         var kiraNet = kiraAktif;
         var kiraBrut = P.kiraVerenSirket ? kiraNet : kiraNet / 0.8;
@@ -12223,7 +12360,7 @@ Dikkat edilmesi gereken 2 nokta:
         }
         aylar.push({ ay: ay, gun: gunler.hafta + gunler.cumartesi + gunler.pazar, gunHafta: gunler.hafta, gunHs: gunler.cumartesi + gunler.pazar, gunCmt: gunler.cumartesi, gunPaz: gunler.pazar, hsSaat: hsSaat, tatilCalisma: gunler.tatilCalisma,
           verim: verim*100, adet: adet, hesapAdet: hesapAdet, kapasiteBrut: kapasiteBrut, gunduzAdet: gunduzAktif, geceAdet: geceAdet, fiyat: fiyat, satis: satis, digerGelir: digerGelir, talasGelir: talasGelir, kdvliDigerGelir: kdvliDigerGelir, ekGelir: ekGelir, gelir: gelir, kdvDetay: kdvDetay, damgaKira: damgaKira, sabitKdvli: sabitKdvli, sabitKdvsiz: sabitKdvsiz,
-          aktifMakine: makineAktif, geceVardiya: geceAktif, personelListe: persAktif.map(function(p){ return { ad: p.ad, net: p.net }; }),
+          aktifMakine: makineAktif, makineEtkin: makineEtkin, urunler: US, urunAdet: urunAdet, geceVardiya: geceAktif, personelListe: persAktif.map(function(p){ return { ad: p.ad, net: p.net }; }),
           personel: personelMaliyet, mesai: mesai, tatilUcret: tatilUcret, netMaas: netOdenen, sgk: sgkOdenecek, gvDv: gvDv,
           kiraNet: kiraNet, kira: kiraBrut, kiraStopaj: kiraStopaj, elektrik: elektrik, elektrikHesap: elektrikHesap, kwh: kwh, uc: uc, ucHesap: ucHesap,
           sabit: sabitKdvli + sabitKdvsiz, sabitHesap: sabitHesap, ekGider: ekGider, ekGiderKdvli: ekGiderKdvli, tekSefer: tekSefer, amortisman: amortAy, faiz: faiz, gider: gider, karOncesi: karOncesi, kidem: kidem,
@@ -12312,20 +12449,26 @@ Dikkat edilmesi gereken 2 nokta:
         net: (Y.karOncesi||0) - (Y.kv != null ? Y.kv : Math.max(0, Y.karOncesi||0) * r.P.kvOrani/100), geriDonus: r.geriDonusAy, nakitIhtiyaci: -r.minKasa,
         adetAy: (Y.adet||0) / Math.max(1, Y.ay||1) };
     }
-    function senaryolar(P){
+    function senaryolar(Pin){
+      var P = Object.assign(varsayilan(), JSON.parse(JSON.stringify(Pin || {})));
+      urunNormalize(P);
+      var tm = Number(P.aktifMakine) || 0, fo = Number(P.fiyat) || 0, cok = P.urunler.length > 1;
+      var tr = function(x){ return yuv(x).toLocaleString('tr-TR'); };
+      var arti2 = tm > 0 ? urunOlcekle(P, { makine: (tm + 2) / tm, sinir: (tm + 2) / tm }) : (function(){ var q = urunOlcekle(P, {}); if (q.urunler[0]) q.urunler[0].makine = 2; return q; })();
       var tan = [
         { ad: 'Mevcut plan', not: 'Varsayımlar + ay ay girdiğiniz değerler', o: {} },
         { ad: '3 kişi (gece tek operatör)', not: 'Aynı üretim varsayıldı — gece tek kişi 3 makineye bakar (İSG riski!)', o: { personel: (P.personel||[]).slice(0, Math.max(1,(P.personel||[]).length-1)) } },
         { ad: 'Tek vardiya', not: 'Sadece gündüz · usta + 1 operatör', o: { geceVardiya: false, personel: (P.personel||[]).slice(0, 2) } },
         { ad: 'Cumartesi mesaili', not: 'Cumartesi 5 saat, gündüz ekibine %50 zamlı mesai', o: { cumartesi: true } },
         { ad: 'Sipariş %20 az', not: 'Kapasitenin %80\'i satılır (Kadir Bey daha az alırsa)', o: { kararliVerim: (P.kararliVerim||100) * 0.8, rampa: (P.rampa||[]).map(function(x){ return x*0.8; }) } },
-        { ad: 'Fiyat %10 düşük', not: 'Birim fiyat '+(P.fiyat||0)+' → '+Math.round((P.fiyat||0)*0.9*100)/100+' ₺', o: { fiyat: (P.fiyat||0) * 0.9 } },
-        { ad: '+2 makine dolu', not: (Number(P.aktifMakine)||0)+2+' makine aynı işte, aynı kadro — iş bulunursa', o: { aktifMakine: (Number(P.aktifMakine)||0) + 2 } }
+        { ad: 'Fiyat %10 düşük', not: (cok ? 'Tüm ürün fiyatları %10 düşük · ortalama ' : 'Birim fiyat ')+tr(fo)+' → '+tr(fo*0.9)+' ₺', o: urunOlcekle(P, { fiyat: 0.9 }) },
+        { ad: '+2 makine dolu', not: tr(tm)+' → '+tr(tm+2)+' makine'+(cok ? ', ürünlere aynı oranda' : ', aynı işte')+', aynı kadro — iş bulunursa', o: arti2 }
       ];
       return tan.map(function(t){ var r = hesapla(Object.assign({}, P, t.o)); return Object.assign({ ad: t.ad, not: t.not }, ozetle(r)); });
     }
     return { varsayilan: varsayilan, hesapla: hesapla, ozetle: ozetle, senaryolar: senaryolar, bordro: bordro, yilParam: yilParam, isGunu: isGunu, gunHaritasi: gunHaritasi,
       haftaGunu: haftaGunu, ayGunSayisi: ayGunSayisi, tatilAdi: tatilAdi, ayEkle: ayEkle, ayAdiUzun: ayAdiUzun, vergiHesap: vergiHesap, KALICI: KALICI,
+      urunNormalize: urunNormalize, urunOlcekle: urunOlcekle, urunIdleri: urunIdleri,
       ESKI_VARSAYILAN: ESKI_VARSAYILAN, VARSAYIM_SURUMU: VARSAYIM_SURUMU };
   })();
 
@@ -12340,7 +12483,7 @@ Dikkat edilmesi gereken 2 nokta:
   function kvParam(){
     // Taslak, sunucudaki kayıt onu birebir yansıtana kadar tutulur (kayıt dönmeden eski değer görünmesin)
     if (_kvTaslak && _kvBekleyen != null && _kvSurum === _kvBekleyenSurum && state.config && state.config.karlilikPlanJson === _kvBekleyen){ _kvTaslak = null; _kvBekleyen = null; }
-    if (_kvTaslak){ var T = kvKopya(_kvTaslak); kvRefUygula(T); return T; } // Tanımlar bağlantısı taslakta da güncel
+    if (_kvTaslak){ var T = kvKopya(_kvTaslak); kvRefUygula(T); KV_MODEL.urunNormalize(T); return T; } // Tanımlar bağlantısı taslakta da güncel
     var P = KV_MODEL.varsayilan(), c = state.config || {}, kay = {};
     if (typeof c.karlilikPlanJson === 'string' && c.karlilikPlanJson){ try { kay = JSON.parse(c.karlilikPlanJson) || {}; } catch(e){ kay = {}; } }
     else if (c.karlilikPlan && typeof c.karlilikPlan === 'object') kay = c.karlilikPlan;
@@ -12351,12 +12494,14 @@ Dikkat edilmesi gereken 2 nokta:
     if (!P.yapilacak || typeof P.yapilacak !== 'object') P.yapilacak = { bitti: {}, ozel: [] };
     P.yapilacak.bitti = P.yapilacak.bitti || {}; P.yapilacak.ozel = P.yapilacak.ozel || [];
     kvRefUygula(P);
+    KV_MODEL.urunNormalize(P); // r128 öncesi tek ürünlü / paylı plan bir kez ürün başına makineye çevrilir
     return P;
   }
   function kvFark(P){ var v = KV_MODEL.varsayilan(), f = {}; Object.keys(P).forEach(function(k){ if (JSON.stringify(P[k]) !== JSON.stringify(v[k])) f[k] = P[k]; }); return f; }
   // Plan tek bir metin alanında saklanır: sunucu iç içe nesneleri birleştirdiğinde silinen değerler (ör. takvim) geri gelmesin
   function kvKaydetP(P){
     P.varsayimSurumu = KV_MODEL.VARSAYIM_SURUMU;
+    KV_MODEL.urunNormalize(P); // ürün eklenip silinince özet değerler (toplam makine, ortalama fiyat) güncel kaydedilsin
     delete P._ref;
     var j = JSON.stringify(temizle(kvFark(P)));
     _kvTaslak = kvKopya(P); if (_kvBekleyenSurum !== _kvSurum){ _kvSurum++; } _kvBekleyen = j; _kvBekleyenSurum = _kvSurum;
@@ -12399,7 +12544,7 @@ Dikkat edilmesi gereken 2 nokta:
   function kvAyObj(P, ay, olustur){ if (!P.aylik[ay] && olustur) P.aylik[ay] = {}; return P.aylik[ay] || {}; }
   function kvAyTemizle(P, ay){ var o = P.aylik[ay]; if (o && !Object.keys(o).length) delete P.aylik[ay]; }
 
-  var KV_SEKMELER = [['ozet','Özet'],['planla','Ay ay planım ✎'],['aylik','Aylık tablo'],['yillik','Yıllık & birim'],['vergi','Takvim & yapılacaklar'],['senaryo','Senaryolar'],['gercek','Plan / gerçekleşen'],['varsayim','Varsayımlar']];
+  var KV_SEKMELER = [['ozet','Özet'],['urunler','Ürünler & satış ✎'],['planla','Ay ay planım ✎'],['aylik','Aylık tablo'],['yillik','Yıllık & birim'],['vergi','Takvim & yapılacaklar'],['senaryo','Senaryolar'],['gercek','Plan / gerçekleşen'],['varsayim','Varsayımlar']];
 
   EK_RENDER.karlilik = function(){
     var host = byId('karlilikIcerik'); if (!host) return;
@@ -12429,6 +12574,7 @@ Dikkat edilmesi gereken 2 nokta:
     kvSet('kvSekmeBar', KV_SEKMELER.map(function(s){ return '<button data-kvsekme="'+s[0]+'" class="'+(_kvSekme===s[0]?'aktif':'')+'">'+s[1]+'</button>'; }).join(''));
     if (_kvSekme === 'varsayim'){ var ic = byId('kvIcerik'); if (ic.__sonHtml !== 'varsayim'){ ic.__sonHtml = 'varsayim'; kvFormCiz(kvParam()); } return; }
     if (_kvSekme === 'planla'){ kvPlanlayici(r); return; }
+    if (_kvSekme === 'urunler'){ kvUrunSekme(r); return; }
     if (_kvSekme === 'ozet'){
       var oic = byId('kvIcerik');
       if (oic.__sonHtml !== 'ozet'){ oic.innerHTML = '<div id="kvOzetUst"></div><div id="kvDenePanel">'+kvDenePanelHtml(r0)+'</div><div id="kvOzetGovde"></div>'; oic.__sonHtml = 'ozet'; }
@@ -12474,7 +12620,7 @@ Dikkat edilmesi gereken 2 nokta:
     var dna = t.closest('[data-kvdeneact]');
     if (dna){
       if (dna.dataset.kvdeneact === 'sifirla'){ _kvDene = null; kvSekmeAc('ozet'); return; }
-      if (dna.dataset.kvdeneact === 'uygula') onayIste('Denediğiniz değerler plana kaydedilsin mi? Değiştirdiğiniz alanlar (makine, vardiya, hafta sonu, fiyat, adet) tüm plan boyunca geçerli olur; o alanlarda ay ay girdiğiniz değerler kalkar.', 'Plana uygula', function(){
+      if (dna.dataset.kvdeneact === 'uygula') onayIste('Denediğiniz değerler plana kaydedilsin mi? Değiştirdiğiniz alanlar tüm plan boyunca geçerli olur: makine, fiyat ve adet her üründe (ay ay girdikleriniz dahil) aynı oranda değişir; vardiya ve hafta sonu için ay ay girdiğiniz değerler kalkar.', 'Plana uygula', function(){
         var Q = kvDeneUygula(kvParam());
         _kvDene = null;
         var ic = byId('kvIcerik'); if (ic) ic.__sonHtml = null;
@@ -12487,12 +12633,11 @@ Dikkat edilmesi gereken 2 nokta:
     if (t.closest('#kvCsv')) kvCsvIndir();
     if (t.closest('#kvYazdir')) kvYazdir();
     if (t.closest('#kvKaydet')) kvVarsayimKaydet();
-    if (t.closest('#kvSifirla')) onayIste('Varsayımlar sıfırlansın mı? Makine, adet, fiyat, personel, gider ve yatırım değerleri 0 olur; vergi / SGK oranları kalır. (Ay ay girdiğiniz değerler ve yapılacaklar korunur.)', 'Evet, sıfırla', function(){
-      var P = kvParam(), yeni = KV_MODEL.varsayilan(); yeni.aylik = P.aylik; yeni.yapilacak = P.yapilacak; _kvSurum++;
+    if (t.closest('#kvSifirla')) onayIste('Varsayımlar sıfırlansın mı? Ürünler, personel, gider ve yatırım değerleri silinir / 0 olur; vergi / SGK oranları kalır. (Ay ay girdiğiniz diğer değerler ve yapılacaklar korunur.)', 'Evet, sıfırla', function(){
+      var P = kvParam(), yeni = KV_MODEL.varsayilan(); yeni.aylik = P.aylik; yeni.yapilacak = P.yapilacak; yeni.urunSurum = 2; _kvSurum++;
+      Object.keys(yeni.aylik).forEach(function(k){ delete yeni.aylik[k].urun; if (!Object.keys(yeni.aylik[k]).length) delete yeni.aylik[k]; });
       kvKaydetP(yeni).then(function(){ byId('kvIcerik').__sonHtml = null; toast('✓ Varsayılan değerler yüklendi'); EK_RENDER.karlilik(); }); });
     if (t.closest('#kvPersEkle')){ var P = kvFormOku(); P.personel.push({ ad: 'Yeni personel', net: 40000 }); kvFormCiz(P); kvVarsayimCanli(); }
-    if (t.closest('#kvUrunEkle')){ var Pu = kvFormOku(); Pu.urunler.push({ ad: 'Ürün / iş '+(Pu.urunler.length+1), fiyat: 0, adet: 0, pay: 0 }); kvFormCiz(Pu); kvVarsayimCanli(); return; }
-    var usil = t.closest('[data-kvurunsil]'); if (usil){ var Pu2 = kvFormOku(); Pu2.urunler.splice(Number(usil.dataset.kvurunsil), 1); kvFormCiz(Pu2); kvVarsayimCanli(); return; }
     var sil = t.closest('[data-kvperssil]'); if (sil){ var P2 = kvFormOku(); P2.personel.splice(Number(sil.dataset.kvperssil), 1); kvFormCiz(P2); kvVarsayimCanli(); }
     // Aylık tablodan / özet listesinden aya git
     var git = t.closest('[data-kvgitay]'); if (git){ kvSekmeAc('planla', git.dataset.kvgitay); return; }
@@ -12527,7 +12672,23 @@ Dikkat edilmesi gereken 2 nokta:
       EK_RENDER.karlilik();
       return;
     }
-    if (el.dataset.kvurun != null){ var uo = byId('kvUrunOzet'); if (uo) uo.innerHTML = kvUrunOzetHtml(kvFormUrunOku()); kvVarsayimCanli(e.type === 'change'); return; }
+    // Ürünler & satış: ürün satırı
+    if (el.dataset.kvurun != null){
+      var uid = el.dataset.kvurun, ua = el.dataset.kvalan, uv;
+      if (ua === 'ad') uv = el.value;
+      else if (ua === 'basla'){ uv = el.value; if (uv && !/^\d{4}-\d{2}$/.test(uv)) return; }
+      else { uv = el.value === '' ? '' : Number(el.value); if (uv !== '' && (isNaN(uv) || uv < 0)) return; }
+      kvDegistir(function(P){ var u = (P.urunler || []).find(function(x){ return x.id === uid; }); if (u) u[ua] = uv; });
+      return;
+    }
+    // Ay ay ürün değerleri: planlayıcıdaki ürün tablosu (data-kvau) ve satış planı ızgarası (data-kvsp)
+    if (el.dataset.kvau != null || el.dataset.kvsp != null){
+      var aid = el.dataset.kvau != null ? el.dataset.kvau : el.dataset.kvsp, af = el.dataset.kvau != null ? el.dataset.kvalan : 'satis', aay = el.dataset.kvau != null ? ay : el.dataset.kvspay;
+      var av = el.value === '' ? null : Number(el.value);
+      if (av !== null && (isNaN(av) || av < 0)) return;
+      kvDegistir(function(P){ kvAyUrunYaz(P, aay, aid, af, av); });
+      return;
+    }
     if (el.dataset.kvkey || el.dataset.kvpers != null){ kvVarsayimCanli(e.type === 'change'); return; }
     if (el.dataset.kva){
       var k = el.dataset.kva, v;
@@ -12570,6 +12731,35 @@ Dikkat edilmesi gereken 2 nokta:
 
   function kvEylem(ad, el){
     var ay = _kvAy, r = kvSonuc(), a = r.aylar.find(function(x){ return x.ay === ay; });
+    if (ad === 'urunEkle'){
+      var tanimMk = kvTanimRef('aktifMakine'), yeniId = null;
+      kvDegistir(function(P){
+        var l = P.urunler = P.urunler || [], top = toplamla(l, function(u){ return u.makine; }), kalan = tanimMk != null ? Math.round((tanimMk - top) * 100) / 100 : 0;
+        l.push({ ad: 'Ürün / iş '+(l.length+1), fiyat: '', makine: kalan > 0 ? kalan : 1, adet: '', gece: '', sinir: '', degisken: '', basla: '' });
+        KV_MODEL.urunIdleri(l); yeniId = l[l.length-1].id;
+      });
+      setTimeout(function(){ var inp = document.querySelector('#kvIcerik [data-kvurun="'+yeniId+'"][data-kvalan="ad"]'); if (inp){ inp.focus(); inp.select(); } }, 0);
+      return;
+    }
+    if (ad === 'urunSil'){
+      var sid = el.dataset.id, su = (r.P.urunler || []).find(function(x){ return x.id === sid; });
+      onayIste('"'+((su && String(su.ad || '').trim()) || 'Ürün')+'" plandan silinsin mi? Ay ay planda bu ürüne girdiğiniz değerler de silinir.', 'Sil', function(){
+        kvDegistir(function(P){
+          P.urunler = (P.urunler || []).filter(function(x){ return x.id !== sid; });
+          Object.keys(P.aylik || {}).forEach(function(k){ var o = P.aylik[k]; if (o && o.urun){ delete o.urun[sid]; if (!Object.keys(o.urun).length) delete o.urun; } kvAyTemizle(P, k); });
+        });
+      });
+      return;
+    }
+    if (ad === 'satisTemizle'){
+      onayIste('Ay ay satış planına elle yazdığınız ürün adetleri silinsin mi? Satışlar yeniden kapasiteye ve satış sınırına göre hesaplanır.', 'Temizle', function(){
+        var ic = byId('kvIcerik'); if (ic) ic.__sonHtml = null;
+        kvDegistir(function(P){ Object.keys(P.aylik || {}).forEach(function(k){ var o = P.aylik[k]; if (!o || !o.urun) return;
+          Object.keys(o.urun).forEach(function(id){ delete o.urun[id].satis; if (!Object.keys(o.urun[id]).length) delete o.urun[id]; });
+          if (!Object.keys(o.urun).length) delete o.urun; kvAyTemizle(P, k); }); });
+      });
+      return;
+    }
     if (ad === 'onceki' || ad === 'sonraki'){ var i = r.aylar.indexOf(a) + (ad === 'onceki' ? -1 : 1); if (r.aylar[i]){ _kvAy = r.aylar[i].ay; EK_RENDER.karlilik(); } return; }
     if (ad === 'bugun'){ var ba = thisMonthKey(); _kvAy = r.aylar.some(function(x){ return x.ay === ba; }) ? ba : r.aylar[0].ay; EK_RENDER.karlilik(); return; }
     if (ad === 'persBaslat'){ kvDegistir(function(P){ kvAyObj(P, ay, true).personel = a.personelListe.map(function(p){ return { ad: p.ad, net: Math.round(p.net) }; }); }); kvFormYenile(); return; }
@@ -12599,6 +12789,159 @@ Dikkat edilmesi gereken 2 nokta:
     return toplamla(state.uretim.filter(function(k){ return ayAnahtari(k.tarih) === ay && (!k.operasyon || OPERASYONLAR.indexOf(k.operasyon) === OPERASYONLAR.length-1 || k.stokGiris); }), function(k){ return k.adet; });
   }
 
+  // ---------- Ürünler & satış: ürün / iş listesi, çalışan makine, ay ay satış planı ----------
+  // Her ürün kendi fiyatı, kendine ayrılan makine sayısı ve makine başı adediyle ayrı hesaplanır; toplam satış ürünlerin toplamıdır.
+  // Çalışan makine = ürün satırlarındaki makinelerin toplamı (elle). Tanımlar › Kapasite'deki aktif makine sayısı yalnız bilgi.
+  // Ay ay değişiklikler P.aylik[ay].urun[id] = { makine, adet, gece, fiyat (girildiği aydan itibaren), satis (yalnız o ay) }.
+  function kvAyUrunYaz(P, ay, id, f, v){
+    var o = kvAyObj(P, ay, true), U = o.urun = o.urun && typeof o.urun === 'object' ? o.urun : {}, x = U[id] = U[id] || {};
+    if (v === null) delete x[f]; else x[f] = v;
+    if (!Object.keys(x).length) delete U[id];
+    if (!Object.keys(U).length) delete o.urun;
+    kvAyTemizle(P, ay);
+  }
+  function kvUrunAd(u){ return String((u && u.ad) || '').trim() || 'Ürün'; }
+  function kvUrunGeceVar(r){ return !!r.P.geceVardiya || r.aylar.some(function(a){ return a.geceVardiya; }); }
+  function kvUrunSekme(r){
+    var ic = byId('kvIcerik'), P = r.P, gece = kvUrunGeceVar(r);
+    var key = 'urunler|'+P.urunler.map(function(u){ return u.id; }).join(',')+'|'+(gece ? 1 : 0)+'|'+r.aylar.map(function(a){ return a.ay; }).join(',')+'|'+P.ucAdet;
+    if (ic.__sonHtml !== key){
+      ic.innerHTML = kvUrunTabloHtml(r, gece)+
+        (P.urunler.length ? '<div class="block"><div class="block-head"><h3>Ay ay satış planı '+infoIco('Satırlar ürün, sütunlar ay. Gri sayı kapasiteye ve satış sınırına göre hesaplanan satış adedidir; bir hücreye adet yazarsanız o ayın satış planı o olur (yalnız o ay için). Altındaki tutar o ayın cirosudur. Hücreyi boşaltınca hesaplanan değere döner. Aynı değerler Ay ay planım\'daki ürün tablosunda da görünür.\n\n* işaretli aylarda toplam satış Ay ay planım\'da elle girilmiştir; ürünlere planlanan satışları oranında dağıtılır.')+'</h3>'+
+          '<div class="bh-actions"><button class="btn secondary small" data-kvact="satisTemizle">Elle yazılan adetleri temizle</button></div></div><div class="block-body"><div class="tablewrap">'+kvSatisPlanHtml(r)+'</div>'+
+          '<div class="helper" style="margin-top:6px"><span class="kv-lej elle"></span> elle yazılan adet · <span class="kv-lej sinir"></span> satış sınırına takılan · <span class="kv-lej eksi"></span> satılabilir adetten fazla</div></div></div>'+
+          '<div id="kvUrunYillik"></div>' : '');
+      ic.__sonHtml = key;
+    }
+    kvUrunCanli(r, gece);
+  }
+  function kvUrunTabloHtml(r, gece){
+    var P = r.P;
+    var bas = '<tr><th>#</th><th>Ürün / iş</th><th>Birim fiyat<br><span class="muted">₺, KDV hariç</span></th><th>Makine<br><span class="muted">bu işte</span></th><th>Gündüz adet<br><span class="muted">1 makine, '+fmt2(P.gunduzSaat)+' sa</span></th>'+
+      (gece ? '<th>Gece adet<br><span class="muted">boş = orantılı</span></th>' : '')+
+      '<th title="Müşterinin ayda en fazla alacağı adet. Boş: üretilen her şey satılır.">Satış sınırı<br><span class="muted">adet / ay</span></th><th title="Adet başına uç, takım, malzeme, kaplama… Boş: Varsayımlar\'daki genel uç bedeli.">Değişken gider<br><span class="muted">₺ / adet</span></th><th title="Ürün bu aydan itibaren üretilir. Boş: plan başından.">Başlangıç<br><span class="muted">boş = baştan</span></th>'+
+      '<th class="num">Satış<br><span class="muted" data-kvutipik></span></th><th class="num">Ciro<br><span class="muted">aylık</span></th><th class="num">Pay</th><th></th></tr>';
+    var satir = function(u, i){
+      var inp = function(alan, tip, ek){
+        var t = tip === 'num' ? 'type="number" step="any" min="0" inputmode="decimal"' : tip === 'ay' ? 'type="month" placeholder="YYYY-AA"' : 'type="text"';
+        return '<input '+t+' data-kvurun="'+u.id+'" data-kvalan="'+alan+'" value="'+escAttr(u[alan] == null ? '' : u[alan])+'"'+(ek || '')+'>';
+      };
+      return '<tr><td class="muted">'+(i+1)+'</td><td>'+inp('ad', 'text', ' placeholder="ör. flanş, mil, saatlik işleme"')+'</td><td>'+inp('fiyat', 'num')+'</td><td>'+inp('makine', 'num', ' title="Yarım zamanlı çalışan makine için 0,5 yazabilirsiniz"')+'</td><td>'+inp('adet', 'num')+'</td>'+
+        (gece ? '<td>'+inp('gece', 'num')+'</td>' : '')+
+        '<td>'+inp('sinir', 'num', ' placeholder="sınırsız"')+'</td><td>'+inp('degisken', 'num', ' placeholder="genel '+escAttr(fmt2(P.ucAdet))+'"')+'</td><td>'+inp('basla', 'ay')+'</td>'+
+        '<td class="num" data-kvuc="'+u.id+':satis"></td><td class="num" data-kvuc="'+u.id+':ciro"></td><td class="num" data-kvuc="'+u.id+':pay"></td>'+
+        '<td><button class="btn danger small" data-kvact="urunSil" data-id="'+u.id+'" title="Ürünü plandan sil">Sil</button></td></tr>';
+    };
+    return '<div class="block"><div class="block-head"><h3>Ürünler / işler ve çalışan makine '+infoIco('Her satır bir ürün ya da iş; istediğiniz kadar ekleyebilirsiniz.\n\nMakine: bu işe ayrılan makine sayısı (yarım zamanlı için 0,5). Çalışan makine sayısı bu satırların toplamıdır. Tanımlar › Kapasite\'deki aktif makine sayısı yalnız bilgi olarak gösterilir, plana kendiliğinden geçmez.\n\nGündüz adet: bir makinenin gündüz vardiyasında bu üründen çıkardığı adet. Gece adedi boş bırakılırsa gündüz adedi saatle orantılanır.\n\nAylık satış sınırı: müşterinin ayda en fazla alacağı adet. Boşsa üretilen her şey satılır kabul edilir; sınır varsa makine o kadar çalışır, elektrik de ona göre hesaplanır.\n\nDeğişken gider: adet başına uç, takım, malzeme, kaplama… Boşsa Varsayımlar\'daki genel kesici uç bedeli kullanılır.\n\nBaşlangıç ayı: ürün bu aydan itibaren üretilir.\n\nFiyatlar her Ocak Varsayımlar\'daki oranla artar. Belirli bir aydan itibaren makine, adet ya da fiyatı değiştirmek için Ay ay planım\'daki ürün tablosunu kullanın.')+'</h3>'+
+      '<div class="bh-actions"><button class="btn small" data-kvact="urunEkle">+ Ürün / iş ekle</button></div></div><div class="block-body">'+
+      '<div id="kvMakineBilgi"></div>'+
+      (P.urunler.length ? '<div class="tablewrap"><table class="edit-tablo kv-urun-tablo"><thead>'+bas+'</thead><tbody>'+P.urunler.map(satir).join('')+'</tbody><tfoot id="kvUrunTop"></tfoot></table></div>'
+        : '<div class="kv-urun-bos">Henüz ürün yok. Ürettiğiniz her parça ya da iş için bir satır ekleyin: fiyat, kaç makinede yapıldığı ve bir makinenin vardiyada kaç adet çıkardığı yeterli.<br><button class="btn" data-kvact="urunEkle" style="margin-top:8px">+ İlk ürünü ekle</button></div>')+
+      '</div></div>';
+  }
+  function kvSatisPlanHtml(r){
+    var P = r.P, aylar = r.aylar;
+    var bas = '<tr><th class="kv-sp-ad">Ürün / iş</th>'+aylar.map(function(a){ return '<th class="num">'+kvAyAdi(a.ay)+'</th>'; }).join('')+'<th class="num">Toplam</th></tr>';
+    var govde = P.urunler.map(function(u){
+      return '<tr><th class="kv-sp-ad" data-kvuad="'+u.id+'">'+esc(kvUrunAd(u))+'</th>'+aylar.map(function(a){
+        var x = (((P.aylik[a.ay] || {}).urun) || {})[u.id] || {};
+        return '<td class="kv-sp-h" data-kvsph="'+u.id+'|'+a.ay+'"><input type="number" min="0" step="1" inputmode="numeric" data-kvsp="'+u.id+'" data-kvspay="'+a.ay+'" value="'+escAttr(x.satis == null ? '' : x.satis)+'"><span></span></td>';
+      }).join('')+'<td class="num" data-kvspt="'+u.id+'"></td></tr>';
+    }).join('');
+    var top = function(etiket, k, cls){ return '<tr class="'+(cls || '')+'"><th class="kv-sp-ad">'+etiket+'</th>'+aylar.map(function(a){ return '<td class="num" data-'+k+'="'+a.ay+'"></td>'; }).join('')+'<td class="num" data-'+k+'="top"></td></tr>'; };
+    return '<table class="kv-tablo kv-satis-plan"><thead>'+bas+'</thead><tbody>'+govde+top('Toplam adet', 'kvspa', 'kv-toplam')+top('Toplam ciro', 'kvspc')+top('Çalışan makine', 'kvspm', 'kv-alt')+'</tbody></table>';
+  }
+  function kvUrunCanli(r, gece){
+    var P = r.P, a3 = r.aylar[r.refIndex], tanim = kvTanimRef('aktifMakine'), mk = Number(P.aktifMakine) || 0;
+    var enCok = 0, enAz = Infinity, topAdet = 0, topCiro = 0;
+    r.aylar.forEach(function(a){ enCok = Math.max(enCok, a.aktifMakine); enAz = Math.min(enAz, a.aktifMakine); topAdet += a.adet; topCiro += a.satis; });
+    if (enAz === Infinity) enAz = 0;
+    var not = [];
+    if (tanim != null && enCok > tanim + 1e-9) not.push('<span class="neg">Planda '+fmt2(enCok)+' makine çalışıyor, Tanımlar › Kapasite\'de '+fmt(tanim)+' aktif makine var. Yeni makine alınacaksa Varsayımlar › Yatırım\'daki makine tutarını da güncelleyin.</span>');
+    else if (tanim != null && P.urunler.length && mk < tanim - 1e-9) not.push(fmt2(tanim - mk)+' makine bu planda boşta.');
+    if (tanim == null) not.push('<span class="muted">Tanımlar › Kapasite\'de aktif makine sayısı girilmemiş.</span>');
+    P.urunler.forEach(function(u){
+      var ad = esc(kvUrunAd(u)), m = Number(u.makine) || 0;
+      if (m > 0 && !(Number(u.fiyat) > 0)) not.push('<span class="neg">'+ad+': birim fiyat girilmedi — satışı ciroya girmiyor.</span>');
+      if (m > 0 && !(Number(u.adet) > 0)) not.push('<span class="neg">'+ad+': makine başı adet girilmedi — üretim 0.</span>');
+      if (!(m > 0) && (Number(u.adet) > 0 || Number(u.fiyat) > 0)) not.push(ad+': makine 0 — bu ürün üretilmiyor.');
+    });
+    kvSet('kvMakineBilgi', '<div class="kv-mb">'+
+      '<div class="kv-mb-k"><span>Bu planda çalışan makine</span><b>'+fmt2(mk)+'</b><small>ürün satırlarının toplamı'+(r.aylar.length && Math.abs(enCok - enAz) > 1e-9 ? ' · ay ay '+fmt2(enAz)+'–'+fmt2(enCok) : '')+'</small></div>'+
+      '<div class="kv-mb-k"><span>Tanımlar › Kapasite: aktif makine</span><b>'+(tanim != null ? fmt(tanim) : '—')+'</b><small>kurulu makine · bilgi, plana kendiliğinden geçmez</small></div>'+
+      '<div class="kv-mb-k"><span>'+esc(kvAyAdi(a3.ay))+' satışı (tipik ay)</span><b>'+fmt(a3.adet)+' adet</b><small>ciro '+kvTl(a3.satis)+' · ort. '+fmt2(a3.fiyat)+' ₺/adet</small></div>'+
+      '<div class="kv-mb-k"><span>Plan boyunca satış ('+r.aylar.length+' ay)</span><b>'+kvTlK(topCiro)+'</b><small>'+fmt(topAdet)+' adet · KDV hariç</small></div>'+
+      '</div>'+(not.length ? '<div class="kv-mb-not">'+not.join('<br>')+'</div>' : ''));
+    var S3 = {}; (a3.urunler || []).forEach(function(x){ S3[x.id] = x; });
+    var el1 = document.querySelector('#kvIcerik [data-kvutipik]'); if (el1 && el1.textContent !== kvAyAdi(a3.ay)) el1.textContent = kvAyAdi(a3.ay);
+    document.querySelectorAll('#kvIcerik [data-kvuc]').forEach(function(el){
+      var p = el.dataset.kvuc.split(':'), x = S3[p[0]], h = '';
+      if (x){
+        if (p[1] === 'satis') h = x.bekliyor ? '<span class="muted">'+esc(kvAyAdi(x.basla))+'\'da başlar</span>' : fmt(x.satis)+(x.sinirli && !x.elle ? '<div class="muted" style="font-size:10.5px">kapasite '+fmt(x.hesap)+'</div>' : '');
+        else if (p[1] === 'ciro') h = kvTl(x.ciro);
+        else if (p[1] === 'pay') h = a3.satis > 0 ? '%'+fmt(x.ciro / a3.satis * 100) : '—';
+      }
+      if (el.__h !== h){ el.innerHTML = h; el.__h = h; }
+    });
+    document.querySelectorAll('#kvIcerik input[data-kvurun][data-kvalan="gece"]').forEach(function(el){
+      var u = P.urunler.find(function(x){ return x.id === el.dataset.kvurun; }) || {};
+      var v = 'oto '+fmt(P.gunduzSaat > 0 ? Math.round((Number(u.adet) || 0) * P.geceSaat / P.gunduzSaat) : 0);
+      if (el.placeholder !== v) el.placeholder = v;
+    });
+    if (byId('kvUrunTop')) kvSet('kvUrunTop', '<tr class="kv-toplam"><td></td><td><b>Toplam</b></td><td class="num muted">ort. '+fmt2(a3.fiyat)+'</td><td class="num"><b>'+fmt2(mk)+'</b></td><td></td>'+(gece ? '<td></td>' : '')+'<td></td><td></td><td></td>'+
+      '<td class="num"><b>'+fmt(a3.adet)+'</b></td><td class="num"><b>'+kvTl(a3.satis)+'</b></td><td class="num">'+(a3.satis > 0 ? '%100' : '')+'</td><td></td></tr>');
+    // ürün adları (satış planı ve yıllık tablo)
+    document.querySelectorAll('#kvIcerik [data-kvuad]').forEach(function(el){ var u = P.urunler.find(function(x){ return x.id === el.dataset.kvuad; }); var t = kvUrunAd(u); if (el.textContent !== t) el.textContent = t; });
+    // ay ay satış planı
+    var AY = {}; r.aylar.forEach(function(a){ AY[a.ay] = a; });
+    var TU = {};
+    document.querySelectorAll('#kvIcerik [data-kvsph]').forEach(function(td){
+      var p = td.dataset.kvsph.split('|'), a = AY[p[1]], x = a && (a.urunler || []).find(function(z){ return z.id === p[0]; });
+      if (!x) return;
+      var inp = td.firstElementChild, sp = td.lastElementChild, topElle = (P.aylik[a.ay] || {}).adet != null;
+      var ph = x.bekliyor ? '—' : fmt(x.plan);
+      if (inp.placeholder !== ph) inp.placeholder = ph;
+      var c = kvTlK(x.ciro)+(topElle ? ' *' : '');
+      if (sp.textContent !== c) sp.textContent = c;
+      var fazla = x.elle && x.satis > x.hesap + 0.5;
+      td.classList.toggle('elle', x.elle); td.classList.toggle('bekliyor', x.bekliyor); td.classList.toggle('fazla', fazla); td.classList.toggle('sinir', x.sinirli && !x.elle);
+      var ttl = kvAyAdi(a.ay)+' · '+kvUrunAd(x)+': satılabilir '+fmt(x.hesap)+(x.sinirli && !x.elle ? ', satış sınırı '+fmt(x.plan) : '')+' · satış '+fmt(x.satis)+' × '+fmt2(x.fiyat)+' ₺'+(topElle ? ' · toplam satış elle girildi, oranla dağıtıldı' : '')+(x.bekliyor ? ' · '+kvAyAdi(x.basla)+'\'da başlıyor' : '');
+      if (td.title !== ttl) td.title = ttl;
+      var t = TU[p[0]] = TU[p[0]] || { a: 0, c: 0 }; t.a += x.satis; t.c += x.ciro;
+    });
+    var yaz = function(sel, h){ var el = document.querySelector(sel); if (el && el.__h !== h){ el.innerHTML = h; el.__h = h; } };
+    P.urunler.forEach(function(u){ var t = TU[u.id] || { a: 0, c: 0 }; yaz('#kvIcerik [data-kvspt="'+u.id+'"]', '<b>'+fmt(t.a)+'</b><div class="muted" style="font-size:10.5px">'+kvTlK(t.c)+'</div>'); });
+    r.aylar.forEach(function(a){
+      yaz('#kvIcerik [data-kvspa="'+a.ay+'"]', fmt(a.adet)); yaz('#kvIcerik [data-kvspc="'+a.ay+'"]', kvTlK(a.satis)); yaz('#kvIcerik [data-kvspm="'+a.ay+'"]', fmt2(a.aktifMakine));
+    });
+    yaz('#kvIcerik [data-kvspa="top"]', '<b>'+fmt(topAdet)+'</b>'); yaz('#kvIcerik [data-kvspc="top"]', '<b>'+kvTlK(topCiro)+'</b>'); yaz('#kvIcerik [data-kvspm="top"]', '');
+    if (byId('kvUrunYillik')) kvSet('kvUrunYillik', kvUrunYillikHtml(r));
+  }
+  function kvUrunYillikHtml(r){
+    var P = r.P; if (!P.urunler.length) return '';
+    var yillar = [], ayS = {}, T = {};
+    r.aylar.forEach(function(a){
+      var y = a.ay.slice(0,4); if (yillar.indexOf(y) < 0) yillar.push(y); ayS[y] = (ayS[y] || 0) + 1;
+      (a.urunler || []).forEach(function(x){ var k = x.id+'|'+y; T[k] = T[k] || { a: 0, c: 0 }; T[k].a += x.satis; T[k].c += x.ciro; });
+      var kt = 'top|'+y; T[kt] = T[kt] || { a: 0, c: 0 }; T[kt].a += a.adet; T[kt].c += a.satis;
+    });
+    var hucre = function(k){ var t = T[k] || { a: 0, c: 0 }; return '<td class="num">'+fmt(t.a)+'</td><td class="num">'+kvTlK(t.c)+'</td>'; };
+    return '<div class="block"><div class="block-head"><h3>Yıllara göre ürün satışı</h3></div><div class="block-body tablewrap"><table class="kv-tablo"><thead><tr><th rowspan="2">Ürün / iş</th>'+
+      yillar.map(function(y){ return '<th colspan="2" class="num">'+y+(ayS[y] < 12 ? ' <span class="muted">('+ayS[y]+' ay)</span>' : '')+'</th>'; }).join('')+'</tr><tr>'+
+      yillar.map(function(){ return '<th class="num">Adet</th><th class="num">Ciro</th>'; }).join('')+'</tr></thead><tbody>'+
+      P.urunler.map(function(u){ return '<tr><td>'+esc(kvUrunAd(u))+'</td>'+yillar.map(function(y){ return hucre(u.id+'|'+y); }).join('')+'</tr>'; }).join('')+
+      '<tr class="kv-toplam"><td><b>Toplam</b></td>'+yillar.map(function(y){ return hucre('top|'+y); }).join('')+'</tr></tbody></table></div></div>';
+  }
+  // Yazdırma için: aylar satırda, ürünler sütunda
+  function kvSatisPlanDikeyHtml(r){
+    var P = r.P;
+    return '<div class="block"><div class="block-head"><h3>Ürün bazında satış planı</h3></div><div class="block-body tablewrap"><table class="kv-tablo"><thead><tr><th>Ay</th>'+
+      P.urunler.map(function(u){ return '<th class="num">'+esc(kvUrunAd(u))+'<br><span class="muted">adet · ciro</span></th>'; }).join('')+'<th class="num">Toplam<br><span class="muted">adet · ciro</span></th></tr></thead><tbody>'+
+      r.aylar.map(function(a){ var S = {}; (a.urunler || []).forEach(function(x){ S[x.id] = x; });
+        return '<tr><td>'+esc(kvAyAdi(a.ay))+'</td>'+P.urunler.map(function(u){ var x = S[u.id] || { satis: 0, ciro: 0 }; return '<td class="num">'+fmt(x.satis)+' · '+kvTlK(x.ciro)+'</td>'; }).join('')+'<td class="num"><b>'+fmt(a.adet)+' · '+kvTlK(a.satis)+'</b></td></tr>'; }).join('')+
+      '</tbody></table></div></div>';
+  }
+
   // ---------- Ay ay planlayıcı ----------
   function kvPlanlayici(r){
     var ic = byId('kvIcerik');
@@ -12618,7 +12961,8 @@ Dikkat edilmesi gereken 2 nokta:
       var ba = thisMonthKey(); _kvAy = r.aylar.some(function(a){ return a.ay === ba; }) ? ba : r.aylar[0].ay;
     }
     var a = r.aylar.find(function(x){ return x.ay === _kvAy; }), P = r.P;
-    if (ic.__kvFormAy !== _kvAy){ byId('kvAyForm').innerHTML = kvAyFormHtml(r, a); ic.__kvFormAy = _kvAy; }
+    var formKey = _kvAy+'|'+P.urunler.map(function(u){ return u.id; }).join(',')+'|'+(a.geceVardiya ? 1 : 0);
+    if (ic.__kvFormAy !== formKey){ byId('kvAyForm').innerHTML = kvAyFormHtml(r, a); ic.__kvFormAy = formKey; }
     kvFormCanliGuncelle(r, a);
     kvSet('kvAyBar', r.aylar.map(function(x){
       var cls = 'kv-ayb'+(x.ay === _kvAy ? ' secili' : '')+(x.elle ? ' elle' : '')+(x.gercek ? ' gercek' : '')+(x.sirketKasa < 0 ? ' eksi' : '');
@@ -12628,7 +12972,9 @@ Dikkat edilmesi gereken 2 nokta:
     kvSet('kvVergiDokum', kvVergiDokumHtml(r, a));
     kvSet('kvEngeller', kvEngellerHtml(r, a));
     kvKayitDurumYaz();
-    var sb = document.querySelector('#kvAyBar .secili'); if (sb && sb.__kaydirildi !== _kvAy){ sb.__kaydirildi = _kvAy; try { sb.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch(e){} }
+    // Seçili ay çubukta ortalanır; yalnız ay değişince ve yalnız yatay (değer girerken sayfa yukarı zıplamasın)
+    var ab = byId('kvAyBar'), sb = ab && ab.querySelector('.secili');
+    if (sb && ab.__kaydirildi !== _kvAy){ ab.__kaydirildi = _kvAy; ab.scrollLeft += (sb.getBoundingClientRect().left - ab.getBoundingClientRect().left) - (ab.clientWidth - sb.offsetWidth) / 2; }
   }
 
   var KV_TL_ALANLAR = ['fiyat','kira','elektrik','uc','sabit'];
@@ -12638,19 +12984,24 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function kvAyFormHtml(r, a){
     var P = r.P, o = P.aylik[a.ay] || {};
-    var html = '<div class="block"><div class="block-head"><h3>'+esc(KV_MODEL.ayAdiUzun(a.ay))+' — değerleri girin '+infoIco('Boş bıraktığınız her alan otomatik hesaplanır; gri yazı o anki hesaplanan değerdir. Bir değer yazınca sağdaki vergi, SGK, KDV ve kasa anında yeniden hesaplanır ve birkaç saniye içinde kaydedilir (herkes aynı planı görür).\n\n∞ kalıcı alanlar (personel, fiyat, kira, makine sayısı, gece vardiyası) yazdığınız aydan itibaren sonraki aylara da geçer; her Ocak ayında Varsayımlar\'daki artış oranı bunun üzerine uygulanır. Diğer alanlar sadece bu ay içindir.')+'</h3>'+
+    var html = '<div class="block"><div class="block-head"><h3>'+esc(KV_MODEL.ayAdiUzun(a.ay))+' — değerleri girin '+infoIco('Boş bıraktığınız her alan otomatik hesaplanır; gri yazı o anki hesaplanan değerdir. Bir değer yazınca sağdaki vergi, SGK, KDV ve kasa anında yeniden hesaplanır ve birkaç saniye içinde kaydedilir (herkes aynı planı görür).\n\n∞ kalıcı alanlar (ürünlerin makine, adet ve fiyatı, personel, kira, gece vardiyası) yazdığınız aydan itibaren sonraki aylara da geçer; her Ocak ayında Varsayımlar\'daki artış oranı bunun üzerine uygulanır. Diğer alanlar sadece bu ay içindir.')+'</h3>'+
       '<div class="bh-actions"><button class="btn secondary small" data-kvact="ayTemizle" title="Bu aydaki tüm elle girişleri sil">Bu ayı sıfırla</button></div></div><div class="block-body">';
     // Takvim
     html += '<div class="kv-bolum-baslik">Çalışma günleri <span class="muted" style="font-weight:400">— güne tıklayın: tam gün → yarım gün → kapalı. Cumartesi/Pazar tıklanırsa mesai günü olur (saat ve zam oranı Varsayımlar\'da).</span></div><div id="kvTakvim"></div>';
-    // Üretim
-    html += '<div class="kv-bolum-baslik">Üretim ve fiyat</div><div class="grid2">'+
-      kvAlan('aktifMakine', 'Çalışan makine sayısı', o.aktifMakine, a.aktifMakine, true)+
-      kvAlan('gunduzAdet', 'Gündüz vardiyası: 1 makine kaç adet? (ortalama, '+fmt2(P.gunduzSaat)+' sa)', o.gunduzAdet, a.gunduzAdet, true)+
-      '<div class="field"><label>Gece vardiyası <span class="kv-kalici">∞ kalıcı</span></label><select data-kva="geceVardiya"><option value=""'+(o.geceVardiya==null?' selected':'')+'>Önceki gibi</option><option value="1"'+(o.geceVardiya===true?' selected':'')+'>Var ('+fmt2(P.geceSaat)+' sa)</option><option value="0"'+(o.geceVardiya===false?' selected':'')+'>Yok</option></select></div>'+
-      kvAlan('geceAdet', 'Gece vardiyası: 1 makine kaç adet? ('+fmt2(P.geceSaat)+' sa)', o.geceAdet, a.geceAdet, true)+
-      '</div><div class="kv-kapasite" id="kvKapasite"></div><div class="grid2">'+
-      kvAlan('adet', 'Satılan adet — elle (boş = satılabilir adet)', o.adet, a.hesapAdet, false, '<button class="btn secondary small" style="margin-top:4px" data-kvact="erpAdet" title="Üretim Kayıtları\'ndaki bu ayın mamul adedini yaz">ERP\'den al</button>')+
-      kvAlan('fiyat', 'Ortalama birim fiyat (₺, KDV hariç)', o.fiyat, fmt2(a.fiyat), true)+
+    // Üretim: ürün ürün makine, adet, fiyat ve bu ayın satışı
+    var ou = o.urun || {}, geceAy = !!a.geceVardiya;
+    html += '<div class="kv-bolum-baslik">Ürünler, makine ve fiyat <span class="muted" style="font-weight:400">— <span class="kv-kalici">∞</span> işaretli sütunlar yazdığınız aydan itibaren geçerli, satış adedi yalnız bu ay. Ürün eklemek / silmek: <a href="#" data-kvsekme="urunler">Ürünler & satış</a></span></div>'+
+      '<div class="grid2"><div class="field"><label>Gece vardiyası <span class="kv-kalici">∞ kalıcı</span></label><select data-kva="geceVardiya"><option value=""'+(o.geceVardiya==null?' selected':'')+'>Önceki gibi</option><option value="1"'+(o.geceVardiya===true?' selected':'')+'>Var ('+fmt2(P.geceSaat)+' sa)</option><option value="0"'+(o.geceVardiya===false?' selected':'')+'>Yok</option></select></div>'+
+      '<div class="field"><label>Çalışan makine (bu ay)</label><div class="kv-ay-makine" id="kvAyMakine"></div></div></div>'+
+      (P.urunler.length ? '<div class="tablewrap"><table class="edit-tablo kv-ay-urun"><thead><tr><th>Ürün / iş</th><th>Makine <span class="kv-kalici">∞</span></th><th>Gündüz adet / makine <span class="kv-kalici">∞</span></th>'+(geceAy ? '<th>Gece adet / makine <span class="kv-kalici">∞</span></th>' : '')+'<th>Birim fiyat ₺ <span class="kv-kalici">∞</span></th><th>Satış adedi</th><th class="num">Ciro</th></tr></thead><tbody>'+
+        P.urunler.map(function(u){
+          var x = ou[u.id] || {};
+          var inp = function(f){ return '<td><input type="number" step="any" min="0" inputmode="decimal" data-kvau="'+u.id+'" data-kvalan="'+f+'" value="'+escAttr(x[f] == null ? '' : x[f])+'"></td>'; };
+          return '<tr><td data-kvuad="'+u.id+'">'+esc(String(u.ad || '').trim() || 'Ürün')+'</td>'+inp('makine')+inp('adet')+(geceAy ? inp('gece') : '')+inp('fiyat')+inp('satis')+'<td class="num" data-kvauc="'+u.id+'"></td></tr>';
+        }).join('')+'</tbody><tfoot id="kvAyUrunTop"></tfoot></table></div>'
+        : '<div class="helper">Planda ürün yok — <a href="#" data-kvsekme="urunler">Ürünler & satış</a> sekmesinden ekleyin.</div>')+
+      '<div class="kv-kapasite" id="kvKapasite"></div><div class="grid2">'+
+      kvAlan('adet', 'Toplam satılan adet — elle (boş = ürünlerin toplamı)', o.adet, a.urunAdet, false, '<button class="btn secondary small" style="margin-top:4px" data-kvact="erpAdet" title="Üretim Kayıtları\'ndaki bu ayın mamul adedini yaz">ERP\'den al</button><div class="helper" style="margin-top:4px">Girilirse ürünlere planlanan satışları oranında dağıtılır.</div>')+
       '</div>';
     // Personel
     html += '<div class="kv-bolum-baslik">Personel (net maaş) <span class="kv-kalici">∞ kalıcı</span></div><div id="kvPersBolum">'+kvPersHtml(r, a)+'</div>';
@@ -12659,7 +13010,7 @@ Dikkat edilmesi gereken 2 nokta:
       kvAlan('kira', 'Kira (net, KDV / stopaj hariç)', o.kira, Math.round(a.kiraNet), true, '<div class="helper" id="kvKiraIpucu" style="margin-top:4px"></div>')+
       '<div class="field"><label>Kira faturası kimden? <span class="kv-kalici">tüm plan</span></label><select data-kvglobal="kiraVerenSirket"><option value="1"'+(P.kiraVerenSirket?' selected':'')+'>Şirket (KDV\'li fatura)</option><option value="0"'+(!P.kiraVerenSirket?' selected':'')+'>Şahıs (%20 stopaj)</option></select></div>'+
       kvAlan('elektrik', 'Elektrik faturası (bu ay)', o.elektrik, Math.round(a.elektrikHesap), false)+
-      kvAlan('uc', 'Kesici uç / takım (bu ay)', o.uc, Math.round(a.ucHesap), false)+
+      kvAlan('uc', 'Uç / takım / malzeme (bu ay)', o.uc, Math.round(a.ucHesap), false)+
       kvAlan('sabit', 'Diğer sabit giderler (bu ay)', o.sabit, Math.round(a.sabitHesap), false)+
       '</div><div class="helper" style="margin-top:-4px">Diğer sabit = yağ, bakım, mali müşavir, sigorta, OSGB, KKD, su/internet, ofis, e-belge, OSB aidatı, kalibrasyon, banka, beklenmeyen.</div>';
     // Ek kalemler
@@ -12709,16 +13060,32 @@ Dikkat edilmesi gereken 2 nokta:
     return html;
   }
   function kvFormCanliGuncelle(r, a){
-    var ph = { aktifMakine: a.aktifMakine, gunduzAdet: a.gunduzAdet, geceAdet: a.geceAdet, adet: a.hesapAdet, fiyat: fmt2(a.fiyat), kira: Math.round(a.kiraNet), elektrik: Math.round(a.elektrikHesap), uc: Math.round(a.ucHesap), sabit: Math.round(a.sabitHesap) };
+    var ph = { adet: a.urunAdet, kira: Math.round(a.kiraNet), elektrik: Math.round(a.elektrikHesap), uc: Math.round(a.ucHesap), sabit: Math.round(a.sabitHesap) };
     document.querySelectorAll('#kvAyForm [data-kvph]').forEach(function(el){ var v = String(ph[el.dataset.kvph]); if (el.placeholder !== v) el.placeholder = v; });
     document.querySelectorAll('#kvAyForm [data-kvpm]').forEach(function(el){ var b = a.pers[Number(el.dataset.kvpm)]; el.textContent = kvTl(b ? b.maliyet : 0); });
     kvSet('kvTakvim', kvTakvimHtml(r, a));
-    var P = r.P, uretilebilir = Math.floor(a.kapasiteBrut);
-    var geceOrantili = P.gunduzSaat > 0 ? Math.round(a.gunduzAdet * P.geceSaat / P.gunduzSaat) : 0;
-    kvSet('kvKapasite', '<b>'+a.aktifMakine+' makine</b> × ('+fmt(a.gunduzAdet)+' gündüz'+(a.geceVardiya ? ' + '+fmt(a.geceAdet)+' gece' : ' · gece vardiyası yok')+') adet × <b>'+fmt2(a.gunHafta)+' iş günü</b>'+(a.hsSaat ? ' + '+fmt2(a.hsSaat)+' hafta sonu saati' : '')+
-      ' = <b>'+fmt(uretilebilir)+'</b> üretilebilir − %'+fmt2(P.hurdaYuzde)+' hurda = <b class="pos">'+fmt(a.hesapAdet)+' satılabilir adet</b>'+
-      (a.adet !== a.hesapAdet ? '<br>Elle girilen satış: <b>'+fmt(a.adet)+' adet</b> (kapasitenin %'+fmt(a.hesapAdet ? a.adet/a.hesapAdet*100 : 0)+'\'i)'+(a.adet > a.hesapAdet ? ' <span class="neg">— kapasiteden fazla!</span>' : '') : '')+
-      (a.geceVardiya && geceOrantili > 0 && a.geceAdet < geceOrantili * 0.3 ? '<br><span class="neg">⚠ Gece adedi ('+fmt(a.geceAdet)+') gündüzün çok altında — gündüzle orantılı değer ~'+fmt(geceOrantili)+'. Kutuyu boş bırakırsanız otomatik hesaplanır.</span>' : ''));
+    var P = r.P, uretilebilir = Math.floor(a.kapasiteBrut), oAy = P.aylik[a.ay] || {};
+    var US = {}; (a.urunler || []).forEach(function(s){ US[s.id] = s; });
+    document.querySelectorAll('#kvAyForm [data-kvau]').forEach(function(el){
+      var s = US[el.dataset.kvau]; if (!s) return;
+      var f = el.dataset.kvalan, v = f === 'makine' ? (s.bekliyor ? 'başlamadı' : fmt2(s.makine)) : f === 'adet' ? fmt2(s.adet) : f === 'gece' ? fmt(s.gece) : f === 'fiyat' ? fmt2(s.fiyat) : (s.bekliyor ? '0' : fmt(s.plan));
+      if (el.placeholder !== v) el.placeholder = v;
+    });
+    document.querySelectorAll('#kvAyForm [data-kvauc]').forEach(function(el){ var s = US[el.dataset.kvauc]; var h = s ? kvTl(s.ciro)+(s.elle && s.satis > s.hesap + 0.5 ? ' <span class="neg" title="Satılabilir adetten fazla">!</span>' : '') : ''; if (el.__h !== h){ el.innerHTML = h; el.__h = h; } });
+    document.querySelectorAll('#kvAyForm [data-kvuad]').forEach(function(el){ var u = P.urunler.find(function(x){ return x.id === el.dataset.kvuad; }); var t = u ? (String(u.ad || '').trim() || 'Ürün') : ''; if (el.textContent !== t) el.textContent = t; });
+    kvSet('kvAyUrunTop', '<tr><td><b>Toplam</b></td><td class="num"><b>'+fmt2(a.aktifMakine)+'</b></td><td></td>'+(a.geceVardiya ? '<td></td>' : '')+'<td class="num muted">ort. '+fmt2(a.fiyat)+'</td><td class="num"><b>'+fmt(a.adet)+'</b></td><td class="num"><b>'+kvTl(a.satis)+'</b></td></tr>');
+    var tanimMk = kvTanimRef('aktifMakine');
+    kvSet('kvAyMakine', '<b>'+fmt2(a.aktifMakine)+'</b> <span class="muted">ürünlerdeki makinelerin toplamı'+(tanimMk != null ? ' · Tanımlar\'da aktif '+fmt(tanimMk) : '')+'</span>'+(tanimMk != null && a.aktifMakine > tanimMk + 1e-9 ? ' <span class="neg">— Tanımlar\'dakinden fazla</span>' : ''));
+    var fazla = (a.urunler || []).filter(function(s){ return s.elle && s.satis > s.hesap + 0.5; });
+    var geceDusuk = a.geceVardiya && P.gunduzSaat > 0 ? (a.urunler || []).filter(function(s){ return s.geceElle && s.gece < s.adet * P.geceSaat / P.gunduzSaat * 0.3; }) : [];
+    kvSet('kvKapasite', '<b>'+fmt2(a.gunHafta)+' iş günü</b>'+(a.hsSaat ? ' + '+fmt2(a.hsSaat)+' hafta sonu saati' : '')+' · '+(a.geceVardiya ? '2 vardiya' : 'tek vardiya')+' · verim %'+fmt(a.verim)+' · hurda %'+fmt2(P.hurdaYuzde)+
+      (a.urunler || []).filter(function(s){ return s.makine > 0 || s.satis > 0 || s.bekliyor; }).map(function(s){
+        return '<br>'+esc(s.ad)+': '+(s.bekliyor ? '<span class="muted">'+kvAyAdi(s.basla)+'\'da başlıyor</span>' : fmt2(s.makine)+' makine × ('+fmt(s.adet)+' gündüz'+(a.geceVardiya ? ' + '+fmt(s.gece)+' gece' : '')+') → <b>'+fmt(s.hesap)+'</b> satılabilir'+(s.sinirli && !s.elle ? ' · satış sınırı <b>'+fmt(s.plan)+'</b>' : ''));
+      }).join('')+
+      '<br>Toplam: <b>'+fmt(uretilebilir)+'</b> üretilebilir → <b class="pos">'+fmt(a.hesapAdet)+' satılabilir</b> · plan satış <b>'+fmt(a.adet)+' adet</b>'+(oAy.adet != null ? ' <span class="muted">(toplam elle girildi, ürünlere oranla dağıtıldı)</span>' : '')+
+      (a.adet > a.hesapAdet ? ' <span class="neg">— kapasiteden fazla!</span>' : '')+
+      (fazla.length ? '<br><span class="neg">⚠ '+fazla.map(function(s){ return esc(s.ad); }).join(', ')+': satış adedi satılabilir adetten fazla.</span>' : '')+
+      (geceDusuk.length ? '<br><span class="neg">⚠ '+geceDusuk.map(function(s){ return esc(s.ad)+' gece '+fmt(s.gece)+' adet'; }).join(', ')+' — gündüzün çok altında. Kutuyu boş bırakırsanız saatle orantılanır.</span>' : ''));
     var ki = byId('kvKiraIpucu');
     if (ki) ki.innerHTML = P.kiraVerenSirket
       ? 'Net '+kvTl(a.kiraNet)+' + KDV %'+P.kdvOrani+' '+kvTl(a.kiraNet*P.kdvOrani/100)+' = <b>'+kvTl(a.kiraNet*(1+P.kdvOrani/100))+'</b> ödenir. KDV\'si indirilecek KDV\'ye girer.'
@@ -12742,7 +13109,7 @@ Dikkat edilmesi gereken 2 nokta:
       (a.mesai || a.tatilUcret ? sat('· mesai / tatil ücreti', -(a.mesai + a.tatilUcret), 'personel', false, '', true) : '')+
       sat('Kira <span class="muted">'+(P.kiraVerenSirket ? 'net '+kvTl(a.kiraNet)+' · +KDV '+kvTl(a.kira*P.kdvOrani/100)+' ayrıca ödenir ve KDV\'den düşülür' : 'brüt '+kvTl(a.kira)+' = net '+kvTl(a.kiraNet)+' + %20 stopaj '+kvTl(a.kiraStopaj))+'</span>', -a.kira, 'kira')+
       sat('Elektrik <span class="muted">'+fmt(a.kwh)+' kWh</span>', -a.elektrik, 'elektrik')+
-      sat('Kesici uç / takım', -a.uc, 'uc')+
+      sat('Uç / takım / malzeme', -a.uc, 'uc')+
       sat('Diğer sabit giderler', -a.sabit, 'sabit')+
       (a.ekGider ? sat('Ek kalemler (gider)', -a.ekGider, 'ekGider') : '')+
       (a.tekSefer ? sat('Kuruluş / tek seferlik', -a.tekSefer, 'tekSefer') : '')+
@@ -12793,7 +13160,7 @@ Dikkat edilmesi gereken 2 nokta:
       '<tr><td><b>Hesaplanan KDV</b></td><td class="num"><b>'+kvTl(a.hesaplananKdv)+'</b></td></tr>'+
       (d.kira ? tr('Kira '+kvTl(a.kira)+' × %'+ko, -d.kira, 'Kiraya veren şirket KDV\'li fatura kesiyor.') : tr('Kira', 0, 'Şahıstan kira: KDV yok, onun yerine stopaj var (aşağıda 3. madde).', 'muted'))+
       tr('Elektrik '+kvTl(a.elektrik)+' × %'+ko, -d.elektrik, 'Faturadaki elektrik tüketim vergisi (BTV) ve dağıtım bedeli birim fiyata dahil varsayıldı.')+
-      tr('Kesici uç / takım '+kvTl(a.uc)+' × %'+ko, -d.uc)+
+      tr('Uç / takım / malzeme '+kvTl(a.uc)+' × %'+ko, -d.uc)+
       tr('Diğer faturalı giderler '+kvTl(a.sabitKdvli)+' × %'+ko, -d.sabit, 'Yağ, bakım, mali müşavir, OSGB, KKD, su/internet, ofis, e-belge, OSB aidatı, kalibrasyon… Sigorta, banka ve fişsiz giderlerde ('+kvTl(a.sabitKdvsiz)+') KDV yok — bunlarda BSMV var, indirilemez.')+
       (d.ek ? tr('Ek kalemler (KDV\'li) × %'+ko, -d.ek) : '')+
       (d.yatirim ? tr('Makine + nakliye + ilk takım × %'+ko, -d.yatirim, 'Yatırım KDV\'si tek seferde indirilir; satış KDV\'sinden aylar içinde düşülür.') : '')+
@@ -12878,7 +13245,10 @@ Dikkat edilmesi gereken 2 nokta:
       if (a.gunPaz && !(Number(P.pazarKisi) > 0)) l.push({ ay: a.ay, sev: 'uyari', m: 'Pazar çalışılıyor ama "Pazar çalışan kişi" 0: mesai ücreti hesaba girmiyor.' });
       var hsKisiSaat = (a.gunCmt || 0) * P.cumartesiSaat + (a.gunPaz || 0) * P.pazarSaat;
       if (hsKisiSaat * 12 > 270) l.push({ ay: a.ay, sev: 'uyari', m: 'Hafta sonu mesaisi ayda '+fmt2(hsKisiSaat)+' saat (yıllık ~'+fmt(hsKisiSaat*12)+'): kişi başı yıllık 270 saat fazla çalışma sınırını aşar.' });
-      if (a.geceVardiya && P.gunduzSaat > 0 && a.geceAdet < a.gunduzAdet * P.geceSaat / P.gunduzSaat * 0.3) l.push({ ay: a.ay, sev: 'uyari', m: 'Gece vardiyasında makine başı '+fmt(a.geceAdet)+' adet girilmiş — gündüzün çok altında. Doğru değilse Varsayımlar\'da "Gece vardiyasında 1 makine" kutusunu boş bırakın.' });
+      (a.urunler || []).forEach(function(s){
+        if (s.elle && s.satis > s.hesap + 0.5) l.push({ ay: a.ay, sev: 'uyari', m: s.ad+': satış planı ('+fmt(s.satis)+' adet) satılabilir adetin ('+fmt(s.hesap)+') üstünde.' });
+        if (a.geceVardiya && s.geceElle && P.gunduzSaat > 0 && s.gece < s.adet * P.geceSaat / P.gunduzSaat * 0.3) l.push({ ay: a.ay, sev: 'uyari', m: s.ad+': gece vardiyasında makine başı '+fmt(s.gece)+' adet girilmiş — gündüzün çok altında. Doğru değilse Ürünler & satış\'ta gece adedini boş bırakın (saatle orantılanır).' });
+      });
       a.vergiOdemeleri.forEach(function(v){ if (/^Kurumlar|^Geçici/.test(v.kalem) && v.tutar > 100000) l.push({ ay: a.ay, sev: 'uyari', m: v.kalem+' ödemesi '+kvTl(v.tutar)+' — kasada hazır bulunsun.' }); });
     });
     if (r.P.geceSaat > 7.5) l.unshift({ ay: r.aylar[0].ay, sev: 'kritik', m: 'Gece vardiyası '+fmt2(r.P.geceSaat)+' saat: yasal sınır 7,5 saat.' });
@@ -12963,16 +13333,16 @@ Dikkat edilmesi gereken 2 nokta:
     var o = P.aylik[a.ay] || {}, adi = KV_MODEL.ayAdiUzun(a.ay), yilIndex = Number(a.ay.slice(0,4)) - Number(P.baslangicAy.slice(0,4));
     var saat = a.gunHafta * (P.gunduzSaat + (a.geceVardiya ? P.geceSaat : 0)) + (a.hsSaat || 0);
     if (k === 'satis' || k === 'adet'){
-      d = { t: 'Satış — '+adi, f: 'Adet = makine × verim × (iş günü × makine başı günlük adet + hafta sonu saati × gündüz adedi ÷ gündüz saati) × (1 − hurda). Satış = adet × ortalama birim fiyat.',
-        h: kvHesapTablo([kvHesapSatir('Çalışan makine', fmt2(a.aktifMakine)+' × verim %'+fmt(a.verim)),
-          kvHesapSatir('İş günü', fmt2(a.gunHafta)+(a.gunCmt ? ' + '+fmt2(a.gunCmt)+' cumartesi × '+fmt2(P.cumartesiSaat)+' sa' : '')+(a.gunPaz ? ' + '+fmt2(a.gunPaz)+' pazar × '+fmt2(P.pazarSaat)+' sa' : '')),
-          kvHesapSatir('Makine başı günlük adet', fmt(a.gunduzAdet)+' gündüz'+(a.geceVardiya ? ' + '+fmt(a.geceAdet)+' gece' : '')),
-          kvHesapSatir('Üretilebilir', fmt(a.kapasiteBrut)+' adet'),
-          kvHesapSatir('− Hurda %'+fmt2(P.hurdaYuzde), fmt(a.hesapAdet)+' satılabilir'),
-          kvHesapSatir('Satılan adet'+(o.adet != null ? ' (elle girildi)' : ''), fmt(a.adet)+' adet'),
-          kvHesapSatir('× Ortalama birim fiyat', fmt2(a.fiyat)+' ₺'),
-          kvHesapTop('Satış', a.satis, 'pos')].concat(a.digerGelir ? [kvHesapSatir('+ Talaş / ek gelir', a.digerGelir), kvHesapTop('Toplam gelir', a.gelir, 'pos')] : [])),
-        git: 'varsayim', gitAd: 'Varsayımlar (ürünler / kapasite)' };
+      var us = (a.urunler || []).filter(function(x){ return x.makine > 0 || x.satis > 0 || x.bekliyor; });
+      var ut = '<div class="tablewrap"><table class="kv-tablo" style="font-size:12px"><thead><tr><th>Ürün / iş</th><th class="num">Makine</th><th class="num">Günlük adet / makine</th><th class="num">Satılabilir</th><th class="num">Satış</th><th class="num">Birim fiyat</th><th class="num">Ciro</th></tr></thead><tbody>'+
+        us.map(function(x){ return '<tr><td>'+esc(x.ad)+(x.bekliyor ? ' <span class="muted">'+kvAyAdi(x.basla)+'\'da başlar</span>' : '')+'</td><td class="num">'+fmt2(x.makine)+'</td><td class="num">'+fmt(x.adet)+(a.geceVardiya ? ' + '+fmt(x.gece)+' gece' : '')+'</td><td class="num">'+fmt(x.hesap)+'</td>'+
+          '<td class="num">'+fmt(x.satis)+(x.elle ? ' <span class="muted">elle</span>' : x.sinirli ? ' <span class="muted">sınır</span>' : '')+'</td><td class="num">'+fmt2(x.fiyat)+' ₺</td><td class="num">'+kvTl(x.ciro)+'</td></tr>'; }).join('')+
+        '<tr class="kv-toplam"><td><b>Toplam</b></td><td class="num"><b>'+fmt2(a.aktifMakine)+'</b></td><td></td><td class="num">'+fmt(a.hesapAdet)+'</td><td class="num"><b>'+fmt(a.adet)+'</b></td><td class="num muted">ort. '+fmt2(a.fiyat)+' ₺</td><td class="num pos"><b>'+kvTl(a.satis)+'</b></td></tr></tbody></table></div>';
+      d = { t: 'Satış — '+adi, f: 'Her ürün ayrı hesaplanır: satılabilir adet = makine × verim × (iş günü × makine başı günlük adet + hafta sonu saati × gündüz adedi ÷ gündüz saati) × (1 − hurda). Satış sınırı girilen üründe en fazla o kadar satılır. Ciro = satış adedi × ürünün birim fiyatı; toplam satış ürünlerin toplamıdır.',
+        h: kvHesapTablo([kvHesapSatir('İş günü', fmt2(a.gunHafta)+(a.gunCmt ? ' + '+fmt2(a.gunCmt)+' cumartesi × '+fmt2(P.cumartesiSaat)+' sa' : '')+(a.gunPaz ? ' + '+fmt2(a.gunPaz)+' pazar × '+fmt2(P.pazarSaat)+' sa' : '')),
+          kvHesapSatir('Verim · hurda', '%'+fmt(a.verim)+' · %'+fmt2(P.hurdaYuzde)), kvHesapSatir('Vardiya', a.geceVardiya ? 'gündüz + gece' : 'yalnız gündüz')].concat(o.adet != null ? [kvHesapSatir('Toplam satış bu ay elle girildi', fmt(a.adet)+' adet — ürünlere oranla dağıtıldı')] : []))+ut+
+          (a.digerGelir ? kvHesapTablo([kvHesapSatir('+ Talaş / ek gelir', a.digerGelir), kvHesapTop('Toplam gelir', a.gelir, 'pos')]) : ''),
+        git: 'urunler', gitAd: 'Ürünler & satış', git2: 'planla', git2Ad: 'Ay ay planım' };
     } else if (k === 'personel' || k === 'netMaas' || k === 'sgk' || k === 'gvDv'){
       var tp = { net:0, brut:0, sgk:0, gv:0, isv:0, mal:0 };
       var sat = a.pers.map(function(b){ tp.net += b.net; tp.brut += b.brut; tp.sgk += b.sgkIsci + b.issizIsci; tp.gv += b.gv + b.dv; tp.isv += b.isvSgk + b.isvIssiz; tp.mal += b.maliyet;
@@ -12989,16 +13359,18 @@ Dikkat edilmesi gereken 2 nokta:
         git: 'varsayim', gitAd: 'Varsayımlar (kira)' };
     } else if (k === 'elektrik'){
       var bf = P.elektrikFiyat * Math.pow(1 + P.elektrikArtisOcak/100, yilIndex);
-      d = { t: 'Elektrik — '+adi, f: 'kWh = çalışma saati × (makine × verim × makine kW + genel yük kW). Elektrik = kWh × birim fiyat (her Ocak artışıyla).',
+      d = { t: 'Elektrik — '+adi, f: 'kWh = çalışma saati × (makine × verim × makine kW + genel yük kW). Satış sınırı yüzünden boşta kalan makine süresi düşülür. Elektrik = kWh × birim fiyat (her Ocak artışıyla).',
         h: kvHesapTablo([kvHesapSatir('Çalışma saati', fmt2(saat)+' sa <span class="muted">('+fmt2(a.gunHafta)+' gün × '+fmt2(P.gunduzSaat + (a.geceVardiya ? P.geceSaat : 0))+' sa'+(a.hsSaat ? ' + '+fmt2(a.hsSaat)+' sa hafta sonu' : '')+')</span>'),
-          kvHesapSatir('Güç', fmt2(a.aktifMakine * a.verim/100 * P.kwMakine + P.kwGenel)+' kW <span class="muted">('+fmt2(a.aktifMakine)+' × '+fmt2(P.kwMakine)+' + '+fmt2(P.kwGenel)+')</span>'),
+          kvHesapSatir('Güç', fmt2(a.makineEtkin * a.verim/100 * P.kwMakine + P.kwGenel)+' kW <span class="muted">('+fmt2(a.makineEtkin)+' makine'+(a.makineEtkin < a.aktifMakine - 0.005 ? ' — '+fmt2(a.aktifMakine)+' makineden satış sınırıyla boşta kalan düşüldü' : '')+' × '+fmt2(P.kwMakine)+' + '+fmt2(P.kwGenel)+')</span>'),
           kvHesapSatir('Tüketim', fmt(a.kwh)+' kWh'), kvHesapSatir('× Birim fiyat', fmt2(bf)+' ₺/kWh'), kvHesapTop('Hesaplanan', a.elektrikHesap)].concat(o.elektrik != null ? [kvHesapTop('Bu ay elle girilen', a.elektrik)] : [])),
         git: 'varsayim', gitAd: 'Varsayımlar (enerji)' };
     } else if (k === 'uc'){
-      var ba = a.adet / Math.max(0.01, 1 - P.hurdaYuzde/100), kat = Math.pow(1 + P.giderArtisOcak/100, yilIndex);
-      d = { t: 'Kesici uç / takım — '+adi, f: 'Hurdalar da işlendiği için takım gideri hurda dahil adet üzerinden: satılan adet ÷ (1 − hurda) × ₺/adet.',
-        h: kvHesapTablo([kvHesapSatir('İşlenen adet (hurda dahil)', fmt(ba)), kvHesapSatir('× Uç maliyeti', fmt2(P.ucAdet * kat)+' ₺/adet'), kvHesapTop('Hesaplanan', a.ucHesap)].concat(o.uc != null ? [kvHesapTop('Bu ay elle girilen', a.uc)] : [])),
-        git: 'varsayim', gitAd: 'Varsayımlar (giderler)' };
+      var hk = Math.max(0.01, 1 - P.hurdaYuzde/100), kat = Math.pow(1 + P.giderArtisOcak/100, yilIndex);
+      var ucl = (a.urunler || []).filter(function(x){ return x.satis > 0; });
+      d = { t: 'Uç / takım / malzeme — '+adi, f: 'Hurdalar da işlendiği için adet başı gider hurda dahil adet üzerinden: satılan adet ÷ (1 − hurda) × ₺/adet. Ürüne özel değişken gider girilmeyen üründe Varsayımlar\'daki genel kesici uç / takım bedeli kullanılır; ikisi de her Ocak gider artışıyla büyür.',
+        h: kvHesapTablo((ucl.length ? ucl.map(function(x){ return kvHesapSatir(esc(x.ad)+' <span class="muted">'+fmt(x.satis / hk)+' işlenen × '+fmt2((x.degisken != null ? x.degisken : P.ucAdet) * kat)+' ₺'+(x.degisken != null ? ' (ürüne özel)' : ' (genel)')+'</span>', x.uc); })
+          : [kvHesapSatir('İşlenen adet (hurda dahil)', fmt(a.adet / hk)), kvHesapSatir('× Uç maliyeti', fmt2(P.ucAdet * kat)+' ₺/adet')]).concat([kvHesapTop('Hesaplanan', a.ucHesap)]).concat(o.uc != null ? [kvHesapTop('Bu ay elle girilen', a.uc)] : [])),
+        git: 'urunler', gitAd: 'Ürünler & satış', git2: 'varsayim', git2Ad: 'Varsayımlar (giderler)' };
     } else if (k === 'sabit'){
       var sk = kvSabitKalemleri(P, a);
       d = { t: 'Diğer sabit giderler — '+adi, f: 'Varsayımlar › Diğer aylık giderler kalemlerinin toplamı'+(yilIndex ? ' (her Ocak %'+fmt(P.giderArtisOcak)+' artışla, katsayı '+fmt2(sk.kat)+')' : '')+'.',
@@ -13021,7 +13393,7 @@ Dikkat edilmesi gereken 2 nokta:
     } else if (k === 'faiz'){
       d = { t: 'Finansman faizi — '+adi, f: 'Kalan borç × yıllık faiz ÷ 12.', h: kvHesapTablo([kvHesapSatir('Kalan borç', a.borc + a.geriOdeme), kvHesapSatir('× Yıllık faiz', '%'+fmt2(P.finansFaizYillik)), kvHesapTop('Bu ay', a.faiz)]), git: 'varsayim', gitAd: 'Varsayımlar (finansman)' };
     } else if (k === 'gider' || k === 'kar'){
-      var gl = [['Personel', a.personel], ['Kira', a.kira], ['Elektrik', a.elektrik], ['Kesici uç / takım', a.uc], ['Diğer sabit giderler', a.sabit], ['Ek kalemler', a.ekGider], ['Kuruluş / tek seferlik', a.tekSefer], ['Amortisman', a.amortisman], ['Finansman faizi', a.faiz]].filter(function(x){ return x[1]; });
+      var gl = [['Personel', a.personel], ['Kira', a.kira], ['Elektrik', a.elektrik], ['Uç / takım / malzeme', a.uc], ['Diğer sabit giderler', a.sabit], ['Ek kalemler', a.ekGider], ['Kuruluş / tek seferlik', a.tekSefer], ['Amortisman', a.amortisman], ['Finansman faizi', a.faiz]].filter(function(x){ return x[1]; });
       d = { t: (k === 'kar' ? 'Vergi öncesi kâr' : 'Toplam gider')+' — '+adi, f: k === 'kar' ? 'Vergi öncesi kâr = toplam gelir − toplam gider (amortisman dahil, KDV hariç).' : 'Bu ayın tüm giderleri (KDV hariç, amortisman dahil).',
         h: kvHesapTablo((k === 'kar' ? [kvHesapSatir('Toplam gelir', a.gelir, 'pos')] : []).concat(gl.map(function(x){ return kvHesapSatir((k === 'kar' ? '− ' : '')+x[0], k === 'kar' ? -x[1] : x[1]); }))
           .concat(k === 'kar' ? [kvHesapSatir('Toplam gider', -a.gider), kvHesapTop('Vergi öncesi kâr', a.karOncesi, a.karOncesi < 0 ? 'neg' : 'pos')] : [kvHesapTop('Toplam gider', a.gider)])) };
@@ -13063,16 +13435,15 @@ Dikkat edilmesi gereken 2 nokta:
     var satir = function(ad, v, not, cls, k){ return '<tr'+(k ? ' data-kvhesap="'+k+'" data-kvhay="'+a3.ay+'" data-kvnorm="1"' : '')+'><td>'+ad+(not?' <span class="muted">'+not+'</span>':'')+'</td><td class="num '+(cls||'')+'">'+kvTl(v)+'</td><td class="num muted">'+(a3.adet ? fmt2(v/a3.adet)+' ₺/adet' : '')+'</td></tr>'; };
     var amN = r.basaBas.amortNorm, karN = a3.gelir - (a3.personel + a3.kira + a3.elektrik + a3.uc + a3.sabit + a3.ekGider + amN);
     var kvAy = Math.max(0, karN) * P.kvOrani/100, giderN = a3.gelir - karN;
-    var yardim = '<div class="helper" style="margin:0 0 10px">Bu sayfadaki rakamlar iki yerden hesaplanır: <a href="#" data-kvsekme="varsayim">Varsayımlar</a> (makine, adet, fiyat, personel, kira, giderler, yatırım, vergi oranları — tüm plan için başlangıç değerleri) ve <a href="#" data-kvsekme="planla">Ay ay planım</a> (belirli bir ayı farklı yapmak için; oraya girilen değer Varsayımlar\'ın önüne geçer). Kartlardaki yıl toplamları ilk tam yıl olan '+(Number(r.P.baslangicAy.slice(0,4))+1)+' içindir.</div>';
+    var yardim = '<div class="helper" style="margin:0 0 10px">Bu sayfadaki rakamlar üç yerden hesaplanır: <a href="#" data-kvsekme="urunler">Ürünler & satış</a> (hangi ürün, kaç makinede, makine başı kaç adet, hangi fiyata — çalışan makine sayısı da burada), <a href="#" data-kvsekme="varsayim">Varsayımlar</a> (vardiya, personel, kira, giderler, yatırım, vergi oranları — tüm plan için başlangıç değerleri) ve <a href="#" data-kvsekme="planla">Ay ay planım</a> (belirli bir ayı farklı yapmak için; oraya girilen değer Varsayımlar\'ın önüne geçer). Kartlardaki yıl toplamları ilk tam yıl olan '+(Number(r.P.baslangicAy.slice(0,4))+1)+' içindir.</div>';
     var html = '<div class="block"><div class="block-head"><h3>Tipik bir ay — '+kvAyAdi(a3.ay)+' ('+fmt2(a3.gun)+' iş günü) '+infoIco('Kuruluş ayından sonraki ilk ay. Varsayım: her Ocak ayında fiyat %'+fmt(P.fiyatArtisOcak)+', net maaşlar %'+fmt(P.maasArtisOcak)+', kira %'+fmt(P.kiraArtisOcak)+', diğer giderler %'+fmt(P.giderArtisOcak)+' artar. Gündüz vardiyası 9 saat net, gece vardiyası yasal sınır olan 7,5 saat net. Hurda %'+fmt2(P.hurdaYuzde)+' faturalanmaz. Ay ay değiştirmek için "Ay ay planım" sekmesini kullanın.')+'</h3><div class="bh-actions"><button class="btn small" data-kvsekme="planla">Ay ay planla ✎</button></div></div><div class="block-body tablewrap"><table><thead><tr><th>Kalem</th><th class="num">Tutar (KDV hariç)</th><th class="num">Adet başı</th></tr></thead><tbody>'+
       '<tr data-kvhesap="satis" data-kvhay="'+a3.ay+'"><td><b>Satış</b> <span class="muted">'+fmt(a3.adet)+' adet × ortalama '+fmt2(a3.fiyat)+' ₺</span></td><td class="num pos">'+kvTl(a3.gelir)+'</td><td class="num muted">'+fmt2(a3.fiyat)+' ₺/adet</td></tr>'+
-      (function(){ var k = kvUrunKarisim(P.urunler); if (!k || k.liste.length < 2 || !k.ciro) return '';
-        return k.liste.map(function(u){ var pAdet = k.adet ? u._w * u.adet / k.adet : 0, pCiro = u._w * u.adet * u.fiyat / k.ciro;
-          return '<tr class="kv-alt"><td>· '+esc(u.ad || 'Ürün')+' <span class="muted">~'+fmt(a3.adet * pAdet)+' adet · %'+fmt(u._w*100)+' makine zamanı</span></td><td class="num">'+kvTl(a3.satis * pCiro)+'</td><td class="num muted">'+fmt2(u.fiyat)+' ₺/adet</td></tr>'; }).join(''); })()+
+      (function(){ var us = (a3.urunler || []).filter(function(x){ return x.satis > 0 || x.makine > 0; }); if (us.length < 2) return '';
+        return us.map(function(x){ return '<tr class="kv-alt"><td>· '+esc(x.ad)+' <span class="muted">'+fmt(x.satis)+' adet · '+fmt2(x.makine)+' makine</span></td><td class="num">'+kvTl(x.ciro)+'</td><td class="num muted">'+fmt2(x.fiyat)+' ₺/adet</td></tr>'; }).join(''); })()+
       satir('Personel (brüt + işveren SGK)', a3.personel, a3.personelListe.length+' kişi · net maaşlar toplamı '+kvTl(a3.netMaas), '', 'personel')+
       satir('Kira', a3.kira, P.kiraVerenSirket ? '+%20 KDV (indirilir)' : 'brüt · %20 stopaj dahil', '', 'kira')+
       satir('Elektrik', a3.elektrik, fmt(a3.kwh)+' kWh', '', 'elektrik')+
-      satir('Kesici uç / takım', a3.uc, fmt2(P.ucAdet)+' ₺/adet', '', 'uc')+
+      satir('Uç / takım / malzeme', a3.uc, (P.urunler || []).some(function(u){ return u.degisken !== '' && u.degisken != null; }) ? 'ürüne göre' : fmt2(P.ucAdet)+' ₺/adet', '', 'uc')+
       satir('Diğer sabit giderler', a3.sabit, 'yağ, bakım, SMMM, sigorta, OSGB, OSB aidatı…', '', 'sabit')+
       (a3.ekGider ? satir('Ek kalemler', a3.ekGider, '', '', 'ekGider') : '')+
       satir('Amortisman', amN, 'yıllık '+kvTl(amN*12)+' / 12 · nakit çıkışı değil', '', 'amortisman')+
@@ -13087,7 +13458,7 @@ Dikkat edilmesi gereken 2 nokta:
     var selale = '<div class="block"><div class="block-head"><h3>Satıştan cebe kalana — '+kvAyAdi(a3.ay)+' '+infoIco('Tipik bir ayda satıştan başlayıp her gider düşülür. Taralı çubuklar amortismandır: gider yazılır ve vergiyi düşürür ama kasadan para çıkmaz, bu yüzden en sonda geri eklenir. "Cebe kalan" vergiden sonra işletmenin ürettiği nakittir (tahsilat vadesi, KDV ve borç ödemeleri hariç).')+'</h3></div><div class="block-body">'+
       kvSelaleHtml([
         ['Satış', a3.gelir, 'top'],
-        ['Personel', -a3.personel], ['Kira', -a3.kira], ['Elektrik', -a3.elektrik], ['Kesici uç / takım', -a3.uc], ['Diğer sabit giderler', -a3.sabit],
+        ['Personel', -a3.personel], ['Kira', -a3.kira], ['Elektrik', -a3.elektrik], ['Uç / takım / malzeme', -a3.uc], ['Diğer sabit giderler', -a3.sabit],
         a3.ekGider ? ['Ek kalemler', -a3.ekGider] : null,
         ['Amortisman (nakit çıkmaz)', -amN, 'kagit'],
         ['Vergi öncesi kâr', karN, 'ara'],
@@ -13120,30 +13491,28 @@ Dikkat edilmesi gereken 2 nokta:
   function kvDeneUygula(Pin){
     var Q = kvKopya(Pin), b = _kvDene.bas, d = _kvDene.d;
     var degisti = function(k){ return d[k] !== b[k]; };
-    // fiyat / adet elle girilir: plandaki değere oranlanarak ürün karışımı korunur; planda değer yoksa doğrudan yazılır
-    var dF = Math.max(0, Number(d.fiyat) || 0), dA = Math.max(0, Number(d.adet) || 0), bF = Number(b.fiyat) || 0, bA = Number(b.adet) || 0;
-    var fk = degisti('fiyat') && bF > 0 ? dF / bF : 1, ak = degisti('adet') && bA > 0 ? dA / bA : 1;
-    if (degisti('fiyat') && !(bF > 0)){ Q.fiyat = dF; Q.urunler = (Q.urunler && Q.urunler.length ? Q.urunler : [{ ad: 'Ürün / iş 1', adet: Q.gunduzAdet || 0, pay: 100 }]).map(function(u){ return Object.assign({}, u, { fiyat: dF }); }); }
-    if (degisti('adet') && !(bA > 0)){ Q.gunduzAdet = dA; Q.urunler = (Q.urunler && Q.urunler.length ? Q.urunler : [{ ad: 'Ürün / iş 1', fiyat: Q.fiyat || 0, pay: 100 }]).map(function(u){ return Object.assign({}, u, { adet: dA }); }); }
-    if (degisti('aktifMakine')) Q.aktifMakine = d.aktifMakine;
+    KV_MODEL.urunNormalize(Q);
+    // makine / fiyat / adet: planın tipik ayına oranlanır, her üründe (ay ay girilenler dahil) aynı oranda değişir — ürün karışımı korunur
+    var dF = Math.max(0, Number(d.fiyat) || 0), dA = Math.max(0, Number(d.adet) || 0), dM = Math.max(0, Number(d.aktifMakine) || 0);
+    var bF = Number(b.fiyat) || 0, bA = Number(b.adet) || 0, bM = Number(b.aktifMakine) || 0, k = {};
+    if ((degisti('fiyat') || degisti('adet') || degisti('aktifMakine')) && !Q.urunler.length){ Q.urunler.push({ ad: 'Ürün / iş 1', fiyat: 0, makine: 0, adet: 0, gece: '', sinir: '', degisken: '', basla: '' }); KV_MODEL.urunIdleri(Q.urunler); }
+    if (degisti('fiyat')){ if (bF > 0) k.fiyat = dF / bF; else Q.urunler.forEach(function(u){ u.fiyat = dF; }); }
+    if (degisti('adet')){ if (bA > 0) k.adet = dA / bA; else Q.urunler.forEach(function(u){ u.adet = dA; }); }
+    if (degisti('aktifMakine')){ if (bM > 0) k.makine = dM / bM; else Q.urunler[0].makine = dM; }
+    var olc = KV_MODEL.urunOlcekle(Q, k); Q.urunler = olc.urunler; Q.aylik = olc.aylik;
     var kisiFark = (Number(d.kisi)||0) - (Number(b.kisi)||0);
     if (kisiFark) Q.personel = kvDeneKadro(Q.personel, kisiFark);
     if (degisti('geceVardiya')) Q.geceVardiya = d.geceVardiya;
     if (degisti('cumartesi')){ Q.cumartesi = d.cumartesi; if (d.cumartesi && !(Number(Q.cumartesiKisi) > 0)) Q.cumartesiKisi = Math.min(2, (Q.personel||[]).length); }
     if (degisti('pazar')){ Q.pazar = d.pazar; if (d.pazar && !(Number(Q.pazarKisi) > 0)) Q.pazarKisi = Math.min(2, (Q.personel||[]).length); }
-    if (fk !== 1){ Q.fiyat = (Number(Q.fiyat)||0) * fk; if (Q.urunler) Q.urunler = Q.urunler.map(function(u){ return Object.assign({}, u, { fiyat: Math.round((Number(u.fiyat)||0) * fk * 100) / 100 }); }); }
-    if (ak !== 1){ Q.gunduzAdet = (Number(Q.gunduzAdet)||0) * ak; if (Number(Q.geceAdet) > 0) Q.geceAdet = Q.geceAdet * ak; if (Q.urunler) Q.urunler = Q.urunler.map(function(u){ return Object.assign({}, u, { adet: Math.round((Number(u.adet)||0) * ak * 100) / 100 }); }); }
     Object.keys(Q.aylik || {}).forEach(function(ay){
       var o = Q.aylik[ay];
-      if (degisti('aktifMakine')) delete o.aktifMakine;
       if (degisti('geceVardiya')) delete o.geceVardiya;
       if (kisiFark && Array.isArray(o.personel)) o.personel = kvDeneKadro(o.personel, kisiFark);
       if (o.gunler && (degisti('cumartesi') || degisti('pazar'))){
         Object.keys(o.gunler).forEach(function(dd){ var w = KV_MODEL.haftaGunu(ay, Number(dd)); if ((w === 6 && degisti('cumartesi')) || (w === 0 && degisti('pazar'))) delete o.gunler[dd]; });
         if (!Object.keys(o.gunler).length) delete o.gunler;
       }
-      if (fk !== 1 && o.fiyat != null) o.fiyat = o.fiyat * fk;
-      if (ak !== 1){ if (o.gunduzAdet != null) o.gunduzAdet = o.gunduzAdet * ak; if (Number(o.geceAdet) > 0) o.geceAdet = o.geceAdet * ak; if (o.adet != null) o.adet = Math.round(o.adet * ak); }
       if (!Object.keys(o).length) delete Q.aylik[ay];
     });
     return Q;
@@ -13176,8 +13545,8 @@ Dikkat edilmesi gereken 2 nokta:
       '<div class="kv-dene-grid">'+
         aralik('aktifMakine', 'Çalışan makine', 1, maxMk, 1)+
         aralik('kisi', 'Personel', 1, maxKisi, 1, 'Kadrodaki kişi sayısı — gece vardiyası açılınca 1 artar')+
-        sayi('fiyat', 'Birim fiyat (₺/adet, KDV hariç)', 0.01)+
-        sayi('adet', 'Makine başı adet (gündüz vardiyası)', 1, 'Çevrim süresi kısalırsa / uzarsa makine başı adet değişir')+
+        sayi('fiyat', 'Ortalama birim fiyat (₺/adet, KDV hariç)', 0.01, 'Birden çok ürün varsa tüm ürün fiyatları aynı oranda değişir')+
+        sayi('adet', 'Makine başı ortalama adet (gündüz vardiyası)', 1, 'Çevrim süresi kısalırsa / uzarsa makine başı adet değişir; birden çok ürün varsa hepsinde aynı oranda')+
         '<div>'+anahtar('geceVardiya', 'Gece vardiyası')+anahtar('cumartesi', 'Cumartesi mesaisi')+anahtar('pazar', 'Pazar mesaisi')+'</div>'+
       '</div><div class="kv-dene-fark" id="kvDeneFark"></div></div></div>';
   }
@@ -13492,12 +13861,10 @@ Dikkat edilmesi gereken 2 nokta:
       ['baslangicAy','Planın ilk ayı','ay','','Şirketin / üretimin başladığı ay. Yatırım ve kuruluş giderleri bu aya yazılır.'],
       ['kurulusTarihi','Şirket kuruluş tarihi','tarih','','Yapılacaklar listesi bu tarihe göre sıralanır: şirketle yapılan işler (banka, sözleşmeler, SGK…) kuruluştan önceye düşmez. Boş bırakılırsa plan başlangıcından 14 gün önce sayılır.'],
       ['sureAy','Kaç ay planlansın','num','ay','3–60 arası. Uzun tutarsanız yatırımın geri dönüşü görünür.']]],
-    ['Üretim kapasitesi', 'Kaç makine, kaç vardiya, kaç saat çalışılacağı. Günlük adetler aşağıdaki "Ürünler / işler" tablosundan gelir.', [
-      ['aktifMakine','Çalışan makine','num','adet'],
+    ['Üretim kapasitesi', 'Kaç vardiya, kaç saat çalışılacağı. Çalışan makine ve makine başı adetler Ürünler & satış sekmesinde ürün ürün girilir.', [
       ['gunduzSaat','Gündüz vardiyası net süre','num','saat','Molalar düşülmüş çalışma süresi.'],
       ['geceVardiya','Gece vardiyası','bool'],
       ['geceSaat','Gece vardiyası net süre','num','saat','Yasal azami 7,5 saat.'],
-      ['geceAdet','Gece vardiyasında 1 makine','num','adet','Boş bırakın: gündüz adedi saatle orantılanır (önerilen).'],
       ['cumartesi','Cumartesi çalışılsın','bool','','Her cumartesi mesai günü olur. Tek tek aylar için Ay ay planım takviminden açıp kapatabilirsiniz.'],
       ['cumartesiSaat','Cumartesi çalışma süresi','num','saat'],
       ['cumartesiKisi','Cumartesi çalışan kişi','num','kişi','Mesai ücreti bu kadar kişi için hesaplanır.'],
@@ -13505,7 +13872,7 @@ Dikkat edilmesi gereken 2 nokta:
       ['pazarSaat','Pazar çalışma süresi','num','saat'],
       ['pazarKisi','Pazar çalışan kişi','num','kişi'],
       ['hurdaYuzde','Hurda / fire','num','%','Faturalanmayan oran.']]],
-    ['Satış ve tahsilat', 'Fiyatlar ürün tablosunda. Buradakiler tüm satışlara uygulanır.', [
+    ['Satış ve tahsilat', 'Ürün fiyatları Ürünler & satış sekmesinde. Buradakiler tüm satışlara uygulanır.', [
       ['fiyatArtisOcak','Her Ocak fiyat artışı','num','%'],
       ['tahsilatGun','Tahsilat vadesi','num','gün','Fatura kesildikten kaç gün sonra para geliyor.'],
       ['kdvTevkifat','Satışta KDV tevkifatı','num','/10','Yoksa 0. Örn. 5/10 için 5 yazın.'],
@@ -13537,7 +13904,7 @@ Dikkat edilmesi gereken 2 nokta:
       ['kwMakine','Çalışan makine ortalama güç','num','kW'],
       ['kwGenel','Genel yük (ışık, kompresör…)','num','kW']]],
     ['Diğer aylık giderler', 'KDV hariç. Her Ocak aşağıdaki oranda artar.', [
-      ['ucAdet','Kesici uç / takım','num','₺/adet'],
+      ['ucAdet','Kesici uç / takım','num','₺/adet','Ürünler & satış\'ta ürüne özel değişken gider girilmeyen ürünlerde kullanılır.'],
       ['yaglarAylik','Bor yağı ve yağlar','num','₺/ay'],['bakimAylik','Bakım-onarım','num','₺/ay'],['smmmAylik','Mali müşavir','num','₺/ay'],
       ['sigortaAylik','Sigorta (işyeri, makine)','num','₺/ay'],['osgbAylik','OSGB (İSG uzmanı + hekim)','num','₺/ay'],['kkdAylik','İş kıyafeti / KKD','num','₺/ay'],
       ['suIletisimAylik','Su, internet, telefon','num','₺/ay'],['ofisAylik','Ofis, temizlik, çay','num','₺/ay'],['eBelgeAylik','e-Fatura / e-Defter','num','₺/ay'],
@@ -13554,29 +13921,12 @@ Dikkat edilmesi gereken 2 nokta:
       ['geriOdemeBaslangicAy','Geri ödeme başlangıcı','ay','','Boş = geri ödeme yok.'],
       ['geriOdemeAylik','Aylık geri ödeme','num','₺']]]
   ];
-  // Ürün / iş karışımı → ortalama günlük adet ve ortalama fiyat (model tek adet × fiyat ile hesaplar)
-  function kvUrunKarisim(list){
-    var l = (list || []).filter(function(u){ return (Number(u.fiyat)||0) > 0 || (Number(u.adet)||0) > 0; });
-    if (!l.length) return null;
-    var topPay = toplamla(l, function(u){ return u.pay; });
-    var adet = 0, ciro = 0;
-    l.forEach(function(u){ var w = topPay > 0 ? (Number(u.pay)||0) / topPay : 1 / l.length; adet += w * (Number(u.adet)||0); ciro += w * (Number(u.adet)||0) * (Number(u.fiyat)||0); u._w = w; });
-    return { adet: adet, fiyat: adet ? ciro / adet : 0, ciro: ciro, topPay: topPay, liste: l };
-  }
-  function kvUrunOzetHtml(list){
-    var k = kvUrunKarisim(list);
-    if (!k) return '<span class="muted">Ürün satırı girilmedi — fiyat ve adet 0 kabul edilir.</span>';
-    return 'Ortalama: <b>'+fmt2(k.adet)+' adet</b> / makine / gündüz vardiyası · <b>'+fmt2(k.fiyat)+' ₺/adet</b> · makine başı vardiya cirosu <b>'+kvTl(k.ciro)+'</b>'+
-      (k.topPay > 0 && Math.abs(k.topPay - 100) > 0.01 ? ' <span class="neg">· paylar toplamı %'+fmt2(k.topPay)+' — oranlanarak kullanılır</span>' : '')+
-      (k.topPay === 0 && k.liste.length > 1 ? ' <span class="muted">· pay girilmedi, eşit bölündü</span>' : '');
-  }
   function kvFormSatir(f, P){
     var v = P[f[0]], id = 'kvf_'+f[0], tip = f[2] || 'num';
     var inp = tip === 'bool' ? '<select id="'+id+'" data-kvkey="'+f[0]+'" data-kvtur="bool"><option value="1"'+(v?' selected':'')+'>Evet</option><option value="0"'+(!v?' selected':'')+'>Hayır</option></select>'
       : tip === 'sel' ? '<select id="'+id+'" data-kvkey="'+f[0]+'" data-kvtur="text">'+f[5].map(function(o){ return '<option'+(o===v?' selected':'')+'>'+o+'</option>'; }).join('')+'</select>'
       : tip === 'ay' ? '<input id="'+id+'" data-kvkey="'+f[0]+'" data-kvtur="text" type="month" placeholder="YYYY-AA" value="'+escAttr(v||'')+'">'
       : tip === 'tarih' ? '<input id="'+id+'" data-kvkey="'+f[0]+'" data-kvtur="text" type="date" value="'+escAttr(v||'')+'">'
-      : f[0] === 'geceAdet' ? '<input id="'+id+'" data-kvkey="geceAdet" data-kvtur="num" type="number" step="any" value="'+escAttr(Number(v) > 0 ? v : '')+'" placeholder="otomatik: '+fmt(P.gunduzSaat > 0 ? Math.round((Number(P.gunduzAdet)||0) * P.geceSaat / P.gunduzSaat) : 0)+'">'
       : '<input id="'+id+'" data-kvkey="'+f[0]+'" data-kvtur="num" type="number" step="any"'+(/^₺/.test(f[3]||'') ? ' data-para="TRY"' : '')+' value="'+escAttr(v)+'">';
     var ref = P._ref && P._ref[f[0]], ozel = P.ozel && P.ozel[f[0]] && kvTanimRef(f[0]) !== undefined;
     if (ref) inp = inp.replace(/^<(input|select) /, '<$1 disabled ');
@@ -13590,16 +13940,10 @@ Dikkat edilmesi gereken 2 nokta:
   function kvFormCiz(P){
     var ic = byId('kvIcerik'), G = {};
     KV_ALANLAR.forEach(function(g){ G[g[0]] = kvGrupHtml(g, P); });
-    var urunler = (P.urunler && P.urunler.length) ? P.urunler : [{ ad: 'Ürün / iş 1', fiyat: P.fiyat || '', adet: P.gunduzAdet || '', pay: 100 }];
-    var urunHtml = '<div class="block"><div class="block-head"><h3>Ürünler / işler</h3><button class="btn secondary small" id="kvUrunEkle">+ Ürün / iş</button></div><div class="block-body">'+
-      '<div class="kv-grup-acik">Ürettiğiniz her parça ya da iş için bir satır. <b>Adet</b>: bir makine gündüz vardiyasında sadece bu işi yapsa kaç adet çıkar. <b>Pay</b>: makine zamanının yüzde kaçı bu işe gidiyor. Saat ücretiyle çalışılan işlerde fiyata saat ücretini, adede vardiya saatini yazın.</div>'+
-      '<div class="tablewrap"><table class="edit-tablo kv-urun-tablo"><thead><tr><th>Ürün / iş</th><th>Birim fiyat (₺, KDV hariç)</th><th>Adet / makine / gündüz vard.</th><th>Makine zamanı payı (%)</th><th></th></tr></thead><tbody>'+
-      urunler.map(function(u, i){ return '<tr><td><input data-kvurun="'+i+'" data-kvalan="ad" value="'+escAttr(u.ad||'')+'" placeholder="ör. flanş, mil, saatlik işleme"></td>'+
-        '<td><input type="number" step="any" data-para="TRY" data-kvurun="'+i+'" data-kvalan="fiyat" value="'+escAttr(u.fiyat)+'"></td>'+
-        '<td><input type="number" step="any" data-kvurun="'+i+'" data-kvalan="adet" value="'+escAttr(u.adet)+'"></td>'+
-        '<td><input type="number" step="any" data-kvurun="'+i+'" data-kvalan="pay" value="'+escAttr(u.pay)+'"></td>'+
-        '<td>'+(urunler.length > 1 ? '<button class="btn danger" data-kvurunsil="'+i+'">Sil</button>' : '')+'</td></tr>'; }).join('')+
-      '</tbody></table></div><div class="helper" id="kvUrunOzet" style="margin-top:8px">'+kvUrunOzetHtml(urunler)+'</div></div></div>';
+    var tanimMk = kvTanimRef('aktifMakine');
+    var urunHtml = '<div class="block"><div class="block-head"><h3>Ürünler / işler ve çalışan makine</h3><button class="btn secondary small" data-kvsekme="urunler">Ürünler & satış</button></div><div class="block-body">'+
+      '<div class="kv-grup-acik">Hangi ürünü kaç makinede, makine başı kaç adet ve hangi fiyata ürettiğiniz <a href="#" data-kvsekme="urunler">Ürünler & satış</a> sekmesinde ürün ürün girilir. Çalışan makine sayısı oradaki satırların toplamıdır; Tanımlar › Kapasite\'deki aktif makine sayısı yalnız bilgi olarak gösterilir.</div>'+
+      '<div style="font-size:12.5px">'+(P.urunler.length ? '<b>'+P.urunler.length+'</b> ürün / iş · <b>'+fmt2(P.aktifMakine)+'</b> çalışan makine' : '<span class="muted">Henüz ürün girilmedi.</span>')+(tanimMk != null ? ' <span class="muted">· Tanımlar\'da aktif makine: '+fmt(tanimMk)+'</span>' : '')+'</div></div></div>';
     var persRef = P._ref && P._ref.personel;
     var persHtml = persRef ? '<div class="block"><div class="block-head"><h3>Personel — başlangıç kadrosu</h3></div><div class="block-body">'+
       '<div class="kv-grup-acik">Tanımlar › Personel listesinden geliyor (net maaş ₺/ay, güncel kurla). <a href="#" data-kvozel="personel">Bu planda farklı kadro kullan</a></div><table class="edit-tablo"><thead><tr><th>Ad / görev</th><th class="num">Net maaş (₺/ay)</th></tr></thead><tbody>'+
@@ -13619,11 +13963,6 @@ Dikkat edilmesi gereken 2 nokta:
       '<div class="row" style="margin-bottom:20px"><button class="btn" id="kvKaydet">Kaydet ve özete dön</button><button class="btn secondary" id="kvSifirla">Sıfırla</button><span class="helper" style="margin:0">Değiştirdiğiniz her değer anında hesaplanır ve otomatik kaydedilir (tüm kullanıcılar için ortak).</span><span id="kvKayitDurum" class="helper" style="margin:0 0 0 auto"></span></div>';
     ic.innerHTML = html; ic.__sonHtml = 'varsayim';
   }
-  function kvFormUrunOku(){
-    var l = [];
-    document.querySelectorAll('#kvIcerik [data-kvurun]').forEach(function(el){ var i = Number(el.dataset.kvurun); l[i] = l[i] || {}; l[i][el.dataset.kvalan] = el.dataset.kvalan === 'ad' ? el.value : (el.value === '' ? '' : Number(el.value)); });
-    return l.filter(Boolean);
-  }
   function kvFormOku(){
     var P = kvParam();
     document.querySelectorAll('#kvIcerik [data-kvkey]').forEach(function(el){
@@ -13636,16 +13975,9 @@ Dikkat edilmesi gereken 2 nokta:
     var pers = [];
     document.querySelectorAll('#kvIcerik [data-kvpers]').forEach(function(el){ var i = Number(el.dataset.kvpers); pers[i] = pers[i] || {}; pers[i][el.dataset.kvalan] = el.dataset.kvalan === 'net' ? Number(el.value)||0 : el.value; });
     if (!(P._ref && P._ref.personel)) P.personel = pers.filter(Boolean);
-    if (document.querySelector('#kvIcerik [data-kvurun]')){
-      P.urunler = kvFormUrunOku().map(function(u){ return { ad: u.ad || '', fiyat: Number(u.fiyat)||0, adet: Number(u.adet)||0, pay: Number(u.pay)||0 }; });
-      var k = kvUrunKarisim(P.urunler);
-      P.gunduzAdet = k ? Math.round(k.adet * 100) / 100 : 0;
-      P.fiyat = k ? Math.round(k.fiyat * 10000) / 10000 : 0;
-    }
     return P;
   }
   // Varsayımlar değiştirildiği anda hesaplanır ve kaydedilir ("Kaydet" düğmesine basmayı unutmak değişikliği kaybettirmesin)
-  var _kvGeceUyarildi = false;
   function kvVarsayimCanli(uyar){
     var P = kvFormOku();
     if (!/^\d{4}-\d{2}$/.test(P.baslangicAy)) return;
@@ -13654,12 +13986,8 @@ Dikkat edilmesi gereken 2 nokta:
     P.kdvTevkifat = Math.max(0, Math.min(10, P.kdvTevkifat));
     if (uyar){
       if (P.geceSaat > 7.5) toast('Uyarı: gece çalışması yasal olarak 7,5 saati geçemez.', true);
-      var oran = P.gunduzSaat > 0 ? P.gunduzAdet * P.geceSaat / P.gunduzSaat : 0;
-      if (P.geceVardiya && P.geceAdet > 0 && P.geceAdet < oran * 0.3){ if (!_kvGeceUyarildi){ _kvGeceUyarildi = true; toast('Gece vardiyasında makine başı '+fmt(P.geceAdet)+' adet yazılı — gündüzle orantılı değer ~'+fmt(Math.round(oran))+'. Yanlışsa kutuyu boşaltın.', true); } }
-      else _kvGeceUyarildi = false;
     }
     kvDegistir(function(T){ Object.keys(T).forEach(function(k){ delete T[k]; }); Object.assign(T, P); });
-    var gi = byId('kvf_geceAdet'); if (gi) gi.placeholder = 'otomatik: '+fmt(P.gunduzSaat > 0 ? Math.round(P.gunduzAdet * P.geceSaat / P.gunduzSaat) : 0);
   }
   function kvVarsayimKaydet(){
     var P = kvFormOku();
@@ -13680,11 +14008,19 @@ Dikkat edilmesi gereken 2 nokta:
     r.aylar.forEach(function(a){ rows.push([a.ay, a.gercek ? 'Gerçekleşen' : (a.elle ? 'Plan (elle)' : 'Plan'), a.gun, a.verim, a.personelListe.length, a.adet, y(a.fiyat), y(a.gelir), y(a.personel), y(a.netMaas), y(a.sgk), y(a.gvDv), y(a.kira), y(a.elektrik), y(a.uc), y(a.sabit+a.tekSefer), y(a.ekGider), y(a.amortisman), y(a.faiz), y(a.karOncesi), y(a.hesaplananKdv), y(a.indirilecekKdv), y(a.kdvOde), y(a.devredenKdv), y(a.tahsilat), y(a.vergiToplam), y(a.netNakit), y(a.kasa), y(a.sirketKasa), y(a.borc), a.not]); });
     rows.push([]); rows.push(['Ödeme takvimi']); rows.push(['Tarih','Tür','Kalem','Tutar']);
     r.nakitTakvim.forEach(function(o){ rows.push([o.tarih, o.tur, o.kalem, y(o.tutar)]); });
+    if (r.P.urunler.length){
+      rows.push([]); rows.push(['Ürün bazında satış planı']);
+      rows.push(['Ay'].concat([].concat.apply([], r.P.urunler.map(function(u){ var ad = String(u.ad || '').trim() || 'Ürün'; return [ad+' makine', ad+' adet', ad+' birim fiyat', ad+' ciro']; }))).concat(['Toplam adet', 'Toplam ciro']));
+      r.aylar.forEach(function(a){
+        var S = {}; (a.urunler || []).forEach(function(x){ S[x.id] = x; });
+        rows.push([a.ay].concat([].concat.apply([], r.P.urunler.map(function(u){ var x = S[u.id] || {}; return [y(x.makine || 0), Math.round(x.satis || 0), y(x.fiyat || 0), y(x.ciro || 0)]; }))).concat([a.adet, y(a.satis)]));
+      });
+    }
     disaAktarCSV('karlilik-plani-'+r.P.baslangicAy+'.csv', rows);
   }
   function kvYazdir(){
     var r = kvSonuc();
-    yazdirHtml('<h2>Kârlılık & vergi planı</h2><div style="font-size:11px">Başlangıç '+esc(r.P.baslangicAy)+' · '+r.aylar.length+' ay · tüm tutarlar ₺</div>'+kvOzetHtml(r).replace(/<span class="info-ico[\s\S]*?<\/span><\/span>/g,'').replace(/<div class="bh-actions">[\s\S]*?<\/div>/g,'')+kvYillikHtml(r).replace(/<span class="info-ico[\s\S]*?<\/span><\/span>/g,'')+kvAylikHtml(r).replace(/<span class="info-ico[\s\S]*?<\/span><\/span>/g,'').replace(/<div class="bh-actions">[\s\S]*?<\/div>/,''));
+    yazdirHtml('<h2>Kârlılık & vergi planı</h2><div style="font-size:11px">Başlangıç '+esc(r.P.baslangicAy)+' · '+r.aylar.length+' ay · tüm tutarlar ₺</div>'+kvOzetHtml(r).replace(/<span class="info-ico[\s\S]*?<\/span><\/span>/g,'').replace(/<div class="bh-actions">[\s\S]*?<\/div>/g,'')+(r.P.urunler.length ? kvSatisPlanDikeyHtml(r) : '')+kvYillikHtml(r).replace(/<span class="info-ico[\s\S]*?<\/span><\/span>/g,'')+kvAylikHtml(r).replace(/<span class="info-ico[\s\S]*?<\/span><\/span>/g,'').replace(/<div class="bh-actions">[\s\S]*?<\/div>/,''));
   }
 
   // ---------- Özet sayfası: vergi takvimi + yapılacaklar ----------
@@ -16639,7 +16975,7 @@ Dikkat edilmesi gereken 2 nokta:
   };
   var MENU_YENI = [
     { alan: 'KARTLAR', ikon: 'kart', ogeler: [
-      { ad: 'Cari Kartları', tab: 'musteriler' }, { ad: 'Stok Kartları', tab: 'stok' }, { ad: 'Lot / Heat Kartları', tab: 'lotlar' },
+      { ad: 'Cari Kartları', tab: 'musteriler' }, { ad: 'Stok Kartları', tab: 'stok' }, { ad: 'Ürün Ağacı & Rota', tab: 'urunteknik' }, { ad: 'Lot / Heat Kartları', tab: 'lotlar' },
       { ad: 'Fiyat Listesi', tab: 'fiyatlar' }, { ad: 'Ölçü Aletleri', tab: 'olcualetleri' }, { ad: 'Sabit Kıymetler', tab: 'amortisman' }, { ad: 'Hesap Planı', tab: 'hesapplani' } ] },
     { alan: 'HAREKETLER', ikon: 'hareket', ogeler: [
       { ad: 'Teklif & Sipariş', kolonlar: [[{ baslik: 'Satış' }, { ad: 'Teklifler', tab: 'teklifler' }, { ad: 'Satış Siparişleri', tab: 'siparisler' }, { ad: 'Müşteri Görüşmeleri', tab: 'gorusmeler' }],
@@ -16929,7 +17265,8 @@ Dikkat edilmesi gereken 2 nokta:
   }
   EK_HER_ZAMAN.push(sirketCiz);
   // ---------- Maliyetlendirmenin Tanımlar'dan okuduğu alanlar ----------
-  var KV_REF = SIRKET_ANAHTAR.concat(['aktifMakine', 'gunduzSaat', 'cumartesi', 'cumartesiSaat', 'pazar', 'pazarSaat', 'personel', 'makine']);
+  // aktifMakine burada yok: Kârlılık planında çalışan makine ürün ürün elle girilir; Tanımlar › Kapasite'deki sayı orada yalnız bilgi olarak görünür
+  var KV_REF = SIRKET_ANAHTAR.concat(['gunduzSaat', 'cumartesi', 'cumartesiSaat', 'pazar', 'pazarSaat', 'personel', 'makine']);
   function kvTanimRef(k){
     var c = state.config || {};
     if (k === 'makine' && Number(sirketDeger('makine')) > 0) return Number(sirketDeger('makine'));
@@ -18247,6 +18584,170 @@ Dikkat edilmesi gereken 2 nokta:
     });
   }
 
+// ===== m21_sayi_girisi.js — Safari / iPhone sayı kutusunda virgül =====
+  // Safari ve iOS sayı kutusunda (type=number) virgülü ondalık saymaz: "8,55" yazılınca değer boş döner, fiyat 0 olur.
+  // Bu tarayıcılarda sayı kutusuna yazılan virgül noktaya çevrilir (Chrome virgülü zaten tanır, dokunulmaz).
+  var VIRGUL_DUZELT = (/Safari\//.test(navigator.userAgent) && !/Chrome\/|Chromium\/|CriOS\/|Edg\/|OPR\//.test(navigator.userAgent)) || /iPhone|iPad|iPod/.test(navigator.userAgent);
+  document.addEventListener('beforeinput', function(e){
+    var t = e.target;
+    if (!(VIRGUL_DUZELT || window.__virgulDuzelt) || !t || t.tagName !== 'INPUT' || t.type !== 'number' || e.data !== ',') return;
+    e.preventDefault();
+    try { document.execCommand('insertText', false, '.'); } catch(err){}
+  }, true);
+// ===== m22_urun_teknik.js — Ürün teknik kartı: rota, ürün ağacı ve kontrol planı tek, geniş sayfada =====
+  // Eskiden stok kartındaki "Rota / Ağaç / Kontrol" küçük pencerede sekmeliydi; artık Kartlar › Ürün Ağacı & Rota sayfası:
+  // üstte ürün seçici + özet + sabit Kaydet / Vazgeç, altında üç bölüm alt alta (geniş tablolar). Değişiklikler taslakta
+  // tutulur (sayfadan çıkıp dönünce kaybolmaz), Kaydet ile karta yazılır. Tablolar yalnız satır ekleme / silme / taşımada
+  // yeniden çizilir; yazarken odak kaybolmaz. Kaydetme kuralları eskisi gibi: döngü kontrolü, toplam çevrim → üretim süresi,
+  // "ağaç maliyetini karta yaz" seçildiyse malzeme maliyeti.
+  var UT = { stokId: '', d: null, kirli: false, maliyetYaz: null };
+  var UT_KOLON = {
+    rota: [ { k: 'operasyon', b: 'Operasyon', t: 'op', g: 160 }, { k: 'makineId', b: 'Makine', t: 'makine', g: 150 }, { k: 'hazirlikDk', b: 'Hazırlık (dk)', t: 'n', g: 90 }, { k: 'cevrimDk', b: 'Çevrim (dk / adet)', t: 'n', g: 110 }, { k: 'programNo', b: 'CNC program no', t: 's', g: 140 }, { k: 'takimlar', b: 'Takımlar', t: 's', g: 260 } ],
+    bom: [ { k: 'stokId', b: 'Malzeme', t: 'stok', g: 300 }, { k: 'miktar', b: 'Miktar / adet', t: 'n', g: 100 }, { k: 'birim', b: 'Birim', t: 's', g: 70 }, { k: 'boyMm', b: 'Adet başı boy (mm)', t: 'n', g: 120 }, { k: 'birimAgirlikKg', b: 'Birim ağırlık (kg)', t: 'n', g: 120 }, { k: 'fireYuzde', b: 'Fire %', t: 'n', g: 70 }, { k: 'not', b: 'Not', t: 's', g: 200 } ],
+    kontrolPlani: [ { k: 'karakteristik', b: 'Karakteristik', t: 's', g: 220 }, { k: 'nominal', b: 'Nominal', t: 'n', g: 90 }, { k: 'alt', b: 'Min', t: 'n', g: 90 }, { k: 'ust', b: 'Max', t: 'n', g: 90 }, { k: 'alet', b: 'Ölçü aleti', t: 's', g: 160 }, { k: 'siklik', b: 'Sıklık', t: 's', g: 140 }, { k: 'operasyon', b: 'Operasyon', t: 'op', g: 150 } ]
+  };
+  var UT_BOS = {
+    rota: function(){ return { operasyon: OPERASYONLAR[0] || '', makineId: '', hazirlikDk: 0, cevrimDk: 0, programNo: '', takimlar: '' }; },
+    bom: function(){ return { stokId: '', miktar: 1, birim: '', boyMm: 0, birimAgirlikKg: 0, fireYuzde: 0, not: '' }; },
+    kontrolPlani: function(){ return { karakteristik: '', nominal: 0, alt: 0, ust: 0, alet: '', siklik: 'her 50 adette 1', operasyon: '' }; }
+  };
+  var UT_BOLUM = [['rota', 'Ürün rotası', 'Operasyon sırası, makine, hazırlık ve çevrim süresi. Toplam çevrim kaydedince kartın üretim süresi olur; iş emrinde süre ve operasyonlar buradan gelir.', '+ Operasyon'],
+    ['bom', 'Ürün ağacı (malzeme listesi)', 'Hammadde için adet başı boy (kesme payı dahil) ya da birim ağırlık girin. Kendi ağacı olan yarı mamul eklenebilir; MRP alt seviyesine açar.', '+ Malzeme'],
+    ['kontrolPlani', 'Kontrol planı', 'Min / Max mutlak sınırlardır (ör. Ø12,00 için 11,95 – 12,05). Kalite kontrol formunda bu satırlar kendiliğinden gelir.', '+ Karakteristik']];
+  function utTaslakKur(stokId){
+    var s = stokKart(stokId); UT.stokId = s ? s.id : ''; UT.kirli = false; UT.maliyetYaz = null;
+    if (!s){ UT.d = null; return; }
+    var kopya = function(l){ return (l || []).map(function(x){ return Object.assign({}, x); }); };
+    UT.d = { rota: kopya(s.rota), bom: kopya(s.bom), kontrolPlani: kopya(s.kontrolPlani) };
+    if (!UT.d.rota.length) UT.d.rota = OPERASYONLAR.map(function(o){ return { operasyon: o, makineId: '', hazirlikDk: 0, cevrimDk: 0, programNo: '', takimlar: '' }; });
+  }
+  // Stok kartından ya da menüden: kaydedilmemiş başka ürün varsa önce sorar
+  function urunTeknikAc(stokId){
+    var ac = function(){ if (stokId !== UT.stokId || !UT.d) utTaslakKur(stokId); var h = byId('urunteknikIcerik'); if (h) h.dataset.yapi = ''; if (aktifSekme() === 'urunteknik') EK_RENDER.urunteknik(); else gitSekme('urunteknik'); };
+    if (UT.kirli && UT.stokId && UT.stokId !== stokId) onayIste(stokEtiket(UT.stokId) + ' için kaydedilmemiş değişiklikler var. Bırakılsın mı?', 'Evet, bırak', function(){ UT.kirli = false; ac(); });
+    else ac();
+  }
+  function openRotaAgacForm(stokId){ urunTeknikAc(stokId); }
+  function utHucre(bolum, c, v, i, salt){
+    var at = 'data-ut="' + bolum + '|' + i + '|' + c.k + '"' + (salt ? ' disabled' : '');
+    if (c.t === 'op') return '<select ' + at + '><option value="">-</option>' + OPERASYONLAR.map(function(o){ return '<option' + (v === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>';
+    if (c.t === 'makine') return '<select ' + at + '><option value="">-</option>' + state.makineler.map(function(m){ return '<option value="' + m.id + '"' + (v === m.id ? ' selected' : '') + '>' + esc(m.ad) + '</option>'; }).join('') + '</select>';
+    if (c.t === 'stok'){
+      var gruplar = {}; state.stok.filter(function(x){ return x.id !== UT.stokId && x.tip !== 'Mamul'; }).forEach(function(x){ (gruplar[x.tip || 'Diğer'] = gruplar[x.tip || 'Diğer'] || []).push(x); });
+      return '<select ' + at + '><option value="">— malzeme seçin —</option>' + Object.keys(gruplar).map(function(g){ return '<optgroup label="' + escAttr(g) + '">' + gruplar[g].map(function(x){ return '<option value="' + x.id + '"' + (v === x.id ? ' selected' : '') + '>' + esc((x.kod ? x.kod + ' · ' : '') + x.ad) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '</select>';
+    }
+    return '<input type="' + (c.t === 'n' ? 'number' : 'text') + '" ' + (c.t === 'n' ? 'step="any" class="num" ' : '') + at + ' value="' + escAttr(v == null ? '' : v) + '">';
+  }
+  function utTabloHtml(bolum, salt){
+    var kol = UT_KOLON[bolum], l = UT.d[bolum];
+    return '<div class="tablewrap"><table class="ut-tablo"><colgroup><col style="width:34px">' + kol.map(function(c){ return '<col style="min-width:' + c.g + 'px">'; }).join('') + '<col style="width:84px"></colgroup>' +
+      '<thead><tr><th>#</th>' + kol.map(function(c){ return '<th' + (c.t === 'n' ? ' class="num"' : '') + '>' + esc(c.b) + '</th>'; }).join('') + '<th></th></tr></thead><tbody>' +
+      (l.length ? l.map(function(r, i){ return '<tr><td class="muted">' + (i + 1) + '</td>' + kol.map(function(c){ return '<td>' + utHucre(bolum, c, r[c.k], i, salt) + '</td>'; }).join('') +
+        '<td style="white-space:nowrap">' + (salt ? '' : '<button type="button" class="btn secondary small" data-utyukari="' + bolum + '|' + i + '" title="Yukarı taşı"' + (i ? '' : ' disabled') + '>↑</button> <button type="button" class="btn danger" data-utsil="' + bolum + '|' + i + '" title="Satırı sil">Sil</button>') + '</td></tr>'; }).join('')
+        : '<tr><td colspan="' + (kol.length + 2) + '" class="empty">Satır yok</td></tr>') +
+      '</tbody></table></div>';
+  }
+  function utRotaOzet(){
+    var l = (UT.d.rota || []).filter(function(r){ return r.operasyon; }), c = toplamla(l, function(r){ return r.cevrimDk; }), h = toplamla(l, function(r){ return r.hazirlikDk; });
+    return 'Toplam çevrim <b>' + fmt2(c) + ' dk / adet</b> · toplam hazırlık <b>' + fmt2(h) + ' dk</b> · 100 adet ≈ <b>' + sureStrOlustur(h + c * 100) + '</b>' + (c > 0 ? ' — kaydedince kartın üretim süresi ' + fmt2(c) + ' dk olur.' : '');
+  }
+  function utSayilar(){ return { rota: UT.d.rota.filter(function(r){ return r.operasyon; }).length, bom: UT.d.bom.filter(function(r){ return r.stokId; }).length, kontrolPlani: UT.d.kontrolPlani.filter(function(r){ return r.karakteristik; }).length }; }
+  function utDurumYaz(){
+    var d = byId('utDurum'); if (d){ d.textContent = UT.kirli ? 'Kaydedilmemiş değişiklik var' : 'Kaydedildi'; d.className = UT.kirli ? 'neg' : 'muted'; }
+    var b = byId('utKaydet'); if (b) b.disabled = !UT.kirli;
+    var v = byId('utVazgec'); if (v) v.disabled = !UT.kirli;
+    var n = utSayilar(); ['rota', 'bom', 'kontrolPlani'].forEach(function(k){ var e = byId('utSay-' + k); if (e) e.textContent = n[k]; });
+    var ro = byId('utRotaOzet'); if (ro) ro.innerHTML = utRotaOzet();
+    var ag = byId('utAgac'); if (ag) ag.innerHTML = bomAgacHtml(UT.stokId, UT.d.bom.filter(function(r){ return r.stokId; }), UT.maliyetYaz);
+  }
+  function utUrunListesiHtml(){
+    var l = state.stok.filter(function(s){ return s.tip === 'Mamul' || s.tip === 'Yarı Mamul' || (s.rota || []).length || (s.bom || []).length; })
+      .sort(function(a, b){ return String(a.kod || a.ad).localeCompare(String(b.kod || b.ad), 'tr', { numeric: true }); });
+    if (!l.length) return '<div class="empty">Mamul ya da yarı mamul stok kartı yok — Kartlar › Stok Kartları\'ndan açın.</div>';
+    return '<div class="block"><div class="block-head"><h3>Ürünler</h3></div><div class="block-body tablewrap"><table id="utUrunler"><thead><tr><th>Kod</th><th>Ürün</th><th>Tip</th><th class="num">Rota adımı</th><th class="num">Ağaç kalemi</th><th class="num">Kontrol</th><th class="num">Çevrim (dk)</th><th></th></tr></thead><tbody>' +
+      l.map(function(s){ return '<tr><td>' + esc(s.kod || '') + '</td><td>' + esc(s.ad) + '</td><td>' + esc(s.tip || '') + '</td><td class="num">' + (s.rota || []).length + '</td><td class="num">' + (s.bom || []).length + '</td><td class="num">' + (s.kontrolPlani || []).length + '</td><td class="num">' + fmt2(toplamla(s.rota || [], function(r){ return r.cevrimDk; })) + '</td>' +
+        '<td><button type="button" class="btn small" data-utac="' + s.id + '">Aç</button></td></tr>'; }).join('') + '</tbody></table></div></div>';
+  }
+  EK_RENDER.urunteknik = function(){
+    var host = byId('urunteknikIcerik'); if (!host) return;
+    if (!host.dataset.bagli){ host.dataset.bagli = '1'; utBagla(host); }
+    if (UT.stokId && !stokKart(UT.stokId)){ UT.stokId = ''; UT.d = null; UT.kirli = false; }
+    if (UT.stokId && !UT.d) utTaslakKur(UT.stokId);
+    var s = UT.stokId && stokKart(UT.stokId), salt = !izinVar('duzenle');
+    var secici = '<select id="utStok"><option value="">— ürün seçin —</option>' + state.stok.filter(function(x){ return x.tip !== 'Hammadde' && x.tip !== 'Sarf' && x.tip !== 'Müşteri Malı' || x.id === UT.stokId; })
+      .sort(function(a, b){ return String(a.kod || a.ad).localeCompare(String(b.kod || b.ad), 'tr', { numeric: true }); })
+      .map(function(x){ return '<option value="' + x.id + '"' + (x.id === UT.stokId ? ' selected' : '') + '>' + esc((x.kod ? x.kod + ' · ' : '') + x.ad + ' (' + (x.tip || '') + ')') + '</option>'; }).join('') + '</select>';
+    var yapi = (UT.stokId || '-') + '|' + salt;
+    if (host.dataset.yapi === yapi && s){ // aynı ürün: yalnız özet / ağaç / sayılar güncellenir (yazarken odak kaybolmaz)
+      var oz = byId('utOzet'); if (oz) oz.innerHTML = utOzetHtml(s); utDurumYaz(); return;
+    }
+    host.dataset.yapi = yapi;
+    if (!s){ host.innerHTML = '<div class="ut-ust"><div class="field" style="margin:0;flex:1;max-width:520px"><label>Ürün</label>' + secici + '</div></div>' + utUrunListesiHtml(); return; }
+    host.innerHTML = '<div class="ut-ust"><div class="field" style="margin:0;flex:1;max-width:520px"><label>Ürün</label>' + secici + '</div>' +
+        '<div id="utOzet" class="ut-ozet">' + utOzetHtml(s) + '</div>' +
+        '<div class="ut-dugmeler"><span id="utDurum"></span>' + (salt ? '<span class="muted">Düzenleme yetkiniz yok — yalnız görüntüleme</span>' : '<button type="button" class="btn secondary small" id="utVazgec">Vazgeç</button><button type="button" class="btn small" id="utKaydet">💾 Kaydet</button>') +
+        '<button type="button" class="btn secondary small" id="utDon">← Stok kartları</button></div></div>' +
+      '<div class="ut-gecis">' + UT_BOLUM.map(function(b){ return '<a href="#utBolum-' + b[0] + '" data-utgit="' + b[0] + '">' + esc(b[1]) + ' (<span id="utSay-' + b[0] + '">0</span>)</a>'; }).join('') + '</div>' +
+      UT_BOLUM.map(function(b){
+        return '<div class="block ut-bolum" id="utBolum-' + b[0] + '"><div class="block-head"><h3>' + esc(b[1]) + ' ' + infoIco(b[2]) + '</h3><div class="bh-actions">' + (salt ? '' : '<button type="button" class="btn secondary small" data-utekle="' + b[0] + '">' + esc(b[3]) + '</button>') + '</div></div>' +
+          '<div class="block-body"><div id="utTablo-' + b[0] + '">' + utTabloHtml(b[0], salt) + '</div>' +
+          (b[0] === 'rota' ? '<div class="helper" id="utRotaOzet"></div>' : '') + (b[0] === 'bom' ? '<div id="utAgac"></div>' : '') + '</div></div>';
+      }).join('');
+    utDurumYaz();
+  };
+  function utOzetHtml(s){
+    var h = stokHesapla(s);
+    return '<span class="pill">' + esc(s.tip || '') + '</span> <span>birim: <b>' + esc(s.birim || 'adet') + '</b></span>' +
+      '<span>stok: <b>' + fmt2(s.miktar) + '</b></span>' + '<span>üretim süresi: <b>' + fmt2(s.uretimSuresiDk) + ' dk</b></span>' +
+      '<span class="yetki-maliyet">maliyet: <b>€' + fmt2(h.toplamMaliyet) + '</b></span><span>satış: <b>€' + fmt2(s.birimFiyat) + '</b></span>';
+  }
+  function utTabloYenile(bolum){ var t = byId('utTablo-' + bolum); if (t) t.innerHTML = utTabloHtml(bolum, !izinVar('duzenle')); utDurumYaz(); }
+  function utBagla(host){
+    var degis = function(e){
+      var el = e.target;
+      if (el.id === 'utStok'){ var yeni = el.value; el.value = UT.stokId; if (yeni) urunTeknikAc(yeni); else if (!UT.kirli){ UT.stokId = ''; UT.d = null; host.dataset.yapi = ''; EK_RENDER.urunteknik(); } return; }
+      if (!el.dataset.ut || !UT.d) return;
+      var p = el.dataset.ut.split('|'), bolum = p[0], i = Number(p[1]), k = p[2], c = UT_KOLON[bolum].find(function(x){ return x.k === k; }), r = UT.d[bolum][i]; if (!r || !c) return;
+      r[k] = c.t === 'n' ? (el.value === '' ? 0 : Number(el.value) || 0) : el.value;
+      if (bolum === 'bom' && k === 'stokId'){ var st = stokKart(el.value); if (st && !r.birim){ r.birim = st.birim || ''; var bi = host.querySelector('[data-ut="bom|' + i + '|birim"]'); if (bi) bi.value = r.birim; } }
+      if (bolum === 'bom') UT.maliyetYaz = null;
+      UT.kirli = true; utDurumYaz();
+    };
+    host.addEventListener('input', degis); host.addEventListener('change', degis);
+    host.addEventListener('click', function(e){
+      var b = e.target.closest('button, a[data-utgit]'); if (!b) return;
+      if (b.dataset.utgit){ e.preventDefault(); var hedef = byId('utBolum-' + b.dataset.utgit); if (hedef) hedef.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      if (b.dataset.utac){ urunTeknikAc(b.dataset.utac); return; }
+      if (b.dataset.utekle){ UT.d[b.dataset.utekle].push(UT_BOS[b.dataset.utekle]()); UT.kirli = true; utTabloYenile(b.dataset.utekle); var son = host.querySelectorAll('#utTablo-' + b.dataset.utekle + ' tbody tr'); son = son[son.length - 1]; var ilk = son && son.querySelector('input, select'); if (ilk) ilk.focus(); return; }
+      if (b.dataset.utsil || b.dataset.utyukari){
+        var p = (b.dataset.utsil || b.dataset.utyukari).split('|'), l = UT.d[p[0]], i = Number(p[1]);
+        if (b.dataset.utsil) l.splice(i, 1); else if (i > 0){ var t = l[i - 1]; l[i - 1] = l[i]; l[i] = t; }
+        if (p[0] === 'bom') UT.maliyetYaz = null;
+        UT.kirli = true; utTabloYenile(p[0]); return;
+      }
+      if (b.id === 'bomMaliyetYaz'){ UT.maliyetYaz = muhR2(bomMaliyet(UT.stokId, UT.d.bom.filter(function(r){ return r.stokId; })) * 10000) / 10000; UT.kirli = true; utDurumYaz(); return; }
+      if (b.id === 'utDon'){ gitSekme('stok'); return; }
+      if (b.id === 'utVazgec'){ onayIste('Kaydedilmemiş değişiklikler silinsin, kayıtlı hale dönülsün mü?', 'Evet, vazgeç', function(){ utTaslakKur(UT.stokId); host.dataset.yapi = ''; EK_RENDER.urunteknik(); }); return; }
+      if (b.id === 'utKaydet') utKaydet(host);
+    });
+  }
+  function utKaydet(host){
+    var s = stokKart(UT.stokId); if (!s || !UT.d) return;
+    if (!izinVar('duzenle')){ toast(izinYokMesaji('duzenle'), true); return; }
+    var rota = UT.d.rota.filter(function(r){ return r.operasyon; }), bom = UT.d.bom.filter(function(r){ return r.stokId; }), kp = UT.d.kontrolPlani.filter(function(r){ return r.karakteristik; });
+    // Döngü: kart kendini ya da kendisini içeren bir yarı mamulü içeremez (MRP ve maliyet sonsuza gider)
+    var dongu = bom.find(function(b){ return b.stokId === s.id || bomIceriyorMu(b.stokId, s.id); });
+    if (dongu){ toast('Ürün ağacında döngü: ' + stokEtiket(dongu.stokId) + ' bu kartı (alt seviyede) zaten içeriyor. O satırı kaldırın.', true); return; }
+    var hatali = kp.find(function(r){ return Number(r.alt) && Number(r.ust) && Number(r.alt) > Number(r.ust); });
+    if (hatali){ toast('Kontrol planında "' + hatali.karakteristik + '": Min, Max\'tan büyük olamaz.', true); return; }
+    var veri = { rota: rota, bom: bom, kontrolPlani: kp };
+    var top = rota.reduce(function(a, r){ return a + (Number(r.cevrimDk) || 0); }, 0);
+    if (top > 0){ veri.uretimSuresiDk = Math.round(top * 1000) / 1000; veri.iscilikSabit = null; }
+    if (UT.maliyetYaz != null){ veri.maliyet = UT.maliyetYaz; veri.maliyetTarihi = todayISO(); }
+    var b = byId('utKaydet'); if (b) b.disabled = true;
+    kayitGuncelle('stok', s.id, veri).then(function(){ UT.kirli = false; UT.maliyetYaz = null; toast('✓ ' + stokEtiket(s.id) + ': rota / ağaç / kontrol planı kaydedildi'); utDurumYaz(); })
+      .catch(function(e){ if (b) b.disabled = false; toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+  }
   init();
 })();
 </script>
