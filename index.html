@@ -1166,7 +1166,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-14-r141</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-14-r142</div>
   </nav>
   <main>
     <div class="topbar">
@@ -11696,16 +11696,16 @@ Dikkat edilmesi gereken 2 nokta:
       'Bu cihazdan son elle yedek: <b>'+(son || 'hiç alınmadı')+'</b>'+(!klasorModu && son && gunFarki(son, todayISO()) > 7 ? ' <span class="neg">(7 günden eski)</span>' : '')+
       (supabaseModu ? geceYedekHtml() : '');
   };
-  // Bulut: her gece 03:30'da gizli GitHub deposuna (kaff-ozerp-yedek) taşıma dosyası olarak yedek alınır (yedekleme/ klasörü).
+  // Bulut: her gece 03:30'da gizli GitHub deposuna (ozerp-yedek) taşıma dosyası olarak yedek alınır (yedekleme/ klasörü).
   // Görev bitince config.sonYedekTarihi / sonYedekAlan = 'GitHub gece yedeği' yazar.
-  var GECE_YEDEK_DEPO = 'https://github.com/fatihozinal-bit/kaff-ozerp-yedek';
+  var GECE_YEDEK_DEPO = 'https://github.com/fatihozinal-bit/ozerp-yedek';
   function geceYedekCalisiyor(){ var c = state.config || {}; return c.sonYedekAlan === 'GitHub gece yedeği'; }
   function geceYedekHtml(){
     var c = state.config || {}, gun = c.sonYedekTarihi ? gunFarki(c.sonYedekTarihi, todayISO()) : null;
     return '<div style="margin-top:8px"><b>Otomatik gece yedeği:</b> ' + (geceYedekCalisiyor()
       ? 'son yedek <b>' + esc(kvTarihTR(c.sonYedekTarihi)) + '</b>' + (gun > 2 ? ' <span class="neg">(' + gun + ' gündür alınmadı — görev çalışmıyor olabilir)</span>' : ' ✓')
       : '<span class="neg">henüz kurulmadı</span> — Mac\'teki OzERP klasöründe <b>OzERP-Yedek-Kur.command</b> dosyasına çift tıklayın (Supabase service_role anahtarını bir kez ister).') +
-      ' · Yedekler her gece 03:30\'da yalnız size açık <a href="' + GECE_YEDEK_DEPO + '/tree/main/yedek" target="_blank" rel="noopener">kaff-ozerp-yedek</a> deposuna yazılır; geri yüklemek için dosyayı indirip aşağıdaki "Taşıma dosyası yükle" ile seçin.</div>';
+      ' · Yedekler her gece 03:30\'da yalnız size açık <a href="' + GECE_YEDEK_DEPO + '/tree/main/yedek" target="_blank" rel="noopener">ozerp-yedek</a> deposuna yazılır; geri yüklemek için dosyayı indirip aşağıdaki "Taşıma dosyası yükle" ile seçin.</div>';
   }
 
   // ---------- Kapasite & arşiv ----------
@@ -12067,7 +12067,7 @@ Dikkat edilmesi gereken 2 nokta:
     var u = [], bugun = todayISO(), hafta = tarihEkle(bugun, 7);
     function ekle(sev, metin, tab, id){ u.push({ seviye: sev, metin: metin, tab: tab, id: id || '' }); }
     // Supabase ücretsiz planında otomatik yedek yok: 7 günden eski (ya da hiç alınmamış) yedek uyarılır
-    if (supabaseModu && state.config && geceYedekCalisiyor() && state.config.sonYedekTarihi && gunFarki(state.config.sonYedekTarihi, bugun) > 2) ekle('kritik', 'Gece yedeği '+gunFarki(state.config.sonYedekTarihi, bugun)+' gündür alınmadı — GitHub › kaff-ozerp-yedek › Actions', 'veri', '');
+    if (supabaseModu && state.config && geceYedekCalisiyor() && state.config.sonYedekTarihi && gunFarki(state.config.sonYedekTarihi, bugun) > 2) ekle('kritik', 'Gece yedeği '+gunFarki(state.config.sonYedekTarihi, bugun)+' gündür alınmadı — GitHub › ozerp-yedek › Actions', 'veri', '');
     else if (supabaseModu && state.config){ var sy = state.config.sonYedekTarihi; if (!sy || gunFarki(sy, bugun) > 7) ekle(sy ? 'uyari' : 'kritik', sy ? 'Son yedek '+kvTarihTR(sy)+' tarihli (7 günden eski) — Sistem › Veri & Yedek › Yedek indir' : 'Buluttaki veri için henüz yedek alınmadı — Sistem › Veri & Yedek › Yedek indir', 'veri'); }
     teminatlar().filter(function(t){ return teminatAcik(t) && t.vade && t.vade <= tarihEkle(bugun, 30); }).forEach(function(t){
       ekle(t.vade < bugun ? 'kritik' : 'uyari', 'Teminat mektubu '+(t.vade < bugun ? 'vadesi geçti' : 'vadesi yaklaşıyor')+': '+t.banka+(t.mektupNo ? ' '+t.mektupNo : '')+' · '+pbFmt(t.tutar, t.paraBirimi || 'TRY')+' ('+kvTarihTR(t.vade)+')', 'kasabanka', t.id); });
