@@ -1119,7 +1119,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-14-r131</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-14-r132</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1994,7 +1994,7 @@ Dikkat edilmesi gereken 2 nokta:
         openForm({
           title: opts.editTitle || 'Kaydı düzenle',
           fields: fields,
-          values: item,
+          values: opts.degerler ? opts.degerler(item) : item,
           onSave: function(vals){
             if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
             if (opts.onSaveTransform) opts.onSaveTransform(vals, item);
@@ -3096,23 +3096,58 @@ Dikkat edilmesi gereken 2 nokta:
     var kur = state.config ? Number(state.config.eurTryKuru)||0 : 0;
     return kur > 0 ? ('≈ ₺'+fmt2(tl(eurTutar))) : '';
   }
-  // Personelin şirkete aylık maliyeti (€): işveren maliyeti girilmişse o; yoksa net maaştan
-  // brüt + işveren SGK/işsizlik payı Kârlılık modelindeki bordro hesabıyla tahmin edilir (plandaki teşvik / asgari ücret ayarlarıyla).
-  // Gelir vergisi yıl içinde dilim atladıkça brüt yükselir; bu yüzden Ocak ayı değil, 12 ayın ortalaması alınır.
-  function personelMaliyet(p){
-    var girilen = Number(p.brutMaliyet)||0, net = Number(p.maasAylik)||0;
-    if (girilen) return { tutar: girilen, kaynak: 'işveren maliyeti' };
-    var kur = state.config ? Number(state.config.eurTryKuru)||0 : 0;
-    if (!net || !kur || typeof KV_MODEL === 'undefined' || !KV_MODEL) return { tutar: net, kaynak: 'net maaş' };
-    var P = typeof kvParam === 'function' ? kvParam() : KV_MODEL.varsayilan();
-    var yp = KV_MODEL.yilParam(P, new Date().getFullYear()), kum = 0, top = 0;
-    for (var ay = 1; ay <= 12; ay++){ var b = KV_MODEL.bordro(net * kur, kum, ay, yp, P.imalatTesvik); kum += b.matrah; top += b.maliyet; }
-    return { tutar: top / 12 / kur, kaynak: 'netten tahmini işveren maliyeti (yıl ortalaması)' };
+  // Maaş ₺ sözleşmesidir: net maaş ve işveren maliyeti ₺ saklanır (netMaasTL, isverenMaliyetTL); € karşılığı güncel kurla bulunur.
+  // r131 ve öncesinde € saklanıyordu (maasAylik, brutMaliyet): ₺ yazılıp o günün kuruyla €'ya çevrilmişti, kur oynadıkça ₺ maaş kayıyordu
+  // (6 Ekim'de 55,50 kurla girilen 50.000 ₺, 55,21 kurla 49.736 ₺ hesaplanıyordu). Eski kayıtta ₺ tutar, kur geçmişindeki kurlardan
+  // yuvarlak sayı (100'ün katı) verenle geri bulunur; kişi kartı bir kez kaydedilince ₺ olarak yazılır.
+  function personelEskiTL(eur){
+    eur = Number(eur) || 0; if (!eur) return 0;
+    var c = state.config || {}, en = null;
+    (c.kurGecmisi || []).map(function(k){ return Number(k.kur) || 0; }).concat([Number(c.eurTryKuru) || 0]).forEach(function(k){
+      if (!(k > 0)) return; var v = eur * k, y = Math.round(v / 100) * 100, f = Math.abs(v - y);
+      if (!en || f < en.f) en = { v: v, y: y, f: f };
+    });
+    return !en ? 0 : en.f < 1 ? en.y : Math.round(en.v);
   }
+  function personelNetTL(p){ return p.netMaasTL != null && p.netMaasTL !== '' ? Number(p.netMaasTL) || 0 : personelEskiTL(p.maasAylik); }
+  function personelIsverenTL(p){ return p.isverenMaliyetTL != null && p.isverenMaliyetTL !== '' ? Number(p.isverenMaliyetTL) || 0 : personelEskiTL(p.brutMaliyet); }
+  // İşten çıkış ayından sonraki aylarda çalışmıyor
+  function personelAyrildi(p, ay){ return /^\d{4}-\d{2}/.test(p.istenCikis || '') && p.istenCikis.slice(0, 7) < ay; }
+  // Personelin şirkete aylık maliyeti (€, sabit gider / saat maliyeti için): işveren maliyeti girilmişse o; yoksa net maaştan
+  // brüt + işveren SGK/işsizlik payı Kârlılık modelindeki bordro hesabıyla tahmin edilir (plandaki teşvik / asgari ücret ayarlarıyla).
+  // Gelir vergisi yıl içinde dilim atladıkça brüt yükselir; bu yüzden Ocak ayı değil, tam bir yılın (12 ay) ortalaması alınır.
+  function personelMaliyet(p){
+    var kur = state.config ? Number(state.config.eurTryKuru)||0 : 0, girilen = personelIsverenTL(p), net = personelNetTL(p);
+    if (!kur) return { tutar: 0, tl: 0, kaynak: 'kur girilmedi' };
+    if (girilen) return { tutar: girilen / kur, tl: girilen, kaynak: 'işveren maliyeti' };
+    if (!net) return { tutar: 0, tl: 0, kaynak: 'maaş girilmedi' };
+    var P = kvParam(), yp = KV_MODEL.yilParam(P, new Date().getFullYear()), kum = 0, top = 0;
+    for (var ay = 1; ay <= 12; ay++){ var b = KV_MODEL.bordro(net, kum, ay, yp, P.imalatTesvik); kum += b.matrah; top += b.maliyet; }
+    return { tutar: top / 12 / kur, tl: top / 12, kaynak: 'net ₺' + fmt(net) + ' → tahmini işveren maliyeti (12 ay ortalaması)' };
+  }
+  // Personelin belli bir aydaki şirkete maliyeti (₺, Finans Raporları / Yönetim panosu / Plan-gerçekleşen tahmini):
+  // işe giriş ayından önce ve işten çıkış ayından sonra 0; giriş / çıkış ayında çalıştığı gün kadar (30 gün üzerinden).
+  // İşveren maliyeti girilmişse o; yoksa net maaştan o ayın bordrosu — gelir vergisi matrahı yılbaşından (ya da işe giriş ayından)
+  // birikir, Kârlılık planıyla aynı hesap.
+  function personelAyMaliyetTL(p, ay, P){
+    var kist = function(a){ return KV_MODEL.kistOran(a, p.iseGiris, p.istenCikis); }, oran = kist(ay);
+    if (!(oran > 0)) return 0;
+    var girilen = personelIsverenTL(p); if (girilen) return girilen * oran;
+    var net = personelNetTL(p); if (!net) return 0;
+    P = P || kvParam();
+    var yil = Number(ay.slice(0, 4)), ayNo = Number(ay.slice(5, 7)), yp = KV_MODEL.yilParam(P, yil), kum = 0;
+    for (var m = 1; m < ayNo; m++){ var o = kist(yil + '-' + String(m).padStart(2, '0')); if (o > 0) kum += KV_MODEL.bordro(net, kum, m, yp, P.imalatTesvik).matrah * o; }
+    return KV_MODEL.bordro(net, kum, ayNo, yp, P.imalatTesvik).maliyet * oran;
+  }
+  // Aylık sabit gider (€): çalışan personel (ayrılanlar hariç; henüz başlamayan dahil — saat maliyeti tam kadroyla) + yemek / servis + kira + diğer
   function calcSabitGider(){
-    var personelToplam = state.personel.reduce(function(s,p){ return s + personelMaliyet(p).tutar; },0);
-    var kira = sirketEur('kira'), diger = sirketEur('diger');
-    return { personelToplam: personelToplam, kira: kira, diger: diger, toplam: personelToplam+kira+diger };
+    var ay = thisMonthKey(), kur = state.config ? Number(state.config.eurTryKuru)||0 : 0;
+    var aktif = state.personel.filter(function(p){ return !personelAyrildi(p, ay); });
+    var personelToplam = aktif.reduce(function(s,p){ return s + personelMaliyet(p).tutar; },0);
+    var yemekKisi = aktif.filter(function(p){ return personelNetTL(p) > 0 || personelIsverenTL(p) > 0; }).length;
+    var yemek = kur > 0 ? (Number(sirketDeger('yemekServisKisi')) || 0) * yemekKisi / kur : 0;
+    var kira = sirketEur('kira'), diger = sirketEur('diger') + yemek;
+    return { personelToplam: personelToplam, kira: kira, diger: diger, yemek: yemek, yemekKisi: yemekKisi, toplam: personelToplam+kira+diger };
   }
   function calcSaatMaliyeti(){
     var sabit = calcSabitGider().toplam;
@@ -3512,7 +3547,17 @@ Dikkat edilmesi gereken 2 nokta:
 
     renderSimpleList('personelListe', state.personel, 'personel', {
       emptyText: 'Personel eklenmedi',
-      rowFn: function(p){ return { title: esc(p.ad), sub: [p.rol, p.vardiya, p.iseGiris?'giriş '+p.iseGiris:'', '€'+fmt(p.maasAylik||0)+(tl(p.maasAylik) ? ' (₺'+fmt(tl(p.maasAylik))+')' : '')+'/ay net'+(p.brutMaliyet?' · €'+fmt(p.brutMaliyet)+(tl(p.brutMaliyet) ? ' (₺'+fmt(tl(p.brutMaliyet))+')' : '')+' işveren maliyeti':(p.maasAylik ? ' · işveren maliyeti girilmedi, tahmini €'+fmt(personelMaliyet(p).tutar) : '')), p.beceriler?'yetkin: '+p.beceriler:''].filter(Boolean).map(esc).join(' · ') }; },
+      rowFn: function(p){
+        var net = personelNetTL(p), isv = personelIsverenTL(p), kur = state.config ? Number(state.config.eurTryKuru)||0 : 0;
+        var eur = function(v){ return kur > 0 ? ' (≈ €'+fmt(v / kur)+')' : ''; };
+        var maas = net ? '₺'+fmt(net)+eur(net)+'/ay net'+(isv ? ' · işveren maliyeti ₺'+fmt(isv)+eur(isv) : ' · işveren maliyeti tahmini ₺'+fmt(personelMaliyet(p).tl)+'/ay (12 ay ortalaması)')
+          : isv ? 'işveren maliyeti ₺'+fmt(isv)+eur(isv)+'/ay' : 'maaş girilmedi — personel giderine katılmaz';
+        return { title: esc(p.ad)+(personelAyrildi(p, thisMonthKey()) ? ' <span class="muted">(ayrıldı)</span>' : ''),
+          sub: [p.rol, p.vardiya, p.iseGiris?'giriş '+p.iseGiris:'', p.istenCikis?'çıkış '+p.istenCikis:'', maas, p.beceriler?'yetkin: '+p.beceriler:''].filter(Boolean).map(esc).join(' · ') };
+      },
+      // Eski (€ saklanan) kayıt düzenlenirken ₺ tutar doldurulur; kaydedince ₺ yazılır, eski € alanları sıfırlanır
+      degerler: function(p){ return Object.assign({}, p, { netMaasTL: personelNetTL(p), isverenMaliyetTL: personelIsverenTL(p) }); },
+      onSaveTransform: function(v){ v.maasAylik = 0; v.brutMaliyet = 0; },
       fields: PERSONEL_FIELDS,
       editTitle: 'Personeli düzenle',
       deleteMsg: 'Bu personeli silmek istediğinize emin misiniz?',
@@ -5615,7 +5660,7 @@ Dikkat edilmesi gereken 2 nokta:
         kiraAylik: conv(state.config.kiraAylik), digerGiderAylik: conv(state.config.digerGiderAylik),
         paraBirimi: 'EUR', paraBirimiTarihi: todayISO()
       }));
-      state.personel.forEach(function(p){ ops.push(db.collection('personel').doc(p.id).update({ maasAylik: conv(p.maasAylik) })); });
+      // Personel maaşları ₺ saklanır (netMaasTL), çevrilmez
       state.urunler.forEach(function(u){ ops.push(db.collection('urunler').doc(u.id).update({ fasonUcret: conv(u.fasonUcret) })); });
       state.stok.forEach(function(s){
         var payload = { maliyet: conv(s.maliyet), birimFiyat: conv(s.birimFiyat) };
@@ -5655,7 +5700,7 @@ Dikkat edilmesi gereken 2 nokta:
   });
 
   document.getElementById('pEkleBtn').addEventListener('click', function(){
-    openNewRecordForm('personel', 'Yeni personel', PERSONEL_FIELDS, {ad:'', rol:'Operatör', maasAylik:730, brutMaliyet:0, vardiya:'1. Vardiya', iseGiris: todayISO()}, 'Personel eklendi');
+    openNewRecordForm('personel', 'Yeni personel', PERSONEL_FIELDS, {ad:'', rol:'Operatör', netMaasTL:0, isverenMaliyetTL:0, vardiya:'1. Vardiya', iseGiris: todayISO()}, 'Personel eklendi');
   });
   document.getElementById('mEkleBtn').addEventListener('click', function(){
     openNewRecordForm('makineler', 'Yeni makine', MAKINE_FIELDS, {ad:'', model:'', durum:'Çalışıyor', amortismanAy:60, gucKw:0, bakimAylik:0, alisBedeli:0}, 'Makine eklendi');
@@ -7222,8 +7267,9 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'dogumTarihi', label:'Doğum tarihi', type:'date', hint:'Yıllık izin hakkı için: 18 yaş altı ve 50 yaş üstü en az 20 gün.'},
     {key:'devredenIzin', label:'Devreden yıllık izin (gün)', type:'number', para:false, hint:'Önceki dönemden kalan (kullanılmamış) yıllık izin; programa geçişte bir kez girilir.'},
     {key:'vardiya', label:'Vardiya', type:'select', options:['1. Vardiya','2. Vardiya','Gündüz','Değişken']},
-    {key:'maasAylik', label:'Net maaş (€/ay)', type:'number'},
-    {key:'brutMaliyet', label:'İşveren maliyeti (€/ay, SGK+vergi dahil)', type:'number', hint:'Yazarsanız bu tutar kullanılır. 0: net maaştan bordro ile tahmin edilir.'},
+    {key:'istenCikis', label:'İşten çıkış tarihi', type:'date', hint:'Ayrılan personel bu tarihten sonraki aylarda personel giderine ve kârlılık planına katılmaz.'},
+    {key:'netMaasTL', label:'Net maaş (₺/ay, ele geçen)', type:'number', hint:'Sözleşmedeki ₺ tutar; kur değişse de aynı kalır. Brüt, SGK ve vergiler bordro kurallarıyla hesaplanır.'},
+    {key:'isverenMaliyetTL', label:'İşveren maliyeti (₺/ay, SGK + vergi dahil)', type:'number', hint:'Müşavirin bordrosundaki toplam maliyeti biliyorsanız yazın; bu tutar kullanılır. 0: net maaştan hesaplanır.'},
     {key:'beceriler', label:'Yetkin olduğu makine / operasyonlar', type:'text', placeholder:'ör. CNC-1, CNC-2, Op1, Op2'},
     {key:'egitimler', label:'Eğitimler', type:'textarea'}
   ];
@@ -9529,8 +9575,8 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // Önerilen dağılım: personelin görevine ve net maaşına göre (maaş yoksa kişi sayısına göre)
   function bordroDagilimOnerisi(){
-    var p = state.personel || [], m = { p720: 0, p730: 0, p760: 0, p770: 0 }, maasli = p.some(function(x){ return Number(x.maasAylik) > 0; });
-    p.forEach(function(x){ if (maasli && !(Number(x.maasAylik) > 0)) return; m[bordroGiderHesabi(x.rol)] += maasli ? Number(x.maasAylik) : 1; });
+    var ay = thisMonthKey(), p = (state.personel || []).filter(function(x){ return !personelAyrildi(x, ay); }), m = { p720: 0, p730: 0, p760: 0, p770: 0 }, maasli = p.some(function(x){ return personelNetTL(x) > 0; });
+    p.forEach(function(x){ if (maasli && !(personelNetTL(x) > 0)) return; m[bordroGiderHesabi(x.rol)] += maasli ? personelNetTL(x) : 1; });
     var top = m.p720 + m.p730 + m.p760 + m.p770; if (!top) return { p720: 100, p730: 0, p760: 0, p770: 0 };
     var r = {}, en = 'p720', topR = 0; Object.keys(m).forEach(function(k){ r[k] = Math.round(m[k] / top * 100); topR += r[k]; if (m[k] > m[en]) en = k; });
     r[en] += 100 - topR; return r;
@@ -10411,21 +10457,30 @@ Dikkat edilmesi gereken 2 nokta:
 
   // ---------- Finans raporları ----------
   var _finansAy = null;
+  // Ayın gelir / gideri (€, KDV hariç, yönetim raporu). Personel: o ay bordro özeti girildiyse bordronun işveren maliyeti (o ayın Giderler'deki
+  // Maaş / SGK kayıtları sayılmaz, çift olmasın); yoksa Giderler'deki Maaş / SGK; o da yoksa Tanımlar'daki kadrodan o ayın tahmini
+  // (işe girişten önce ve çıkıştan sonra 0). Makine yatırımı gider değildir (amortismanla dağılır): ayrı döner, gidere girmez.
   function gelirGider(ay){
     var fts = state.faturalar.filter(function(f){ return f.durum === 'Kesildi' && ayAnahtari(f.tarih) === ay; });
     var gelir = toplamla(fts, function(f){ return f.araToplam; });
     var alis = (state.alisFaturalari||[]).filter(function(f){ return ayAnahtari(f.tarih) === ay; });
     var gid = (state.giderler||[]).filter(function(g){ return ayAnahtari(g.tarih) === ay; });
-    var kalemler = {};
-    alis.forEach(function(f){ var t = f.giderTuru || 'Alış faturası'; kalemler[t] = (kalemler[t]||0) + (Number(f.araToplam)||0); });
-    gid.forEach(function(g){ kalemler[g.tur] = (kalemler[g.tur]||0) + (Number(g.tutar)||0); });
+    var bord = bordrolar().filter(function(b){ return b.ay === ay; });
+    var kalemler = {}, yatirim = 0, kur = state.config ? Number(state.config.eurTryKuru)||0 : 0;
+    function ekle(t, v){ if (t === 'Yatırım (makine)'){ yatirim += v; return; } if (bord.length && (t === 'Maaş' || t === 'SGK / vergi')) return; kalemler[t] = (kalemler[t]||0) + v; }
+    alis.forEach(function(f){ ekle(f.giderTuru || 'Alış faturası', Number(f.araToplam)||0); });
+    gid.forEach(function(g){ ekle(g.tur, Number(g.tutar)||0); });
     var tahmini = [];
-    if (!kalemler['Maaş']){ var p = toplamla(state.personel, function(x){ return personelMaliyet(x).tutar; }); if (p){ kalemler['Maaş (tanımlardan tahmini)'] = p; tahmini.push('Maaş'); } }
+    if (bord.length){ var bk = muhKur(muhAySonu(ay)) || kur; if (bk) kalemler['Maaş (bordro özeti)'] = toplamla(bord, function(b){ return bordroHesap(b).maliyet; }) / bk; }
+    else if (!kalemler['Maaş'] && !kalemler['SGK / vergi'] && kur){
+      var P = kvParam(), p = toplamla(state.personel, function(x){ return personelAyMaliyetTL(x, ay, P); }) / kur;
+      if (p){ kalemler['Maaş (tanımlardan tahmini)'] = p; tahmini.push('Maaş'); }
+    }
     if (!kalemler['Kira'] && sirketEur('kira')){ kalemler['Kira (tanımlardan tahmini)'] = sirketEur('kira'); tahmini.push('Kira'); }
     var gider = Object.keys(kalemler).reduce(function(a,k){ return a + kalemler[k]; }, 0);
     var satisKdv = toplamla(fts, function(f){ return f.kdvTutar; });
     var alisKdv = toplamla(alis, function(f){ return f.kdvTutar; }) + toplamla(gid, function(g){ return g.kdvTutar; });
-    return { gelir: gelir, gider: gider, kalemler: kalemler, kar: gelir - gider, faturaSayisi: fts.length, satisKdv: satisKdv, alisKdv: alisKdv, tahmini: tahmini };
+    return { gelir: gelir, gider: gider, kalemler: kalemler, kar: gelir - gider, faturaSayisi: fts.length, satisKdv: satisKdv, alisKdv: alisKdv, tahmini: tahmini, yatirim: yatirim, bordro: bord.length > 0 };
   }
   function nakitAkisi(){
     var bugun = todayISO(); var kalanlar = faturaKalanlari();
@@ -10467,7 +10522,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kurlar = ((state.config && state.config.kurGecmisi) || []).slice(-12).reverse();
     setHtmlIdle('frIcerik',
       '<div class="cards"><div class="card good"><div class="label">Gelir (kesilen fatura, KDV hariç)</div><div class="value">'+euro(g.gelir)+'</div><div class="sub">'+g.faturaSayisi+' fatura</div></div>'+
-      '<div class="card accent"><div class="label">Gider (KDV hariç)</div><div class="value">'+euro(g.gider)+'</div><div class="sub">'+(g.tahmini.length?g.tahmini.join(', ')+' tanımlardan tahmini':'')+'</div></div>'+
+      '<div class="card accent"><div class="label">Gider (KDV hariç)</div><div class="value">'+euro(g.gider)+'</div><div class="sub">'+[g.bordro ? 'personel bordro özetinden' : '', g.tahmini.length ? g.tahmini.join(', ')+' tanımlardan tahmini' : '', g.yatirim ? 'makine yatırımı '+euro(g.yatirim)+' gidere dahil değil (amortismanla)' : ''].filter(Boolean).join(' · ')+'</div></div>'+
       '<div class="card '+(g.kar>=0?'good':'')+'"><div class="label">'+(g.kar>=0?'Kâr':'Zarar')+'</div><div class="value">'+euro(g.kar)+'</div><div class="sub">'+(g.gelir?'marj %'+fmt2(g.kar/g.gelir*100):'')+'</div></div>'+
       '<div class="card"><div class="label">KDV (hesaplanan − indirilecek)</div><div class="value">'+euro(g.satisKdv - g.alisKdv)+'</div><div class="sub">satış '+euro(g.satisKdv)+' · alış/gider '+euro(g.alisKdv)+'</div></div></div>'+
       '<div class="block"><div class="block-head"><h3>Gider kırılımı</h3></div><div class="block-body">'+(kalemSirali.length ? kalemSirali.map(function(k){ return '<div class="makine-bar-row"><div class="makine-bar-label">'+esc(k)+'</div><div class="makine-bar-track"><div class="makine-bar-fill" style="width:'+(g.gider?g.kalemler[k]/g.gider*100:0)+'%;background:var(--steel)"></div></div><div class="makine-bar-etiket">'+euro(g.kalemler[k])+'</div></div>'; }).join('') : '<div class="empty">Bu ay gider yok.</div>')+'</div></div>'+
@@ -11273,11 +11328,11 @@ Dikkat edilmesi gereken 2 nokta:
   var ICE_AKTARMA = {
     stok: { ad:'Stok kartları', col:'stok', kod:'stok', alanlar: ['kod','ad','tip','birim','miktar','kritikSeviye','maliyet','uretimSuresiDk','fasonUcret','birimFiyat','malzemeCinsi','olcu','resimNo'], zorunlu:['ad'], sayi:['miktar','kritikSeviye','maliyet','uretimSuresiDk','fasonUcret','birimFiyat'], varsayilan: {tip:'Mamul', birim:'adet', karMarji:30} },
     musteriler: { ad:'Cari kartlar', col:'musteriler', kod:'musteri', alanlar: ['kod','ad','cariTipi','yetkili','telefon','eposta','adres','sehir','vergiDairesi','vergiNo','iban','odemeVadesiGun'], zorunlu:['ad'], sayi:['odemeVadesiGun'], varsayilan: {cariTipi:'Müşteri', aktif:'Aktif'} },
-    personel: { ad:'Personel', col:'personel', alanlar: ['ad','rol','telefon','iseGiris','maasAylik','brutMaliyet','beceriler'], zorunlu:['ad'], sayi:['maasAylik','brutMaliyet'], varsayilan: {} },
+    personel: { ad:'Personel', col:'personel', alanlar: ['ad','rol','telefon','iseGiris','netMaasTL','isverenMaliyetTL','beceriler'], zorunlu:['ad'], sayi:['netMaasTL','isverenMaliyetTL'], varsayilan: {} },
     makineler: { ad:'Makineler', col:'makineler', alanlar: ['ad','marka','model','modelYili','seriNo','alisBedeli','amortismanAy','gucKw'], zorunlu:['ad'], sayi:['alisBedeli','amortismanAy','gucKw'], varsayilan: {durum:'Çalışıyor'} }
   };
   var ETIKET_ESLE = { 'stok kodu':'kod', 'kod':'kod', 'ad':'ad', 'adı':'ad', 'ürün':'ad', 'ürün adı':'ad', 'firma':'ad', 'unvan':'ad', 'ünvan':'ad', 'tip':'tip', 'birim':'birim', 'miktar':'miktar', 'stok':'miktar', 'kritik':'kritikSeviye', 'kritik seviye':'kritikSeviye',
-    'maliyet':'maliyet', 'satış fiyatı':'birimFiyat', 'fiyat':'birimFiyat', 'vergi no':'vergiNo', 'vkn':'vergiNo', 'vergi dairesi':'vergiDairesi', 'telefon':'telefon', 'e-posta':'eposta', 'eposta':'eposta', 'adres':'adres', 'şehir':'sehir', 'iban':'iban', 'vade':'odemeVadesiGun', 'yetkili':'yetkili', 'maaş':'maasAylik', 'rol':'rol', 'marka':'marka', 'model':'model', 'seri no':'seriNo' };
+    'maliyet':'maliyet', 'satış fiyatı':'birimFiyat', 'fiyat':'birimFiyat', 'vergi no':'vergiNo', 'vkn':'vergiNo', 'vergi dairesi':'vergiDairesi', 'telefon':'telefon', 'e-posta':'eposta', 'eposta':'eposta', 'adres':'adres', 'şehir':'sehir', 'iban':'iban', 'vade':'odemeVadesiGun', 'yetkili':'yetkili', 'maaş':'netMaasTL', 'net maaş':'netMaasTL', 'işveren maliyeti':'isverenMaliyetTL', 'rol':'rol', 'marka':'marka', 'model':'model', 'seri no':'seriNo' };
   function csvCozumle(metin){
     metin = metin.replace(/^﻿/, '');
     var ilk = metin.split(/\r?\n/)[0] || '';
@@ -11846,9 +11901,10 @@ Dikkat edilmesi gereken 2 nokta:
         h: ozetDetayTablo(['Ürün','Kayıt sayısı','Adet'], Object.keys(grup).map(function(id){ return [esc(urunAdiById(id)), grup[id].n, fmt(grup[id].adet)]; }), ['Toplam', kay.length, fmt(toplamla(kay, function(x){ return x.adet; }))]),
         git: 'kayitlar', gitAd: 'Üretim Kayıtları' };
     } else if (k === 'sabit'){
-      d = { t: 'Aylık sabit gider', f: 'Personel (işveren maliyeti girilmişse o; girilmemişse net maaştan brüt + işveren SGK payı tahmin edilir — cebinizden çıkan tutar) + kira + diğer sabit giderler. Hepsi <b>Sistem › Tanımlar</b> sayfasından gelir; değiştirmek için oraya gidin.',
-        h: ozetDetayTablo(['Kalem','Kaynak','Aylık'], state.personel.map(function(p){ var m = personelMaliyet(p); return [esc(p.ad), m.kaynak, eurTl(m.tutar)]; })
-          .concat([['Kira', 'genel giderler', eurTl(sabit.kira)], ['Diğer sabit (muhasebe, sigorta…)', 'genel giderler', eurTl(sabit.diger)]]), ['Toplam', '', eurTl(sabit.toplam)]),
+      d = { t: 'Aylık sabit gider', f: 'Personel (işveren maliyeti girilmişse o; girilmemişse ₺ net maaştan brüt + işveren SGK payı bordro kurallarıyla hesaplanır — cebinizden çıkan tutar; gelir vergisi dilimi yıl içinde arttığı için tam yılın 12 ay ortalaması) + yemek / servis + kira + diğer sabit giderler. İşten ayrılanlar katılmaz; henüz işe başlamayanlar saat maliyeti tam kadroyla hesaplansın diye katılır. Hepsi <b>Sistem › Tanımlar</b> sayfasından gelir; değiştirmek için oraya gidin. Kârlılık planı ve Finans Raporları ay ay hesaplar (işe giriş ayında gün kadar).',
+        h: ozetDetayTablo(['Kalem','Kaynak','Aylık'], state.personel.filter(function(p){ return !personelAyrildi(p, ay); }).map(function(p){ var m = personelMaliyet(p); return [esc(p.ad), esc(m.kaynak), eurTl(m.tutar)]; })
+          .concat(sabit.yemek ? [['Yemek / servis', sabit.yemekKisi + ' kişi × ₺' + fmt(Number(sirketDeger('yemekServisKisi')) || 0) + '/ay', eurTl(sabit.yemek)]] : [])
+          .concat([['Kira', 'genel giderler', eurTl(sabit.kira)], ['Diğer sabit (muhasebe, sigorta…)', 'genel giderler', eurTl(sabit.diger - sabit.yemek)]]), ['Toplam', '', eurTl(sabit.toplam)]),
         git: 'tanimlar', gitAd: 'Tanımlar' };
     } else if (k === 'katki' || k === 'net'){
       var l = urunListesi().map(function(u){ var adet = urunAdedBuAy(u.id), mal = calcUrunMaliyet(u), bk = (Number(u.fasonUcret)||0) - mal; return { u: u, adet: adet, mal: mal, bk: bk, top: adet * bk }; }).filter(function(x){ return x.adet; });
@@ -12087,6 +12143,15 @@ Dikkat edilmesi gereken 2 nokta:
       r.sgkToplam = r.sgkIsci + r.issizIsci + isvSgk + isvIssiz - r.destek; // SGK'ya ödenecek (destek mahsup edilmiş)
       return r;
     }
+    // İşe giriş / işten çıkış ayında çalışılan gün oranı (30 gün üzerinden; SGK gibi): aralık dışında 0, tam ayda 1. Tarihler 'YYYY-AA-GG' ya da boş.
+    function kistOran(ay, giris, cikis){
+      giris = /^\d{4}-\d{2}-\d{2}/.test(giris || '') ? giris.slice(0, 10) : ''; cikis = /^\d{4}-\d{2}-\d{2}/.test(cikis || '') ? cikis.slice(0, 10) : '';
+      if ((giris && ay < giris.slice(0, 7)) || (cikis && ay > cikis.slice(0, 7))) return 0;
+      var gi = giris && ay === giris.slice(0, 7), ci = cikis && ay === cikis.slice(0, 7);
+      if (!gi && !ci) return 1;
+      return Math.max(0, Math.min(30, (ci ? Number(cikis.slice(8, 10)) : ayGunSayisi(ay)) - (gi ? Number(giris.slice(8, 10)) : 1) + 1)) / 30;
+    }
+    function bordroKist(b, oran){ ['brut','sgkIsci','issizIsci','matrah','gv','dv','net','isvSgk','isvIssiz','destek','maliyet','sgkToplam'].forEach(function(k){ b[k] *= oran; }); return b; }
     function sayi(v){ return v === '' || v == null || isNaN(Number(v)) ? null : Number(v); }
     function yuv(x, n){ var k = Math.pow(10, n == null ? 2 : n); return Math.round((Number(x) || 0) * k) / k; }
     // Ürün kimlikleri: u1, u2… (ay ay ürün değerleri P.aylik[ay].urun[id] altında bu kimlikle durur)
@@ -12189,7 +12254,7 @@ Dikkat edilmesi gereken 2 nokta:
       var kasa = 0, minKasa = 0, geriDonusAy = null;
       var netDefterDegeri = amortismanaTabi;
       // Kalıcı değerler (girildiği aydan itibaren geçerli)
-      var persAktif = P.personel.map(function(p){ return { ad: p.ad, net: Number(p.net)||0 }; });
+      var persAktif = P.personel.map(function(p){ return { ad: p.ad, net: Number(p.net)||0, giris: p.giris || '', cikis: p.cikis || '' }; }); // giris / cikis: Tanımlar'daki işe giriş / çıkış
       var kiraAktif = P.kira, geceAktif = P.geceVardiya;
       // Ürünler: fiyat / makine / adet / gece adedi girildiği aydan itibaren geçerli (ay ay P.aylik[ay].urun[id])
       var UA = P.urunler.map(function(u){ return { id: u.id, ad: String(u.ad || '').trim() || 'Ürün', fiyat: Math.max(0, Number(u.fiyat) || 0), makine: Math.max(0, Number(u.makine) || 0),
@@ -12205,7 +12270,7 @@ Dikkat edilmesi gereken 2 nokta:
         if (i > 0 && ayNo === 1){
           UA.forEach(function(u){ u.fiyat *= 1 + P.fiyatArtisOcak/100; });
           kiraAktif *= 1 + P.kiraArtisOcak/100;
-          persAktif = persAktif.map(function(p){ return { ad: p.ad, net: p.net * (1 + P.maasArtisOcak/100) }; });
+          persAktif = persAktif.map(function(p){ return Object.assign({}, p, { net: p.net * (1 + P.maasArtisOcak/100) }); });
         }
         var OU = o.urun && typeof o.urun === 'object' ? o.urun : {};
         UA.forEach(function(u){ var x = OU[u.id]; if (!x) return; ['fiyat', 'makine', 'adet', 'gece'].forEach(function(f){ if (sayi(x[f]) != null) u[f] = Math.max(0, sayi(x[f])); }); });
@@ -12257,12 +12322,16 @@ Dikkat edilmesi gereken 2 nokta:
         var digerGelir = talasGelir + kdvliDigerGelir;
         var gelir = satis + digerGelir;
         // --- Personel
-        var pers = persAktif.map(function(p, k){
+        // İşe girişten önce ve çıkıştan sonra maliyet yok; giriş / çıkış ayında çalışılan gün kadar
+        var pers = [], calisan = [];
+        persAktif.forEach(function(p, k){
+          var oran = kistOran(ay, p.giris, p.cikis); if (!(oran > 0)) return;
           var key = p.ad + '#' + k;
           var b = bordro(p.net, kumMatrah[key] || 0, ayNo, yp, P.imalatTesvik);
+          if (oran < 1) bordroKist(b, oran);
           kumMatrah[key] = (kumMatrah[key] || 0) + b.matrah;
-          b.ad = p.ad;
-          return b;
+          b.ad = p.ad; b.kist = oran < 1 ? oran : null;
+          pers.push(b); calisan.push(p);
         });
         var personelMaliyet = pers.reduce(function(s,b){ return s + b.maliyet; }, 0);
         var netOdenen = pers.reduce(function(s,b){ return s + b.net; }, 0);
@@ -12360,7 +12429,7 @@ Dikkat edilmesi gereken 2 nokta:
         }
         aylar.push({ ay: ay, gun: gunler.hafta + gunler.cumartesi + gunler.pazar, gunHafta: gunler.hafta, gunHs: gunler.cumartesi + gunler.pazar, gunCmt: gunler.cumartesi, gunPaz: gunler.pazar, hsSaat: hsSaat, tatilCalisma: gunler.tatilCalisma,
           verim: verim*100, adet: adet, hesapAdet: hesapAdet, kapasiteBrut: kapasiteBrut, gunduzAdet: gunduzAktif, geceAdet: geceAdet, fiyat: fiyat, satis: satis, digerGelir: digerGelir, talasGelir: talasGelir, kdvliDigerGelir: kdvliDigerGelir, ekGelir: ekGelir, gelir: gelir, kdvDetay: kdvDetay, damgaKira: damgaKira, sabitKdvli: sabitKdvli, sabitKdvsiz: sabitKdvsiz,
-          aktifMakine: makineAktif, makineEtkin: makineEtkin, urunler: US, urunAdet: urunAdet, geceVardiya: geceAktif, personelListe: persAktif.map(function(p){ return { ad: p.ad, net: p.net }; }),
+          aktifMakine: makineAktif, makineEtkin: makineEtkin, urunler: US, urunAdet: urunAdet, geceVardiya: geceAktif, personelListe: calisan.map(function(p){ return { ad: p.ad, net: p.net }; }),
           personel: personelMaliyet, mesai: mesai, tatilUcret: tatilUcret, netMaas: netOdenen, sgk: sgkOdenecek, gvDv: gvDv,
           kiraNet: kiraNet, kira: kiraBrut, kiraStopaj: kiraStopaj, elektrik: elektrik, elektrikHesap: elektrikHesap, kwh: kwh, uc: uc, ucHesap: ucHesap,
           sabit: sabitKdvli + sabitKdvsiz, sabitHesap: sabitHesap, ekGider: ekGider, ekGiderKdvli: ekGiderKdvli, tekSefer: tekSefer, amortisman: amortAy, faiz: faiz, gider: gider, karOncesi: karOncesi, kidem: kidem,
@@ -12466,7 +12535,7 @@ Dikkat edilmesi gereken 2 nokta:
       ];
       return tan.map(function(t){ var r = hesapla(Object.assign({}, P, t.o)); return Object.assign({ ad: t.ad, not: t.not }, ozetle(r)); });
     }
-    return { varsayilan: varsayilan, hesapla: hesapla, ozetle: ozetle, senaryolar: senaryolar, bordro: bordro, yilParam: yilParam, isGunu: isGunu, gunHaritasi: gunHaritasi,
+    return { varsayilan: varsayilan, hesapla: hesapla, ozetle: ozetle, senaryolar: senaryolar, bordro: bordro, kistOran: kistOran, yilParam: yilParam, isGunu: isGunu, gunHaritasi: gunHaritasi,
       haftaGunu: haftaGunu, ayGunSayisi: ayGunSayisi, tatilAdi: tatilAdi, ayEkle: ayEkle, ayAdiUzun: ayAdiUzun, vergiHesap: vergiHesap, KALICI: KALICI,
       urunNormalize: urunNormalize, urunOlcekle: urunOlcekle, urunIdleri: urunIdleri,
       ESKI_VARSAYILAN: ESKI_VARSAYILAN, VARSAYIM_SURUMU: VARSAYIM_SURUMU };
@@ -13239,12 +13308,16 @@ Dikkat edilmesi gereken 2 nokta:
           (a.digerGelir ? kvHesapTablo([kvHesapSatir('+ Talaş / ek gelir', a.digerGelir), kvHesapTop('Toplam gelir', a.gelir, 'pos')]) : ''),
         git: 'urunler', gitAd: 'Ürünler ve çalışan makineler', git2: 'planla', git2Ad: 'Ay ay planım' };
     } else if (k === 'personel' || k === 'netMaas' || k === 'sgk' || k === 'gvDv'){
-      var tp = { net:0, brut:0, sgk:0, gv:0, isv:0, mal:0 };
+      // Maliyet = brüt + SGK işveren − asgari ücret desteği: destek sütunu gösterilir ki sütunlar toplansın
+      var tp = { net:0, brut:0, sgk:0, gv:0, isv:0, des:0, mal:0 };
+      a.pers.forEach(function(b){ tp.des += b.destek || 0; });
+      var desS = tp.des > 0;
       var sat = a.pers.map(function(b){ tp.net += b.net; tp.brut += b.brut; tp.sgk += b.sgkIsci + b.issizIsci; tp.gv += b.gv + b.dv; tp.isv += b.isvSgk + b.isvIssiz; tp.mal += b.maliyet;
-        return '<tr><td>'+esc(b.ad)+'</td><td class="num">'+kvTl(b.net)+'</td><td class="num">'+kvTl(b.brut)+'</td><td class="num">'+kvTl(b.sgkIsci + b.issizIsci)+'</td><td class="num">'+kvTl(b.gv + b.dv)+'</td><td class="num">'+kvTl(b.isvSgk + b.isvIssiz)+'</td><td class="num"><b>'+kvTl(b.maliyet)+'</b></td></tr>'; });
-      d = { t: 'Personel — '+adi, f: 'Net maaştan geriye brüt bulunur. Brüt − SGK işçi %14 − işsizlik %1 − gelir vergisi − damga vergisi = net. İşverene maliyet = brüt + işveren SGK %'+(P.imalatTesvik ? '16,75' : '21,75')+' + işsizlik %2'+(P.asgariDestek ? ' − asgari ücret desteği ₺'+fmt(P.asgariDestek)+' (' + P.asgariDestekSonYil + ' sonuna kadar)' : '')+'. Asgari ücret kadar kısım gelir ve damga vergisinden muaf.',
-        h: '<div class="tablewrap"><table class="kv-tablo" style="font-size:12px"><thead><tr><th>Kişi</th><th class="num">Net</th><th class="num">Brüt</th><th class="num">SGK işçi</th><th class="num">GV + DV</th><th class="num">SGK işveren</th><th class="num">Maliyet</th></tr></thead><tbody>'+sat.join('')+
-          '<tr><td><b>Toplam</b></td><td class="num">'+kvTl(tp.net)+'</td><td class="num">'+kvTl(tp.brut)+'</td><td class="num">'+kvTl(tp.sgk)+'</td><td class="num">'+kvTl(tp.gv)+'</td><td class="num">'+kvTl(tp.isv)+'</td><td class="num"><b>'+kvTl(tp.mal)+'</b></td></tr></tbody></table></div>'+
+        return '<tr><td>'+esc(b.ad)+(b.kist ? ' <span class="muted">('+Math.round(b.kist * 30)+' gün — işe giriş / çıkış ayı)</span>' : '')+'</td><td class="num">'+kvTl(b.net)+'</td><td class="num">'+kvTl(b.brut)+'</td><td class="num">'+kvTl(b.sgkIsci + b.issizIsci)+'</td><td class="num">'+kvTl(b.gv + b.dv)+'</td><td class="num">'+kvTl(b.isvSgk + b.isvIssiz)+'</td>'+(desS ? '<td class="num">'+kvTl(-(b.destek || 0))+'</td>' : '')+'<td class="num"><b>'+kvTl(b.maliyet)+'</b></td></tr>'; });
+      var ypA = KV_MODEL.yilParam(P, Number(a.ay.slice(0, 4)));
+      d = { t: 'Personel — '+adi, f: 'Net maaştan geriye brüt bulunur. Brüt − SGK işçi %14 − işsizlik %1 − gelir vergisi − damga vergisi = net. İşverene maliyet = brüt + işveren SGK %'+(P.imalatTesvik ? '16,75' : '21,75')+' + işsizlik %2'+(ypA.destek ? ' − asgari ücret desteği ₺'+fmt(ypA.destek)+' (kişi başı, ' + P.asgariDestekSonYil + ' sonuna kadar)' : '')+'. Asgari ücret kadar kısım gelir ve damga vergisinden muaf.',
+        h: '<div class="tablewrap"><table class="kv-tablo" style="font-size:12px"><thead><tr><th>Kişi</th><th class="num">Net</th><th class="num">Brüt</th><th class="num">SGK işçi</th><th class="num">GV + DV</th><th class="num">SGK işveren</th>'+(desS ? '<th class="num">Asgari ücret desteği</th>' : '')+'<th class="num">Maliyet</th></tr></thead><tbody>'+sat.join('')+
+          '<tr><td><b>Toplam</b></td><td class="num">'+kvTl(tp.net)+'</td><td class="num">'+kvTl(tp.brut)+'</td><td class="num">'+kvTl(tp.sgk)+'</td><td class="num">'+kvTl(tp.gv)+'</td><td class="num">'+kvTl(tp.isv)+'</td>'+(desS ? '<td class="num">'+kvTl(-tp.des)+'</td>' : '')+'<td class="num"><b>'+kvTl(tp.mal)+'</b></td></tr></tbody></table></div>'+
           (a.mesai || a.tatilUcret ? kvHesapTablo([kvHesapSatir('+ Hafta sonu mesaisi / tatil ücreti', a.mesai + a.tatilUcret), kvHesapTop('Personel toplamı', a.personel)]) : ''),
         git: 'varsayim', gitAd: 'Varsayımlar (personel)' };
     } else if (k === 'kira'){
@@ -13566,15 +13639,16 @@ Dikkat edilmesi gereken 2 nokta:
     if (!aylar.length) return '<div class="block"><div class="block-body"><div class="empty">Plan '+kvAyAdi(r.aylar[0].ay)+' ayında başlıyor. İlk ay dolduğunda burada plan ile gerçekleşen (üretim kayıtları, kesilen faturalar, gider fişleri) yan yana görünecek.</div></div></div>';
     var rows = aylar.map(function(a){
       var adet = kvGercekAdet(a.ay);
-      var gg = gelirGider(a.ay);
-      var ciro = gg.gelir * kur, gider = gg.gider * kur;
+      // Gerçek gider kalem tablosuyla aynı: personel bordro özetinden (₺), makine yatırımı hariç
+      var gk = kvGercekKalemler(a.ay, kur);
+      var ciro = gk.gelir, gider = KV_KALEMLER.reduce(function(t, x){ return t + (gk[x[0]] || 0); }, 0);
       function fark(g, p, ters){ if (!p) return ''; var d = (g - p) / Math.abs(p) * 100; var iyi = ters ? d <= 0 : d >= 0; return '<span class="'+(iyi?'pos':'neg')+'">'+(d>=0?'+':'')+fmt(d)+'%</span>'; }
       return '<tr><td>'+kvAyAdi(a.ay)+'</td><td class="num">'+fmt(a.adet)+'</td><td class="num">'+fmt(adet)+' '+fark(adet, a.adet)+'</td>'+
         '<td class="num">'+kvTl(a.gelir)+'</td><td class="num">'+kvTl(ciro)+' '+fark(ciro, a.gelir)+'</td>'+
         '<td class="num">'+kvTl(a.gider - a.amortisman)+'</td><td class="num">'+kvTl(gider)+' '+fark(gider, a.gider - a.amortisman, true)+'</td>'+
         '<td class="num">'+kvTl(a.karOncesi + a.amortisman)+'</td><td class="num '+(ciro-gider>=0?'pos':'neg')+'">'+kvTl(ciro - gider)+'</td></tr>';
     }).join('');
-    return '<div class="block"><div class="block-head"><h3>Plan / gerçekleşen '+infoIco('Gerçekleşen üretim: Üretim Kayıtları (son operasyon ya da mamul girişi işaretli kayıtlar). Gerçekleşen ciro/gider: Fatura / Invoice (Kesildi), Alış Faturaları ve Giderler — ERP € tuttuğu için Özet\'teki kurla ₺\'ye çevrilir (1€ = '+fmt2(kur)+' ₺). Gider girilmemiş aylarda maaş ve kira Tanımlar\'dan tahmin edilir. Plan tarafı amortisman hariçtir. Gerçekleşen adedi plana yazmak için Ay ay planım > "ERP\'den al".')+'</h3></div><div class="block-body tablewrap"><table class="kv-tablo" style="font-size:12px"><thead><tr><th>Ay</th><th class="num">Plan adet</th><th class="num">Gerçek adet</th><th class="num">Plan ciro</th><th class="num">Gerçek ciro</th><th class="num">Plan gider</th><th class="num">Gerçek gider</th><th class="num">Plan kâr (FAVÖK)</th><th class="num">Gerçek kâr</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    return '<div class="block"><div class="block-head"><h3>Plan / gerçekleşen '+infoIco('Gerçekleşen üretim: Üretim Kayıtları (son operasyon ya da mamul girişi işaretli kayıtlar). Gerçekleşen ciro/gider: Fatura / Invoice (Kesildi), Alış Faturaları ve Giderler — ERP € tuttuğu için Özet\'teki kurla ₺\'ye çevrilir (1€ = '+fmt2(kur)+' ₺). Personel: bordro özeti girilen ayda bordronun işveren maliyeti; gider girilmemiş aylarda maaş (işe giriş tarihinden itibaren) ve kira Tanımlar\'dan tahmin edilir. Makine yatırımı gider sayılmaz. Plan tarafı amortisman hariçtir. Gerçekleşen adedi plana yazmak için Ay ay planım > "ERP\'den al".')+'</h3></div><div class="block-body tablewrap"><table class="kv-tablo" style="font-size:12px"><thead><tr><th>Ay</th><th class="num">Plan adet</th><th class="num">Gerçek adet</th><th class="num">Plan ciro</th><th class="num">Gerçek ciro</th><th class="num">Plan gider</th><th class="num">Gerçek gider</th><th class="num">Plan kâr (FAVÖK)</th><th class="num">Gerçek kâr</th></tr></thead><tbody>'+rows+'</tbody></table>'+
       (kur ? '' : '<div class="helper neg">Özet sayfasında € kuru girilmemiş — gerçekleşen tutarlar 0 görünür.</div>')+'</div></div>'+kvKalemHtml(r, aylar);
   }
   // ---------- Plan / gerçekleşen: kalem bazında (bütçe kontrolü) ----------
@@ -13590,11 +13664,11 @@ Dikkat edilmesi gereken 2 nokta:
     'Yatırım (makine)':'yatirim', 'Diğer':'ek' };
   var _kvKalemDonem = 'ytd';
   function kvGercekKalemler(ay, kur){
-    var gg = gelirGider(ay), k = { gelir: gg.gelir * kur, yatirim: 0, tahmini: [] };
+    var gg = gelirGider(ay), k = { gelir: gg.gelir * kur, yatirim: gg.yatirim * kur, tahmini: [] };
     KV_KALEMLER.forEach(function(x){ k[x[0]] = 0; });
     var bord = bordrolar().filter(function(b){ return b.ay === ay; });
     Object.keys(gg.kalemler).forEach(function(ad){
-      if (bord.length && /^Maaş|^SGK/.test(ad)) return; // bordro varsa personel bordrodan
+      if (bord.length && /^Maaş|^SGK/.test(ad)) return; // bordro varsa personel bordrodan (₺, kur çevrimi olmadan)
       var hedef = KV_KALEM_ESLE[ad] || 'ek';
       k[hedef] += (gg.kalemler[ad] || 0) * kur;
       if (/tahmini/.test(ad)) k.tahmini.push(ad.replace(/ \(tanımlardan tahmini\)/, ''));
@@ -13738,7 +13812,7 @@ Dikkat edilmesi gereken 2 nokta:
       '<div style="font-size:12.5px">'+(P.urunler.length ? '<b>'+P.urunler.length+'</b> ürün / iş · <b>'+fmt2(P.aktifMakine)+'</b> çalışan makine' : '<span class="muted">Henüz ürün girilmedi.</span>')+(tanimMk != null ? ' <span class="muted">· Tanımlar\'da aktif makine: '+fmt(tanimMk)+'</span>' : '')+'</div></div></div>';
     var persRef = P._ref && P._ref.personel;
     var persHtml = persRef ? '<div class="block"><div class="block-head"><h3>Personel — başlangıç kadrosu</h3></div><div class="block-body">'+
-      '<div class="kv-grup-acik">Tanımlar › Personel listesinden geliyor (net maaş ₺/ay, güncel kurla). <a href="#" data-kvozel="personel">Bu planda farklı kadro kullan</a></div><table class="edit-tablo"><thead><tr><th>Ad / görev</th><th class="num">Net maaş (₺/ay)</th></tr></thead><tbody>'+
+      '<div class="kv-grup-acik">Tanımlar › Personel listesinden geliyor (net maaş ₺/ay; işe giriş / çıkış tarihinden önce / sonra maliyet yok). <a href="#" data-kvozel="personel">Bu planda farklı kadro kullan</a></div><table class="edit-tablo"><thead><tr><th>Ad / görev</th><th class="num">Net maaş (₺/ay)</th></tr></thead><tbody>'+
       P.personel.map(function(p){ return '<tr><td>'+esc(p.ad)+'</td><td class="num">'+kvTl(p.net)+'</td></tr>'; }).join('')+'</tbody></table></div></div>'
       : '<div class="block"><div class="block-head"><h3>Personel — başlangıç kadrosu</h3><button class="btn secondary small" id="kvPersEkle">+ Personel</button></div><div class="block-body">'+
       (P.ozel && P.ozel.personel && kvTanimRef('personel') !== undefined ? '<div class="kv-grup-acik">Bu plana özel kadro. <a href="#" data-kvozelkaldir="personel">Tanımlar\'daki personel listesine dön</a></div>' : '')+
@@ -17072,8 +17146,9 @@ Dikkat edilmesi gereken 2 nokta:
     if (k === 'pazarSaat') return gun && gun[6].calisiyor && Number(gun[6].saat) > 0 ? Number(gun[6].saat) : undefined;
     var kur = Number(c.eurTryKuru) || 0;
     if (k === 'personel'){
-      var l = (state.personel || []).filter(function(p){ return Number(p.maasAylik) > 0; }).map(function(p){ return { ad: p.ad + (p.rol ? ' (' + p.rol + ')' : ''), net: Math.round(Number(p.maasAylik) * kur) }; });
-      return l.length && kur ? l : undefined;
+      // Net maaş ₺ (kurdan bağımsız); işe giriş / çıkış tarihleri planda o aylardan önce / sonra maliyeti sıfırlar
+      var l = (state.personel || []).filter(function(p){ return personelNetTL(p) > 0; }).map(function(p){ return { ad: p.ad + (p.rol ? ' (' + p.rol + ')' : ''), net: personelNetTL(p), giris: p.iseGiris || '', cikis: p.istenCikis || '' }; });
+      return l.length ? l : undefined;
     }
     if (k === 'makine'){ var t = toplamla(state.makineler || [], function(m){ return Number(m.alisBedeli) || 0; }); return t > 0 && kur ? Math.round(t * kur) : undefined; }
     return undefined;
