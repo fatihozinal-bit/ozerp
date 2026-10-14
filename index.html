@@ -1119,7 +1119,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-14-r132</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-14-r133</div>
   </nav>
   <main>
     <div class="topbar">
@@ -13078,6 +13078,8 @@ Dikkat edilmesi gereken 2 nokta:
       (a.ekGider ? sat('Ek kalemler (gider)', -a.ekGider, 'ekGider') : '')+
       (a.tekSefer ? sat('Kuruluş / tek seferlik', -a.tekSefer, 'tekSefer') : '')+
       sat('Amortisman <span class="muted">(kâğıt üstü gider — nakit çıkmaz, vergiyi düşürür)</span>', -a.amortisman, 'amortisman')+
+      // Makine ve taşıma / montaj bedeli ilk ayda ödenir ama gider değildir: makinenin maliyetine eklenir (VUK 262), amortismanla yıllara dağılır
+      (r.aylar[0].ay === a.ay && (P.makine || P.nakliye) ? '<tr class="kv-alt" data-kvhesap="yatirim" data-kvhay="'+a.ay+'"><td>· bu ay ödenen makine '+kvTl(P.makine)+(P.nakliye ? ' + taşıma / montaj '+kvTl(P.nakliye) : '')+': gidere yazılmaz, makinenin maliyetine eklenir ve yukarıdaki amortismanla yıllara dağılır (kasadan bu ay çıkar)</td><td class="num muted">gider dışı</td></tr>' : '')+
       (a.faiz ? sat('Finansman faizi', -a.faiz, 'faiz') : '')+
       '<tr data-kvhesap="gider" data-kvhay="'+a.ay+'" class="kv-toplam"><td><b>Toplam gider</b> <span class="muted">(KDV hariç, amortisman dahil)</span></td><td class="num neg"><b>'+kvTl(-a.gider)+'</b></td></tr>'+
       '<tr data-kvhesap="kar" data-kvhay="'+a.ay+'"><td><b>Vergi öncesi kâr</b> <span class="muted">(vergi bunun üzerinden)</span></td><td class="num '+(a.karOncesi>=0?'pos':'neg')+'"><b>'+kvTl(a.karOncesi)+'</b></td></tr>'+
@@ -13349,8 +13351,9 @@ Dikkat edilmesi gereken 2 nokta:
         h: kvHesapTablo((o.ek || []).filter(function(e){ return e.tur !== 'gelir'; }).map(function(e){ return kvHesapSatir(esc(e.ad || 'Ek kalem')+(e.tur === 'giderKdvsiz' ? ' <span class="muted">KDV\'siz</span>' : ''), Number(e.tutar)||0); }).concat([kvHesapTop('Toplam', a.ekGider)])),
         git: 'planla', gitAd: 'Ay ay planım' };
     } else if (k === 'tekSefer'){
-      d = { t: 'Kuruluş / tek seferlik — '+adi, f: 'Planın ilk ayında bir kez gider yazılır.',
-        h: kvHesapTablo([kvHesapSatir('Şirket kuruluş', P.kurulus), kvHesapSatir('Sağlık raporları', P.saglikRapor), kvHesapSatir('İlk takım ve sarf', P.ilkTakim), kvHesapSatir('Kira sözleşmesi damga vergisi', a.damgaKira), kvHesapTop('Toplam', a.tekSefer)]),
+      d = { t: 'Kuruluş / tek seferlik — '+adi, f: 'Planın ilk ayında bir kez gider yazılır. Makinenin taşıma / montaj bedeli burada değildir: makinenin maliyetine eklenir (VUK 262 — sabit kıymeti kullanılır hale getirmek için yapılan harcama), amortismanla yıllara dağılır.',
+        h: kvHesapTablo([kvHesapSatir('Şirket kuruluş', P.kurulus), kvHesapSatir('Sağlık raporları', P.saglikRapor), kvHesapSatir('İlk takım ve sarf', P.ilkTakim), kvHesapSatir('Kira sözleşmesi damga vergisi', a.damgaKira), kvHesapTop('Toplam', a.tekSefer)]
+          .concat(P.nakliye ? [kvHesapSatir('<span class="muted">Taşıma / montaj — gider dışı, makine maliyetinde (amortisman)</span>', '<span class="muted">'+kvTl(P.nakliye)+'</span>')] : [])),
         git: 'varsayim', gitAd: 'Varsayımlar (yatırım)' };
     } else if (k === 'amortisman'){
       var yil = r.amortismanaTabi / P.faydaliOmur, ilkAy = 12 - Number(P.baslangicAy.slice(5,7)) + 1;
@@ -13362,7 +13365,8 @@ Dikkat edilmesi gereken 2 nokta:
       d = { t: 'Finansman faizi — '+adi, f: 'Kalan borç × yıllık faiz ÷ 12.', h: kvHesapTablo([kvHesapSatir('Kalan borç', a.borc + a.geriOdeme), kvHesapSatir('× Yıllık faiz', '%'+fmt2(P.finansFaizYillik)), kvHesapTop('Bu ay', a.faiz)]), git: 'varsayim', gitAd: 'Varsayımlar (finansman)' };
     } else if (k === 'gider' || k === 'kar'){
       var gl = [['Personel', a.personel], ['Kira', a.kira], ['Elektrik', a.elektrik], ['Uç / takım / malzeme', a.uc], ['Diğer sabit giderler', a.sabit], ['Ek kalemler', a.ekGider], ['Kuruluş / tek seferlik', a.tekSefer], ['Amortisman', a.amortisman], ['Finansman faizi', a.faiz]].filter(function(x){ return x[1]; });
-      d = { t: (k === 'kar' ? 'Vergi öncesi kâr' : 'Toplam gider')+' — '+adi, f: k === 'kar' ? 'Vergi öncesi kâr = toplam gelir − toplam gider (amortisman dahil, KDV hariç).' : 'Bu ayın tüm giderleri (KDV hariç, amortisman dahil).',
+      d = { t: (k === 'kar' ? 'Vergi öncesi kâr' : 'Toplam gider')+' — '+adi, f: (k === 'kar' ? 'Vergi öncesi kâr = toplam gelir − toplam gider (amortisman dahil, KDV hariç).' : 'Bu ayın tüm giderleri (KDV hariç, amortisman dahil).')+
+          (r.aylar[0].ay === a.ay && (P.makine || P.nakliye) ? ' Bu ay ödenen makine'+(P.nakliye ? ' ve taşıma / montaj ('+kvTl(P.nakliye)+')' : '')+' gider değildir: makinenin maliyetine eklenir, amortisman satırıyla yıllara dağılır.' : ''),
         h: kvHesapTablo((k === 'kar' ? [kvHesapSatir('Toplam gelir', a.gelir, 'pos')] : []).concat(gl.map(function(x){ return kvHesapSatir((k === 'kar' ? '− ' : '')+x[0], k === 'kar' ? -x[1] : x[1]); }))
           .concat(k === 'kar' ? [kvHesapSatir('Toplam gider', -a.gider), kvHesapTop('Vergi öncesi kâr', a.karOncesi, a.karOncesi < 0 ? 'neg' : 'pos')] : [kvHesapTop('Toplam gider', a.gider)])) };
     } else if (k === 'kasa'){
