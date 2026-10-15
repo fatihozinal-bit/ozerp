@@ -860,6 +860,11 @@
   .kf-baslik .field { margin-bottom: 8px; min-width: 0; }
   .kf-baslik .field > input, .kf-baslik .field > select { width: 100%; }
   .kf-baslik .kf-cari { grid-column: span 2; }
+  .kf-teslim { grid-column: 1 / -1; margin: -2px 0 8px; font-size: 12px; line-height: 1.55; color: var(--ink-soft); }
+  .kf-teslim .kf-t-ana { color: var(--ink); }
+  .kf-teslim .kf-t-ana .btn { margin-left: 6px; padding: 2px 8px; }
+  .kf-teslim .kf-t-not { color: var(--warn); }
+  .kf-teslim .kf-t-uyari { color: var(--bad); font-weight: 600; }
   .kf-yanyana { display: flex; gap: 6px; } .kf-yanyana select { flex: 1; min-width: 0; }
   .kf-mini { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 10px; border: 1px dashed var(--border); border-radius: 6px; background: var(--surface-alt); }
   .kf-mini .field { margin-bottom: 0; }
@@ -1166,7 +1171,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-14-r142</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-15-r148</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2023,6 +2028,8 @@ Dikkat edilmesi gereken 2 nokta:
         var ilkEksik = fieldsEl.querySelector('.alan-hata'); if (ilkEksik){ ilkEksik.focus(); ilkEksik.scrollIntoView({ block: 'nearest' }); }
         toast('Zorunlu alan: '+eksik.map(function(f){ return f.label; }).join(', '), true); return;
       }
+      // Kayıt öncesi kontrol (tekrar kaydı, VKN / IBAN): form açıkken yapılır; engel ya da "Vazgeç" formu açık bırakır
+      if (opts.kayitOncesi){ opts.kayitOncesi(out, function(){ cleanup(); opts.onSave(out); }); return; }
       cleanup();
       opts.onSave(out);
     }
@@ -2050,7 +2057,8 @@ Dikkat edilmesi gereken 2 nokta:
         openForm({
           title: opts.editTitle || 'Kaydı düzenle',
           fields: fields,
-          values: opts.degerler ? opts.degerler(item) : item,
+          values: opts.degerler ? opts.degerler(item) : item, onOpen: opts.formAcildi,
+          kayitOncesi: opts.kayitOncesi ? function(vals, devam){ opts.kayitOncesi(vals, item, devam); } : null,
           onSave: function(vals){
             if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
             if (opts.onSaveTransform) opts.onSaveTransform(vals, item);
@@ -2150,6 +2158,8 @@ Dikkat edilmesi gereken 2 nokta:
     maliyetHesaplari:'maliyet hesabı', vardiyaDevir:'vardiya devri', irsaliyeler:'irsaliye', kurFarklari:'kur farkı belgesi' };
   // Bu kayda bağlı kayıtlar: [{ k: state anahtarı, r: kayıt }]. Kaydın kendi silme/oluşturma yan etkisi olan stok hareketleri
   // (kaynakId bu kayıt) bağlı sayılmaz; böylece üretim kaydı, irsaliye gibi kayıtlar kendi stok hareketleri yüzünden kilitlenmez.
+  // Faturanın irsaliyeye yazdığı "faturalandı" işareti (irsaliye.faturaId) de faturanın kendi yan etkisidir: fatura silinince
+  // irsaliye serbest kalır (faturaIrsaliyeleriniBirak); sayılsaydı fatura ile irsaliye birbirini silinemez yapardı.
   function baglantiliListe(id){
     if (!id) return [];
     var aranan = '"'+id+'"', sonuc = [];
@@ -2158,6 +2168,7 @@ Dikkat edilmesi gereken 2 nokta:
       state[k].forEach(function(r){
         if (!r || r.id === id || JSON.stringify(r).indexOf(aranan) < 0) return;
         if (k === 'stokHareketleri' && r.kaynakId === id) return;
+        if (k === 'irsaliyeler' && r.faturaId === id) return;
         sonuc.push({ k: k, r: r });
       });
     });
@@ -2197,6 +2208,184 @@ Dikkat edilmesi gereken 2 nokta:
       vazgecBtn.removeEventListener('click', kapat); ov.removeEventListener('click', kapat);
     }
     vazgecBtn.addEventListener('click', kapat); ov.addEventListener('click', kapat);
+  }
+
+  // ---------- Kayıt öncesi kontrol: VKN / TCKN / IBAN doğrulama ve aynı kaydın iki kez girilmesi ----------
+  // VKN 10 hane (GİB kontrol hanesi), TCKN 11 hane (ilk hane 0 olamaz; 10. ve 11. hane kuralı), IBAN ISO 13616 (mod 97 = 1; TR + 24 hane).
+  // Boşluk, nokta ve tire temizlenerek denetlenir; kayıttaki yazım değiştirilmez.
+  function kimlikNoTemiz(s){ return String(s == null ? '' : s).replace(/[\s.\-]/g, '').toUpperCase(); }
+  function vknGecerli(s){
+    var v = kimlikNoTemiz(s); if (!/^\d{10}$/.test(v)) return false;
+    var top = 0;
+    for (var i = 0; i < 9; i++){
+      var t = (Number(v[i]) + 9 - i) % 10, p = (t * Math.pow(2, 9 - i)) % 9;
+      if (t !== 0 && p === 0) p = 9;
+      top += p;
+    }
+    return (10 - top % 10) % 10 === Number(v[9]);
+  }
+  function tcknGecerli(s){
+    var v = kimlikNoTemiz(s); if (!/^[1-9]\d{10}$/.test(v)) return false;
+    var d = v.split('').map(Number), tek = d[0] + d[2] + d[4] + d[6] + d[8], cift = d[1] + d[3] + d[5] + d[7];
+    if (((tek * 7 - cift) % 10 + 10) % 10 !== d[9]) return false;
+    return (tek + cift + d[9]) % 10 === d[10];
+  }
+  function ibanTemiz(s){ return String(s == null ? '' : s).replace(/\s+/g, '').toUpperCase(); }
+  function ibanGecerli(s){
+    var v = ibanTemiz(s);
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(v) || (v.slice(0, 2) === 'TR' && !/^TR\d{24}$/.test(v))) return false;
+    var r = v.slice(4) + v.slice(0, 4), k = 0;
+    for (var i = 0; i < r.length; i++){
+      var n = /[A-Z]/.test(r[i]) ? String(r.charCodeAt(i) - 55) : r[i];
+      for (var j = 0; j < n.length; j++) k = (k * 10 + Number(n[j])) % 97;
+    }
+    return k === 1;
+  }
+  // Vergi no alanı: 10 hane VKN, 11 hane TCKN. İki harfle başlayan (ör. DE123456789) yabancı vergi numarasıdır, denetlenmez. Sorun yoksa ''.
+  function vergiNoSorunu(s){
+    var v = kimlikNoTemiz(s);
+    if (!v || /^[A-Z]{2}/.test(v)) return '';
+    if (!/^\d+$/.test(v)) return 'Vergi no "' + String(s).trim() + '" yalnız rakam olmalı (10 haneli VKN ya da 11 haneli TCKN).';
+    if (v.length === 10) return vknGecerli(v) ? '' : 'VKN ' + v + ' geçersiz: kontrol hanesi tutmuyor. Bir hane yanlış yazılmış olabilir; e-Fatura portalda reddedilir.';
+    if (v.length === 11) return tcknGecerli(v) ? '' : 'TCKN ' + v + ' geçersiz: ' + (v[0] === '0' ? 'ilk hane 0 olamaz.' : 'kontrol haneleri tutmuyor. Bir hane yanlış yazılmış olabilir.');
+    return 'Vergi no ' + v.length + ' haneli; VKN 10, TCKN 11 hane olmalı.';
+  }
+  // IBAN alanına birden çok IBAN virgül, noktalı virgül ya da satır başıyla ayrılarak yazılabilir
+  function ibanSorunu(s){
+    var yanlis = String(s || '').split(/[,;\n]+/).map(function(x){ return x.trim(); }).filter(Boolean).filter(function(x){ return !ibanGecerli(x); });
+    return yanlis.length ? 'IBAN geçersiz: ' + yanlis.join(', ') + '. TR ile başlayıp 24 rakamla devam etmeli ve kontrol haneleri tutmalı; bir hane yanlış yazılmış olabilir.' : '';
+  }
+  function belgeNoAnahtar(s){ return String(s == null ? '' : s).replace(/\s+/g, '').toUpperCase(); }
+  function adAnahtar(s){ return String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLocaleLowerCase('tr-TR'); }
+  function cariKodAd(m){ return (m.kod ? m.kod + ' · ' : '') + (m.ad || ''); }
+  // k = { engel: [html], soru: [metin] }. Engel varsa kaydedilmez (uyarı çıkar, form açık kalır);
+  // yalnız soru varsa "Yine de kaydet" denirse devam eder, "Vazgeç" forma döner.
+  function kayitKontrolu(k, devam){
+    if (k.engel.length){ uyariGoster(k.engel.join('<br><br>')); return; }
+    if (k.soru.length){ confirmSil(k.soru.join('\n\n') + '\n\nYine de kaydedilsin mi?', devam, 'Yine de kaydet'); return; }
+    devam();
+  }
+  // Cari kartı: vergi no ve IBAN doğrulama; aynı vergi no'lu ya da aynı adlı başka kart yalnız sorulur (şube kartı serbest).
+  // Yeni kartta hepsi, düzenlemede yalnız değiştirilen alan denetlenir (eski kayıtta her kaydedişte sorulmasın); kart kendisiyle karşılaştırılmaz.
+  function cariKartKontrolu(v, eski){
+    var k = { engel: [], soru: [] }, id = eski && eski.id;
+    var digerleri = state.musteriler.filter(function(m){ return m.id !== id; });
+    if (adAnahtar(v.ad) && (!eski || adAnahtar(v.ad) !== adAnahtar(eski.ad))){
+      var ayniAd = digerleri.find(function(m){ return adAnahtar(m.ad) === adAnahtar(v.ad); });
+      if (ayniAd) k.soru.push('Aynı adla başka cari kartı var (' + cariKodAd(ayniAd) + '). Aynı firma iki kartla açılırsa bakiyesi ikiye bölünür.');
+    }
+    var vno = kimlikNoTemiz(v.vergiNo);
+    if (vno && (!eski || vno !== kimlikNoTemiz(eski.vergiNo))){
+      var s = vergiNoSorunu(v.vergiNo); if (s) k.soru.push(s);
+      var ayniVkn = digerleri.filter(function(m){ return kimlikNoTemiz(m.vergiNo) === vno; });
+      if (ayniVkn.length) k.soru.push('Bu vergi no başka cari kartında da var (' + ayniVkn.map(cariKodAd).join(', ') + '). Şube kartıysa sorun yok; aynı firmanın ikinci kartıysa bakiyesi ikiye bölünür, risk limiti ve mutabakat yanlış çıkar.');
+    }
+    if (ibanTemiz(v.iban) && (!eski || ibanTemiz(v.iban) !== ibanTemiz(eski.iban))){ var si = ibanSorunu(v.iban); if (si) k.soru.push(si); }
+    return k;
+  }
+  // Stok kartı: aynı kod başka kartta varsa kaydedilmez (büyük / küçük harf ve boşluk farkı gözetilmez)
+  function stokKodTekrari(kod, haricId){
+    var a = belgeNoAnahtar(kod); if (!a) return null;
+    return state.stok.find(function(s){ return s.id !== haricId && belgeNoAnahtar(s.kod) === a; }) || null;
+  }
+  function stokKartKontrolu(v, eski){
+    var k = { engel: [], soru: [] };
+    if (eski && belgeNoAnahtar(v.kod) === belgeNoAnahtar(eski.kod)) return k;
+    var t = stokKodTekrari(v.kod, eski && eski.id);
+    if (t) k.engel.push('Stok kodu <b>' + esc(v.kod) + '</b> başka bir kartta kullanılıyor: <b>' + esc(cariKodAd(t)) + '</b>.<br>Aynı kodlu iki kartta stok, maliyet ve etiketler karışır; başka bir kod yazın.');
+    return k;
+  }
+  // Otomatik verilen stok kodu (sayaç geride kalmışsa) başka kartta varsa uyarır; true: kart açılmaz
+  function stokOtoKodCakisti(kod){
+    var t = stokKodTekrari(kod); if (!t) return false;
+    uyariGoster('Sıradaki stok kodu <b>' + esc(kod) + '</b> başka bir kartta kullanılıyor: <b>' + esc(cariKodAd(t)) + '</b>.<br>Kod sayacı geride kalmış; <b>Tanımlar › Kod &amp; numara parametreleri</b>\'nde stok sayacını ilerletin.');
+    return true;
+  }
+  // Alış faturası: aynı tedarikçinin aynı numaralı (ya da aynı ETTN'li) faturası kayıtlıysa kaydedilmez — KDV iki kez indirilir, borç iki kez yazılır.
+  // Farklı tedarikçide aynı fatura no serbesttir. Aynı cari + belge no ile girilmiş gider varsa yalnız sorulur.
+  function alisFaturaTekrari(tedarikciId, faturaNo, haricId){
+    var a = belgeNoAnahtar(faturaNo); if (!a || !tedarikciId) return null;
+    return (state.alisFaturalari || []).find(function(f){ return f.id !== haricId && f.durum !== 'İptal' && f.tedarikciId === tedarikciId && belgeNoAnahtar(f.faturaNo) === a; }) || null;
+  }
+  function alisFaturaOzet(f){ return (f.faturaNo || f.no || '') + ' · ' + cariAdi(f.tedarikciId) + ' · ' + kvTarihTR(f.tarih) + ' · ' + (belgePB(f) !== 'EUR' && f.belgeTutar ? pbFmt(f.belgeTutar.genelToplam, belgePB(f)) : euro(f.genelToplam)); }
+  function giderOzet(g){ return (g.belgeNo || '') + ' · ' + (g.cariId ? cariAdi(g.cariId) + ' · ' : '') + (g.tur || '') + ' · ' + kvTarihTR(g.tarih) + ' · ' + (belgePB(g) !== 'EUR' && Number(g.belgeTutar) ? pbFmt(g.belgeTutar, belgePB(g)) : euro(g.tutar)); }
+  function alisFaturaKontrolu(v, eski){
+    var k = { engel: [], soru: [] }, haric = eski && eski.id, a = belgeNoAnahtar(v.faturaNo);
+    var ettn = String(v.ettn || '').trim().toUpperCase();
+    var ayniEttn = ettn && (!eski || ettn !== String(eski.ettn || '').trim().toUpperCase()) && (state.alisFaturalari || []).find(function(x){ return x.id !== haric && x.durum !== 'İptal' && String(x.ettn || '').trim().toUpperCase() === ettn; });
+    var degismedi = eski && eski.tedarikciId === v.tedarikciId && belgeNoAnahtar(eski.faturaNo) === a;
+    var f = degismedi ? null : alisFaturaTekrari(v.tedarikciId, v.faturaNo, haric);
+    if (f || ayniEttn) k.engel.push('Bu fatura zaten kayıtlı: <b>' + esc(alisFaturaOzet(f || ayniEttn)) + '</b>' + (!f ? ' (aynı ETTN)' : '') + '.<br>Aynı fatura iki kez girilirse KDV iki kez indirilir ve tedarikçiye borç iki kez yazılır. Değişiklik gerekiyorsa listedeki mevcut faturayı açıp düzenleyin.');
+    else if (!degismedi && a && v.tedarikciId){
+      var g = (state.giderler || []).find(function(x){ return x.cariId === v.tedarikciId && belgeNoAnahtar(x.belgeNo) === a; });
+      if (g) k.soru.push('Bu belge no ile aynı carinin gideri kayıtlı: ' + giderOzet(g) + '. Aynı belge hem gider hem alış faturası olarak girilirse KDV iki kez indirilir.');
+    }
+    return k;
+  }
+  // Gider: aynı cari ve aynı belge no ile gider ya da alış faturası varsa sorulur (carisiz giderde aynı gider türü aranır)
+  function giderKontrolu(v, eski){
+    var k = { engel: [], soru: [] }, a = belgeNoAnahtar(v.belgeNo), cari = v.cariId || '';
+    if (!a || (eski && (eski.cariId || '') === cari && belgeNoAnahtar(eski.belgeNo) === a)) return k;
+    var g = (state.giderler || []).find(function(x){ return x.id !== (eski && eski.id) && belgeNoAnahtar(x.belgeNo) === a && (x.cariId || '') === cari && (cari || x.tur === v.tur); });
+    if (g) k.soru.push('Aynı ' + (cari ? 'cari' : 'gider türü') + ' ve belge no ile gider zaten kayıtlı: ' + giderOzet(g) + '. Aynı belge iki kez girilirse gider ve KDV iki kez yazılır.');
+    var f = cari ? alisFaturaTekrari(cari, v.belgeNo) : null;
+    if (f) k.soru.push('Bu belge no ile aynı carinin alış faturası kayıtlı: ' + alisFaturaOzet(f) + '. Aynı belge hem alış faturası hem gider olarak girilirse KDV iki kez indirilir.');
+    return k;
+  }
+  // ---------- Kur ve tarih yazım kontrolü: engellemez, yalnız sorar ----------
+  // Elle yazılan kur kayıtlı kurdan %3'ten fazla farklıysa (virgül kayması: 5,52 ↔ 55,20) ya da belge tarihi bugünden 7 günden ileri /
+  // 90 günden eskiyse (yanlış yıl) "Yine de kaydet" sorulur. Düzenlemede yalnız değişen alan denetlenir; TCMB'den gelen kur sorulmaz.
+  var KUR_SAPMA_ESIK = 0.03, TARIH_ILERI_GUN = 7, TARIH_GERI_GUN = 90;
+  function kurYazi(k){ return (Number(k) || 0).toLocaleString('tr-TR', { maximumFractionDigits: 4 }); }
+  function kisaTarihTR(t){ t = String(t || ''); return t.slice(0, 4) === todayISO().slice(0, 4) ? t.slice(8, 10) + '.' + t.slice(5, 7) : kvTarihTR(t); }
+  // Kur geçmişinde tarihe kadarki son kayıt (once: tarihten önceki). Yoksa en eski kayıt, geçmiş boşsa üst çubuktaki kur → { kur, etiket }
+  function kayitliKur(pb, tarih, once){
+    var c = state.config || {}, x = null;
+    var l = ((pb === 'USD' ? c.usdKurGecmisi : c.kurGecmisi) || []).filter(function(y){ return Number(y.kur) > 0 && y.tarih; }).sort(function(a, b){ return a.tarih.localeCompare(b.tarih); });
+    l.forEach(function(y){ if (once ? y.tarih < tarih : y.tarih <= tarih) x = y; });
+    if (!x && !once) x = l[0] || { kur: pb === 'USD' ? c.usdTryKuru : c.eurTryKuru, tarih: pb === 'USD' ? c.usdKuruTarihi : c.kuruTarihi };
+    return x && Number(x.kur) > 0 ? { kur: Number(x.kur), etiket: x.kaynak ? 'TCMB ' + kisaTarihTR(x.tarih) : (x.tarih ? kisaTarihTR(x.tarih) + ' kaydı' : 'güncel kur') } : null;
+  }
+  // Kur, referans kurların hepsinden %3'ten fazla farklıysa soru metni (ilk referans yazılır); değilse ''
+  function kurSapmaSorusu(pb, kur, refler, refAd, sonuc){
+    refler = refler.filter(Boolean);
+    if (!(kur > 0) || !refler.length || refler.some(function(r){ return Math.abs(kur - r.kur) <= r.kur * KUR_SAPMA_ESIK; })) return '';
+    var r = refler[0];
+    return '1 ' + pbSembol(pb) + ' = ₺' + kurYazi(kur) + ' yazdınız, ' + refAd + ' ₺' + kurYazi(r.kur) + ' (' + r.etiket + ') — %' + fmt2(Math.round(Math.abs(kur / r.kur - 1) * 100)) + ' farklı. Virgül kaymış olabilir; ' + sonuc;
+  }
+  // Belgeye elle yazılan kur (1 birim = ₺): belge tarihindeki kayıtlı kurdan da güncel kurdan da farklıysa sorulur
+  // (form $ kurunu güncel kurla doldurduğu için eski tarihli belgede güncel kur da kabul edilir). eskiKur: düzenlemede kayıtlı değer
+  function kurSorusu(pb, kur, tarih, eskiKur){
+    kur = Number(kur) || 0;
+    if (!(kur > 0) || pb === 'TRY' || (eskiKur != null && Math.abs(kur - (Number(eskiKur) || 0)) < 0.00005)) return '';
+    var bugun = todayISO();
+    return kurSapmaSorusu(pb, kur, [kayitliKur(pb, tarih || bugun), kayitliKur(pb, bugun)], 'kayıtlı kur', 'bu kur belgenin ₺ tutarına ve muhasebe kaydına işler.');
+  }
+  // Üst çubukta elle kaydedilen kur: bugünkü kayıttan (TCMB) da bir önceki kayıttan da farklıysa sorulur (yanlış girilen kuru düzeltirken soru çıkmaz)
+  function ustKurSorusu(pb, kur){
+    var bugun = todayISO();
+    return kurSapmaSorusu(pb, kur, [kayitliKur(pb, bugun), kayitliKur(pb, bugun, true)], 'son kur', 'bu kur bugün kaydedilen belgelerin ₺ tutarına ve muhasebe kaydına işler. Doğru mu?');
+  }
+  // Belge tarihi bugünden 7 günden ileri ya da 90 günden eskiyse soru metni; değilse ''. eskiTarih: düzenlemede kayıtlı tarih (aynıysa sorulmaz)
+  function tarihSorusu(tarih, eskiTarih, ad){
+    tarih = String(tarih || '');
+    var p = /^(\d{4,6})-(\d{2})-(\d{2})$/.exec(tarih), b = todayISO().split('-');
+    if (!p || (eskiTarih != null && tarih === String(eskiTarih || ''))) return '';
+    var gun = function(y, a, g){ var d = new Date(Date.UTC(2000, a - 1, g)); d.setUTCFullYear(y); return d.getTime(); };
+    var fark = Math.round((gun(+p[1], +p[2], +p[3]) - gun(+b[0], +b[1], +b[2])) / 86400000);
+    if (fark <= TARIH_ILERI_GUN && fark >= -TARIH_GERI_GUN) return '';
+    return (ad || 'Tarih') + ' ' + p[3] + '.' + p[2] + '.' + p[1] + ' — bugünden ' + fmt2(Math.abs(fark)) + ' gün ' + (fark > 0 ? 'ileri' : 'önce') + '. ' +
+      (p[1] !== b[0] ? 'Yıl' : 'Gün ya da ay') + ' yanlış yazılmış olabilir; belge bu tarihin ayına (KDV ve muhasebe dönemi) yazılır.';
+  }
+  // Belgenin tarihi ve elle yazılan kuru için sorular k.soru'ya eklenir (k: kayitKontrolu nesnesi; F-002 sorularıyla tek kutuda çıkar).
+  // o.kurAlan: kur alanı (varsayılan dovizKuru — yalnız $ belgede yazılır); o.pb: kurun para birimi; o.tarihAd: soru metnindeki tarih adı
+  function tarihKurSorulari(k, v, eski, o){
+    o = o || {};
+    var s = tarihSorusu(v.tarih, eski ? eski.tarih : null, o.tarihAd); if (s) k.soru.push(s);
+    var alan = o.kurAlan || 'dovizKuru', pb = o.pb || v.paraBirimi || 'EUR';
+    if (alan === 'dovizKuru' && pb !== 'USD') return k;
+    s = kurSorusu(pb, v[alan], v.tarih, eski ? eski[alan] : null); if (s) k.soru.push(s);
+    return k;
   }
   function dbErrMsg(e){
     if (!e) return 'bilinmeyen hata';
@@ -3819,6 +4008,7 @@ Dikkat edilmesi gereken 2 nokta:
       },
       extraActions: function(m){ return sekmeIzinli('cariekstre') ? '<button class="btn secondary small" type="button" data-cariekstre="'+m.id+'" title="Hesap ekstresi, açık faturalar, mutabakat">Ekstre</button>' : ''; },
       fields: MUSTERI_FIELDS,
+      kayitOncesi: function(v, eski, devam){ kayitKontrolu(cariKartKontrolu(v, eski), devam); },
       editTitle: 'Cariyi düzenle',
       deleteMsg: 'Bu cariyi silmek istediğinize emin misiniz?',
       baglantiKontrol: true, baglantiIpucu: 'Artık çalışmıyorsanız cariyi <b>Düzenle › Durum: Pasif</b> yapın; geçmiş kayıtlar korunur.'
@@ -3850,6 +4040,7 @@ Dikkat edilmesi gereken 2 nokta:
       fields: STOK_FIELDS.filter(function(f){ return f.key !== 'miktar'; }),
       extraActions: function(s){ return '<button class="btn secondary small" data-stokrota="'+s.id+'" title="Ürün rotası, ürün ağacı ve kontrol planı">Rota / Ağaç / Kontrol</button><button class="btn secondary small" data-stokhar="'+s.id+'">Hareketler</button>'; },
       editTitle: 'Stok kartını düzenle',
+      kayitOncesi: function(v, eski, devam){ kayitKontrolu(stokKartKontrolu(v, eski), devam); },
       deleteMsg: 'Bu stok kartını silmek istediğinize emin misiniz?',
       baglantiKontrol: true, baglantiIpucu: 'Kartı yanlışlıkla açtıysanız önce ona bağlı kayıtları silin.',
       onSaveTransform: function(vals, original){
@@ -4086,6 +4277,7 @@ Dikkat edilmesi gereken 2 nokta:
         if (!r.ad){ toast('Önce ürün adını girin.', true); return; }
         var h = mhHesapla(r);
         var kb = nextKodBilgisi('stok');
+        if (stokOtoKodCakisti(kb.kod)) return;
         db.collection('stok').add({
           kod: kb.kod, ad: r.ad, tip:'Mamul', birim:'adet', miktar:0, kritikSeviye:0,
           maliyet: Math.round((h.birimMaliyet - h.birimIscilikBedeli)*100)/100,
@@ -4135,6 +4327,10 @@ Dikkat edilmesi gereken 2 nokta:
     if (canliEl){ var basK = canliEl.parentNode; basK.parentNode.insertBefore(titleEl, basK); basK.remove(); }
     var init = Object.assign({}, opts.initial || {});
     var cariEtiket = opts.cariEtiket || 'Müşteri';
+    // En erken teslim satırı yalnız satış teklifi (teslim süresi) ve satış siparişinde (termin) çıkar
+    var ekAlanVar = function(key){ return (opts.extraFields || []).some(function(f){ return f.key === key; }); };
+    var teslimModu = cariEtiket !== 'Müşteri' ? '' : (ekAlanVar('teslimSuresiGun') ? 'teklif' : (ekAlanVar('termin') ? 'siparis' : ''));
+    var teslimSon = null, teslimZaman = null;
     function bosSatir(){ return { stokId: '', miktar: 1, birim: '', listeFiyat: 0, iskonto: 0, kdvOrani: 20, aciklama: '', otoFiyat: true }; }
     kalemFormDraft.kalemler = (init.kalemler || []).map(function(k){
       var st = stokKart(k.stokId);
@@ -4211,8 +4407,9 @@ Dikkat edilmesi gereken 2 nokta:
           '<div class="field kf-cari"><label>' + esc(cariEtiket) + '</label><div class="kf-yanyana"><select id="kfMusteri"><option value="">Seçin</option>' + musteriOpts + '</select>' +
             '<button type="button" class="btn secondary small" id="kfMusteriYeniBtn" title="Yeni ' + escAttr(cariEtiket.toLocaleLowerCase('tr-TR')) + ' kartı">+</button></div></div>' +
           '<div class="field"><label>Tarih</label><input type="date" id="kfTarih" value="' + escAttr(init.tarih || todayISO()) + '"></div>' +
-          (opts.showGecerlilik ? '<div class="field"><label>Geçerlilik tarihi</label><input type="date" id="kfGecerlilik" value="' + escAttr(init.gecerlilik || (init.id ? '' : tarihEkle(init.tarih || todayISO(), 30))) + '"></div>' : '') +
+          (opts.showGecerlilik ? '<div class="field"><label>Geçerlilik tarihi</label><input type="date" id="kfGecerlilik" value="' + escAttr(init.gecerlilik || (init.id ? '' : tarihEkle(init.tarih || todayISO(), TEKLIF_GECERLILIK_GUN))) + '"></div>' : '') +
           ekstra +
+          (teslimModu ? '<div class="kf-teslim" id="kfTeslim">' + (teslimSon ? teslimHtml(teslimSon) : '<span class="muted">En erken teslim hesaplanıyor…</span>') + '</div>' : '') +
         '</div>' +
         '<div id="kfMusteriMini" class="kf-mini" style="display:none"><div class="field"><label>' + esc(cariEtiket) + ' adı</label><input type="text" id="kfMAd"></div>' +
           '<div class="field"><label>Telefon</label><input type="text" id="kfMTel"></div><button type="button" class="btn small" id="kfMusteriEkleBtn">Kartı aç</button></div>' +
@@ -4234,6 +4431,46 @@ Dikkat edilmesi gereken 2 nokta:
       tr.querySelector('.kf-net').textContent = fmt2(net(k));
       tr.querySelector('.kf-tutar').innerHTML = '<b>' + fmt2(tutar(k)) + '</b>';
       byId('kfToplam').innerHTML = toplamHtml();
+    }
+    // En erken teslim satırı: tarih (iş günü) · darboğaz makinesi · önündeki iş; rotasız kalem, malzeme eksiği ve erken termin uyarıları
+    function teslimHtml(r){
+      var bas = '<b>En erken teslim</b> ', h;
+      if (r.hata) return '<div class="kf-t-ana">' + bas + '<span class="neg">hesaplanamadı: ' + esc(r.hata) + '</span></div>';
+      if (!r.kalemSayisi) return '<div class="kf-t-ana muted">En erken teslim: kalem girilince makine yükünden hesaplanır.</div>';
+      if (!r.bit) h = '<div class="kf-t-ana">' + bas + (r.kapsanan === r.kalemSayisi ? '<span class="pos">— kalemlerin iş emirleri tamamlandı, üretim bekleyen iş yok</span>' : '<span class="neg">hesaplanamadı (rota girilmemiş)</span>') + '</div>';
+      else {
+        var s = r.son, gun = Math.max(1, r.takvimGun);
+        var ayrinti = r.parcalar.map(function(p){ return p.ad + ': ' + fmt2(p.adet) + ' ' + p.birim + ' · ' + sureStrOlustur(p.dk) + ' · ' + makineAdiById(p.makineId) + ' · ' + kvTarihTR(p.bas) + ' → ' + kvTarihTR(p.bit); }).join('\n');
+        var neden = s.ie ? 'siparişin iş emri ' + esc(s.ie.isEmriNo || '') + ' planda bu tarihte bitiyor'
+          : (s.darbogaz ? 'darboğaz: ' : 'makine: ') + esc(makineAdiById(s.makineId)) + (r.parcalar.length > 1 ? ' (' + esc(s.ad) + ')' : '') + (s.darbogaz ? '' : ' (en erken bitiren)') +
+            ' · ' + (s.onunde < 1 ? 'önünde iş yok' : 'önünde ' + (s.onunde < 60 ? fmt(s.onunde) + ' dk' : fmt(Math.round(s.onunde / 60)) + ' saat') + ' iş');
+        h = '<div class="kf-t-ana"' + (ayrinti ? ' title="' + escAttr(ayrinti) + '"' : '') + '>' + bas + '<b>' + kvTarihTR(r.bit) + '</b> (' + (r.isGunu ? r.isGunu + ' iş günü' : 'bugün') + ') · ' + neden +
+          ' <button type="button" class="btn secondary small" data-kfteslimyaz="1" title="' + escAttr(teslimModu === 'teklif' ? 'Teslim süresine ' + gun + ' gün yazar' : 'Termine ' + kvTarihTR(r.bit) + ' yazar') + '">Bunu yaz' + (teslimModu === 'teklif' ? ' (' + gun + ' gün)' : '') + '</button></div>';
+        if (teslimModu === 'siparis' && init.termin && init.termin < r.bit)
+          h += '<div class="kf-t-uyari">⚠ Termin ' + kvTarihTR(init.termin) + ', en erken teslimden ' + gunFarki(init.termin, r.bit) + ' gün önce — atölye yüküyle bu tarihe yetişmeyebilir.</div>';
+      }
+      h += r.notlar.map(function(n){ return '<div class="kf-t-not">⚠ ' + esc(n) + '</div>'; }).join('');
+      return h + r.eksikler.map(function(e){
+        var b = e.birim ? ' ' + esc(e.birim) : '';
+        return '<div class="kf-t-not">⚠ malzeme eksik: ' + esc(e.ad) + ' — gerekli ' + fmt2(e.gerek) + b + ', ' +
+          (e.ayrilan > 0 ? 'serbest stok ' + fmt2(e.serbest) + b + ' (eldeki ' + fmt2(e.eldeki) + ', açık işlere ayrılan ' + fmt2(e.ayrilan) + ')' : 'stokta ' + fmt2(e.eldeki) + b) +
+          (e.yolda > 0 ? ' · yolda ' + fmt2(e.yolda) + b : '') + ' — ' + (e.musteriden ? 'müşteriden gelişini bekleyin' : 'tedarik süresini ekleyin') + '</div>';
+      }).join('');
+    }
+    function teslimCiz(){ var el = byId('kfTeslim'); if (el && teslimSon) el.innerHTML = teslimHtml(teslimSon); }
+    function teslimHesapla(){
+      teslimZaman = null;
+      if (!byId('kfTeslim')) return;
+      teslimSon = enErkenTeslimHesapla(K, { siparisId: teslimModu === 'siparis' ? init.id || '' : '', siparisNo: teslimModu === 'siparis' && init.id ? init.siparisNo || '' : '', musteriMalzemesi: init.musteriMalzemesi });
+      teslimCiz();
+    }
+    // Yazarken her tuşta hesaplanmaz: son değişiklikten kısa süre sonra bir kez
+    function teslimGuncelle(gecikme){ if (!teslimModu) return; clearTimeout(teslimZaman); teslimZaman = setTimeout(teslimHesapla, gecikme == null ? 250 : gecikme); }
+    function teslimYaz(){
+      var r = teslimSon; if (!r || !r.bit) return;
+      if (teslimModu === 'teklif'){ var gun = Math.max(1, r.takvimGun), g = fieldsEl.querySelector('[data-kfxkey="teslimSuresiGun"]'); if (g) g.value = gun; init.teslimSuresiGun = gun; }
+      else { var t = fieldsEl.querySelector('[data-kfxkey="termin"]'); if (t) t.value = r.bit; init.termin = r.bit; }
+      teslimCiz();
     }
     // Fiyat seçici (▾): fiyat listesi (müşteriye özel / genel, kademeler), stok kartı satış fiyatı, maliyetten önerilen,
     // bu cariye son teklif / sipariş fiyatları; satınalmada stok maliyeti ve bu tedarikçiye son satınalma fiyatları.
@@ -4311,7 +4548,8 @@ Dikkat edilmesi gereken 2 nokta:
     function onDegisim(e){
       var x = e.target;
       if (x.id === 'kfMusteri'){ init.musteriId = x.value; odemeKosuluCaridenAl(); K.forEach(function(k, i){ fiyatYenile(i, false); satirGuncelle(i); }); return; }
-      if (x.dataset.kfxkey){ init[x.dataset.kfxkey] = x.value; if (x.dataset.kfxkey === 'paraBirimi'){ K.forEach(function(k, i){ fiyatYenile(i, false); satirGuncelle(i); }); } return; }
+      if (x.dataset.kfxkey){ init[x.dataset.kfxkey] = x.value; if (x.dataset.kfxkey === 'paraBirimi'){ K.forEach(function(k, i){ fiyatYenile(i, false); satirGuncelle(i); }); }
+        if (x.dataset.kfxkey === 'termin') teslimCiz(); else if (x.dataset.kfxkey === 'musteriMalzemesi') teslimGuncelle(); return; }
       var tr = x.closest('[data-kr]'); if (!tr || !x.dataset.kc) return;
       var i = Number(tr.dataset.kr), k = K[i], c = x.dataset.kc;
       if (c === 'stok'){
@@ -4329,6 +4567,7 @@ Dikkat edilmesi gereken 2 nokta:
         if (c === 'miktar' && e.type === 'change') fiyatYenile(i, false);
       }
       satirGuncelle(i);
+      if (c === 'stok' || c === 'miktar') teslimGuncelle();
     }
     function onTus(e){
       if (e.key !== 'Enter' || e.ctrlKey || e.metaKey) return;
@@ -4340,6 +4579,7 @@ Dikkat edilmesi gereken 2 nokta:
     }
     function onTik(e){
       var b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.kfteslimyaz != null){ teslimYaz(); return; }
       if (b.dataset.kffiyat != null){ fiyatMenusuAc(Number(b.dataset.kffiyat), b); return; }
       if (b.dataset.kfdel != null){ K.splice(Number(b.dataset.kfdel), 1); if (!K.length) K.push(bosSatir()); yenidenCiz(); return; }
       if (b.id === 'kfKalemEkle'){ satirEkle(); return; }
@@ -4347,17 +4587,21 @@ Dikkat edilmesi gereken 2 nokta:
       if (b.id === 'kfMusteriEkleBtn'){
         if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
         var ad = byId('kfMAd').value.trim(); if (!ad){ toast(cariEtiket + ' adı girin.', true); return; }
-        var kb = nextKodBilgisi('musteri'), kayit = { kod: kb.kod, ad: ad, yetkili: '', telefon: byId('kfMTel').value.trim(), adres: '', vergiNo: '', cariTipi: opts.yeniCariTipi || 'Müşteri' };
-        db.collection('musteriler').add(kayit).then(function(res){
-          var id = res && res.id; if (id && !state.musteriler.some(function(m){ return m.id === id; })) state.musteriler.push(Object.assign({ id: id }, kayit));
-          configWrite(kb.kodPayload).catch(function(){}); init.musteriId = id; toast('✓ ' + cariEtiket + ' kartı açıldı: ' + ad); yenidenCiz();
-        }).catch(function(er){ toast('Eklenemedi: ' + dbErrMsg(er), true); });
+        // aynı adlı cari varsa sorulur (aynı müşteri iki kartla açılmasın)
+        kayitKontrolu(cariKartKontrolu({ ad: ad }, null), function(){
+          var kb = nextKodBilgisi('musteri'), kayit = { kod: kb.kod, ad: ad, yetkili: '', telefon: byId('kfMTel').value.trim(), adres: '', vergiNo: '', cariTipi: opts.yeniCariTipi || 'Müşteri' };
+          db.collection('musteriler').add(kayit).then(function(res){
+            var id = res && res.id; if (id && !state.musteriler.some(function(m){ return m.id === id; })) state.musteriler.push(Object.assign({ id: id }, kayit));
+            configWrite(kb.kodPayload).catch(function(){}); init.musteriId = id; toast('✓ ' + cariEtiket + ' kartı açıldı: ' + ad); yenidenCiz();
+          }).catch(function(er){ toast('Eklenemedi: ' + dbErrMsg(er), true); });
+        });
         return;
       }
       if (b.id === 'kfUrunEkleBtn'){
         if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
         var uad = byId('kfUAd').value.trim(); if (!uad){ toast('Stok adı girin.', true); return; }
         var fiyat = Number(byId('kfUFiyat').value) || 0, kb2 = nextKodBilgisi('stok');
+        if (stokOtoKodCakisti(kb2.kod)) return;
         var yeniStok = { kod: kb2.kod, ad: uad, tip: 'Mamul', birim: 'adet', miktar: 0, kritikSeviye: 0, maliyet: 0, uretimSuresiDk: Number(byId('kfUSure').value) || 0, karMarji: 30, birimFiyat: fiyat };
         db.collection('stok').add(yeniStok).then(function(res){
           var id = res && res.id; if (id && !state.stok.some(function(s){ return s.id === id; })) state.stok.push(Object.assign({ id: id }, yeniStok));
@@ -4375,8 +4619,10 @@ Dikkat edilmesi gereken 2 nokta:
       var n = byId('kfNot'); if (n) init.not_ = n.value;
       fieldsEl.querySelectorAll('[data-kfxkey]').forEach(function(x){ init[x.dataset.kfxkey] = x.value; });
       build();
+      teslimGuncelle();
     }
     build();
+    teslimGuncelle(0); // form önce açılsın, hesap hemen ardından
     if (!init.id) odemeKosuluCaridenAl();
     fieldsEl.addEventListener('input', onDegisim);
     fieldsEl.addEventListener('change', onDegisim);
@@ -4385,6 +4631,7 @@ Dikkat edilmesi gereken 2 nokta:
     overlay.classList.add('open');
     var ilkOdak = byId('kfMusteri'); if (ilkOdak && !ilkOdak.value) ilkOdak.focus(); else satirOdak(0);
     function cleanup(){
+      clearTimeout(teslimZaman); teslimZaman = null;
       overlay.classList.remove('open');
       formBox.classList.remove('tam');
       fieldsEl.removeEventListener('input', onDegisim);
@@ -4419,21 +4666,20 @@ Dikkat edilmesi gereken 2 nokta:
     cancelBtn.addEventListener('click', onCancelClick);
   }
 
+  // Yeni teklif kaydı (yeni teklif formu ve "⧉ Kopyala" ortak): yeni numara, revizyon 0, durum Taslak
+  function yeniTeklifKaydet(vals){
+    if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
+    var kb = nextKodBilgisi('teklif');
+    db.collection('teklifler').add(Object.assign({
+      teklifNo: kb.kod, revizyon: 0,
+      durum: 'Taslak'
+    }, vals)).then(function(){
+      configWrite(kb.kodPayload).catch(function(){});
+      toast('✓ Teklif oluşturuldu: '+kb.kod);
+    }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
+  }
   document.getElementById('tYeniBtn').addEventListener('click', function(){
-    openKalemForm({
-      title: 'Yeni teklif', showGecerlilik: true, initial: {}, extraFields: TEKLIF_EK_ALANLAR,
-      onSave: function(vals){
-        if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
-        var kb = nextKodBilgisi('teklif');
-        db.collection('teklifler').add(Object.assign({
-          teklifNo: kb.kod, revizyon: 0,
-          durum: 'Taslak'
-        }, vals)).then(function(){
-          configWrite(kb.kodPayload).catch(function(){});
-          toast('✓ Teklif oluşturuldu');
-        }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
-      }
-    });
+    openKalemForm({ title: 'Yeni teklif', showGecerlilik: true, initial: {}, extraFields: TEKLIF_EK_ALANLAR, onSave: yeniTeklifKaydet });
   });
 
   // Teklif / sipariş detayında kalem tablosu: liste fiyatı, iskonto, net fiyat, KDV, tutar
@@ -4461,6 +4707,7 @@ Dikkat edilmesi gereken 2 nokta:
         epostaDugmesi('Teklif', t)+
         (sekmeIzinli('gorusmeler') ? '<button class="btn secondary small" type="button" data-gorusmeekle="'+t.id+'" title="Bu teklif için müşteri görüşmesi kaydet">+ Görüşme</button>' : '')+
         '<button class="btn secondary small" data-teklifrev="'+t.id+'" title="Bu teklifin yeni revizyonunu oluştur">Revizyon oluştur</button>'+
+        '<button class="btn secondary small" data-teklifkopya="'+t.id+'" title="Aynı müşteri ve kalemlerle yeni teklif formu açar (kaydedene kadar kayıt oluşmaz)">⧉ Kopyala</button>'+
         '</div>'+
         (teklifIskontoBekliyor(t) ? '<div class="helper neg" style="margin:0 0 8px">%'+fmt2(teklifMaxIskonto(t))+' iskonto, %'+fmt2(iskontoOnayLimiti())+' onay limitinin üstünde — onaylanmadan gönderilemez ve yazdırılamaz.'+(onayYetkili() ? ' <button class="btn small" type="button" data-iskontoonay="'+t.id+'">İskontoyu onayla</button>' : '')+'</div>' : '')+
         teklifEkBilgiHtml(t)+
@@ -4504,6 +4751,9 @@ Dikkat edilmesi gereken 2 nokta:
     document.querySelectorAll('#teklifListesi [data-teklifrev]').forEach(function(btn){
       btn.addEventListener('click', function(){ teklifRevizyonOlustur(btn.dataset.teklifrev); });
     });
+    document.querySelectorAll('#teklifListesi [data-teklifkopya]').forEach(function(btn){
+      btn.addEventListener('click', function(){ teklifKopyala(btn.dataset.teklifkopya); });
+    });
     gecmisButonlariBagla(document.getElementById('teklifListesi'));
     document.querySelectorAll('#teklifListesi [data-yazdirteklif]').forEach(function(btn){
       btn.addEventListener('click', function(){ yazdirTeklif(btn.dataset.yazdirteklif); });
@@ -4531,23 +4781,22 @@ Dikkat edilmesi gereken 2 nokta:
     });
   }
 
+  // Teklifsiz yeni sipariş kaydı (yeni sipariş formu ve "⧉ Kopyala" ortak): yeni numara, durum Bekliyor, sevk edilen 0
+  function yeniSiparisKaydet(vals){
+    if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
+    var kb = nextKodBilgisi('siparis');
+    var kalemlerSevk = vals.kalemler.map(function(k){ return Object.assign({}, k, {sevkEdilen: 0}); });
+    db.collection('siparisler').add(Object.assign({}, vals, {
+      siparisNo: kb.kod,
+      teklifId: null,
+      durum: 'Bekliyor', kalemler: kalemlerSevk
+    })).then(function(){
+      configWrite(kb.kodPayload).catch(function(){});
+      toast('✓ Sipariş oluşturuldu: '+kb.kod);
+    }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
+  }
   document.getElementById('sipYeniBtn').addEventListener('click', function(){
-    openKalemForm({
-      title: 'Yeni sipariş (teklifsiz)', showGecerlilik: false, initial: {}, extraFields: SIPARIS_EK_ALANLAR,
-      onSave: function(vals){
-        if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
-        var kb = nextKodBilgisi('siparis');
-        var kalemlerSevk = vals.kalemler.map(function(k){ return Object.assign({}, k, {sevkEdilen: 0}); });
-        db.collection('siparisler').add(Object.assign({}, vals, {
-          siparisNo: kb.kod,
-          teklifId: null,
-          durum: 'Bekliyor', kalemler: kalemlerSevk
-        })).then(function(){
-          configWrite(kb.kodPayload).catch(function(){});
-          toast('✓ Sipariş oluşturuldu');
-        }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
-      }
-    });
+    openKalemForm({ title: 'Yeni sipariş (teklifsiz)', showGecerlilik: false, initial: {}, extraFields: SIPARIS_EK_ALANLAR, onSave: yeniSiparisKaydet });
   });
 
   // Sipariş kalemlerinin durumu: iş emrine verilen, üretilen (iş emri tamamlanan), sevk edilen, faturalanan, sevk bekleyen
@@ -4573,6 +4822,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<select data-siparisdurum="'+s.id+'">'+durumlar.map(function(d){ return '<option'+(s.durum===d?' selected':'')+'>'+d+'</option>'; }).join('')+'</select>'+
         (s.teklifId?'':' <span class="muted">(doğrudan sipariş)</span>')+
         '<button class="btn small" data-yazdirsiparis="'+s.id+'" title="Yazdır">🖨 Yazdır</button><button class="btn secondary small" data-csvsiparis="'+s.id+'" title="CSV dışa aktar">⇩ CSV</button>'+epostaDugmesi('Sipariş', s)+
+        '<button class="btn secondary small" data-sipariskopya="'+s.id+'" title="Aynı müşteri ve kalemlerle yeni sipariş formu açar (kaydedene kadar kayıt oluşmaz)">⧉ Kopyala</button>'+
         siparisKisayolHtml(s)+
         '</div>'+
         siparisEkBilgiHtml(s)+
@@ -4617,6 +4867,9 @@ Dikkat edilmesi gereken 2 nokta:
     });
     document.querySelectorAll('#siparisListesi [data-csvsiparis]').forEach(function(btn){
       btn.addEventListener('click', function(){ disaAktarSiparisCSV(btn.dataset.csvsiparis); });
+    });
+    document.querySelectorAll('#siparisListesi [data-sipariskopya]').forEach(function(btn){
+      btn.addEventListener('click', function(){ siparisKopyala(btn.dataset.sipariskopya); });
     });
     gecmisButonlariBagla(document.getElementById('siparisListesi'));
   }
@@ -4798,6 +5051,7 @@ Dikkat edilmesi gereken 2 nokta:
             {key:'not_', label:'Not', type:'text'}
           ],
           values: irs,
+          kayitOncesi: function(vals, devam){ kayitKontrolu(tarihKurSorulari({ engel: [], soru: [] }, Object.assign({}, irs, vals), irs), devam); },
           onSave: function(vals){
             if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
             db.collection('sevkiyatlar').doc(irs.id).update(vals)
@@ -4952,10 +5206,12 @@ Dikkat edilmesi gereken 2 nokta:
     var tevkOran = document.getElementById('fTevkifat').value, tevkTutar = Math.round(kdvTutar * tevkifatKat(tevkOran) * 100)/100;
     // "Kalan" seçildiyse sevk edilmemiş mal da faturalanır: önce uyar
     var sevksiz = kapsam === 'kalan' ? satir.filter(function(x){ return x.q > Math.max(0, Math.min(x.sevk, x.sip) - x.ftr) + 0.0001; }) : [];
-    if (sevksiz.length){
-      confirmSil('Henüz sevk edilmemiş mal da faturalanacak: '+
-        sevksiz.map(function(x){ return (x.k.ad||'kalem')+' — bu faturada '+fmt2(x.q)+', sevk edilip faturalanmamış '+fmt2(Math.max(0, Math.min(x.sevk, x.sip) - x.ftr)); }).join('; ')+
-        '. Devam edilsin mi?', faturaKaydet, 'Yine de oluştur');
+    // $ faturaya elle yazılan kur son kurdan %3'ten fazla farklıysa aynı kutuda sorulur (bu faturanın tarihi her zaman bugün)
+    var kurSoru = document.getElementById('fPb').value === 'USD' ? kurSorusu('USD', document.getElementById('fKur').value, todayISO()) : '';
+    if (sevksiz.length || kurSoru){
+      confirmSil((sevksiz.length ? 'Henüz sevk edilmemiş mal da faturalanacak: '+
+        sevksiz.map(function(x){ return (x.k.ad||'kalem')+' — bu faturada '+fmt2(x.q)+', sevk edilip faturalanmamış '+fmt2(Math.max(0, Math.min(x.sevk, x.sip) - x.ftr)); }).join('; ')+'.' : '')+
+        (sevksiz.length && kurSoru ? '\n\n' : '')+kurSoru+(kurSoru ? '\n\n' : ' ')+'Devam edilsin mi?', faturaKaydet, 'Yine de oluştur');
     } else {
       faturaKaydet();
     }
@@ -5093,6 +5349,8 @@ Dikkat edilmesi gereken 2 nokta:
             {key:'not_', label:'Not', type:'text'}
           ],
           values: f,
+          // değiştirilen tarih ya da € kuru sınır dışındaysa sorulur
+          kayitOncesi: function(vals, devam){ kayitKontrolu(tarihKurSorulari({ engel: [], soru: [] }, Object.assign({}, f, vals), f, { kurAlan: 'kur', pb: 'EUR' }), devam); },
           onSave: function(vals){
             if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
             var brut = f.brutToplam != null ? Number(f.brutToplam) : (Number(f.araToplam)||0);
@@ -5128,9 +5386,14 @@ Dikkat edilmesi gereken 2 nokta:
           toast('Kesilmiş fatura silinmez; durumunu "İptal" yapın.', true);
           return;
         }
-        confirmSil('Bu faturayı silmek istediğinize emin misiniz?', function(){
-          db.collection('faturalar').doc(btn.dataset.ftrdel).delete()
-            .then(function(){ toast('Silindi'); })
+        var silId = btn.dataset.ftrdel;
+        confirmSil('Bu faturayı silmek istediğinize emin misiniz?' + (ftrKontrol && ftrKontrol.irsaliyeYerine ? ' Stoktan düşülen mal stoğa geri girer.' : ''), function(){
+          db.collection('faturalar').doc(silId).delete()
+            .then(function(){
+              belgeStokEsitle('fatura', silId, ftrKontrol ? ftrKontrol.faturaNo : '', {}, 'Fatura silindi (stoğa geri)');
+              faturaIrsaliyeleriniBirak(silId);
+              toast('Silindi');
+            })
             .catch(function(e){ toast('Silinemedi: '+dbErrMsg(e), true); });
         });
       });
@@ -5351,21 +5614,26 @@ Dikkat edilmesi gereken 2 nokta:
 
     renderSimpleList('chListe', state.tahsilatlar, 'tahsilatlar', {
       emptyText: 'Henüz tahsilat kaydı yok',
-      rowFn: function(t){ var ft = t.faturaId ? state.faturalar.find(function(x){ return x.id===t.faturaId; }) : null; return { title: esc(musteriAdiById(t.musteriId))+' · '+(belgePB(t) !== 'EUR' ? pbFmt(t.belgeTutar, belgePB(t))+' <span class="muted">≈ €'+fmt2(t.tutar)+'</span>' : '€'+fmt2(t.tutar)), sub: esc(t.tarih||'')+' · '+esc(t.yontem||'')+(ft?' · '+esc(ft.faturaNo):'')+(t.hesapId?' · '+esc(hesapAdi(t.hesapId)):'')+(t.not_?' · '+esc(t.not_):'') }; },
-      fields: [
+      rowFn: function(t){ var ft = t.faturaId ? state.faturalar.find(function(x){ return x.id===t.faturaId; }) : null, yf = tahsilatFaturaUyumsuz(t); return { title: esc(musteriAdiById(t.musteriId))+' · '+(belgePB(t) !== 'EUR' ? pbFmt(t.belgeTutar, belgePB(t))+' <span class="muted">≈ €'+fmt2(t.tutar)+'</span>' : '€'+fmt2(t.tutar)), sub: esc(t.tarih||'')+' · '+esc(t.yontem||'')+(ft && !yf?' · '+esc(ft.faturaNo):'')+(t.hesapId?' · '+esc(hesapAdi(t.hesapId)):'')+(t.not_?' · '+esc(t.not_):'')+(yf ? ' · <span class="neg">⚠ başka müşterinin faturasına bağlı ('+esc(yf.faturaNo)+' · '+esc(musteriAdiById(yf.musteriId))+') — düzenleyip kaydedin</span>' : '') }; },
+      // müşteri değiştirilemediği için "Kapanan fatura" listesi formun açıldığı tahsilatın müşterisine göre süzülür
+      fields: function(t){ return [
         {key:'tarih', label:'Tarih', type:'date'},
         {key:'paraBirimi', label:'Para birimi', type:'select', options: PB_LISTE},
         {key:'belgeTutar', label:'Tutar', type:'number', para:'paraBirimi'},
         {key:'dovizKuru', label:'Kur (yalnız $; boş: günün kuru)', type:'number', para:false},
         {key:'yontem', label:'Yöntem', type:'select', options:['Havale/EFT','Nakit','Çek','Senet','Diğer']},
-        {key:'faturaId', label:'Kapanan fatura', type:'select', options: function(){ return [{value:'',label:'-'}].concat(state.faturalar.filter(function(f){ return f.durum !== 'İptal'; }).map(function(f){ return {value:f.id, label:f.faturaNo+' · '+musteriAdiById(f.musteriId)}; })); }},
+        {key:'faturaId', label:'Kapanan fatura (yalnız bu müşterinin)', type:'select', options: function(){ return tahsilatFaturaSecenek(t); }},
         {key:'hesapId', label:'Kasa / banka', type:'select', options: function(){ return hesapSecenekleri(); }},
         {key:'belgeNo', label:'Dekont / makbuz no', type:'text'},
         {key:'not_', label:'Not', type:'text'}
-      ],
+      ]; },
       editTitle: 'Tahsilatı düzenle (müşteri değiştirilemez)',
+      // değiştirilen tarih ya da $ kuru sınır dışındaysa sorulur
+      kayitOncesi: function(vals, item, devam){ kayitKontrolu(tarihKurSorulari({ engel: [], soru: [] }, Object.assign({}, item, vals), item), devam); },
       // eski kayıtta belge tutarı yoksa € tutar kullanılır; € karşılığı yeniden hesaplanır
-      onUpdate: function(vals, item){ var v = Object.assign({}, item, vals); delete v.id; if (!(Number(v.belgeTutar) > 0) && belgePB(v) === 'EUR') v.belgeTutar = Number(item.tutar) || 0; basitBelgeEur(v, 'belgeTutar', 'tutar');
+      onUpdate: function(vals, item){ var v = Object.assign({}, item, vals); delete v.id;
+        var yf = tahsilatFaturaUyumsuz(v); if (yf){ toast('Seçilen fatura '+yf.faturaNo+' başka bir müşteriye ('+musteriAdiById(yf.musteriId)+') ait — tahsilat yalnız kendi müşterisinin faturasını kapatabilir. Kaydedilmedi.', true); return; }
+        if (!(Number(v.belgeTutar) > 0) && belgePB(v) === 'EUR') v.belgeTutar = Number(item.tutar) || 0; basitBelgeEur(v, 'belgeTutar', 'tutar');
         var g = { paraBirimi: v.paraBirimi || 'EUR', belgeTutar: v.belgeTutar, dovizKuru: v.dovizKuru || 0, tutar: v.tutar, kur: v.kur || 0 }; Object.keys(vals).forEach(function(k){ g[k] = v[k]; });
         kayitGuncelle('tahsilatlar', item.id, g).then(function(){ toast('✓ Güncellendi'); }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); }); },
       deleteMsg: 'Bu tahsilat kaydını silmek istediğinize emin misiniz?'
@@ -5389,6 +5657,9 @@ Dikkat edilmesi gereken 2 nokta:
       belgeNo: (document.getElementById('chBelgeNo').value || '').trim(),
       paraBirimi: document.getElementById('chPb').value || 'EUR', belgeTutar: tutar, dovizKuru: Number(document.getElementById('chDkur').value) || 0
     };
+    if (tahsilatFaturaUyumsuz(thVeri)){ msg.textContent = 'Seçilen fatura bu müşterinin değil — "Kapanan fatura" listesinden yeniden seçin.'; tahsilatEkSecimler(); return; }
+    // tarih ya da $ kuru sınır dışındaysa sorulur; "Vazgeç" bir şey kaydetmez, girilenler formda kalır
+    kayitKontrolu(tarihKurSorulari({ engel: [], soru: [] }, thVeri, null), function(){
     basitBelgeEur(thVeri, 'belgeTutar', 'tutar');
     // Çek / senetle tahsilat bankaya girmez: portföye (101 / 121) alınır, tahsil edilince bankaya geçer
     if (cekYontemi(thVeri.yontem)) thVeri.hesapId = '';
@@ -5399,6 +5670,7 @@ Dikkat edilmesi gereken 2 nokta:
       document.getElementById('chNot').value = ''; document.getElementById('chBelgeNo').value = '';
       msg.textContent = '';
     }).catch(function(e){ msg.textContent = 'Kaydedilemedi: '+dbErrMsg(e); });
+    });
   });
 
   // ---------- İş Emirleri (Sipariş ↔ Üretim bağlantısı) ----------
@@ -5709,13 +5981,14 @@ Dikkat edilmesi gereken 2 nokta:
   }
 
   // ---------- Müşteri / stok ekleme ----------
-  function openNewRecordFormOtoKod(tur, collection, title, fields, defaults, successMsg){
+  function openNewRecordFormOtoKod(tur, collection, title, fields, defaults, successMsg, kayitOncesi){
     if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
     var kb = nextKodBilgisi(tur);
     openForm({
       title: title,
       fields: fields,
       values: Object.assign({}, defaults, {kod: kb.kod}),
+      kayitOncesi: kayitOncesi ? function(vals, devam){ kayitOncesi(vals, null, devam); } : null,
       onSave: function(vals){
         db.collection(collection).add(Object.assign({}, defaults, vals))
           .then(function(){
@@ -5728,7 +6001,8 @@ Dikkat edilmesi gereken 2 nokta:
   }
   document.getElementById('cariEkleBtn').addEventListener('click', function(){
     openNewRecordFormOtoKod('musteri', 'musteriler', 'Yeni cari aç', MUSTERI_FIELDS,
-      {kod:'', ad:'', cariTipi:'Müşteri', yetkili:'', telefon:'', eposta:'', adres:'', sehir:'', vergiDairesi:'', vergiNo:'', iban:'', odemeVadesiGun:0, paraBirimi:'EUR', riskLimiti:0, sevkAdresi:'', kisiler:'', onayliTedarikci:'-', aktif:'Aktif'}, 'Cari açıldı');
+      {kod:'', ad:'', cariTipi:'Müşteri', yetkili:'', telefon:'', eposta:'', adres:'', sehir:'', vergiDairesi:'', vergiNo:'', iban:'', odemeVadesiGun:0, paraBirimi:'EUR', riskLimiti:0, sevkAdresi:'', kisiler:'', onayliTedarikci:'-', aktif:'Aktif'}, 'Cari açıldı',
+      function(v, eski, devam){ kayitKontrolu(cariKartKontrolu(v, eski), devam); });
   });
   var STOK_TIPLERI = ['Hammadde','Yarı Mamul','Mamul','Müşteri Malı','Sarf','Yedek Parça','Ambalaj'];
   var STOK_FIELDS = [
@@ -5771,13 +6045,19 @@ Dikkat edilmesi gereken 2 nokta:
   document.getElementById('gKur').addEventListener('keydown', function(e){ if (e.key === 'Enter') document.getElementById('gKurKaydet').click(); });
   document.getElementById('gKurKaydet').addEventListener('click', function(){
     if (!db){ toast('Ortak veri bağlantısı yok, kaydedilemedi.', true); return; }
-    var kur = Number(document.getElementById('gKur').value)||0;
+    var kurEl = document.getElementById('gKur'), kur = Number(kurEl.value)||0;
     if (kur <= 0){ toast('Geçerli bir kur girin.', true); return; }
-    var gecmis = ((state.config && state.config.kurGecmisi) || []).filter(function(x){ return x.tarih !== todayISO(); });
-    gecmis.push({tarih: todayISO(), kur: kur});
-    if (gecmis.length > 120) gecmis = gecmis.slice(-120);
-    configWrite({ eurTryKuru: kur, kuruTarihi: todayISO(), kurGecmisi: gecmis })
-      .then(function(){ toast('Kur güncellendi: 1€ = ₺'+fmt2(kur)); }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
+    // son kurdan %3'ten fazla farklıysa sorulur (virgül kayması); "Vazgeç" kur kutusuna döner
+    var soru = ustKurSorusu('EUR', kur);
+    if (soru){ confirmSil(soru, kaydet, 'Evet, kaydet', function(){ kurEl.focus(); kurEl.select(); }); return; }
+    kaydet();
+    function kaydet(){
+      var gecmis = ((state.config && state.config.kurGecmisi) || []).filter(function(x){ return x.tarih !== todayISO(); });
+      gecmis.push({tarih: todayISO(), kur: kur});
+      if (gecmis.length > 120) gecmis = gecmis.slice(-120);
+      configWrite({ eurTryKuru: kur, kuruTarihi: todayISO(), kurGecmisi: gecmis })
+        .then(function(){ toast('Kur güncellendi: 1€ = ₺'+fmt2(kur)); }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
+    }
   });
 
   document.getElementById('euroDonusturBtn').addEventListener('click', function(){
@@ -6273,19 +6553,22 @@ Dikkat edilmesi gereken 2 nokta:
     } else {
       renderSimpleList(t.key+'Liste', items, t.collection, {
         emptyText: t.bos || 'Kayıt yok', rowFn: t.rowFn, fields: t.fields, editTitle: t.duzenleBaslik || 'Kaydı düzenle',
-        onUpdate: function(vals, item){ crudGuncelle(t, vals, item); }, extraActions: t.ekAksiyon, onDelete: sil, deleteMsg: t.silMesaj, kilitliSatir: t.kilitliSatir
+        onUpdate: function(vals, item){ crudGuncelle(t, vals, item); }, extraActions: t.ekAksiyon, onDelete: sil, deleteMsg: t.silMesaj, kilitliSatir: t.kilitliSatir, formAcildi: t.formAcildi,
+        kayitOncesi: t.kayitOncesi ? function(vals, item, devam){ t.kayitOncesi(Object.assign({}, item, vals), item, devam); } : null
       });
     }
     if (t.altHtml) setHtmlIdle(t.key+'Alt', t.altHtml());
     if (t.sonra) t.sonra(host);
   }
-  function crudAlanlar(t){ return typeof t.fields === 'function' ? t.fields() : t.fields; }
+  // fields bir fonksiyonsa formun açılış değerleriyle çağrılır (ör. seçenekler seçili cariye göre süzülür)
+  function crudAlanlar(t, v){ return typeof t.fields === 'function' ? t.fields(v) : t.fields; }
   function crudYeni(t, on){
     if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
     var def = Object.assign({}, typeof t.defaults === 'function' ? t.defaults() : (t.defaults||{}), on||{});
     var kb = t.kodTur ? nextKodBilgisi(t.kodTur) : null;
     if (kb) def[t.kodAlan||'no'] = kb.kod;
-    openForm({ title: t.yeniBaslik || t.yeniEtiket.replace(/^\+\s*/,''), fields: crudAlanlar(t), values: def, onOpen: t.formAcildi,
+    openForm({ title: t.yeniBaslik || t.yeniEtiket.replace(/^\+\s*/,''), fields: crudAlanlar(t, def), values: def, onOpen: t.formAcildi,
+      kayitOncesi: t.kayitOncesi ? function(vals, devam){ t.kayitOncesi(Object.assign({}, def, vals), null, devam); } : null,
       onSave: function(vals){
         var veri = Object.assign({}, def, vals);
         if (t.hazirla){ var h = t.hazirla(veri, null); if (h === false) return; veri = h || veri; }
@@ -6297,7 +6580,8 @@ Dikkat edilmesi gereken 2 nokta:
       } });
   }
   function crudDuzenle(t, item){
-    openForm({ title: t.duzenleBaslik || 'Kaydı düzenle', fields: crudAlanlar(t), values: item, onOpen: t.formAcildi,
+    openForm({ title: t.duzenleBaslik || 'Kaydı düzenle', fields: crudAlanlar(t, item), values: item, onOpen: t.formAcildi,
+      kayitOncesi: t.kayitOncesi ? function(vals, devam){ t.kayitOncesi(Object.assign({}, item, vals), item, devam); } : null,
       onSave: function(vals){ crudGuncelle(t, vals, item); } });
   }
   function crudGuncelle(t, vals, item){
@@ -7321,7 +7605,8 @@ Dikkat edilmesi gereken 2 nokta:
     var kb = nextKodBilgisi('stok');
     var def = Object.assign({kod: kb.kod, ad:'', tip:'Mamul', birim:'adet', miktar:0, kritikSeviye:0, maliyet:0, uretimSuresiDk:0, fasonUcret:0, karMarji:30, birimFiyat:0,
       malzemeCinsi:'', olcu:'', resimNo:'', resimRev:'', lotTakibi:'Hayır', varsayilanDepo:''}, on||{});
-    openForm({ title:'Yeni stok kartı', fields: STOK_FIELDS, values: def, onSave: function(vals){
+    openForm({ title:'Yeni stok kartı', fields: STOK_FIELDS, values: def,
+      kayitOncesi: function(vals, devam){ kayitKontrolu(stokKartKontrolu(vals, null), devam); }, onSave: function(vals){
       var acilis = Number(vals.miktar)||0;
       var veri = Object.assign({}, def, vals, { miktar: 0, depoMiktar: {} });
       if (!veri.varsayilanDepo) veri.varsayilanDepo = varsayilanDepo(veri);
@@ -8212,39 +8497,51 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Otomatik planla: planlanmamış iş emirlerini kapasiteye göre makinelere dağıtan öneri ----------
   // Sıra: acil önce, sonra termin, sonra açılış tarihi. Makine: rotada makine varsa en uzun süren operasyonun (darboğaz) makinesi;
   // yoksa işi en erken bitirecek çalışır makine. İş, makinenin mevcut planının arkasına, kapasite takvimine göre gün gün yerleşir.
-  function otomatikPlanHesapla(){
-    var bugun = todayISO(), ufuk = 240, p = planHesapla(bugun, ufuk), kullanim = {}, sonGun = {};
-    Object.keys(p.hucre).forEach(function(k){ var q = k.split('|'); kullanim[k] = toplamla(p.hucre[k], function(x){ return x.dk; }); if (!sonGun[q[0]] || q[1] > sonGun[q[0]]) sonGun[q[0]] = q[1]; });
-    var makineler = state.makineler.filter(function(m){ return (m.durum || 'Çalışıyor') !== 'Pasif'; });
+  // Hesap yalnız okur: makine yükü bu hesaba özel bir tabloda tutulur; iş emri, plan ve ayar değişmez.
+  // Teklif / sipariş formundaki "en erken teslim" de aynı yükü ve aynı yerleştirmeyi kullanır (enErkenTeslimHesapla).
+  function planYukHesapla(){
+    var bugun = todayISO(), ufuk = 240, p = planHesapla(bugun, ufuk), y = { bugun: bugun, kullanim: {}, sonGun: {}, bitisler: p.bitisler };
+    Object.keys(p.hucre).forEach(function(k){ var q = k.split('|'); y.kullanim[k] = toplamla(p.hucre[k], function(x){ return x.dk; }); if (!y.sonGun[q[0]] || q[1] > y.sonGun[q[0]]) y.sonGun[q[0]] = q[1]; });
+    y.makineler = state.makineler.filter(function(m){ return (m.durum || 'Çalışıyor') !== 'Pasif'; });
     var plansiz = state.isemirleri.filter(function(ie){ return !ie.planMakineId && ie.durum !== 'İptal' && isEmriKalan(ie) > 0; })
       .sort(function(a, b){ return (b.oncelik === 'Acil') - (a.oncelik === 'Acil') || (a.termin || '9999').localeCompare(b.termin || '9999') || (a.tarih || '').localeCompare(b.tarih || ''); });
-    function yerlestir(mid, dk, kaydet){
-      var gun = sonGun[mid] && sonGun[mid] > bugun ? sonGun[mid] : bugun, ilk = null, guv = 0, k;
-      while (dk > 0.5 && guv++ < 400){
-        k = mid + '|' + gun; var bos = gunlukKapasiteDk(gun) - (kullanim[k] || 0);
-        if (bos > 0){ var ayir = Math.min(bos, dk); if (!ilk) ilk = gun; dk -= ayir; if (kaydet) kullanim[k] = (kullanim[k] || 0) + ayir; }
-        if (dk > 0.5) gun = tarihEkle(gun, 1);
-      }
-      if (kaydet) sonGun[mid] = gun;
-      return { bas: ilk || gun, bit: gun };
-    }
-    return plansiz.map(function(ie){
+    y.oneriler = plansiz.map(function(ie){
       var toplam = Number(ie.tahminiSureDk) || isEmriTahminiSure(ie.stokId, ie.planlanan, ie.gerekliOperasyonlar);
       var dk = (Number(ie.planlanan) || 0) > 0 ? toplam * isEmriKalan(ie) / Number(ie.planlanan) : toplam; if (!(dk > 0)) dk = 60;
-      var rota = urunRota(ie.stokId).filter(function(r){ return r.makineId && (!ie.gerekliOperasyonlar || !ie.gerekliOperasyonlar.length || ie.gerekliOperasyonlar.indexOf(r.operasyon) > -1); });
-      var adaylar = [], neden = '';
-      if (rota.length){
-        var darbogaz = rota.slice().sort(function(a, b){ return ((Number(b.hazirlikDk) || 0) + (Number(b.cevrimDk) || 0) * (Number(ie.planlanan) || 0)) - ((Number(a.hazirlikDk) || 0) + (Number(a.cevrimDk) || 0) * (Number(ie.planlanan) || 0)); })[0];
-        if (makineler.some(function(m){ return m.id === darbogaz.makineId; })){ adaylar = [darbogaz.makineId]; neden = 'rota: ' + (darbogaz.operasyon || ''); }
-      }
-      if (!adaylar.length){ adaylar = makineler.map(function(m){ return m.id; }); neden = 'en erken bitiren makine'; }
-      if (!adaylar.length) return { ie: ie, hata: 'Çalışır makine yok' };
-      var en = null;
-      adaylar.forEach(function(mid){ var y = yerlestir(mid, dk, false); if (!en || y.bit < en.y.bit) en = { mid: mid, y: y }; });
-      var y = yerlestir(en.mid, dk, true);
-      return { ie: ie, makineId: en.mid, bas: y.bas, bit: y.bit, dk: dk, neden: neden, gec: ie.termin && y.bit > ie.termin ? gunFarki(ie.termin, y.bit) : 0 };
+      var x = planIsYerlestir(y, ie.stokId, ie.planlanan, ie.gerekliOperasyonlar, dk);
+      if (x.hata) return { ie: ie, hata: x.hata };
+      return { ie: ie, makineId: x.makineId, bas: x.bas, bit: x.bit, dk: dk, neden: x.neden, gec: ie.termin && x.bit > ie.termin ? gunFarki(ie.termin, x.bit) : 0 };
     });
+    return y;
   }
+  // dk dakikalık işi makinenin mevcut yükünün arkasına, kapasite takvimine göre gün gün koyar (kaydet: yük tablosuna işlenir).
+  // kalan > 0.5 ise iş 400 günde sığmadı demektir.
+  function planYerlestir(y, mid, dk, kaydet){
+    var gun = y.sonGun[mid] && y.sonGun[mid] > y.bugun ? y.sonGun[mid] : y.bugun, ilk = null, guv = 0, k;
+    while (dk > 0.5 && guv++ < 400){
+      k = mid + '|' + gun; var bos = gunlukKapasiteDk(gun) - (y.kullanim[k] || 0);
+      if (bos > 0){ var ayir = Math.min(bos, dk); if (!ilk) ilk = gun; dk -= ayir; if (kaydet) y.kullanim[k] = (y.kullanim[k] || 0) + ayir; }
+      if (dk > 0.5) gun = tarihEkle(gun, 1);
+    }
+    if (kaydet) y.sonGun[mid] = gun;
+    return { bas: ilk || gun, bit: gun, kalan: dk };
+  }
+  // Bir işin makinesi: rotada makine varsa en uzun süren operasyonun (darboğaz) makinesi; yoksa işi en erken bitiren çalışır makine
+  function planIsYerlestir(y, stokId, adet, ops, dk){
+    var rota = urunRota(stokId).filter(function(r){ return r.makineId && (!ops || !ops.length || ops.indexOf(r.operasyon) > -1); });
+    var adaylar = [], neden = '';
+    if (rota.length){
+      var darbogaz = rota.slice().sort(function(a, b){ return ((Number(b.hazirlikDk) || 0) + (Number(b.cevrimDk) || 0) * (Number(adet) || 0)) - ((Number(a.hazirlikDk) || 0) + (Number(a.cevrimDk) || 0) * (Number(adet) || 0)); })[0];
+      if (y.makineler.some(function(m){ return m.id === darbogaz.makineId; })){ adaylar = [darbogaz.makineId]; neden = 'rota: ' + (darbogaz.operasyon || ''); }
+    }
+    if (!adaylar.length){ adaylar = y.makineler.map(function(m){ return m.id; }); neden = 'en erken bitiren makine'; }
+    if (!adaylar.length) return { hata: 'Çalışır makine yok' };
+    var en = null;
+    adaylar.forEach(function(mid){ var s = planYerlestir(y, mid, dk, false); if (!en || s.bit < en.s.bit) en = { mid: mid, s: s }; });
+    var s = planYerlestir(y, en.mid, dk, true);
+    return { makineId: en.mid, bas: s.bas, bit: s.bit, kalan: s.kalan, neden: neden, darbogaz: neden.indexOf('rota:') === 0 };
+  }
+  function otomatikPlanHesapla(){ return planYukHesapla().oneriler; }
   function otomatikPlanAc(){
     var l = otomatikPlanHesapla();
     if (!l.length){ toast('Planlanmamış iş emri yok.'); return; }
@@ -8265,6 +8562,60 @@ Dikkat edilmesi gereken 2 nokta:
         Promise.all(secilen.map(function(x){ return kayitGuncelle('isemirleri', x.ie.id, { planMakineId: x.makineId, planBaslangic: x.bas }); }))
           .then(function(){ toast('✓ ' + secilen.length + ' iş emri plana yazıldı'); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
       } });
+  }
+  // ---------- En erken teslim (teklif / sipariş formu) ----------
+  // Her kalemin işi (rotadan hazırlık + çevrim × miktar) "Otomatik planla" ile aynı hesapla makine yükünün arkasına konur:
+  // plandaki iş emirleri + planlanmamış açık iş emirlerinin önerilen yeri, aynı darboğaz makinesi, Tanımlar › Kapasite takvimi.
+  // Yalnız bilgi verir; hiçbir kayıt, plan ya da ayar değişmez. o.siparisId: düzenlenen sipariş — onun açık iş emirleri zaten
+  // yükte olduğundan iş emrine verilmiş miktar yeniden eklenmez, o iş emirlerinin bitişi tarihe katılır.
+  // Malzeme: ürün ağacındaki ihtiyaç serbest stokla (eldeki − açık iş emri / siparişlere ayrılan, Malzeme İhtiyacı hesabı) karşılaştırılır.
+  function enErkenTeslimHesapla(kalemler, o){
+    o = o || {};
+    var y = planYukHesapla(), r = { bugun: y.bugun, bit: '', son: null, parcalar: [], notlar: [], eksikler: [], kalemSayisi: 0, kapsanan: 0 };
+    if (!y.makineler.length){ r.hata = 'Çalışır makine yok (Kartlar › Makineler)'; return r; }
+    var onunde = {}, verilen = {}, ihtiyac = {};
+    Object.keys(y.kullanim).forEach(function(k){ var mid = k.split('|')[0]; onunde[mid] = (onunde[mid] || 0) + y.kullanim[k]; });
+    if (o.siparisId){
+      state.isemirleri.filter(function(ie){ return ie.siparisId === o.siparisId && ie.durum !== 'İptal'; }).forEach(function(ie){
+        verilen[ie.stokId] = (verilen[ie.stokId] || 0) + (Number(ie.planlanan) || 0);
+        if (!(isEmriKalan(ie) > 0)) return;
+        var oneri = y.oneriler.find(function(x){ return x.ie.id === ie.id; }), bit = y.bitisler[ie.id] || (oneri && oneri.bit) || '';
+        if (bit && (!r.son || bit > r.son.bit)) r.son = { bit: bit, ie: ie };
+      });
+    }
+    (kalemler || []).forEach(function(k){
+      var st = stokKart(k.stokId), adet = Number(k.miktar) || 0; if (!st || !(adet > 0)) return;
+      r.kalemSayisi++;
+      var d = Math.min(adet, verilen[k.stokId] || 0); if (d > 0){ verilen[k.stokId] -= d; adet -= d; }
+      if (!(adet > 1e-9)){ r.kapsanan++; return; }
+      var kart = stokKart(urunStokId(k.stokId)) || st;
+      (kart.bom || []).forEach(function(b){ if (b.stokId) ihtiyac[b.stokId] = (ihtiyac[b.stokId] || 0) + bomMiktar(b) * adet; });
+      var rota = urunRota(k.stokId), dk = isEmriTahminiSure(k.stokId, adet, null);
+      if (!(dk > 0)){ r.notlar.push(st.ad + (rota.length ? ' için rotada süre girilmemiş' : ' için rota yok') + ' — hesaba katılmadı'); return; }
+      if (!rota.length) r.notlar.push(st.ad + ' için rota yok — stok kartındaki üretim süresi (' + fmt2(urunBirimSure(kart)) + ' dk / adet) kullanıldı');
+      var x = planIsYerlestir(y, k.stokId, adet, null, dk);
+      if (x.kalan > 0.5){ r.notlar.push(st.ad + ': iş 400 günde bitmiyor (kapasite takvimine bakın) — hesaba katılmadı'); return; }
+      if (rota.length && !x.darbogaz) r.notlar.push(st.ad + ': rotada makine seçilmemiş (ya da makine pasif) — işi en erken bitiren makineye kondu');
+      var p = { ad: st.ad, adet: adet, birim: k.birim || st.birim || 'adet', dk: dk, makineId: x.makineId, bas: x.bas, bit: x.bit, darbogaz: x.darbogaz, onunde: onunde[x.makineId] || 0 };
+      r.parcalar.push(p);
+      if (!r.son || p.bit > r.son.bit) r.son = p;
+    });
+    if (r.son){
+      r.bit = r.son.bit; r.takvimGun = gunFarki(y.bugun, r.bit); r.isGunu = 0;
+      for (var g = y.bugun, guv = 0; g < r.bit && guv++ < 800; ){ g = tarihEkle(g, 1); if (gunlukKapasiteDk(g) > 0) r.isGunu++; }
+    }
+    var mrp = Object.keys(ihtiyac).length ? mrpHesapla() : [];
+    Object.keys(ihtiyac).forEach(function(id){
+      var st = stokKart(id); if (!st) return;
+      var m = mrp.find(function(x){ return x.stokId === id; }), dm = depoMiktarlari(st);
+      var eldeki = m ? m.eldeki : Object.keys(dm).reduce(function(a, dp){ return a + (dp === 'Karantina' ? 0 : (Number(dm[dp]) || 0)); }, 0);
+      var ayrilan = m ? m.ieIhtiyac + m.sipIhtiyac + m.altIhtiyac : 0;
+      if (m && o.siparisNo) ayrilan -= toplamla(m.kaynaklar.filter(function(x){ return String(x.kaynak).indexOf('Sipariş ' + o.siparisNo + ' (') === 0; }), function(x){ return x.miktar; });
+      ayrilan = Math.max(0, ayrilan);
+      if (ihtiyac[id] > eldeki - ayrilan + 1e-9) r.eksikler.push({ stokId: id, ad: st.ad, birim: st.birim || '', gerek: ihtiyac[id], eldeki: Math.max(0, eldeki), ayrilan: ayrilan, serbest: Math.max(0, eldeki - ayrilan),
+        yolda: m && !m.uretilir ? (Number(m.gelecek) || 0) : 0, musteriden: o.musteriMalzemesi === 'Evet' || st.tip === 'Müşteri Malı' });
+    });
+    return r;
   }
 
 // ===== m3_fason_kalite.js =====
@@ -8894,6 +9245,7 @@ Dikkat edilmesi gereken 2 nokta:
   // alış faturası, ödeme, gider, kasa/banka, çek/senet, cari yaşlandırma,
   // makine saat ücreti & iş emri gerçek maliyeti, finans raporları, e-belge
   // =====================================================================
+  var TEKLIF_GECERLILIK_GUN = 30; // yeni teklif, kopya ve revizyonda geçerlilik: tarih + bu kadar gün
   var TEKLIF_EK_ALANLAR = [
     {key:'teslimSuresiGun', label:'Teslim süresi (gün)', type:'number', def: 21},
     {key:'odemeKosulu', label:'Ödeme koşulu', type:'text', def: '30 gün vadeli'},
@@ -8989,10 +9341,50 @@ Dikkat edilmesi gereken 2 nokta:
     var t = state.teklifler.find(function(x){ return x.id === id; }); if (!t || !db) return;
     var yeni = Object.assign({}, t); delete yeni.id;
     yeni.revizyon = (Number(t.revizyon)||0) + 1; yeni.anaTeklifId = t.anaTeklifId || t.id; yeni.durum = 'Taslak'; yeni.tarih = todayISO(); yeni.kayipNedeni = ''; yeni.kayipAciklama = '';
+    // Revizyon yeni bir tekliftir: geçerlilik bugünden yeniden başlar, eski teklifin gönderim bilgisi taşınmaz
+    yeni.gecerlilik = tarihEkle(yeni.tarih, TEKLIF_GECERLILIK_GUN); delete yeni.sonGonderim; delete yeni.gonderimTarihi;
     db.collection('teklifler').add(temizle(yeni)).then(function(){
       db.collection('teklifler').doc(t.id).update({ durum: 'Revize edildi' }).catch(function(){});
       toast('✓ '+t.teklifNo+'/R'+yeni.revizyon+' oluşturuldu');
     }).catch(function(e){ toast('Oluşturulamadı: '+dbErrMsg(e), true); });
+  }
+  // ⧉ Kopyala: belge, yeni belge formunda aynı cari, kalemler (stok, miktar, birim, fiyat, iskonto, KDV, satır notu), para birimi ve
+  // ödeme koşuluyla açılır; Vazgeç'te hiçbir kayıt oluşmaz. Numara, tarih ve durum yeniden verilir. İş akışı izi kopyalanmaz: onaylar,
+  // gönderim bilgisi, sevk / teslim alınan miktarlar, müşteri sipariş no, termin, revizyon ve teklif / talep bağlantısı, kayıp nedeni.
+  // Kopyaya kaynak belgenin id'si yazılmaz (yazılsaydı kaynak belge "bağlı kayıt var" diye silinemezdi).
+  function belgeKopyaKalemleri(b){
+    return (b.kalemler || []).map(function(k){
+      return { stokId: k.stokId, miktar: k.miktar, birim: k.birim, listeFiyat: k.listeFiyat, birimFiyat: k.birimFiyat, iskonto: k.iskonto, kdvOrani: k.kdvOrani, aciklama: k.aciklama };
+    });
+  }
+  function teklifKopyala(id){
+    var t = state.teklifler.find(function(x){ return x.id === id; }); if (!t) return;
+    if (!izinVar('ekle')){ toast(izinYokMesaji('ekle'), true); return; }
+    var bugun = todayISO();
+    openKalemForm({
+      title: 'Yeni teklif — kopya: '+teklifAdi(t.id).replace(/^Teklif /, ''), showGecerlilik: true, extraFields: TEKLIF_EK_ALANLAR,
+      initial: { musteriId: t.musteriId, tarih: bugun, gecerlilik: tarihEkle(bugun, TEKLIF_GECERLILIK_GUN), not_: t.not_ || '', kalemler: belgeKopyaKalemleri(t),
+        teslimSuresiGun: t.teslimSuresiGun, odemeKosulu: t.odemeKosulu, paraBirimi: belgePB(t) },
+      onSave: yeniTeklifKaydet
+    });
+  }
+  function siparisKopyala(id){
+    var s = state.siparisler.find(function(x){ return x.id === id; }); if (!s) return;
+    if (!izinVar('ekle')){ toast(izinYokMesaji('ekle'), true); return; }
+    var pb = s.paraBirimi ? { paraBirimi: s.paraBirimi } : {}; // sipariş formunda para birimi alanı yok; varsa olduğu gibi taşınır
+    openKalemForm({
+      title: 'Yeni sipariş — kopya: '+(s.siparisNo || ''), showGecerlilik: false, extraFields: SIPARIS_EK_ALANLAR,
+      initial: Object.assign({ musteriId: s.musteriId, tarih: todayISO(), not_: s.not_ || '', kalemler: belgeKopyaKalemleri(s),
+        resimRev: s.resimRev || '', musteriMalzemesi: s.musteriMalzemesi || 'Hayır', odemeKosulu: s.odemeKosulu || '' }, pb),
+      onSave: function(vals){ delete vals.gecerlilik; yeniSiparisKaydet(Object.assign(vals, pb)); }
+    });
+  }
+  // Satınalma siparişi kopyası yeni sipariş gibi kaydedilir: onay kuralı yeniden işler (limit üstüyse onay bekler)
+  function sasKopyala(id){
+    var s = (state.satinalmaSiparisleri||[]).find(function(x){ return x.id === id; }); if (!s) return;
+    if (!izinVar('ekle')){ toast(izinYokMesaji('ekle'), true); return; }
+    satinalmaSiparisFormu({ musteriId: s.tedarikciId, tarih: todayISO(), not_: s.not_ || '', kalemler: belgeKopyaKalemleri(s),
+      odemeVadeGun: s.odemeVadeGun, teslimYeri: s.teslimYeri, sertifikaIstenir: s.sertifikaIstenir }, null, 'Yeni satınalma siparişi — kopya: '+(s.no || ''));
   }
   function cariRiskDurumu(m){
     var limit = Number(m.riskLimiti)||0; if (!limit) return '';
@@ -9249,9 +9641,9 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'teslimYeri', label:'Teslim yeri', type:'text', def:'Fabrika'},
     {key:'sertifikaIstenir', label:'İstenen sertifika', type:'select', options:['Yok','EN 10204 2.2','EN 10204 3.1','EN 10204 3.2'], def:'Yok'}
   ];
-  function satinalmaSiparisFormu(initial, mevcut){
+  function satinalmaSiparisFormu(initial, mevcut, baslik){
     openKalemForm({
-      title: mevcut ? 'Satınalma siparişini düzenle: '+mevcut.no : 'Yeni satınalma siparişi', showGecerlilik: false, initial: initial || {}, extraFields: SAS_EK_ALANLAR,
+      title: mevcut ? 'Satınalma siparişini düzenle: '+mevcut.no : (baslik || 'Yeni satınalma siparişi'), showGecerlilik: false, initial: initial || {}, extraFields: SAS_EK_ALANLAR,
       cariEtiket: 'Tedarikçi', cariFiltre: tedarikciMi, yeniCariTipi: 'Tedarikçi',
       fiyatBul: function(c, stokId){ var s = stokKart(stokId); return s ? (Number(s.maliyet)||0) : null; },
       onSave: function(v){
@@ -9334,6 +9726,7 @@ Dikkat edilmesi gereken 2 nokta:
       var faturaTutar = toplamla(fts, function(f){ return f.araToplam; });
       var ucluOk = fts.length ? Math.abs(faturaTutar - teslimTutar) < 0.01 : null;
       return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn small" data-sasmk="'+s.id+'">Mal kabul</button><button class="btn secondary small" data-sasyaz="'+s.id+'">🖨 Yazdır</button>'+epostaDugmesi('Satınalma siparişi', s)+'<button class="btn secondary small" data-sasft="'+s.id+'">Alış faturası gir</button>'+
+        '<button class="btn secondary small" data-saskopya="'+s.id+'" title="Aynı tedarikçi ve kalemlerle yeni satınalma siparişi formu açar (kaydedene kadar kayıt oluşmaz; onay kuralı yeniden işler)">⧉ Kopyala</button>'+
         '<select data-sasdurum="'+s.id+'">'+['Taslak','Onaylandı','İptal'].map(function(d){ return '<option'+(s.durum===d?' selected':'')+'>'+d+'</option>'; }).join('')+'</select>'+
         (s.onaylayan ? '<span class="muted" style="font-size:11.5px">Onaylayan: '+esc(s.onaylayan)+(s.onayTarihi ? ' · '+esc(kvTarihTR(s.onayTarihi)) : '')+'</span>' : (s.durum === 'Taslak' && sasOnayGerekli(s.toplam) ? '<span class="neg" style="font-size:11.5px">'+esc(euro(sasOnayLimiti()))+' üstü — onay bekliyor</span>' : ''))+'</div>'+
         '<div class="tablewrap"><table><thead><tr><th>Kalem</th><th class="num">Sipariş</th><th class="num">Teslim alınan</th><th class="num">B.Fiyat</th><th class="num">Tutar</th></tr></thead><tbody>'+
@@ -9345,6 +9738,7 @@ Dikkat edilmesi gereken 2 nokta:
     sonra: function(host){
       host.querySelectorAll('[data-sasmk]').forEach(function(b){ if (!b.dataset.bagli){ b.dataset.bagli = 1; b.addEventListener('click', function(){ sasMalKabul(b.dataset.sasmk); }); } });
       host.querySelectorAll('[data-sasyaz]').forEach(function(b){ if (!b.dataset.bagli){ b.dataset.bagli = 1; b.addEventListener('click', function(){ yazdirSas(b.dataset.sasyaz); }); } });
+      host.querySelectorAll('[data-saskopya]').forEach(function(b){ if (!b.dataset.bagli){ b.dataset.bagli = 1; b.addEventListener('click', function(){ sasKopyala(b.dataset.saskopya); }); } });
       host.querySelectorAll('[data-sasft]').forEach(function(b){ if (!b.dataset.bagli){ b.dataset.bagli = 1; b.addEventListener('click', function(){
         var s = (state.satinalmaSiparisleri||[]).find(function(x){ return x.id === b.dataset.sasft; });
         var teslim = toplamla(s.kalemler||[], function(k){ return (Number(k.teslimAlinan)||0) * (Number(k.birimFiyat)||0); });
@@ -9401,6 +9795,8 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'aciklama', label:'Açıklama', type:'text'}
     ]; },
     defaults: function(){ return { tarih: todayISO(), vadeTarihi:'', tedarikciId:'', sasId:'', fasonSiparisId:'', giderTuru:'Hammadde / malzeme', araToplam:0, kdvOrani:20, tevkifatOrani:'', aciklama:'', faturaNo:'' }; },
+    // aynı tedarikçinin aynı numaralı faturası kaydedilmez (kalemli editörde de aynı kontrol var); tarih sınır dışındaysa sorulur
+    kayitOncesi: function(v, eski, devam){ kayitKontrolu(tarihKurSorulari(alisFaturaKontrolu(v, eski), v, eski), devam); },
     hazirla: function(v){
       v.kdvTutar = Math.round((Number(v.araToplam)||0) * (Number(v.kdvOrani)||0))/100;
       // Tevkifatlı alışta tevkif edilen KDV tedarikçiye ödenmez, KDV-2 ile vergi dairesine ödenir
@@ -9418,13 +9814,31 @@ Dikkat edilmesi gereken 2 nokta:
     sonra: function(host){ host.querySelectorAll('[data-alfyaz]').forEach(function(b){ if (b.dataset.bagli) return; b.dataset.bagli = 1; b.addEventListener('click', function(){ var f = (state.alisFaturalari||[]).find(function(x){ return x.id === b.dataset.alfyaz; }); if (f) alisBelgeYazdir(f); }); }); host.querySelectorAll('[data-alfode]').forEach(function(b){ if (b.dataset.bagli) return; b.dataset.bagli = 1; b.addEventListener('click', function(){
       var f = (state.alisFaturalari||[]).find(function(x){ return x.id === b.dataset.alfode; });
       crudYeni(ODEME_TANIM, { cariId: f.tedarikciId, alisFaturaId: f.id, paraBirimi: belgePB(f), belgeTutar: belgePB(f) !== 'EUR' ? alisKalanBelge(f) : alisKalan(f), dovizKuru: belgePB(f) === 'USD' ? pbKur('USD') : 0, tutar: alisKalan(f), aciklama: (f.faturaNo||f.no)+' ödemesi' });
-    }); }); }
+    }); }); },
+    // stoğa işlenmiş faturanın stok girişi (iadede çıkışı) geri alınır, bağlı irsaliyeler yeniden faturalanabilir olur
+    onDelete: function(id){
+      var f = (state.alisFaturalari||[]).find(function(x){ return x.id === id; });
+      db.collection('alisFaturalari').doc(id).delete().then(function(){
+        belgeStokEsitle('alisFatura', id, f ? (f.faturaNo || f.no) : '', {}, 'Alış faturası silindi (stok geri)');
+        faturaIrsaliyeleriniBirak(id);
+        toast('Silindi');
+      }).catch(function(e){ toast('Silinemedi: '+dbErrMsg(e), true); });
+    }
   };
   EK_RENDER.alisfatura = function(){ crudBolumler('alisfatura', [ALIS_FATURA_TANIM]); };
 
+  // Ödemenin kapattığı alış faturası yalnız ödemenin carisinin olabilir: liste o carinin açık faturaları (+ şu an bağlı olduğu fatura).
+  // Eski kayıtta başka carinin faturasına bağlantı varsa listede gösterilmez; form kaydedilince bağlantı kalkar.
+  function odemeFaturaSecenek(cariId, seciliId){
+    var eski = seciliId ? (state.alisFaturalari||[]).find(function(f){ return f.id === seciliId; }) : null;
+    var bos = !cariId ? '- (önce cariyi seçin)' : (eski && eski.tedarikciId !== cariId ? '- (eski bağlantı '+(eski.faturaNo||eski.no)+' başka carinin faturası; kaldırılır)' : '- (en eskiden düşülür)');
+    return secenek((state.alisFaturalari||[]).filter(function(f){ return cariId && f.tedarikciId === cariId && (alisKalan(f) > 0.01 || f.id === seciliId); }), function(f){ return f.id; },
+      function(f){ return (f.faturaNo||f.no)+' · kalan '+(belgePB(f) !== 'EUR' ? pbFmt(alisKalanBelge(f), belgePB(f)) : euro(alisKalan(f)))+(f.vadeTarihi ? ' · vade '+f.vadeTarihi : ''); }, bos);
+  }
+  function odemeFaturaUyumsuz(o){ var f = o.alisFaturaId ? (state.alisFaturalari||[]).find(function(x){ return x.id === o.alisFaturaId; }) : null; return f && f.tedarikciId !== o.cariId ? f : null; }
   var ODEME_TANIM = {
     key: 'odeme', collection: 'odemeler', state: 'odemeler', listeBaslik: 'Ödemeler (tedarikçi / fasoncu)', yeniEtiket: '+ Ödeme',
-    fields: function(){ return [
+    fields: function(v){ return [
       {key:'cariId', label:'Cari', type:'select', options: cariSecenek(tedarikciMi), required:true},
       {key:'tarih', label:'Tarih', type:'date'},
       {key:'paraBirimi', label:'Para birimi', type:'select', options: PB_LISTE},
@@ -9433,13 +9847,24 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'yontem', label:'Yöntem', type:'select', options:['Havale/EFT','Nakit','Çek','Senet','Kredi kartı','Diğer']},
       {key:'hesapId', label:'Kasa / banka hesabı', type:'select', options: hesapSecenekleri},
       {key:'belgeNo', label:'Dekont / makbuz no (e-Defter için)', type:'text'},
-      {key:'alisFaturaId', label:'Kapanan alış faturası', type:'select', options: function(){ return secenek((state.alisFaturalari||[]).filter(function(f){ return alisKalan(f) > 0.01; }), function(f){ return f.id; }, function(f){ return (f.faturaNo||f.no)+' · '+cariAdi(f.tedarikciId)+' · kalan '+(belgePB(f) !== 'EUR' ? pbFmt(alisKalanBelge(f), belgePB(f)) : euro(alisKalan(f))); }); }},
+      {key:'alisFaturaId', label:'Kapanan alış faturası (yalnız bu carinin)', type:'select', options: function(){ return odemeFaturaSecenek(v && v.cariId, v && v.alisFaturaId); }},
       {key:'aciklama', label:'Açıklama', type:'text'}
     ]; },
     defaults: function(){ return { tarih: todayISO(), cariId:'', paraBirimi:'TRY', belgeTutar:0, dovizKuru:0, tutar:0, yontem:'Havale/EFT', hesapId:'', alisFaturaId:'', aciklama:'' }; },
-    hazirla: function(v, eski){ if (cekYontemi(v.yontem)) v.hesapId = ''; else if (!v.hesapId){ toast('Paranın çıktığı kasa / banka hesabını seçin (muhasebede hesabın alt hesabına yazılır).', true); return false; } if (!(Number(v.belgeTutar) > 0) && belgePB(v) === 'EUR') v.belgeTutar = Number(v.tutar) || 0; return basitBelgeEur(v, 'belgeTutar', 'tutar'); },
+    // tarih ya da $ kuru sınır dışındaysa sorulur (düzenlemede yalnız değişen alan)
+    kayitOncesi: function(v, eski, devam){ kayitKontrolu(tarihKurSorulari({ engel: [], soru: [] }, v, eski), devam); },
+    hazirla: function(v, eski){ if (cekYontemi(v.yontem)) v.hesapId = ''; else if (!v.hesapId){ toast('Paranın çıktığı kasa / banka hesabını seçin (muhasebede hesabın alt hesabına yazılır).', true); return false; }
+      var yf = odemeFaturaUyumsuz(v); if (yf){ toast('Seçilen alış faturası '+(yf.faturaNo||yf.no)+' başka bir cariye ('+cariAdi(yf.tedarikciId)+') ait — ödeme yalnız kendi carisinin faturasını kapatabilir. Kaydedilmedi.', true); return false; }
+      if (!(Number(v.belgeTutar) > 0) && belgePB(v) === 'EUR') v.belgeTutar = Number(v.tutar) || 0; return basitBelgeEur(v, 'belgeTutar', 'tutar'); },
+    // cari değişince "Kapanan alış faturası" listesi yeni carinin faturalarıyla yenilenir (önceki carinin faturası seçili kalmaz)
+    formAcildi: function(el){
+      var l = ODEME_TANIM.fields(), alan = function(k){ return el.querySelector('[data-ffkey="'+l.findIndex(function(f){ return f.key === k; })+'"]'); }, cSel = alan('cariId'), fSel = alan('alisFaturaId');
+      if (!cSel || !fSel) return;
+      cSel.addEventListener('change', function(){ var secili = odemeFaturaUyumsuz({ cariId: cSel.value, alisFaturaId: fSel.value }) ? '' : fSel.value;
+        secenekDoldur(fSel, odemeFaturaSecenek(cSel.value, secili).map(function(o){ return '<option value="'+escAttr(o.value)+'">'+esc(o.label)+'</option>'; }).join(''), secili); });
+    },
     eklendi: function(o){ if (cekYontemi(o.yontem) && !o.cekId && o.id) cekKarsiliktanAc(o, 'odeme'); },
-    rowFn: function(o){ return { title: esc(cariAdi(o.cariId))+' · '+(belgePB(o) !== 'EUR' ? pbFmt(o.belgeTutar, belgePB(o))+' <span class="muted">≈ '+euro(o.tutar)+'</span>' : euro(o.tutar)), sub: esc(o.tarih)+' · '+esc(o.yontem)+(o.hesapId?' · '+esc(hesapAdi(o.hesapId)):'')+(o.aciklama?' · '+esc(o.aciklama):'') }; }
+    rowFn: function(o){ var yf = odemeFaturaUyumsuz(o); return { title: esc(cariAdi(o.cariId))+' · '+(belgePB(o) !== 'EUR' ? pbFmt(o.belgeTutar, belgePB(o))+' <span class="muted">≈ '+euro(o.tutar)+'</span>' : euro(o.tutar)), sub: esc(o.tarih)+' · '+esc(o.yontem)+(o.hesapId?' · '+esc(hesapAdi(o.hesapId)):'')+(o.aciklama?' · '+esc(o.aciklama):'')+(yf ? ' · <span class="neg">⚠ başka carinin faturasına bağlı ('+esc(yf.faturaNo||yf.no)+') — düzenleyip kaydedin</span>' : '') }; }
   };
 
   // ---------- Kasa & banka ----------
@@ -10334,6 +10759,8 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'donemBaslangic', label:'Kapsadığı ilk ay', type:'month', hint:'Boş: gider tarihinin ayı'}
     ]; },
     defaults: function(){ return { tarih: todayISO(), tur:'Diğer', aciklama:'', belgeNo:'', cariId:'', paraBirimi:'TRY', belgeTutar:0, dovizKuru:0, tutar:0, kdvOrani:20, makineId:'', odemeDurumu:'Ödendi', hesapId:'', tekrar:'Hayır', donemAy:1, donemBaslangic:'' }; },
+    // aynı cari + belge no ile gider ya da alış faturası varsa, tarih ya da $ kuru sınır dışındaysa sorulur (tek kutuda)
+    kayitOncesi: function(v, eski, devam){ kayitKontrolu(tarihKurSorulari(giderKontrolu(v, eski), v, eski), devam); },
     // belge para biriminde tutar + KDV → € alanları (tutar, kdvTutar) belge tarihindeki kurla
     hazirla: function(v){
       if ((v.tur === 'Maaş' || v.tur === 'SGK / vergi') && bordrolar().length){
@@ -10510,7 +10937,8 @@ Dikkat edilmesi gereken 2 nokta:
       var use = Math.min(kalanB[f.id] * r, x.tl), b = use / r; kalanB[f.id] -= b; x.tl -= use;
       if (!x.iade) dagilim.push({ f: f, o: x.p, miktar: b, cariId: x.cid });
     }
-    od.forEach(function(x){ if (x.hedef){ var hf = fats.find(function(f){ return f.id === x.hedef; }); if (hf) uygula(hf, x); } });
+    // bağlı fatura başka bir cariye aitse (eski, yanlış bağlanmış kayıt) bağlantı yok sayılır: para kendi carisinin en eski açık faturasına düşer
+    od.forEach(function(x){ if (x.hedef){ var hf = fats.find(function(f){ return f.id === x.hedef; }); if (hf && (satis ? hf.musteriId : hf.tedarikciId) === x.cid) uygula(hf, x); } });
     od.forEach(function(x){ (cariF[x.cid] || []).forEach(function(f){ if (x.tl > 0.004) uygula(f, x); }); if (x.tl > 0.004) serbestTL[x.cid] = (serbestTL[x.cid] || 0) + x.tl; });
     var kalanEur = {}, serbestEur = {}, e = muhKur(todayISO()) || 1;
     Object.keys(kalanB).forEach(function(id){ var f = fats.find(function(x){ return x.id === id; }); kalanB[id] = Math.round(kalanB[id] * 100) / 100; kalanEur[id] = muhR2(belgedenEur(f, kalanB[id])); });
@@ -10535,6 +10963,15 @@ Dikkat edilmesi gereken 2 nokta:
     if ((pb === 'EUR' ? k : kb) <= 0.01) return ' · <span class="pos">tahsil edildi</span>';
     var gec = f.vadeTarihi && f.vadeTarihi < todayISO();
     return ' · <span class="'+(gec?'neg':'')+'">açık '+(pb === 'EUR' ? euro(k) : pbFmt(kb, pb)+' (≈'+euro(k)+')')+(gec?' ('+gunFarki(f.vadeTarihi, todayISO())+' gün gecikme)':'')+'</span>';
+  }
+  // Tahsilatın kapattığı fatura yalnız tahsilatın müşterisinin olabilir (yeni tahsilat ekranı listeyi zaten müşteriye göre süzer).
+  // Düzenleme formu: müşterinin açık kesilmiş faturaları + şu an bağlı olduğu fatura; başka müşterinin faturasına eski bağlantı gösterilmez, kaydedince kalkar.
+  function tahsilatFaturaUyumsuz(t){ var f = t.faturaId ? state.faturalar.find(function(x){ return x.id === t.faturaId; }) : null; return f && f.musteriId !== t.musteriId ? f : null; }
+  function tahsilatFaturaSecenek(t){
+    var kalanlar = faturaKalanlari(), yf = tahsilatFaturaUyumsuz(t);
+    return [{ value: '', label: yf ? '- (eski bağlantı '+yf.faturaNo+' başka müşterinin faturası; kaldırılır)' : '- (en eskiden düşülür)' }].concat(
+      state.faturalar.filter(function(f){ return f.musteriId === t.musteriId && (f.id === t.faturaId || (f.durum === 'Kesildi' && (kalanlar[f.id]||0) > 0.01)); })
+        .map(function(f){ return { value: f.id, label: f.faturaNo+(f.durum === 'Kesildi' ? ' · kalan '+euro(kalanlar[f.id]||0) : ' ('+f.durum+')')+(f.vadeTarihi ? ' · vade '+f.vadeTarihi : '') }; }));
   }
   var _tahsilatBagli = false;
   function tahsilatEkSecimler(){
@@ -11996,11 +12433,71 @@ Dikkat edilmesi gereken 2 nokta:
     if (tah.length){ geri(); uyariGoster('Bu fatura iptal edilemez — '+tah.length+' tahsilat bu faturayı kapatıyor:<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px">'+
       tah.map(function(t){ return '<span class="chip" data-git="carihesap|'+t.id+'">tahsilat '+esc(euro(t.tutar))+' · '+esc(kvTarihTR(t.tarih))+'</span>'; }).join(' ')+'</div>Önce tahsilatın "Kapanan fatura" alanını boşaltın ya da tahsilatı silin.'); return; }
     var eb = f.eBelgeDurumu && f.eBelgeDurumu !== 'Gönderilmedi';
-    iptalNedeniSor('Faturayı iptal et: '+f.faturaNo, eb ? 'Bu fatura e-belge olarak gönderildi: entegratörde / GİB\'de de iptal edin (alıcı itirazı 8 gün içinde).' : 'Fatura silinmez; "İptal" olarak listede kalır, alacağa sayılmaz.', function(neden){
-      durumKaydet('faturalar', f.id, Object.assign({ durum:'İptal', iptalNedeni: neden }, iptalBilgisi()), 'Fatura '+f.faturaNo);
+    iptalNedeniSor('Faturayı iptal et: '+f.faturaNo, (eb ? 'Bu fatura e-belge olarak gönderildi: entegratörde / GİB\'de de iptal edin (alıcı itirazı 8 gün içinde).' : 'Fatura silinmez; "İptal" olarak listede kalır, alacağa sayılmaz.') +
+      (f.irsaliyeYerine ? ' İrsaliyeli faturanın stoktan düştüğü mal stoğa geri girer.' : '') + ((f.irsaliyeIdleri || []).length ? ' Bağlı irsaliyeler yeniden faturalanabilir olur.' : ''), function(neden){
+      durumKaydet('faturalar', f.id, Object.assign({ durum:'İptal', iptalNedeni: neden }, iptalBilgisi()), 'Fatura '+f.faturaNo).then(function(){
+        var g = state.faturalar.find(function(x){ return x.id === f.id; }); if (!g || g.durum !== 'İptal') return;
+        belgeStokEsitle('fatura', f.id, f.faturaNo, {}, 'Fatura iptali (stoğa geri)');
+        faturaIrsaliyeleriniBirak(f.id);
+      });
     });
     geri();
   }
+  // ---------- Belgenin stok etkisini eşitleme (irsaliyeli satış faturası, stoğa işlenen alış faturası) ----------
+  // Belgenin bugüne kadar yazdığı stok hareketlerinin (kaynakTur + kaynakId) net toplamı hedefle karşılaştırılır, fark yazılır:
+  // iptal / silmede hedef boştur (etki tamamen geri alınır, her depo / lot kendi yerine), düzenlemede yeni kalemlerdir (fark tek hareket).
+  // Net üzerinden çalıştığı için iki kez çağrılsa da ikinci çağrı hareket yazmaz.
+  function belgeStokEsitle(kaynakTur, kaynakId, kaynakNo, hedef, tur, tarih){
+    if (!kaynakId) return Promise.resolve();
+    hedef = hedef || {};
+    var gruplar = {}, net = {}, islemler = [], r4 = function(x){ return Math.round(x * 10000) / 10000; };
+    (state.stokHareketleri || []).forEach(function(h){
+      if (h.kaynakTur !== kaynakTur || h.kaynakId !== kaynakId || !h.stokId) return;
+      var a = h.stokId + '|' + (h.depo || '') + '|' + (h.lotNo || ''), m = Number(h.miktar) || 0;
+      (gruplar[a] = gruplar[a] || { stokId: h.stokId, depo: h.depo || null, lotNo: h.lotNo || '', miktar: 0 }).miktar += m;
+      net[h.stokId] = (net[h.stokId] || 0) + m;
+    });
+    var ortak = { tur: tur, kaynakTur: kaynakTur, kaynakId: kaynakId, kaynakNo: kaynakNo || '', tarih: tarih || todayISO() };
+    var idler = Object.keys(net); Object.keys(hedef).forEach(function(id){ if (idler.indexOf(id) < 0) idler.push(id); });
+    idler.forEach(function(stokId){
+      var h = hedef[stokId], hm = h ? Number(h.miktar) || 0 : 0, fark = r4(hm - (net[stokId] || 0));
+      if (!fark) return;
+      if (!hm) Object.keys(gruplar).forEach(function(a){ var g = gruplar[a]; if (g.stokId === stokId && r4(g.miktar)) islemler.push(stokHareketi(Object.assign({}, ortak, { stokId: stokId, miktar: -r4(g.miktar), depo: g.depo, lotNo: g.lotNo }))); });
+      else islemler.push(stokHareketi(Object.assign({}, ortak, { stokId: stokId, miktar: fark, birimMaliyet: fark > 0 ? Number(h.birimMaliyet) || 0 : 0 })));
+    });
+    return Promise.all(islemler);
+  }
+  // İrsaliye yerine geçen satış faturasının stok hedefi: iptal değilse stoklu her kalem çıkış
+  function faturaStokHedefi(f){
+    var h = {};
+    if (f && f.irsaliyeYerine && f.durum !== 'İptal') (f.kalemler || []).forEach(function(k){ if (k.stokId && Number(k.miktar) > 0) (h[k.stokId] = h[k.stokId] || { miktar: 0 }).miktar -= Number(k.miktar); });
+    return h;
+  }
+  // Stoğa işlenen alış faturasının stok hedefi (iade: çıkış); oran belge para biriminden €'ya (giriş birim maliyeti için)
+  function alisStokHedefi(f, oran){
+    var h = {}, t = alisTipi(f.faturaTipi);
+    if (!f.stokIsle || !t.stok) return h;
+    (f.kalemler || []).forEach(function(k){
+      if (!k.stokId || !(Number(k.miktar) > 0)) return;
+      var x = h[k.stokId] = h[k.stokId] || { miktar: 0, birimMaliyet: 0 };
+      x.miktar += (t.iade ? -1 : 1) * Number(k.miktar);
+      if (!t.iade) x.birimMaliyet = (Number(k.tutar) || 0) * (oran || 1) / Number(k.miktar);
+    });
+    return h;
+  }
+  function belgeStokHareketiVar(kaynakTur, kaynakId){ return (state.stokHareketleri || []).some(function(h){ return h.kaynakTur === kaynakTur && h.kaynakId === kaynakId; }); }
+  // Faturanın irsaliye bağlantısı: yeni seçilenler "Faturalandı" olur; bırakılanlar (fatura iptal / silme, düzenlemede çıkarılan)
+  // faturalanmadan önceki durumuna döner ve yeniden faturalanabilir.
+  function faturaIrsaliyeleriniBagla(faturaId, yeniIdler){
+    if (!faturaId) return;
+    yeniIdler = yeniIdler || [];
+    (state.irsaliyeler || []).forEach(function(r){
+      var simdi = yeniIdler.indexOf(r.id) > -1;
+      if (simdi && r.faturaId !== faturaId) kayitGuncelle('irsaliyeler', r.id, { faturaId: faturaId, durum: 'Faturalandı', faturaOncesiDurum: r.durum === 'Faturalandı' ? (r.faturaOncesiDurum || '') : (r.durum || '') }).catch(function(){});
+      else if (!simdi && r.faturaId === faturaId) kayitGuncelle('irsaliyeler', r.id, { faturaId: '', durum: r.faturaOncesiDurum || (irsaliyeTipi(r.tip).yon === 'Giriş' ? 'Teslim alındı' : 'Sevk edildi'), faturaOncesiDurum: '' }).catch(function(){});
+    });
+  }
+  function faturaIrsaliyeleriniBirak(faturaId){ faturaIrsaliyeleriniBagla(faturaId, []); }
   // İrsaliyenin stok ve sipariş etkisini geri alır (silme ve iptal ortak)
   function irsaliyeEtkisiniGeriAl(irs, tur){
     var s = state.siparisler.find(function(x){ return x.id===irs.siparisId; });
@@ -12091,6 +12588,9 @@ Dikkat edilmesi gereken 2 nokta:
     var kalanlar = faturaKalanlari();
     state.faturalar.filter(function(f){ return (kalanlar[f.id]||0) > 0.01 && f.vadeTarihi && f.vadeTarihi < bugun; }).forEach(function(f){ ekle('uyari', 'Vadesi geçen alacak: '+f.faturaNo+' · '+musteriAdiById(f.musteriId)+' · '+euro(kalanlar[f.id]), 'faturalar', f.id); });
     (state.alisFaturalari||[]).filter(function(f){ return alisKalan(f) > 0.01 && f.vadeTarihi && f.vadeTarihi <= hafta; }).forEach(function(f){ ekle(f.vadeTarihi < bugun ? 'kritik' : 'uyari', 'Ödeme '+(f.vadeTarihi < bugun ? 'gecikti' : 'yaklaşıyor')+': '+(f.faturaNo||f.no)+' · '+cariAdi(f.tedarikciId)+' ('+f.vadeTarihi+')', 'alisfatura', f.id); });
+    // Başka carinin faturasına bağlanmış eski tahsilat / ödeme: bakiye hesabı bu bağlantıyı yok sayar; kayıt açılıp kaydedilince bağlantı kalkar
+    state.tahsilatlar.forEach(function(t){ var yf = tahsilatFaturaUyumsuz(t); if (yf) ekle('uyari', 'Tahsilat başka müşterinin faturasına bağlı: '+musteriAdiById(t.musteriId)+' · '+euro(t.tutar)+' ('+(t.tarih||'')+') → '+yf.faturaNo+' · '+musteriAdiById(yf.musteriId)+' — tahsilatı açıp "Kapanan fatura"yı düzeltin', 'carihesap', t.id); });
+    (state.odemeler||[]).forEach(function(o){ var yf = odemeFaturaUyumsuz(o); if (yf) ekle('uyari', 'Ödeme başka carinin faturasına bağlı: '+cariAdi(o.cariId)+' · '+euro(o.tutar)+' ('+(o.tarih||'')+') → '+(yf.faturaNo||yf.no)+' · '+cariAdi(yf.tedarikciId)+' — ödemeyi açıp "Kapanan alış faturası"nı düzeltin', 'kasabanka', o.id); });
     (state.cekSenet||[]).filter(function(c){ return c.vade && c.vade <= hafta && ['Portföyde','Bankaya verildi'].indexOf(c.durum) > -1 || (c.yon.indexOf('Verilen') === 0 && c.vade && c.vade <= hafta && c.durum !== 'Ödendi' && c.durum !== 'İade'); }).forEach(function(c){ ekle('uyari', c.tur+' vadesi: '+cariAdi(c.cariId)+' · '+fmt2(c.tutar)+' '+(c.paraBirimi||'')+' ('+c.vade+')', 'ceksenet', c.id); });
     (state.ncr||[]).filter(function(n){ return n.durum !== 'Kapandı'; }).forEach(function(n){ ekle(n.hedefTarih && n.hedefTarih < bugun ? 'kritik' : 'bilgi', 'Açık NCR: '+n.no+' · '+(n.tanim||'').slice(0,60), 'ncr', n.id); });
     (state.duruslar||[]).filter(function(d){ return d.baslangic && !d.bitis; }).forEach(function(d){ ekle('kritik', 'Devam eden duruş: '+makineAdiById(d.makineId)+' · '+d.neden+' ('+d.tarih+' '+d.baslangic+')', 'duruslar', d.id); });
@@ -14348,9 +14848,9 @@ Dikkat edilmesi gereken 2 nokta:
     '600.001':'Yurt içi satışlar', '600.002':'Fason işçilik ve hizmet satışları', '601.001':'Mal ihracatı', '601.002':'Hizmet ihracatı', '602.001':'Hurda ve talaş satışları', '710.001':'Hammadde sarfı'
   };
   function muhCariKod(cariId, ana, pb){ var m = state.musteriler.find(function(x){ return x.id === cariId; }); return m ? ana + '.' + muhCariNo(m) + (pb ? '.' + muhPbKod(pb) : '') : ana; }
-  // Ödeme / tahsilatın cari döviz kırılımı: bağlı fatura varsa onun dövizi; yoksa carinin faturaları tek dövizdeyse o; yoksa cari kartındaki; yoksa belgenin dövizi
+  // Ödeme / tahsilatın cari döviz kırılımı: bağlı fatura (aynı carinin) varsa onun dövizi; yoksa carinin faturaları tek dövizdeyse o; yoksa cari kartındaki; yoksa belgenin dövizi
   function muhCariPB(cariId, satis, belge, bagli){
-    if (bagli) return belgePB(bagli);
+    if (bagli && (satis ? bagli.musteriId : bagli.tedarikciId) === cariId) return belgePB(bagli);
     var f = satis ? state.faturalar.filter(function(x){ return x.musteriId === cariId && x.durum === 'Kesildi'; }) : (state.alisFaturalari || []).filter(function(x){ return x.tedarikciId === cariId; });
     var pbs = {}; f.forEach(function(x){ pbs[belgePB(x)] = 1; }); var l = Object.keys(pbs);
     if (l.length === 1) return l[0];
@@ -14830,7 +15330,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (mevcut && donemKilitli(mevcut.tarih)){ toast(kilitMesaji(mevcut.tarih), true); return; }
     if (mevcut && muhAyKesin(mevcut.tarih)){ toast(muhAyAdi(mevcut.tarih.slice(0, 7)) + ' kesinleşmiş; fişi değiştirmek yerine açık bir aya düzeltme fişi girin.', true); return; }
     muhHesapDatalist();
-    var d = mevcut ? JSON.parse(JSON.stringify(mevcut)) : { tarih: todayISO(), tur: 'Mahsup', aciklama: '', belgeNo: '', satirlar: [{ hesap: '', borc: 0, alacak: 0 }, { hesap: '', borc: 0, alacak: 0 }] };
+    var d = mevcut ? JSON.parse(JSON.stringify(mevcut)) : { tarih: todayISO(), tur: 'Mahsup', aciklama: '', belgeNo: '', satirlar: [{ hesap: '', borc: 0, alacak: 0 }, { hesap: '', borc: 0, alacak: 0 }] }, soruOnay = false;
     function satirHtml(s, i){
       var kod = s.hesap ? s.hesap + ' ' + muhHesapAdi(s.hesap) : '';
       return '<tr data-muhsatir="' + i + '"><td><input type="text" list="muhHesapListe" data-mf="hesap" value="' + escAttr(kod) + '" placeholder="kod veya ad yazın"></td>' +
@@ -14907,6 +15407,9 @@ Dikkat edilmesi gereken 2 nokta:
       if (Math.abs(b - a) >= 0.005){ toast('Fiş denk değil: borç ₺' + muhTutar(b) + ' ≠ alacak ₺' + muhTutar(a), true); return false; }
       if (d.belgeTipi && (!String(d.belgeNo).trim() || !d.belgeTarihi)){ toast('Belge tipi seçildiyse belge no ve belge tarihi de girilmeli (e-Defter zorunlu alanı). Belgeye dayanmayan kayıtta tipi boş bırakın.', true); return false; }
       if (d.belgeTipi === 'other' && !String(d.belgeAciklama).trim()){ toast('"Diğer" belge tipinde belge türü açıklaması yazın (ör. Banka dekontu).', true); return false; }
+      // fiş tarihi sınır dışındaysa sorulur ("Yine de kaydet" formu yeniden kaydeder; düzenlemede yalnız tarih değiştiyse)
+      var soruK = tarihKurSorulari({ engel: [], soru: [] }, d, mevcut, { tarihAd: 'Fiş tarihi' });
+      if (soruK.soru.length && !soruOnay){ kayitKontrolu(soruK, function(){ soruOnay = true; byId('formKaydet').click(); }); return false; }
       var veri = { tarih: d.tarih, tur: d.tur, aciklama: d.aciklama.trim(), belgeNo: d.belgeNo.trim(), belgeTipi: d.belgeTipi || '', belgeTarihi: d.belgeTipi ? d.belgeTarihi : '', belgeAciklama: d.belgeTipi === 'other' ? d.belgeAciklama.trim() : '', kur: muhKur(d.tarih), satirlar: satirlar };
       if (mevcut){
         kayitGuncelle('muhasebeFisleri', mevcut.id, veri).then(function(){ toast('✓ Fiş güncellendi'); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
@@ -16258,7 +16761,8 @@ Dikkat edilmesi gereken 2 nokta:
 
   // ---------- İrsaliyeden kalem getirme ----------
   // Bir carinin faturalanmamış irsaliyeleri: Sevkiyat (sipariş) irsaliyeleri + İrsaliyeler sayfasındaki ilgili çeşitler
-  function faturaliIrsaliyeIdleri(){ var m = {}; state.faturalar.concat(state.alisFaturalari || []).forEach(function(f){ (f.irsaliyeIdleri || []).forEach(function(id){ m[id] = f; }); }); return m; }
+  // iptal edilen faturanın irsaliyeleri yeniden faturalanabilir
+  function faturaliIrsaliyeIdleri(){ var m = {}; state.faturalar.concat(state.alisFaturalari || []).forEach(function(f){ if (f.durum === 'İptal') return; (f.irsaliyeIdleri || []).forEach(function(id){ m[id] = f; }); }); return m; }
   function faturalanacakIrsaliyeler(cariId, satis){
     var fat = faturaliIrsaliyeIdleri(), out = [];
     if (satis) state.sevkiyatlar.filter(function(i){ return i.musteriId === cariId && i.durum !== 'İptal' && !fat[i.id]; }).forEach(function(i){
@@ -16280,7 +16784,7 @@ Dikkat edilmesi gereken 2 nokta:
       paraBirimi: 'EUR', dovizKuru: 0, ozelMatrah: 0, ozelMatrahKdvOrani: 20, ozelMatrahKodu: '', konaklamaOrani: 2, asilSaticiUnvan: '', asilSaticiVkn: '', hksKunye: '', sgkDonemBas: '', sgkDonemBit: '', sgkMukellefKodu: '', sgkMukellefAdi: '', sgkDosyaNo: '',
       teslimSarti: '', tasimaSekli: '', gumrukBeyanNo: '', gumrukTarih: '', refFaturaNo: '', refFaturaTarih: '', musteriSiparisNo: '', irsaliyeYerine: false, irsaliyeIdleri: [], irsaliyeNolari: '', not_: '',
       kalemler: [{ miktar: 0, birim: 'adet', kdvOrani: 20 }] }, on || {});
-    var o = { kalemler: d.kalemler, satis: true };
+    var o = { kalemler: d.kalemler, satis: true }, soruOnay = false;
     function tipAyar(){ var t = satisTipi(d.faturaTipi); o.kdvKilit = !!t.kdvSifir || !!t.ozelMatrah; o.gtip = d.faturaTipi === 'İhracat'; o.kdvVarsayilan = t.kdvSifir || t.ozelMatrah ? 0 : (t.kdv != null ? t.kdv : 20); o.pb = d.paraBirimi || 'EUR'; return t; }
     function ciz(el){
       o.kalemler = d.kalemler;
@@ -16359,6 +16863,10 @@ Dikkat edilmesi gereken 2 nokta:
       if (t.ozelMatrah && (!(d.ozelMatrah > 0) || !d.ozelMatrahKodu)){ toast('Özel matrah tutarı ve kodu girilmeli.', true); return false; }
       if (t.komisyoncu && (!d.asilSaticiUnvan || !d.asilSaticiVkn)){ toast('Komisyoncu satışında asıl satıcının unvanı ve VKN\'si girilmeli.', true); return false; }
       if (t.sgk && (!d.sgkDonemBas || !d.sgkDonemBit || !d.sgkMukellefKodu)){ toast('SGK faturasında dönem ve mükellef kodu girilmeli.', true); return false; }
+      if (d.irsaliyeYerine && (d.irsaliyeIdleri || []).length){ toast('Seçilen irsaliyenin malı stoktan zaten düştü — "irsaliye yerine geçer" işaretini kaldırın (yoksa ikinci kez düşülür).', true); return false; }
+      // tarih ya da $ kuru sınır dışındaysa sorulur ("Yine de kaydet" formu yeniden kaydeder; düzenlemede yalnız değişen alan)
+      var soruK = tarihKurSorulari({ engel: [], soru: [] }, d, mevcut);
+      if (soruK.soru.length && !soruOnay){ kayitKontrolu(soruK, function(){ soruOnay = true; byId('formKaydet').click(); }); return false; }
       var tecil = d.faturaTipi === 'İhraç kayıtlı', ttB = satisToplamlari(kal, d), pbF = d.paraBirimi || 'EUR';
       var dkF = pbF === 'TRY' ? 1 : (pbF === 'USD' ? (d.dovizKuru || pbKur('USD', d.tarih)) : 0);
       var tt = pbF === 'EUR' ? ttB : Object.assign({}, ttB, belgeyiEuroya(ttB, pbF, dkF, d.tarih));
@@ -16374,13 +16882,18 @@ Dikkat edilmesi gereken 2 nokta:
         ozelMatrahKodu: t.ozelMatrah ? d.ozelMatrahKodu : '', konaklamaOrani: t.konaklama ? d.konaklamaOrani : 0, asilSaticiUnvan: t.komisyoncu ? d.asilSaticiUnvan : '', asilSaticiVkn: t.komisyoncu ? d.asilSaticiVkn : '', hksKunye: t.hks ? d.hksKunye : '',
         sgkDonemBas: t.sgk ? d.sgkDonemBas : '', sgkDonemBit: t.sgk ? d.sgkDonemBit : '', sgkMukellefKodu: t.sgk ? d.sgkMukellefKodu : '', sgkMukellefAdi: t.sgk ? d.sgkMukellefAdi : '', sgkDosyaNo: t.sgk ? d.sgkDosyaNo : '' });
       if (mevcut){
-        kayitGuncelle('faturalar', mevcut.id, veri).then(function(){ toast('✓ Fatura güncellendi'); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+        // düzenlemede miktar / kalem / "irsaliye yerine geçer" değiştiyse stok farkı yazılır; irsaliye seçimi değiştiyse bağlantı güncellenir
+        kayitGuncelle('faturalar', mevcut.id, veri).then(function(){
+          belgeStokEsitle('fatura', mevcut.id, mevcut.faturaNo, faturaStokHedefi(Object.assign({}, mevcut, veri)), 'Satış (irsaliyeli fatura) düzeltme', veri.tarih);
+          faturaIrsaliyeleriniBagla(mevcut.id, veri.irsaliyeIdleri);
+          toast('✓ Fatura güncellendi');
+        }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
       } else {
         var kb = nextKodBilgisi('fatura');
         kayitEkle('faturalar', Object.assign(veri, { faturaNo: kb.kod, durum: 'Taslak', eBelgeDurumu: 'Gönderilmedi' })).then(function(res){
           configWrite(kb.kodPayload).catch(function(){});
           if (veri.irsaliyeYerine) veri.kalemler.forEach(function(k){ if (k.stokId) stokHareketi({ stokId: k.stokId, miktar: -k.miktar, tur: 'Satış (irsaliyeli fatura)', kaynakTur: 'fatura', kaynakId: res && res.id, kaynakNo: kb.kod, tarih: veri.tarih }); });
-          (veri.irsaliyeIdleri || []).forEach(function(id){ if ((state.irsaliyeler || []).some(function(i){ return i.id === id; })) kayitGuncelle('irsaliyeler', id, { faturaId: res && res.id, durum: 'Faturalandı' }).catch(function(){}); });
+          faturaIrsaliyeleriniBagla(res && res.id, veri.irsaliyeIdleri);
           toast('✓ Fatura oluşturuldu (taslak): ' + kb.kod + ' — kontrol edip "Kesildi" yapın');
         }).catch(function(e){ toast('Oluşturulamadı: ' + dbErrMsg(e), true); });
       }
@@ -16511,7 +17024,7 @@ Dikkat edilmesi gereken 2 nokta:
       kalemler: [{ miktar: 0, birim: 'adet', kdvOrani: 20, giderTuru: 'Hammadde / malzeme' }] }, on || {});
     if (mevcut && !mevcut.paraBirimi) d.paraBirimi = 'EUR';
     if (mevcut){ d.kalemler = (d.kalemler || []).map(function(k){ return k; }); if (d.genelToplam < 0) ['araToplam', 'kdvTutar', 'genelToplam', 'brutToplam'].forEach(function(k){ d[k] = Math.abs(d[k] || 0); }); }
-    var o = { kalemler: d.kalemler, satis: false, gider: true };
+    var o = { kalemler: d.kalemler, satis: false, gider: true }, tekrarSoruOnay = false;
     function ciz(el){
       o.kalemler = d.kalemler;
       var t = alisTipi(d.faturaTipi); o.gider = alisTipi(d.faturaTipi).gider; o.kdvKilit = !!t.ithalat; o.kdvVarsayilan = t.ithalat ? 0 : (t.kdv != null ? t.kdv : 20); o.pb = d.paraBirimi || 'EUR';
@@ -16578,6 +17091,13 @@ Dikkat edilmesi gereken 2 nokta:
       if (d.ettn && !/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/.test(d.ettn)){ toast('ETTN biçimi hatalı.', true); return false; }
       if (d.paraBirimi === 'USD' && !(d.dovizKuru > 0) && !(pbKur('USD', d.tarih) > 0)){ toast('$ faturada belge kuru (1 $ = ₺) girilmeli.', true); return false; }
       if (t.ithalat && d.gumrukKdvTL && !d.gumrukKdvHesapId){ toast('Gümrük KDV\'sinin ödendiği hesabı seçin.', true); return false; }
+      if (!mevcut && d.stokIsle && t.stok && (d.irsaliyeIdleri || []).length){ toast('Seçilen irsaliye malı stoğa zaten işledi — "' + (t.iade ? 'Stoktan düş' : 'Stoğa giriş yap') + '" işaretini kaldırın (yoksa ikinci kez işlenir).', true); return false; }
+      // Aynı tedarikçinin aynı numaralı faturası kaydedilmez; aynı belge no'lu gider varsa, tarih ya da $ kuru sınır dışındaysa
+      // tek kutuda sorulur ("Yine de kaydet" formu yeniden kaydeder)
+      var tekrarK = alisFaturaKontrolu(d, mevcut);
+      if (tekrarK.engel.length){ uyariGoster(tekrarK.engel.join('<br><br>')); return false; }
+      tarihKurSorulari(tekrarK, d, mevcut);
+      if (tekrarK.soru.length && !tekrarSoruOnay){ kayitKontrolu(tekrarK, function(){ tekrarSoruOnay = true; byId('formKaydet').click(); }); return false; }
       var ttB = alisToplamlari(kal, t.ithalat || t.biz || t.ihracKayitli ? '' : d.tevkifatOrani, Number(d.stopajOrani) || 0, !!t.ihracKayitli), isaret = t.iade ? -1 : 1, pbF = d.paraBirimi || 'EUR';
       var dkF = pbF === 'TRY' ? 1 : (pbF === 'USD' ? (d.dovizKuru || pbKur('USD', d.tarih)) : 0);
       var tt = pbF === 'EUR' ? ttB : Object.assign({}, ttB, belgeyiEuroya(ttB, pbF, dkF, d.tarih));
@@ -16594,13 +17114,19 @@ Dikkat edilmesi gereken 2 nokta:
         kur: pbF === 'EUR' ? (Number(mevcut && mevcut.kur) || muhKur(d.tarih)) : muhKur(d.tarih), paraBirimi: pbF, dovizKuru: dkF, belgeTutar: bt,
         faturaTipKodu: t.iade ? (tt.tevkifatTutar ? 'TEVKIFATIADE' : 'IADE') : '' };
       if (mevcut){
-        kayitGuncelle('alisFaturalari', mevcut.id, veri).then(function(){ toast('✓ Alış faturası güncellendi'); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+        // stoğa işlenmiş faturada (işaret eskiden kayda yazılmıyordu; o zaman stok hareketinden anlaşılır) miktar / kalem / çeşit değişikliği stoğa fark olarak yazılır
+        veri.stokIsle = !!mevcut.stokIsle || belgeStokHareketiVar('alisFatura', mevcut.id);
+        kayitGuncelle('alisFaturalari', mevcut.id, veri).then(function(){
+          belgeStokEsitle('alisFatura', mevcut.id, veri.faturaNo, alisStokHedefi(veri, belgeEurOrani(pbF, dkF, veri.tarih)), (t.iade ? 'Alış iadesi' : 'Alış (irsaliyeli fatura)') + ' düzeltme', veri.tarih);
+          faturaIrsaliyeleriniBagla(mevcut.id, veri.irsaliyeIdleri);
+          toast('✓ Alış faturası güncellendi');
+        }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
       } else {
         var kb = nextKodBilgisi('alf');
-        kayitEkle('alisFaturalari', Object.assign(veri, { no: kb.kod })).then(function(res){
+        kayitEkle('alisFaturalari', Object.assign(veri, { no: kb.kod, stokIsle: !!(d.stokIsle && t.stok) })).then(function(res){
           configWrite(kb.kodPayload).catch(function(){});
           if (d.stokIsle && t.stok) veri.kalemler.forEach(function(k){ if (k.stokId) stokHareketi({ stokId: k.stokId, miktar: (t.iade ? -1 : 1) * k.miktar, birimMaliyet: t.iade ? 0 : (k.miktar ? k.tutar * belgeEurOrani(pbF, dkF, veri.tarih) / k.miktar : 0), tur: t.iade ? 'Alış iadesi' : 'Alış (irsaliyeli fatura)', kaynakTur: 'alisFatura', kaynakId: res && res.id, kaynakNo: veri.faturaNo, tarih: veri.tarih }); });
-          (veri.irsaliyeIdleri || []).forEach(function(id){ kayitGuncelle('irsaliyeler', id, { faturaId: res && res.id, durum: 'Faturalandı' }).catch(function(){}); });
+          faturaIrsaliyeleriniBagla(res && res.id, veri.irsaliyeIdleri);
           toast('✓ Alış faturası kaydedildi: ' + veri.faturaNo);
           if (d.faturaTipi === 'Sabit kıymet alımı') setTimeout(function(){ sabitKiymetFaturadan(veri); }, 400);
         }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
@@ -16670,6 +17196,7 @@ Dikkat edilmesi gereken 2 nokta:
     var d = mevcut ? JSON.parse(JSON.stringify(mevcut)) : Object.assign({ tip: 'Alış irsaliyesi (mal kabul)', tarih: todayISO(), sevkTarihi: todayISO(), sevkSaati: simdiSaat(), cariId: '', adres: '', kaynakDepo: '', hedefDepo: '',
       plaka: '', dorsePlaka: '', soforAd: '', soforTckn: '', tasiyiciUnvan: '', tasiyiciVkn: '', teslimEden: aktifKullaniciAdi() || '', teslimAlan: '', ilgiliBelge: '', karsiIrsaliyeNo: '',
       eIrsaliye: 'Kâğıt', ettn: '', resmiNo: '', durum: 'Sevk edildi', not_: '', kalemler: [{ miktar: 0, birim: 'adet' }] }, on || {});
+    var soruOnay = false;
     function kalemHtml(){
       var t = irsaliyeTipi(d.tipi || d.tip);
       return '<div class="tablewrap"><table class="edit-tablo"><thead><tr><th>Stok / açıklama</th><th>Miktar</th><th>Birim</th><th>Lot / heat</th><th>Birim fiyat (€)' + (t.maliyet ? ' — maliyet' : ' (bilgi)') + '</th><th>Not</th><th></th></tr></thead><tbody>' +
@@ -16735,7 +17262,10 @@ Dikkat edilmesi gereken 2 nokta:
       if (!kal.length || kal.some(function(k){ return !k.ad || !(k.miktar > 0); })){ toast('Her kalemde açıklama ve miktar olmalı.', true); return false; }
       if (t.yon === 'Transfer' && t.ad === 'Depolar arası transfer' && (!d.kaynakDepo || !d.hedefDepo || d.kaynakDepo === d.hedefDepo)){ toast('Transferde farklı iki depo seçin.', true); return false; }
       if (donemKilitli(d.tarih)){ toast(kilitMesaji(d.tarih), true); return false; }
-      if (d.eIrsaliye === 'e-İrsaliye' && t.yon !== 'Giriş' && (!d.plaka || !d.soforAd || !/^\d{11}$/.test(d.soforTckn))){ toast('e-İrsaliyede araç plakası, şoför adı ve 11 haneli şoför TCKN zorunlu.', true); return false; }
+      if (d.eIrsaliye === 'e-İrsaliye' && t.yon !== 'Giriş' && (!d.plaka || !d.soforAd || !tcknGecerli(d.soforTckn))){ toast(d.plaka && d.soforAd && /^\d{11}$/.test(kimlikNoTemiz(d.soforTckn)) ? 'Şoför TCKN geçersiz: kontrol haneleri tutmuyor, bir hane yanlış yazılmış olabilir.' : 'e-İrsaliyede araç plakası, şoför adı ve 11 haneli şoför TCKN zorunlu.', true); return false; }
+      // düzenleme tarihi sınır dışındaysa sorulur ("Yine de kaydet" formu yeniden kaydeder; düzenlemede yalnız tarih değiştiyse)
+      var soruK = tarihKurSorulari({ engel: [], soru: [] }, d, mevcut, { tarihAd: 'Düzenleme tarihi' });
+      if (soruK.soru.length && !soruOnay){ kayitKontrolu(soruK, function(){ soruOnay = true; byId('formKaydet').click(); }); return false; }
       if (t.yon !== 'Giriş' && !t.stoksuz) { var eksik = kal.filter(function(k){ var s = stokKart(k.stokId); return s && Number(s.miktar) < k.miktar; }); if (eksik.length) toast('Uyarı: stok eksiye düşecek — ' + eksik.map(function(k){ return k.ad; }).join(', '), true); }
       if (!mevcut && t.yon === 'Giriş' && d.durum === 'Sevk edildi') d.durum = 'Teslim alındı';
       var veri = Object.assign({}, d, { kalemler: kal }); delete veri._depoAyarli; delete veri.id;
@@ -17018,9 +17548,14 @@ Dikkat edilmesi gereken 2 nokta:
     byId('gUsdKur').addEventListener('keydown', function(e){ if (e.key === 'Enter') byId('gUsdKaydet').click(); });
     byId('gUsdKaydet').addEventListener('click', function(){
       if (!db){ toast('Ortak veri bağlantısı yok, kaydedilemedi.', true); return; }
-      var kur = Number(byId('gUsdKur').value) || 0; if (kur <= 0){ toast('Geçerli bir kur girin.', true); return; }
-      var g = ((state.config && state.config.usdKurGecmisi) || []).filter(function(x){ return x.tarih !== todayISO(); }); g.push({ tarih: todayISO(), kur: kur }); if (g.length > 120) g = g.slice(-120);
-      configWrite({ usdTryKuru: kur, usdKuruTarihi: todayISO(), usdKurGecmisi: g }).then(function(){ toast('$ kuru güncellendi: 1$ = ₺' + fmt2(kur)); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+      var kurEl = byId('gUsdKur'), kur = Number(kurEl.value) || 0; if (kur <= 0){ toast('Geçerli bir kur girin.', true); return; }
+      var soru = ustKurSorusu('USD', kur);
+      if (soru){ confirmSil(soru, kaydet, 'Evet, kaydet', function(){ kurEl.focus(); kurEl.select(); }); return; }
+      kaydet();
+      function kaydet(){
+        var g = ((state.config && state.config.usdKurGecmisi) || []).filter(function(x){ return x.tarih !== todayISO(); }); g.push({ tarih: todayISO(), kur: kur }); if (g.length > 120) g = g.slice(-120);
+        configWrite({ usdTryKuru: kur, usdKuruTarihi: todayISO(), usdKurGecmisi: g }).then(function(){ toast('$ kuru güncellendi: 1$ = ₺' + fmt2(kur)); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+      }
     });
   })();
   // ---------- Telefonda kur özet düğmesi: "€ 55,21 · $ 49,37"; dokununca kur kutuları açılır / kapanır ----------
