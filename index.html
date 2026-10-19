@@ -1315,7 +1315,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r158</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r159</div>
   </nav>
   <main>
     <div class="topbar">
@@ -13926,7 +13926,7 @@ Dikkat edilmesi gereken 2 nokta:
       smmmAylik: 12000, sigortaAylik: 4000, osgbAylik: 6000, kkdAylik: 1500, suIletisimAylik: 3000, ofisAylik: 3000, eBelgeAylik: 1000, bankaAylik: 500, beklenmeyenAylik: 10000,
       kalibrasyonAylik: 1000, osbAidatAylik: 3000, giderArtisOcak: 25, makine: 5500000, nakliye: 200000, kurulus: 35000, ilkTakim: 50000, saglikRapor: 8000 };
     var VARSAYIM_SURUMU = 2;
-    var KALICI = ['personel','kira','geceVardiya','urun'];
+    var KALICI = ['personel','kira','makineKira','geceVardiya','urun'];
 
     function ayEkle(ay, n){ var y = Number(ay.slice(0,4)), m = Number(ay.slice(5,7)) - 1 + n; y += Math.floor(m/12); m = ((m%12)+12)%12; return y+'-'+String(m+1).padStart(2,'0'); }
     function ayGunSayisi(ay){ var y = Number(ay.slice(0,4)), m = Number(ay.slice(5,7)); return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
@@ -14106,16 +14106,17 @@ Dikkat edilmesi gereken 2 nokta:
       var kiraAd = /iş yeri/.test(P.kurulusModeli || '') ? 'İşletme kirası' : 'Makine kirası';
       var makineKiraAylik = kiraAy ? Math.max(0, Number(P.makineKiraAylik) || 0) : 0;
       var devir = kiraAy ? ((Number(P.makineDevirBedeli) || 0) > 0 ? Number(P.makineDevirBedeli) : P.makine) : 0;
-      var devirKdv = devir * P.kdvOrani/100;
-      var alimAy = ayEkle(P.baslangicAy, kiraAy), alimYil = Number(alimAy.slice(0,4)); // makinenin şirkete geçtiği ay
+      // Ay ay planım'da makine alımı (devir / alış faturası) girildiyse otomatik devir yapılmaz, kira alım ayında biter
+      var elleAlim = Object.keys(A).some(function(k){ return (sayi((A[k] || {}).makineAlim) || 0) > 0; });
       var yatirimKdvHaric = (kiraAy ? 0 : P.makine) + P.nakliye + P.ilkTakim;
       var yatirimKdv = yatirimKdvHaric * P.kdvOrani/100;
-      var amortismanaTabi = kiraAy ? devir : P.makine + P.nakliye; // kiralık makinenin taşıma / montajı makineye eklenemez, ilk ay gider yazılır
+      // Amortismana tabi varlıklar: başta alınan makine (+ taşıma) ve sonradan alınanlar; kiralık makinenin taşıma / montajı ilk ay gider yazılır
+      var varliklar = !kiraAy && P.makine + P.nakliye > 0 ? [{ ay: P.baslangicAy, tutar: P.makine + P.nakliye }] : [];
+      var mKiraAktif = makineKiraAylik;
       var bekleyen = {}; // ay -> [{kalem, tutar}] sonraki aylarda ödenecek vergiler
       function ekle(ay, kalem, tutar){ (bekleyen[ay] = bekleyen[ay] || []).push({kalem:kalem, tutar:tutar}); }
       var yillar = {};
       var kasa = 0, minKasa = 0, geriDonusAy = null;
-      var netDefterDegeri = amortismanaTabi;
       // Kalıcı değerler (girildiği aydan itibaren geçerli)
       var persAktif = P.personel.map(function(p){ return { ad: p.ad, net: Number(p.net)||0, giris: p.giris || '', cikis: p.cikis || '' }; }); // giris / cikis: Tanımlar'daki işe giriş / çıkış
       var kiraAktif = P.kira, geceAktif = P.geceVardiya;
@@ -14235,20 +14236,25 @@ Dikkat edilmesi gereken 2 nokta:
         var isletme = elektrik + uc + sabitKdvli + sabitKdvsiz + ekGider;
         var tekSefer = 0;
         var damgaKira = i === 0 ? kiraBrut * 12 * 0.00189 : 0; // kira sözleşmesi damga vergisi (yıllık kira × binde 1,89)
-        var makineKira = i < kiraAy ? makineKiraAylik : 0, makineAlim = kiraAy && i === kiraAy ? devir : 0;
+        var oAlim = sayi(o.makineAlim), makineAlim = oAlim != null && oAlim > 0 ? oAlim : (kiraAy && !elleAlim && i === kiraAy ? devir : 0);
+        if (kiraAy && !elleAlim && i === kiraAy) mKiraAktif = 0; // kira süresi bitti
+        if (oAlim > 0) mKiraAktif = 0; // makine alınan ay kira biter (aynı ay yeni kira yazılmadıysa)
+        if (sayi(o.makineKira) != null) mKiraAktif = Math.max(0, sayi(o.makineKira)); // bu aydan itibaren kira (∞ kalıcı)
+        var makineKira = mKiraAktif;
+        if (makineAlim > 0) varliklar.push({ ay: ay, tutar: makineAlim });
         var damgaMakineKira = i === 0 ? makineKiraAylik * kiraAy * 0.00189 : 0; // makine kira sözleşmesi: toplam kira × binde 1,89
         if (i === 0) tekSefer = P.kurulus + P.saglikRapor + P.ilkTakim + damgaKira + damgaMakineKira + (kiraAy ? P.nakliye : 0);
         // --- Amortisman (bilanço esası: alım yılında tam yıl, kıst yok); makine kiralıkken amortisman yok
         var amortAy = 0;
-        if (ay >= alimAy){
-          if (Y.yillikAmort == null){
-            if (P.amortismanYontem === 'azalan'){ Y.yillikAmort = Math.max(0, netDefterDegeri * Math.min(0.5, 2 / P.faydaliOmur)); if (P.faydaliOmur - (yil - alimYil) <= 1) Y.yillikAmort = netDefterDegeri; }
-            else Y.yillikAmort = Math.min(netDefterDegeri, amortismanaTabi / P.faydaliOmur);
-            netDefterDegeri -= Y.yillikAmort;
+        varliklar.forEach(function(v){
+          if (ay < v.ay) return;
+          var y0 = Number(v.ay.slice(0,4)); v.yillik = v.yillik || {}; if (v.nd == null) v.nd = v.tutar;
+          if (v.yillik[yil] == null){
+            var t = P.amortismanYontem === 'azalan' ? (P.faydaliOmur - (yil - y0) <= 1 ? v.nd : Math.max(0, v.nd * Math.min(0.5, 2 / P.faydaliOmur))) : Math.min(v.nd, v.tutar / P.faydaliOmur);
+            v.yillik[yil] = t; v.nd -= t;
           }
-          var ilkYilAy = 12 - Number(alimAy.slice(5,7)) + 1;
-          amortAy = yil === alimYil ? Y.yillikAmort / ilkYilAy : Y.yillikAmort / 12;
-        }
+          amortAy += yil === y0 ? v.yillik[yil] / (12 - Number(v.ay.slice(5,7)) + 1) : v.yillik[yil] / 12;
+        });
         // --- Finansman: faiz + geri ödeme
         var faiz = borc * (P.finansFaizYillik/100) / 12;
         var geriOdeme = 0;
@@ -14260,7 +14266,7 @@ Dikkat edilmesi gereken 2 nokta:
         var ko = P.kdvOrani/100;
         var kdvDetay = { satis: satis * (1 - tahT) * ko, tevkifat: satis * tahT * ko, digerGelir: kdvliDigerGelir * ko,
           kira: P.kiraVerenSirket ? kiraBrut * ko : 0, makineKira: makineKira * ko, elektrik: elektrik * ko, uc: uc * ko, sabit: sabitKdvli * ko, ek: ekGiderKdvli * ko,
-          yatirim: i === 0 ? yatirimKdv : makineAlim ? devirKdv : 0 };
+          yatirim: (i === 0 ? yatirimKdv : 0) + makineAlim * ko };
         var hesaplanan = kdvDetay.satis + kdvDetay.digerGelir;
         var indirilecek = kdvDetay.kira + kdvDetay.makineKira + kdvDetay.elektrik + kdvDetay.uc + kdvDetay.sabit + kdvDetay.ek + kdvDetay.yatirim;
         var devredenOnceki = devredenKdv;
@@ -14318,7 +14324,7 @@ Dikkat edilmesi gereken 2 nokta:
         var kdvOdenenGider = a.indirilecekKdv - a.kdvDetay.yatirim;
         var kiraOdeme = P.kiraVerenSirket ? a.kira : a.kira - a.kiraStopaj;
         var maasOdeme = maasErtesiAy ? (i > 0 ? aylar[i-1].netMaas : 0) : a.netMaas;
-        var cikis = maasOdeme + kiraOdeme + a.makineKira + (a.makineAlim ? a.makineAlim + a.kdvDetay.yatirim : 0) + (a.elektrik + a.uc + a.sabit + a.ekGider + a.tekSefer - (i === 0 ? P.ilkTakim + (kiraAy ? P.nakliye : 0) : 0)) + kdvOdenenGider + a.faiz + vergiToplam;
+        var cikis = maasOdeme + kiraOdeme + a.makineKira + a.makineAlim * (1 + P.kdvOrani/100) + (a.elektrik + a.uc + a.sabit + a.ekGider + a.tekSefer - (i === 0 ? P.ilkTakim + (kiraAy ? P.nakliye : 0) : 0)) + kdvOdenenGider + a.faiz + vergiToplam;
         a.tahsilat = tahsilat; a.vergiOdemeleri = vergiler; a.vergiToplam = vergiToplam; a.nakitCikis = cikis; a.maasOdeme = maasOdeme;
         a.netNakit = tahsilat - cikis;
         kasa += a.netNakit; a.kasa = kasa;
@@ -14350,7 +14356,7 @@ Dikkat edilmesi gereken 2 nokta:
         nakitTakvim.push({ tarih: gunTarih(maasAy, maasErtesiAy ? P.maasOdemeGunu : Math.min(Number(P.maasOdemeGunu)||31, ayGunSayisi(maasAy))), ay: maasAy, kalem: 'Maaşlar — net ('+ayAdiUzun(a.ay)+', '+a.personelListe.length+' kişi)', tutar: a.netMaas, tur: 'odeme' });
         nakitTakvim.push({ tarih: gunTarih(a.ay, P.kiraOdemeGunu), ay: a.ay, kalem: 'Kira ('+ayAdiUzun(a.ay)+')'+(P.kiraVerenSirket ? ' + KDV' : ' — stopaj düşülmüş'), tutar: P.kiraVerenSirket ? a.kira * (1 + P.kdvOrani/100) : a.kira - a.kiraStopaj, tur: 'odeme' });
         if (a.makineKira > 0) nakitTakvim.push({ tarih: gunTarih(a.ay, P.kiraOdemeGunu), ay: a.ay, kalem: kiraAd+' ('+ayAdiUzun(a.ay)+') + KDV', tutar: a.makineKira * (1 + P.kdvOrani/100), tur: 'odeme' });
-        if (a.makineAlim > 0) nakitTakvim.push({ tarih: gunTarih(a.ay, 1), ay: a.ay, kalem: 'Makinelerin satın alınması (kira sonu devir) + KDV', tutar: a.makineAlim * (1 + P.kdvOrani/100), tur: 'odeme' });
+        if (a.makineAlim > 0) nakitTakvim.push({ tarih: gunTarih(a.ay, 1), ay: a.ay, kalem: 'Makine alımı (devir / alış faturası) + KDV', tutar: a.makineAlim * (1 + P.kdvOrani/100), tur: 'odeme' });
         if (a.geriOdeme > 0) nakitTakvim.push({ tarih: gunTarih(a.ay, 15), ay: a.ay, kalem: 'Kadir Bey\'e borç geri ödemesi', tutar: a.geriOdeme, tur: 'odeme' });
         if (a.faiz > 0) nakitTakvim.push({ tarih: gunTarih(a.ay, 15), ay: a.ay, kalem: 'Finansman faizi', tutar: a.faiz, tur: 'odeme' });
         var tahAy = ayEkle(a.ay, gecikme);
@@ -14366,20 +14372,22 @@ Dikkat edilmesi gereken 2 nokta:
       if (refI === 0 && aylar.length > 1) refI = 1; // ilk ay kuruluş giderli; tipik ay olarak ikinci ay
       var ref = aylar[refI];
       var degiskenBirim = (ref.uc + ref.elektrik * 0.8) / Math.max(1, ref.adet);
+      var amortismanaTabi = varliklar.reduce(function(t, v){ return t + v.tutar; }, 0);
       var amortNorm = amortismanaTabi / P.faydaliOmur / 12;
-      var sabitAylik = ref.personel + ref.kira + ref.makineKira + ref.sabit + ref.elektrik * 0.2 + (ref.ay >= alimAy ? amortNorm : 0);
+      function amortNormAy(ay){ return varliklar.reduce(function(t, v){ return t + (v.ay <= ay ? v.tutar / P.faydaliOmur / 12 : 0); }, 0); } // makine kiralıkken amortisman yok
+      var sabitAylik = ref.personel + ref.kira + ref.makineKira + ref.sabit + ref.elektrik * 0.2 + amortNormAy(ref.ay);
       var basaBasAdet = ref.fiyat - degiskenBirim > 0 ? sabitAylik / (ref.fiyat - degiskenBirim) : null; // fiyat girilmemiş / değişken maliyetin altında
       // Ay bazında başa baş (o ayın kendi sabit giderleriyle)
       aylar.forEach(function(a){
         var db = (a.uc + a.elektrik * 0.8) / Math.max(1, a.adet || a.hesapAdet || 1);
-        a.amortNorm = a.ay >= alimAy ? amortNorm : 0; // makine kiralıkken amortisman yok
+        a.amortNorm = amortNormAy(a.ay);
         var sb = a.personel + a.kira + a.makineKira + a.sabit + a.ekGider + a.elektrik * 0.2 + a.amortNorm + a.faiz - a.digerGelir;
         a.basaBas = a.fiyat - db > 0 ? sb / (a.fiyat - db) : null;
       });
       return { P: P, refIndex: refI, aylar: aylar, yillar: yillar, odemeler: odemeler, nakitTakvim: nakitTakvim, yatirimNakit: yatirimNakit, yatirimKdv: yatirimKdv, minKasa: minKasa, geriDonusAy: geriDonusAy,
         finansman: finansman, minSirketKasa: minSirketKasa, kalanBorc: borc,
         kalanYukumluluk: kalanYukumluluk, basaBas: { adet: basaBasAdet, gunluk: basaBasAdet == null ? null : basaBasAdet / Math.max(1, ref.gun), degiskenBirim: degiskenBirim, sabitAylik: sabitAylik, refAy: ref.ay, amortNorm: amortNorm },
-        amortismanaTabi: amortismanaTabi, makineKiraAy: kiraAy, makineKiraAylik: makineKiraAylik, makineAlimAy: kiraAy && kiraAy < P.sureAy ? alimAy : null, makineDevir: devir, kiraAd: kiraAd };
+        amortismanaTabi: amortismanaTabi, makineKiraAy: kiraAy, makineKiraAylik: makineKiraAylik, makineAlimAy: kiraAy && varliklar.length ? varliklar[0].ay : null, makineDevir: kiraAy ? amortismanaTabi : 0, kiraAd: kiraAd, makineAlimlar: varliklar.map(function(v){ return { ay: v.ay, tutar: v.tutar }; }) };
     }
     function ayAdiUzun(ay){ return ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][Number(ay.slice(5,7))-1]+' '+ay.slice(0,4); }
     function ozetle(r){
@@ -14409,13 +14417,15 @@ Dikkat edilmesi gereken 2 nokta:
     function makineKarsilastir(Pin){
       var P = Object.assign(varsayilan(), JSON.parse(JSON.stringify(Pin || {})));
       var kiraMod = kiralamaMi(P), bo = kiraMod ? {} : { kurulusModeli: 'Makineleri kirala', makineKiraAy: Math.round(Number(P.makineKiraAy) || 0) || 12 };
-      var bAy = kiraMod ? (Math.round(Number(P.makineKiraAy) || 0) || P.sureAy) : bo.makineKiraAy, bAd = (kiraMod ? P.kurulusModeli : 'Makineleri kirala') + (bAy < P.sureAy ? ' ('+bAy+' ay, sonra satın al)' : ' (plan boyunca)');
+      var A0 = P.aylik || {}, elle = Object.keys(A0).some(function(k){ return A0[k] && (A0[k].makineKira != null || A0[k].makineAlim != null); });
+      var bAy = kiraMod ? (Math.round(Number(P.makineKiraAy) || 0) || P.sureAy) : bo.makineKiraAy, bAd = (kiraMod ? P.kurulusModeli : 'Makineleri kirala') + (elle ? ' (Ay ay planım\'daki değişikliklerle)' : bAy < P.sureAy ? ' ('+bAy+' ay, sonra satın al)' : ' (plan boyunca)');
       // işletme kiralamada iş yeri kirası kiraya dahil; satın alma yolunda iş yeri kirası yine ödenir
       var aHaric = /iş yeri/.test(P.kurulusModeli || '') ? (P.giderHaric || []).filter(function(k){ return k !== 'kira'; }) : P.giderHaric;
-      return [{ ad: 'Makineleri satın al', o: { kurulusModeli: 'Makineleri satın al', giderHaric: aHaric } }, { ad: bAd, o: bo }].map(function(y){
+      var aAylik = JSON.parse(JSON.stringify(P.aylik || {})); Object.keys(aAylik).forEach(function(k){ delete aAylik[k].makineKira; delete aAylik[k].makineAlim; });
+      return [{ ad: 'Makineleri satın al', o: { kurulusModeli: 'Makineleri satın al', giderHaric: aHaric, aylik: aAylik } }, { ad: bAd, o: bo }].map(function(y){
         var r = hesapla(Object.assign({}, P, y.o)), kar = 0, kv = 0, amort = 0, kira = 0;
         Object.keys(r.yillar).forEach(function(k){ var Y = r.yillar[k]; kar += Y.karOncesi; kv += Y.kv != null ? Y.kv : Math.max(0, Y.karOncesi) * P.kvOrani/100; amort += Y.amortisman; kira += Y.makineKira; });
-        return { ad: y.ad, kiraAd: r.kiraAd, kiraAy: r.makineKiraAy, kiraAylik: r.makineKiraAylik, kira: kira, alim: r.makineKiraAy ? (r.makineAlimAy ? r.makineDevir : 0) : P.makine, alimAy: r.makineKiraAy ? r.makineAlimAy : r.aylar[0].ay,
+        return { ad: y.ad, elle: elle, kiraAd: r.kiraAd, kiraAy: r.makineKiraAy, kiraAylik: r.makineKiraAylik, kira: kira, alim: r.makineAlimlar.reduce(function(t, v){ return t + v.tutar; }, 0) - (r.makineKiraAy ? 0 : P.nakliye), alimAy: r.makineKiraAy ? r.makineAlimAy : r.aylar[0].ay,
           baslangic: r.yatirimNakit, nakitIhtiyaci: Math.max(0, -r.minKasa), amort: amort, kar: kar, kv: kv, net: kar - kv, sonKasa: r.aylar[r.aylar.length-1].kasa, defter: r.amortismanaTabi - amort,
           donem: kvAyKisa(r.aylar[0].ay)+' – '+kvAyKisa(r.aylar[r.aylar.length-1].ay) };
       });
@@ -14827,7 +14837,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (sb && ab.__kaydirildi !== _kvAy){ ab.__kaydirildi = _kvAy; ab.scrollLeft += (sb.getBoundingClientRect().left - ab.getBoundingClientRect().left) - (ab.clientWidth - sb.offsetWidth) / 2; }
   }
 
-  var KV_TL_ALANLAR = ['fiyat','kira','elektrik','uc','sabit'];
+  var KV_TL_ALANLAR = ['fiyat','kira','elektrik','uc','sabit','makineKira','makineAlim'];
   function kvAlan(k, etiket, deger, ph, kalici, ek){
     return '<div class="field"><label>'+etiket+(kalici ? ' <span class="kv-kalici" title="Girildiği aydan itibaren sonraki aylara da geçer">∞ kalıcı</span>' : '')+'</label>'+
       '<input type="number" step="any" data-kva="'+k+'" data-kvph="'+k+'"'+(KV_TL_ALANLAR.indexOf(k) >= 0 ? ' data-para="TRY"' : '')+' value="'+escAttr(deger == null ? '' : deger)+'" placeholder="'+escAttr(ph)+'">'+(ek||'')+'</div>';
@@ -14859,6 +14869,8 @@ Dikkat edilmesi gereken 2 nokta:
     html += '<div class="kv-bolum-baslik">Giderler (₺, KDV hariç)</div><div class="grid2">'+
       kvAlan('kira', 'Kira (net, KDV / stopaj hariç)', o.kira, Math.round(a.kiraNet), true, '<div class="helper" id="kvKiraIpucu" style="margin-top:4px"></div>')+
       '<div class="field"><label>Kira faturası kimden? <span class="kv-kalici">tüm plan</span></label><select data-kvglobal="kiraVerenSirket"><option value="1"'+(P.kiraVerenSirket?' selected':'')+'>Şirket (KDV\'li fatura)</option><option value="0"'+(!P.kiraVerenSirket?' selected':'')+'>Şahıs (%20 stopaj)</option></select></div>'+
+      kvAlan('makineKira', 'Makine / işletme kirası (bu aydan itibaren, KDV hariç; 0 = kira biter)', o.makineKira, Math.round(a.makineKira), true)+
+      kvAlan('makineAlim', 'Makine alımı — devir / alış faturası (bu ay, KDV hariç)', o.makineAlim, Math.round(a.makineAlim), false, '<div class="helper" style="margin-top:4px">Gider değildir: makinenin maliyetine girer, KDV\'si indirilir, amortisman bu yıl başlar. Girilen ayda kira kendiliğinden biter; Varsayımlar\'daki otomatik satın alma yapılmaz.</div>')+
       kvAlan('elektrik', 'Elektrik faturası (bu ay)', o.elektrik, Math.round(a.elektrikHesap), false)+
       kvAlan('uc', 'Uç / takım / malzeme (bu ay)', o.uc, Math.round(a.ucHesap), false)+
       kvAlan('sabit', 'Diğer sabit giderler (bu ay)', o.sabit, Math.round(a.sabitHesap), false)+
@@ -14910,7 +14922,7 @@ Dikkat edilmesi gereken 2 nokta:
     return html;
   }
   function kvFormCanliGuncelle(r, a){
-    var ph = { adet: a.urunAdet, kira: Math.round(a.kiraNet), elektrik: Math.round(a.elektrikHesap), uc: Math.round(a.ucHesap), sabit: Math.round(a.sabitHesap) };
+    var ph = { adet: a.urunAdet, makineKira: Math.round(a.makineKira), makineAlim: Math.round(a.makineAlim), kira: Math.round(a.kiraNet), elektrik: Math.round(a.elektrikHesap), uc: Math.round(a.ucHesap), sabit: Math.round(a.sabitHesap) };
     document.querySelectorAll('#kvAyForm [data-kvph]').forEach(function(el){ var v = String(ph[el.dataset.kvph]); if (el.placeholder !== v) el.placeholder = v; });
     document.querySelectorAll('#kvAyForm [data-kvpm]').forEach(function(el){ var b = a.pers[Number(el.dataset.kvpm)]; el.textContent = kvTl(b ? b.maliyet : 0); });
     kvSet('kvTakvim', kvTakvimHtml(r, a));
@@ -14967,7 +14979,7 @@ Dikkat edilmesi gereken 2 nokta:
       sat('Amortisman <span class="muted">(kâğıt üstü gider — nakit çıkmaz, vergiyi düşürür)</span>', -a.amortisman, 'amortisman')+
       // Makine ve taşıma / montaj bedeli ilk ayda ödenir ama gider değildir: makinenin maliyetine eklenir (VUK 262), amortismanla yıllara dağılır
       (r.aylar[0].ay === a.ay && !r.makineKiraAy && (P.makine || P.nakliye) ? '<tr class="kv-alt" data-kvhesap="yatirim" data-kvhay="'+a.ay+'"><td>· bu ay ödenen makine '+kvTl(P.makine)+(P.nakliye ? ' + taşıma / montaj '+kvTl(P.nakliye) : '')+': gidere yazılmaz, makinenin maliyetine eklenir ve yukarıdaki amortismanla yıllara dağılır (kasadan bu ay çıkar)</td><td class="num muted">gider dışı</td></tr>' : '')+
-      (a.makineAlim ? '<tr class="kv-alt" data-kvhesap="amortisman" data-kvhay="'+a.ay+'"><td>· bu ay kira bitti, makineler '+kvTl(a.makineAlim)+' + KDV ile satın alındı: gidere yazılmaz, makinenin maliyetine eklenir ve amortisman bu yıldan başlar (kasadan bu ay çıkar)</td><td class="num muted">gider dışı</td></tr>' : '')+
+      (a.makineAlim ? '<tr class="kv-alt" data-kvhesap="amortisman" data-kvhay="'+a.ay+'"><td>· bu ay makine alımı (devir / alış faturası) '+kvTl(a.makineAlim)+' + KDV: gidere yazılmaz, makinenin maliyetine eklenir ve amortisman bu yıldan başlar (kasadan bu ay çıkar)</td><td class="num muted">gider dışı</td></tr>' : '')+
       (a.faiz ? sat('Finansman faizi', -a.faiz, 'faiz') : '')+
       '<tr data-kvhesap="gider" data-kvhay="'+a.ay+'" class="kv-toplam"><td><b>Toplam gider</b> <span class="muted">(KDV hariç, amortisman dahil)</span></td><td class="num neg"><b>'+kvTl(-a.gider)+'</b></td></tr>'+
       '<tr data-kvhesap="kar" data-kvhay="'+a.ay+'"><td><b>Vergi öncesi kâr</b> <span class="muted">(vergi bunun üzerinden)</span></td><td class="num '+(a.karOncesi>=0?'pos':'neg')+'"><b>'+kvTl(a.karOncesi)+'</b></td></tr>'+
@@ -15270,7 +15282,7 @@ Dikkat edilmesi gereken 2 nokta:
     } else if (k === 'kasa'){
       d = { t: 'Şirket kasası — '+adi, f: 'Kasa = önceki ay sonu + bu ay fiilen giren − fiilen çıkan. Kâr ile aynı değildir: tahsilat vadeli gelir, vergiler ertesi ay ödenir, amortisman nakit çıkarmaz, KDV kasadan geçer.',
         h: kvHesapTablo([kvHesapSatir(r.aylar[0].ay === a.ay ? 'Başlangıç: finansman − yatırım ödemesi' : 'Önceki ay sonu kasa', a.sirketKasa - a.netNakit + a.geriOdeme), kvHesapSatir('+ Tahsilat (KDV dahil)', a.tahsilat, 'pos'), kvHesapSatir('− Maaşlar (net)', -a.maasOdeme),
-          kvHesapSatir('− Kira, fatura, gider ödemeleri (KDV dahil)', -(a.nakitCikis - a.maasOdeme - a.vergiToplam - a.faiz - (a.makineAlim ? a.makineAlim + a.kdvDetay.yatirim : 0))), (a.makineAlim ? kvHesapSatir('− Makine satın alma (KDV dahil)', -(a.makineAlim + a.kdvDetay.yatirim)) : ''), (a.faiz ? kvHesapSatir('− Faiz', -a.faiz) : ''),
+          kvHesapSatir('− Kira, fatura, gider ödemeleri (KDV dahil)', -(a.nakitCikis - a.maasOdeme - a.vergiToplam - a.faiz - a.makineAlim * (1 + P.kdvOrani/100))), (a.makineAlim ? kvHesapSatir('− Makine alımı (KDV dahil)', -a.makineAlim * (1 + P.kdvOrani/100)) : ''), (a.faiz ? kvHesapSatir('− Faiz', -a.faiz) : ''),
           kvHesapSatir('− Vergi ve SGK ödemeleri', -a.vergiToplam), (a.geriOdeme ? kvHesapSatir('− Kadir Bey\'e geri ödeme', -a.geriOdeme) : ''), kvHesapTop('Ay sonu şirket kasası', a.sirketKasa, a.sirketKasa < 0 ? 'neg' : '')]) };
     } else if (k === 'yatirim'){
       d = { t: 'Başlangıç yatırımı', f: 'Planın ilk ayında ödenen makine, taşıma ve ilk takım bedeli, KDV dahil. KDV kısmı sonraki aylarda satış KDV\'sinden düşülerek geri döner.'+(r.makineKiraAy ? ' Makineler ilk '+r.makineKiraAy+' ay kiralık: başta makine bedeli ödenmez'+(r.makineAlimAy ? ', '+kvAyAdi(r.makineAlimAy)+'\'da '+kvTl(r.makineDevir)+' + KDV ile satın alınır.' : '.') : ''),
@@ -15544,8 +15556,8 @@ Dikkat edilmesi gereken 2 nokta:
     return '<div class="block"><div class="block-head"><h3>Kuruluş modeli: satın al mı, kirala mı? ('+esc(a.donem)+') '+infoIco('İki yol da Varsayımlar\'daki diğer her şeyle aynı hesaplanır; yalnız makinenin nasıl edinildiği değişir. Kira yolunda kira ayları boyunca makine kirası gider yazılır (KDV\'si indirilir, şirketler arasında stopaj yok), kira bitince makineler satın alma bedeliyle alınır ve amortisman o yıl başlar. Kurumlar vergisi yıl yıl hesaplanır; plan son yılı yarımsa o yıl tahmindir.')+'</h3></div><div class="block-body tablewrap">'+
       (kiraYok ? '<div class="helper neg" style="margin-bottom:8px">Varsayımlar › Kuruluş modeli bölümünde aylık kira girilmedi; kira yolu kirasız hesaplanıyor.</div>' : '')+
       '<table class="kv-tablo"><thead><tr><th>Plan süresi toplamı</th><th class="num">'+esc(a.ad)+'</th><th class="num">'+esc(b.ad)+'</th><th class="num">Fark</th></tr></thead><tbody>'+
-      sat(b.kiraAd+' (KDV hariç)', function(x){ return x.kira; }, true, b.kiraAy ? b.kiraAy+' ay × '+kvTl(b.kiraAylik) : '')+
-      sat('Makine satın alma bedeli (KDV hariç)', function(x){ return x.alim; }, true, b.alimAy ? 'kira yolunda '+kvAyAdi(b.alimAy)+'\'da' : 'kira yolunda plan süresinde satın alma yok')+
+      sat(b.kiraAd+' (KDV hariç)', function(x){ return x.kira; }, true, b.elle ? 'Ay ay planım\'daki kira değişiklikleri dahil' : b.kiraAy ? b.kiraAy+' ay × '+kvTl(b.kiraAylik) : '')+
+      sat('Makine satın alma bedeli (KDV hariç)', function(x){ return x.alim; }, true, b.alimAy ? 'kira yolunda '+kvAyAdi(b.alimAy)+'\'da'+(b.elle ? ' (Ay ay planım\'dan)' : '') : 'kira yolunda plan süresinde satın alma yok')+
       sat('Makineye ödenen toplam', function(x){ return x.kira + x.alim; }, true)+
       sat('Başta ödenen yatırım (KDV dahil)', function(x){ return x.baslangic; }, true)+
       sat('Gereken nakit (finansman hariç en düşük kasa)', function(x){ return x.nakitIhtiyaci; }, true, 'Kadir Bey\'den en az bu kadar para gelmeli')+
