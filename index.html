@@ -1359,7 +1359,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r170</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r171</div>
   </nav>
   <main>
     <div class="topbar">
@@ -14533,6 +14533,7 @@ Dikkat edilmesi gereken 2 nokta:
       var kasa = 0, minKasa = 0, geriDonusAy = null;
       // Kalıcı değerler (girildiği aydan itibaren geçerli)
       var gAktif = {}; // Ay ay planım'da elle yazılan gider kalemleri (yazıldığı aydan itibaren)
+      var persElleAy = ''; // kadronun elle belirlendiği son ay (o aydan sonra Tanımlar'daki kadro yerine o liste geçer)
       var persAktif = P.personel.map(function(p){ return { ad: p.ad, net: Number(p.net)||0, giris: p.giris || '', cikis: p.cikis || '' }; }); // giris / cikis: Tanımlar'daki işe giriş / çıkış
       var kiraAktif = P.kira, geceAktif = P.geceVardiya;
       // Ürünler: fiyat / makine / adet / gece adedi girildiği aydan itibaren geçerli (ay ay P.aylik[ay].urun[id])
@@ -14555,7 +14556,7 @@ Dikkat edilmesi gereken 2 nokta:
         UA.forEach(function(u){ var x = OU[u.id]; if (!x) return; ['fiyat', 'makine', 'adet', 'gece'].forEach(function(f){ if (sayi(x[f]) != null) u[f] = Math.max(0, sayi(x[f])); }); });
         if (sayi(o.kira) != null) kiraAktif = sayi(o.kira); // planda sayılmayan kira da Ay ay planım'dan bir aydan itibaren girilebilir
         if (o.geceVardiya === true || o.geceVardiya === false) geceAktif = o.geceVardiya;
-        if (o.personel && o.personel.length >= 0 && Array.isArray(o.personel)) persAktif = o.personel.map(function(p){ return { ad: p.ad || 'Personel', net: Number(p.net)||0 }; });
+        if (o.personel && o.personel.length >= 0 && Array.isArray(o.personel)){ persAktif = o.personel.map(function(p){ return { ad: p.ad || 'Personel', net: Number(p.net)||0, giris: p.giris || '', cikis: p.cikis || '' }; }); persElleAy = ay; }
         var giderKatsayi = Math.pow(1 + P.giderArtisOcak/100, yilIndex);
         var elektrikKatsayi = Math.pow(1 + P.elektrikArtisOcak/100, yilIndex);
         if (ayNo === 1) kumMatrah = {};
@@ -14731,6 +14732,7 @@ Dikkat edilmesi gereken 2 nokta:
         aylar.push({ ay: ay, gun: gunler.hafta + gunler.cumartesi + gunler.pazar, gunHafta: gunler.hafta, gunHs: gunler.cumartesi + gunler.pazar, gunCmt: gunler.cumartesi, gunPaz: gunler.pazar, hsSaat: hsSaat, tatilCalisma: gunler.tatilCalisma,
           verim: verim*100, adet: adet, hesapAdet: hesapAdet, kapasiteBrut: kapasiteBrut, gunduzAdet: gunduzAktif, geceAdet: geceAdet, fiyat: fiyat, satis: satis, digerGelir: digerGelir, talasGelir: talasGelir, kdvliDigerGelir: kdvliDigerGelir, ekGelir: ekGelir, gelir: gelir, kdvDetay: kdvDetay, damgaKira: damgaKira, sabitKdvli: sabitKdvli, sabitKdvsiz: sabitKdvsiz,
           aktifMakine: makineAktif, makineEtkin: makineEtkin, urunler: US, urunAdet: urunAdet, geceVardiya: geceAktif, personelListe: calisan.map(function(p){ return { ad: p.ad, net: p.net }; }), personelTum: persTum,
+          persElleAy: persElleAy, persDisarida: persElleAy ? P.personel.filter(function(t){ return !persAktif.some(function(x){ return x.ad === t.ad; }); }).map(function(t){ return t.ad; }) : [],
           personel: personelMaliyet, mesai: mesai, tatilUcret: tatilUcret, netMaas: netOdenen, sgk: sgkOdenecek, gvDv: gvDv,
           kiraNet: kiraNet, kira: kiraBrut, kiraStopaj: kiraStopaj, giderKalem: giderKalem, tekGider: tekGiderKdvli + tekGiderKdvsiz, tekAktif: tekAktif, gElle: Object.keys(o.gider || {}), yemek: yemek, elektrikBirim: P.elektrikFiyat * elektrikKatsayi, makineKira: makineKira, makineAlim: makineAlim, damgaMakineKira: damgaMakineKira, elektrik: elektrik, elektrikHesap: elektrikHesap, kwh: kwh, uc: uc, ucHesap: ucHesap,
           sabit: sabitKdvli + sabitKdvsiz, sabitHesap: sabitHesap, ekGider: ekGider, ekGiderKdvli: ekGiderKdvli, tekSefer: tekSefer, amortisman: amortAy, faiz: faiz, gider: gider, karOncesi: karOncesi, kidem: kidem,
@@ -15149,7 +15151,7 @@ Dikkat edilmesi gereken 2 nokta:
     }
     if (ad === 'onceki' || ad === 'sonraki'){ var i = r.aylar.indexOf(a) + (ad === 'onceki' ? -1 : 1); if (r.aylar[i]){ _kvAy = r.aylar[i].ay; EK_RENDER.karlilik(); } return; }
     if (ad === 'bugun'){ var ba = thisMonthKey(); _kvAy = r.aylar.some(function(x){ return x.ay === ba; }) ? ba : r.aylar[0].ay; EK_RENDER.karlilik(); return; }
-    if (ad === 'persBaslat'){ kvDegistir(function(P){ kvAyObj(P, ay, true).personel = (a.personelTum || a.personelListe).filter(function(p){ return p.durum !== 'ayrıldı'; }).map(function(p){ return { ad: p.ad, net: Math.round(p.net || 0) }; }); }); kvFormYenile(); return; }
+    if (ad === 'persBaslat'){ kvDegistir(function(P){ kvAyObj(P, ay, true).personel = (a.personelTum || a.personelListe).filter(function(p){ return p.durum !== 'ayrıldı'; }).map(function(p){ return { ad: p.ad, net: Math.round(p.net || 0), giris: p.giris || '', cikis: p.cikis || '' }; }); }); kvFormYenile(); return; }
     if (ad === 'persKaldir'){ kvDegistir(function(P){ delete kvAyObj(P, ay, true).personel; kvAyTemizle(P, ay); }); kvFormYenile(); return; }
     if (ad === 'persEkle'){ var yp = KV_MODEL.yilParam(r.P, Number(ay.slice(0,4))); kvDegistir(function(P){ var o = kvAyObj(P, ay, true); o.personel = o.personel || a.personelListe.map(function(p){ return { ad: p.ad, net: Math.round(p.net) }; }); o.personel.push({ ad: 'Operatör '+(o.personel.length+1), net: Math.ceil(yp.asgariNet/1000)*1000 }); }); kvFormYenile(); return; }
     if (ad === 'persSil'){ var i2 = Number(el.dataset.i); kvDegistir(function(P){ var o = kvAyObj(P, ay, true); if (o.personel) o.personel.splice(i2, 1); }); kvFormYenile(); return; }
@@ -15400,6 +15402,12 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function kvPersHtml(r, a){
     var o = r.P.aylik[a.ay] || {};
+    var uyari = a.persElleAy ? '<div class="helper neg" style="margin:0 0 6px">⚠ Kadro ' + esc(KV_MODEL.ayAdiUzun(a.persElleAy)) + '\'da elle belirlendi; o aydan sonra Tanımlar › Personel değil o liste kullanılıyor.' +
+      (a.persDisarida.length ? ' Planda olmayan: <b>' + a.persDisarida.map(esc).join(', ') + '</b>.' : '') +
+      (a.persElleAy === a.ay ? ' "Değişikliği geri al" Tanımlar\'daki kadroya döner.' : ' <button type="button" class="kv-link" data-kvay="' + a.persElleAy + '">O aya git</button>') + '</div>' : '';
+    return uyari + kvPersHtmlIc(r, a, o);
+  }
+  function kvPersHtmlIc(r, a, o){
     if (!o.personel){
       var pi = 0;
       return '<table class="edit-tablo"><thead><tr><th>Personel</th><th>Durum</th><th class="num">Net maaş</th><th class="num">İşverene maliyet</th></tr></thead><tbody>'+
