@@ -6,7 +6,7 @@
 <title>OZerp</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     /* Palet R4 (docs/arayuz-katalogu.md) */
@@ -45,12 +45,13 @@
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     font-size: 14px;
     line-height: 1.5;
+    font-variant-numeric: tabular-nums; /* tutarlar alt alta hizalı */
   }
   h1, h2, h3, .display {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
     margin: 0;
@@ -68,7 +69,7 @@
     gap: 4px;
   }
   .brand {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     font-weight: 700;
     font-size: 16px;
     color: #fff;
@@ -77,7 +78,7 @@
     margin-bottom: 14px;
     line-height: 1.3;
   }
-  .brand small { display:block; font-family:'IBM Plex Mono',monospace; font-weight:400; font-size:11px; color:#9AA3AC; margin-top:4px; letter-spacing: 0.02em;}
+  .brand small { display:block; font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:400; font-size:11px; color:#9AA3AC; margin-top:4px; letter-spacing: 0.02em;}
   /* Sol üst: firma logosu ve adı, altında program adı (Tanımlar › Firma bilgileri) */
   .brand { display:flex; flex-direction:column; align-items:flex-start; gap:7px; }
   .brand .brand-logo { display:block; max-width:100%; max-height:58px; object-fit:contain; background:#fff; padding:5px 7px; border-radius:4px; box-sizing:border-box; }
@@ -92,7 +93,7 @@
     color: #C9CDD2;
     padding: 10px 10px;
     border-radius: 3px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     font-size: 13px;
     cursor: pointer;
     display: flex;
@@ -143,7 +144,7 @@
     display: inline-flex; align-items: center; justify-content: center;
     width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0;
     background: var(--steel-soft); color: var(--steel); font-size: 10.5px; font-weight: 700;
-    font-family: 'IBM Plex Mono', monospace; font-style: normal; cursor: help; position: relative; vertical-align: middle;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif; font-style: normal; cursor: help; position: relative; vertical-align: middle;
   }
   .info-ico:hover, .info-ico:focus { background: var(--accent); color: #fff; outline: none; }
   .info-ico .info-bubble { display: none; }
@@ -152,11 +153,11 @@
     position: absolute; z-index: 60; bottom: 135%; left: 50%; transform: translateX(-50%);
     width: 260px; max-width: 62vw; background: var(--ink); color: #fff; font-weight: 400;
     font-size: 11px; line-height: 1.5; padding: 9px 11px; border-radius: 3px; text-align: left;
-    white-space: pre-line; box-shadow: 0 6px 18px rgba(0,0,0,.28); font-family: 'IBM Plex Mono', monospace;
+    white-space: pre-line; box-shadow: 0 6px 18px rgba(0,0,0,.28); font-family: 'IBM Plex Sans', system-ui, sans-serif;
   }
   .info-bubble::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color: var(--ink); }
   .makine-bar-row { display:flex; align-items:center; gap:10px; padding:5px 0; }
-  .makine-bar-label { width:130px; flex-shrink:0; font-size:11.5px; font-family:'IBM Plex Mono',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .makine-bar-label { width:130px; flex-shrink:0; font-size:11.5px; font-family:'IBM Plex Sans',system-ui,sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .makine-bar-track { flex:1; height:14px; background:var(--steel-soft); border-radius:2px; overflow:hidden; }
   .makine-bar-fill { height:100%; }
   .makine-bar-etiket { font-size:10.5px; color:var(--ink-soft); flex-shrink:0; white-space:nowrap; }
@@ -170,7 +171,7 @@
   .card.accent { border-left-color: var(--accent); }
   .card.good { border-left-color: var(--good); }
   .card .label { font-size: 10.5px; color: var(--ink-soft); text-transform: none; line-height:1.3; }
-  .card .value { font-family:'Space Grotesk',sans-serif; font-size: 20px; font-weight: 700; margin-top: 4px; line-height:1.2; }
+  .card .value { font-family:'IBM Plex Sans',system-ui,sans-serif; font-size: 20px; font-weight: 700; margin-top: 4px; line-height:1.2; }
   .card .sub { font-size: 10.5px; color: var(--ink-soft); margin-top: 3px; line-height:1.3; }
   section.panel { display: none; }
   section.panel.active { display: block; }
@@ -192,7 +193,7 @@
   .neg { color: var(--bad); font-weight: 600; }
   .tablewrap { overflow-x: auto; }
   input, select {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     font-size: 13px;
     padding: 7px 8px;
     border: 1px solid var(--border);
@@ -203,7 +204,7 @@
   input:focus, select:focus { outline: 2px solid var(--steel); outline-offset: -1px; }
   label { display:block; font-size: 11.5px; color: var(--ink-soft); margin-bottom: 4px; }
   .field { margin-bottom: 12px; }
-  .kur-hint { display:block; font-size:11px; color:#6C737B; margin-top:3px; font-family:'IBM Plex Mono',monospace; min-height:14px; }
+  .kur-hint { display:block; font-size:11px; color:#6C737B; margin-top:3px; font-family:'IBM Plex Sans',system-ui,sans-serif; min-height:14px; }
   .kur-hint.empty { visibility:hidden; }
   .kur-hint .kur-tl-wrap { display:flex; align-items:center; gap:4px; }
   .kur-hint .kur-isaret { white-space:nowrap; }
@@ -211,14 +212,14 @@
   .kv-s-deger .kur-hint { flex-basis:100%; margin-top:0; }
   .kv-s-deger .kur-hint input.kur-tl { width:130px; flex:0 0 130px; }
   .edit-tablo .kur-hint input.kur-tl { max-width:none; }
-  .kur-hint input.kur-tl { width:100%; max-width:150px; font-size:11.5px; padding:3px 6px; font-family:'IBM Plex Mono',monospace; }
-  .kur-etiket { font-weight:400; font-size:10.5px; color:var(--ink-soft); white-space:nowrap; margin-left:4px; font-family:'IBM Plex Mono',monospace; }
+  .kur-hint input.kur-tl { width:100%; max-width:150px; font-size:11.5px; padding:3px 6px; font-family:'IBM Plex Sans',system-ui,sans-serif; }
+  .kur-etiket { font-weight:400; font-size:10.5px; color:var(--ink-soft); white-space:nowrap; margin-left:4px; font-family:'IBM Plex Sans',system-ui,sans-serif; }
   .kur-etiket:empty { display:none; }
   .kur-etiket.yaninda { margin-left:6px; }
-  .kur-badge { font-size:10.5px; color:#9AA3AC; padding:6px 10px 0 10px; font-family:'IBM Plex Mono',monospace; cursor:default; }
+  .kur-badge { font-size:10.5px; color:#9AA3AC; padding:6px 10px 0 10px; font-family:'IBM Plex Sans',system-ui,sans-serif; cursor:default; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 12px; }
   .btn {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     font-size: 12.5px;
     font-weight: 600;
     padding: 8px 14px;
@@ -239,7 +240,7 @@
   .row { display:flex; gap:10px; align-items:end; flex-wrap:wrap; }
   .empty { color: var(--ink-soft); font-size: 12.5px; padding: 14px 0; text-align:center; }
   .pill { display:inline-block; padding: 2px 7px; border-radius: 2px; font-size: 11px; background: var(--steel-soft); color: var(--steel); }
-  .navlabel { font-size: 10px; letter-spacing: 0.06em; color: var(--side-muted); padding: 14px 10px 4px 10px; }
+  .navlabel { font-size: 12px; font-weight: 600; color: var(--side-muted); padding: 12px 10px 3px 10px; }
   .navlabel:first-of-type { padding-top: 4px; }
   .badge-taslak { color: var(--ink-soft); }
   .badge { display:inline-block; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight:600; }
@@ -256,10 +257,10 @@
   #printArea { display:none; }
   @media print {
     body.printing .app > *:not(#printArea) { display:none !important; }
-    body.printing #printArea { display:block !important; padding: 20px; font-family:'IBM Plex Mono',monospace; color:#000; background:#fff; }
+    body.printing #printArea { display:block !important; padding: 20px; font-family:'IBM Plex Sans',system-ui,sans-serif; color:#000; background:#fff; }
     body.printing #printArea table { width:100%; border-collapse:collapse; margin-top:14px; }
     body.printing #printArea th, body.printing #printArea td { border:1px solid #999; padding:6px 8px; font-size:12px; text-align:left; }
-    body.printing #printArea h2 { font-family:'Space Grotesk',sans-serif; }
+    body.printing #printArea h2 { font-family:'IBM Plex Sans',system-ui,sans-serif; }
   }
   .print-doc-head { display:flex; justify-content:space-between; margin-bottom:10px; }
   /* Yazdırma önizlemesi: A4 kağıt görünümü, yazdırma kurallarının aynısı */
@@ -269,12 +270,12 @@
   .oniz-bar select { padding:4px 6px; }
   .oniz-alan { flex:1; overflow:auto; padding:24px; }
   .oniz-kagit { width:210mm; min-height:297mm; margin:0 auto; background:#fff; color:#000; padding:14mm 12mm; box-shadow:0 4px 24px rgba(0,0,0,.45); transform-origin:top center;
-    font-family:'IBM Plex Mono',monospace; font-size:12px; line-height:1.45;
+    font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:12px; line-height:1.45;
     background-image:repeating-linear-gradient(to bottom, transparent 0, transparent calc(297mm - 1px), #d33 calc(297mm - 1px), #d33 297mm); }
   .oniz-kagit.yatay { width:297mm; min-height:210mm; background-image:repeating-linear-gradient(to bottom, transparent 0, transparent calc(210mm - 1px), #d33 calc(210mm - 1px), #d33 210mm); }
   .oniz-kagit table { width:100%; border-collapse:collapse; margin-top:14px; }
   .oniz-kagit th, .oniz-kagit td { border:1px solid #999; padding:6px 8px; font-size:12px; text-align:left; }
-  .oniz-kagit h2 { font-family:'Space Grotesk',sans-serif; margin:0 0 4px; }
+  .oniz-kagit h2 { font-family:'IBM Plex Sans',system-ui,sans-serif; margin:0 0 4px; }
   .oniz-kagit .muted { color:#555; }
   .oniz-kagit .etiket-kutu { border:1px solid #000; }
   .cikti-turler { display:flex; flex-direction:column; gap:4px; }
@@ -340,7 +341,7 @@
   .form-canli h3 { margin: 4px 0 0 !important; }
   .canli-kutu { display: flex; gap: 18px; flex-wrap: wrap; justify-content: flex-end; text-align: right; }
   .canli-kutu .ck { font-size: 11px; color: var(--steel); }
-  .canli-kutu .ck b { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--ink); font-weight: 600; }
+  .canli-kutu .ck b { display: block; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; color: var(--ink); font-weight: 600; }
   .canli-kutu .ck.ana b { font-size: 20px; }
   @media (max-width: 640px) { .canli-kutu { justify-content: flex-start; text-align: left; } }
   .recordlist { border: 1px solid var(--border); }
@@ -373,7 +374,7 @@
   }
   #userGateOverlay.open { display: flex; }
   #userGateBox { max-width: 400px; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 12px 40px rgba(21,32,43,.12); padding: 26px 24px 22px; display: flex; flex-direction: column; max-height: calc(100vh - 48px); }
-  #userGateBox .gate-marka { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .18em; color: var(--accent); margin-bottom: 4px; }
+  #userGateBox .gate-marka { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .18em; color: var(--accent); margin-bottom: 4px; }
   #userGateBox h1 { font-size: 20px; margin-bottom: 4px; }
   #userGateBox p { color: var(--ink-soft); font-size: 13px; margin-bottom: 16px; }
   #userGateList { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; flex: 0 1 auto; margin: 0 -4px 14px; padding: 2px 4px; }
@@ -444,9 +445,9 @@
   #confirmOverlay { z-index: 360; }
   #formBox.genis { max-width: 980px; }
   #formBox.orta { max-width: 680px; }
-  .form-section { font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12.5px; color:var(--steel); border-bottom:1px solid var(--border); padding:6px 0 4px; margin:14px 0 10px; }
+  .form-section { font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:600; font-size:12.5px; color:var(--steel); border-bottom:1px solid var(--border); padding:6px 0 4px; margin:14px 0 10px; }
   .form-section:first-child { margin-top:0; }
-  textarea { font-family:'IBM Plex Mono',monospace; font-size:13px; padding:7px 8px; border:1px solid var(--border); border-radius:2px; background:#fff; color:var(--ink); }
+  textarea { font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:13px; padding:7px 8px; border:1px solid var(--border); border-radius:2px; background:#fff; color:var(--ink); }
   .bh-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
   .navlabel { cursor:pointer; user-select:none; display:flex; justify-content:space-between; align-items:center; }
   .navlabel .ok { font-size:9px; color:var(--side-muted); }
@@ -485,10 +486,10 @@
   .navbtn.ym-oge.ym-acik { background:var(--side-hover); color:#fff; }
   .navbtn.ym-oge .ym-yildiz { margin-left:auto; }
   .ym-fly { position:fixed; z-index:600; background:var(--panel,#fff); color:var(--text,#1d2329); border:1px solid var(--line,#d9dde2); border-radius:6px; box-shadow:0 10px 30px rgba(15,23,32,.18); padding:10px 6px 8px; max-width:calc(100vw - 240px); max-height:calc(100vh - 16px); overflow:auto; }
-  .ym-fust { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; padding:0 10px 8px; border-bottom:1px solid var(--line,#e3e6ea); margin-bottom:6px; }
+  .ym-fust { font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:700; font-size:13px; padding:0 10px 8px; border-bottom:1px solid var(--line,#e3e6ea); margin-bottom:6px; }
   .ym-fkolonlar { display:flex; gap:6px; align-items:flex-start; }
   .ym-fkolon { display:flex; flex-direction:column; min-width:190px; }
-  .ym-fbaslik { font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted,#7a838c); padding:6px 10px 3px; }
+  .ym-fbaslik { font-size:10px;  color:var(--muted,#7a838c); padding:6px 10px 3px; }
   .ym-fsatir { text-align:left; background:none; border:0; border-radius:4px; padding:6px 10px; font:inherit; font-size:12.5px; color:inherit; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap; }
   .ym-fsatir:hover { background:var(--accent-soft, rgba(59,111,163,.10)); }
   .ym-fsatir.active { background:var(--accent); color:#fff; }
@@ -506,13 +507,13 @@
   .arama-wrap input { width:100%; }
   .arama-sonuc { position:absolute; top:100%; left:0; right:0; z-index:70; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 20px rgba(0,0,0,.15); max-height:380px; overflow-y:auto; display:none; }
   .arama-sonuc.acik { display:block; }
-  .arama-sonuc button { display:block; width:100%; text-align:left; border:none; border-bottom:1px solid var(--border); background:none; padding:8px 12px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; cursor:pointer; color:var(--ink); }
+  .arama-sonuc button { display:block; width:100%; text-align:left; border:none; border-bottom:1px solid var(--border); background:none; padding:8px 12px; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:12.5px; cursor:pointer; color:var(--ink); }
   .arama-sonuc button:hover, .arama-sonuc button.secili { background:var(--accent-soft); }
   .arama-sonuc .tur { font-size:10.5px; color:var(--ink-soft); margin-right:6px; }
   .arama-sonuc { min-width:min(440px, calc(100vw - 32px)); }
   .arama-sonuc .tur-komut { color:var(--accent); font-weight:600; }
   .arama-sonuc .arama-ek { font-size:10.5px; color:var(--ink-soft); margin-left:8px; }
-  .arama-sonuc .arama-baslik { padding:6px 12px 4px; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); border-bottom:1px solid var(--border); }
+  .arama-sonuc .arama-baslik { padding:6px 12px 4px; font-size:10.5px;  color:var(--ink-soft); border-bottom:1px solid var(--border); }
   tr.muh-satir.flash { animation: flashbg 1.6s ease-out; }
   .recordrow.flash { animation: flashbg 1.6s ease-out; }
   .recordrow.son-kayit { box-shadow: inset 3px 0 0 var(--good); background: var(--good-soft); }
@@ -529,7 +530,7 @@
   .liste-arac .sayac { font-size:11px; }
   .belge-akisi { display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-top:10px; font-size:11px; }
   .belge-akisi .ok { color:var(--ink-soft); }
-  .chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border:1px solid var(--border); border-radius:10px; background:var(--surface); font-size:11px; cursor:pointer; font-family:'IBM Plex Mono',monospace; color:var(--ink); }
+  .chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border:1px solid var(--border); border-radius:10px; background:var(--surface); font-size:11px; cursor:pointer; font-family:'IBM Plex Sans',system-ui,sans-serif; color:var(--ink); }
   .chip:hover { border-color:var(--accent); }
   .chip.yok { cursor:default; opacity:.55; }
   .uyari-satir { display:flex; gap:8px; align-items:flex-start; padding:6px 0; border-bottom:1px dashed var(--border); font-size:12.5px; cursor:pointer; }
@@ -547,24 +548,24 @@
   .edit-tablo td { padding:4px; }
   .edit-tablo th { font-size:11px; }
   .sekme-bar { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:12px; }
-  .sekme-bar button { border:1px solid var(--border); background:var(--surface); padding:6px 12px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; border-radius:2px; color:var(--ink); }
+  .sekme-bar button { border:1px solid var(--border); background:var(--surface); padding:6px 12px; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:12px; cursor:pointer; border-radius:2px; color:var(--ink); }
   .sekme-bar button.aktif { background:var(--ink); color:#fff; border-color:var(--ink); }
   /* Operatör ekranı */
   .op-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:16px; }
-  .op-kart { border:2px solid var(--border); background:var(--surface); padding:14px; border-radius:4px; cursor:pointer; text-align:left; font-family:'IBM Plex Mono',monospace; color:var(--ink); }
+  .op-kart { border:2px solid var(--border); background:var(--surface); padding:14px; border-radius:4px; cursor:pointer; text-align:left; font-family:'IBM Plex Sans',system-ui,sans-serif; color:var(--ink); }
   .op-kart:hover { border-color:var(--accent); }
   .op-kart.secili { border-color:var(--accent); background:var(--accent-soft); }
-  .op-kart .b { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; }
+  .op-kart .b { font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:700; font-size:16px; }
   .op-kart .k { font-size:11px; color:var(--ink-soft); margin-top:4px; }
   .op-kart.durusta { border-color:var(--bad); }
-  .op-buyuk input { font-size:28px; padding:10px; width:160px; text-align:center; font-family:'Space Grotesk',sans-serif; }
+  .op-buyuk input { font-size:28px; padding:10px; width:160px; text-align:center; font-family:'IBM Plex Sans',system-ui,sans-serif; }
   .op-buyuk input.op-saat { width:auto; font-size:14px; padding:7px; }
   .op-buyuk select.op-fireneden { font-size:14px; padding:10px; }
   .op-buyuk .btn { font-size:16px; padding:12px 18px; }
-  .op-adim { font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:var(--steel); margin:6px 0 8px; }
+  .op-adim { font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:600; font-size:13px; color:var(--steel); margin:6px 0 8px; }
   /* Seçim tamamlanınca makine › iş emri › operasyon tek satırlık şeride katlanır; altında sayaç ve Kaydet */
   .op-bas { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-  .op-ozet { flex:1 1 260px; min-width:0; font-family:'Space Grotesk',sans-serif; font-size:15px; line-height:1.4; padding:8px 12px; border:2px solid var(--accent); background:var(--accent-soft); border-radius:4px; }
+  .op-ozet { flex:1 1 260px; min-width:0; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:15px; line-height:1.4; padding:8px 12px; border:2px solid var(--accent); background:var(--accent-soft); border-radius:4px; }
   .op-ozet.eksik { border-color:var(--border); background:var(--surface); color:var(--ink-soft); }
   .op-ozet-sayi { font-size:13px; color:var(--ink-soft); white-space:nowrap; }
   .op-bas .btn { font-size:14px; padding:8px 14px; }
@@ -572,14 +573,14 @@
   .op-arti { margin-top:6px; display:flex; gap:4px; }
   .op-vardiya { margin-top:12px; }
   /* Bu makinenin sırası: ilk iş büyük; kalan adet ve termin büyük, geciken iş kırmızı */
-  .op-kart .op-kalan { font-family:'Space Grotesk',sans-serif; font-size:13px; margin-top:6px; }
+  .op-kart .op-kalan { font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:13px; margin-top:6px; }
   .op-kart .op-kalan b { font-size:18px; }
   .op-kart .op-termin { font-size:13px; margin-top:2px; }
   .op-kart.gecikti { border-color:var(--bad); }
   .op-kart.siradaki { grid-column:span 2; border-width:3px; }
   .op-kart.siradaki .b { font-size:20px; }
-  .op-kart .op-etiket { display:inline-block; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:12px; letter-spacing:.06em; color:#fff; background:var(--accent); padding:2px 8px; border-radius:3px; margin-bottom:6px; }
-  .op-diger > summary { cursor:pointer; list-style:none; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:var(--steel); margin:6px 0 8px; }
+  .op-kart .op-etiket { display:inline-block; font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:700; font-size:12px; color:#fff; background:var(--accent); padding:2px 8px; border-radius:3px; margin-bottom:6px; }
+  .op-diger > summary { cursor:pointer; list-style:none; font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:600; font-size:13px; color:var(--steel); margin:6px 0 8px; }
   .op-diger > summary::-webkit-details-marker { display:none; }
   .op-diger > summary::before { content:'▸ '; }
   .op-diger[open] > summary::before { content:'▾ '; }
@@ -587,7 +588,7 @@
   .atolye-bar { display:none; }
   body.atolye .sidebar, body.atolye .topbar, body.atolye #panel-operator > .pagehead { display:none !important; }
   body.atolye main { max-width:none; padding:12px 18px 30px; }
-  body.atolye .atolye-bar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:4px 0 12px; font-family:'Space Grotesk',sans-serif; font-size:15px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+  body.atolye .atolye-bar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:4px 0 12px; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:15px; border-bottom:1px solid var(--border); margin-bottom:12px; }
   /* Büyük dokunma hedefleri: dokunmatik cihazda (ya da atölye modunda) operatör ekranı (.op-iri, atolyeUygula koyar) */
   .op-iri .op-grid { grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
   .op-iri .op-kart { padding:18px; min-height:84px; }
@@ -642,7 +643,7 @@
   .firma-baslik img { max-height:60px; max-width:180px; }
   .spc svg { width:100%; max-width:720px; height:auto; display:block; }
   .kpi-mini { display:inline-block; margin-right:14px; font-size:12px; }
-  .kpi-mini b { font-family:'Space Grotesk',sans-serif; font-size:15px; }
+  .kpi-mini b { font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:15px; }
   @media print {
     body.printing #printArea .etiket-kutu { border:1px solid #000; }
   }
@@ -676,6 +677,13 @@
   .pagehead { margin-bottom: 12px; }
   .pagehead h1 { font-size: 20px; }
   .pagehead p { margin-top: 2px; font-size: 12px; }
+  /* Sayfa açıklaması her ekranda katlı (IFS / Canias gibi: başlık ve iş alanı, uzun metin yok); "ⓘ" ile açılır */
+  .pagehead { display:flex; flex-wrap:wrap; align-items:baseline; column-gap:8px; }
+  .pagehead > * { flex-basis:100%; }
+  .pagehead > h1, .pagehead > .ph-bilgi { flex-basis:auto; }
+  .pagehead:not(.ph-acik) p:not(#ozetAyEtiket) { display:none; }
+  .ph-bilgi { display:inline-flex; align-items:center; padding:0 4px; background:none; border:none; color:var(--accent); font-family:inherit; font-size:12px; cursor:pointer; }
+  @media (max-width: 767px) { .ph-bilgi { min-height:32px; } }
   .navbtn { padding: 6px 10px; font-size: 12.5px; }
   .navlabel { padding: 10px 10px 3px 10px; }
   .block { margin-bottom: 12px; }
@@ -767,7 +775,7 @@
   .kv-plan { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:16px; align-items:start; }
   @media (max-width:1100px){ .kv-plan { grid-template-columns:minmax(0,1fr); } }
   .kv-aybar { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
-  .kv-ayb { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-start; gap:1px; border:1px solid var(--border); background:var(--surface); padding:5px 8px; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; cursor:pointer; color:var(--ink); min-width:80px; text-align:left; }
+  .kv-ayb { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-start; gap:1px; border:1px solid var(--border); background:var(--surface); padding:5px 8px; border-radius:3px; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:10.5px; cursor:pointer; color:var(--ink); min-width:80px; text-align:left; }
   .kv-ayb b { font-size:12px; }
   .kv-ayb span { color:var(--ink-soft); }
   .kv-ayb.elle { border-left:3px solid var(--accent); }
@@ -805,7 +813,7 @@
   .kv-var-grid .block { margin-bottom:0; }
   .kv-var-grid > div > .block + .block { margin-top:16px; }
   .kv-grup-acik { font-size:11.5px; color:var(--ink-soft); margin:0 0 6px; line-height:1.5; }
-  .kv-satir { display:flex; align-items:center; gap:12px; padding:7px 0; border-bottom:1px dashed var(--border); }
+  .kv-satir { display:flex; align-items:center; gap:12px; padding:4px 0; border-bottom:1px dashed var(--border); }
   .kv-dahil { display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--muted, #6b7280); white-space:nowrap; cursor:pointer; }
   .kv-dahil input { width:auto; margin:0; }
   .kv-satir:last-child { border-bottom:none; }
@@ -832,12 +840,12 @@
   .kv-db-tutar { font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap; }
   .kv-db-son { color:var(--ink-soft); font-size:11px; white-space:nowrap; min-width:70px; text-align:right; }
   .kv-dokum-bol[open] { padding-bottom:10px; }
-  .kv-bolum-baslik { font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12.5px; color:var(--steel); border-bottom:1px solid var(--border); padding:4px 0; margin:14px 0 8px; }
+  .kv-bolum-baslik { font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:600; font-size:12.5px; color:var(--steel); border-bottom:1px solid var(--border); padding:4px 0; margin:14px 0 8px; }
   .kv-bolum-baslik:first-child { margin-top:0; }
   .kv-kalici { font-size:10px; color:var(--accent); font-weight:600; white-space:nowrap; }
   .kv-takvim { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; max-width:430px; }
   .kv-tbas { font-size:10px; color:var(--ink-soft); text-align:center; }
-  .kv-gun { border:1px solid var(--border); border-radius:3px; padding:6px 0; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; background:var(--surface); color:var(--ink); position:relative; }
+  .kv-gun { border:1px solid var(--border); border-radius:3px; padding:6px 0; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:12px; cursor:pointer; background:var(--surface); color:var(--ink); position:relative; }
   .kv-gun.tam { background:var(--good-soft); color:var(--good); font-weight:600; }
   .kv-gun.yarim { background:var(--warn-soft); color:var(--warn); }
   .kv-gun.kapali { background:var(--surface-alt); color:#9AA0A6; }
@@ -850,7 +858,7 @@
   /* Kârlılık özeti: grafikler, şelale */
   .kv-ozet-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap:10px; align-items:start; margin-bottom:10px; }
   .kv-ozet-grid .block { margin-bottom:0; }
-  .kvg { width:100%; height:auto; display:block; font-family:'IBM Plex Mono',monospace; }
+  .kvg { width:100%; height:auto; display:block; font-family:'IBM Plex Sans',system-ui,sans-serif; }
   .kvg text { font-size:10px; fill:var(--ink-soft); }
   .kvg .kvg-izgara { stroke:var(--border); stroke-width:1; }
   .kvg .kvg-sifir { stroke:var(--ink-soft); stroke-width:1; stroke-dasharray:3 3; }
@@ -875,7 +883,7 @@
   .kvg-ip-baslik { font-weight:600; margin-bottom:4px; }
   .kvg-ip-satir { display:flex; justify-content:space-between; gap:14px; }
   .kvg-ip-satir i { display:inline-block; width:8px; height:8px; margin-right:5px; border-radius:1px; }
-  .kvg-ip-satir b { font-family:'IBM Plex Mono',monospace; font-weight:600; }
+  .kvg-ip-satir b { font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:600; }
   .kvg-ip-plan { display:flex; justify-content:space-between; gap:14px; font-size:11px; color:var(--ink-soft); margin:0 0 3px 13px; }
   .kvg-lejant { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--ink-soft); margin-bottom:4px; }
   .kvg-lejant i { display:inline-block; width:10px; height:10px; margin-right:5px; vertical-align:-1px; }
@@ -890,7 +898,7 @@
   .kvs-bar.son { background:var(--good); }
   .kvs-bar.kagit { background:repeating-linear-gradient(135deg, var(--bad) 0 3px, transparent 3px 6px); border:1px solid var(--bad); opacity:.8; }
   .kvs-bar.kagit.arti { background:repeating-linear-gradient(135deg, var(--good) 0 3px, transparent 3px 6px); border-color:var(--good); }
-  .kvs-deger { font-family:'IBM Plex Mono',monospace; text-align:right; white-space:nowrap; }
+  .kvs-deger { font-family:'IBM Plex Sans',system-ui,sans-serif; text-align:right; white-space:nowrap; }
   .kvs-ayrac { grid-column:1 / -1; border-top:1px solid var(--border); margin:2px 0; }
   .kv-tik tbody tr { cursor:pointer; }
   .kv-tik tbody tr:hover td { background:var(--surface-alt); }
@@ -928,10 +936,10 @@
   .muh-iki { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; align-items:start; }
   .muh-iki > .block { margin-bottom:0; }
   @media (max-width:980px){ .muh-iki { grid-template-columns:1fr; } }
-  .muh-h4 { font-family:'Space Grotesk',sans-serif; font-size:13px; margin:12px 0 6px; color:var(--steel); }
+  .muh-h4 { font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:13px; margin:12px 0 6px; color:var(--steel); }
   .muh-toplam-satir { text-align:right; padding:6px 8px; border-top:2px solid var(--ink); margin-bottom:6px; }
   .muh-kebir { margin-bottom:16px; }
-  .muh-kebir h4 { margin:0 0 4px; font-family:'Space Grotesk',sans-serif; font-size:13px; }
+  .muh-kebir h4 { margin:0 0 4px; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:13px; }
   .muh-adim .muh-no { display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--ink); color:#fff; font-size:12px; align-items:center; justify-content:center; margin-right:4px; }
   .muh-liste { margin:0; padding-left:20px; font-size:12.5px; line-height:1.7; }
   .muh-fis-tablo input { min-width:90px; }
@@ -1115,7 +1123,7 @@
   .kf-fiyat-sec:hover { background:var(--accent-soft); }
   .kf-fiyat-menu { position:fixed; z-index:400; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 28px rgba(21,32,43,.22); min-width:280px; max-width:380px; max-height:60vh; overflow:auto; padding:4px 0; font-size:12.5px; }
   .kf-fm-bas { padding:6px 10px; font-weight:600; border-bottom:1px solid var(--border); }
-  .kf-fm-grup { padding:6px 10px 2px; font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; }
+  .kf-fm-grup { padding:6px 10px 2px; font-size:10.5px; color:var(--ink-soft);  }
   .kf-fiyat-menu button { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:left; border:none; background:none; padding:6px 10px; cursor:pointer; color:var(--ink); }
   .kf-fiyat-menu button:hover, .kf-fiyat-menu button:focus { background:var(--accent-soft); outline:none; }
   .kf-fiyat-menu button small { display:block; color:var(--ink-soft); font-size:10.5px; }
@@ -1145,7 +1153,7 @@
   @media (max-width: 860px) { .ut-ust { position:static; } .ut-dugmeler { margin-left:0; } }
   /* Kârlılık › Özet › Ürünler ve çalışan makineler */
   .kv-mb-satir { display:flex; flex-wrap:wrap; gap:6px 24px; font-size:12.5px; margin:0 0 8px; }
-  .kv-mb-satir b { font-family:'Space Grotesk',sans-serif; font-size:15px; margin:0 4px; font-variant-numeric:tabular-nums; }
+  .kv-mb-satir b { font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:15px; margin:0 4px; font-variant-numeric:tabular-nums; }
   .kv-urun-tablo th { white-space:nowrap; vertical-align:bottom; }
   .kv-urun-tablo th .muted { font-weight:400; font-size:10px; }
   .kv-urun-tablo td:first-child { min-width:0; width:22px; text-align:center; }
@@ -1162,13 +1170,13 @@
   .kv-ay-makine { font-size:12.5px; padding:6px 0; }
   /* ===== Telefon (767 px ve altı): altta sabit çubuk (Özet · Ara · Favoriler · Menü) + tam ekran menü =====
      Yatay menü şeridi (kenar çubuğu) telefonda kalkar; tablet ve masaüstü değişmez. Atölye modunda ve giriş ekranında çubuk yok. */
-  .alt-cubuk, .tel-panel, .ph-bilgi { display:none; }
+  .alt-cubuk, .tel-panel { display:none; }
   @media (max-width: 767px) {
     :root { --alt-h: 56px; }
     .sidebar { display:none; }
     body.alt-hazir:not(.atolye) .alt-cubuk { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:340; height:calc(var(--alt-h) + env(safe-area-inset-bottom, 0px)); padding:0 4px env(safe-area-inset-bottom, 0px); background:var(--ink); border-top:1px solid var(--side-line); box-shadow:0 -4px 14px rgba(21,32,43,.18); }
     body:has(#userGateOverlay.open) .alt-cubuk, body:has(#girisOverlay.open) .alt-cubuk { display:none !important; }
-    .alt-cubuk button { flex:1 1 0; min-width:0; min-height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; position:relative; background:none; border:none; color:#C9CDD2; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; padding:4px 2px; border-radius:6px; -webkit-tap-highlight-color:transparent; }
+    .alt-cubuk button { flex:1 1 0; min-width:0; min-height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; position:relative; background:none; border:none; color:#C9CDD2; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:11px; cursor:pointer; padding:4px 2px; border-radius:6px; -webkit-tap-highlight-color:transparent; }
     .alt-cubuk button svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
     .alt-cubuk button.active { color:#fff; }
     .alt-cubuk button.active::before { content:''; position:absolute; top:0; left:22%; right:22%; height:3px; border-radius:0 0 3px 3px; background:var(--side-link); }
@@ -1181,21 +1189,21 @@
     body.alt-hazir:not(.atolye) .tel-panel.acik { display:block; position:fixed; left:0; right:0; top:0; bottom:calc(var(--alt-h) + env(safe-area-inset-bottom, 0px)); z-index:335; background:var(--bg); overflow-y:auto; overscroll-behavior:contain; }
     body.tel-panel-acik { overflow:hidden; }
     .tp-ust { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top, 0px)) 8px 10px 14px; background:var(--ink); color:#fff; }
-    .tp-ust .tp-marka { flex:1; min-width:0; display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; }
+    .tp-ust .tp-marka { flex:1; min-width:0; display:flex; align-items:center; gap:8px; font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:700; font-size:15px; }
     .tp-ust .tp-marka .brand-logo { max-height:28px; max-width:90px; background:#fff; padding:2px 4px; border-radius:3px; }
     .tp-ust .tp-marka .brand-logo + .brand-ad { display:none; }
     .tp-ust .tp-marka small { display:none; }
-    .tp-ust .tp-baslik { flex:1; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; }
+    .tp-ust .tp-baslik { flex:1; font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:700; font-size:16px; }
     .tp-kapat { flex-shrink:0; width:44px; height:44px; border:none; background:none; color:#fff; font-size:24px; line-height:1; border-radius:6px; cursor:pointer; }
     .tp-kullanici { display:flex; align-items:center; gap:8px; padding:8px 14px; font-size:12px; color:var(--ink-soft); border-bottom:1px solid var(--border); background:var(--surface); }
     .tp-kullanici b { color:var(--ink); }
     .tp-kullanici .btn { margin-left:auto; min-height:36px; }
     .tp-govde { padding:4px 12px 20px; }
-    .tp-alan { display:flex; align-items:center; gap:7px; margin:16px 2px 6px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:12px; letter-spacing:.08em; color:var(--steel); }
+    .tp-alan { display:flex; align-items:center; gap:7px; margin:16px 2px 6px; font-family:'IBM Plex Sans',system-ui,sans-serif; font-weight:700; font-size:12px; letter-spacing:.08em; color:var(--steel); }
     .tp-alan .navgicon { width:16px; height:16px; stroke:var(--steel); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
     .tp-alt { margin:10px 2px 4px; font-size:11px; color:var(--ink-soft); }
     .tp-izgara { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px; }
-    .tp-oge { display:flex; align-items:center; gap:6px; min-height:44px; width:100%; text-align:left; padding:6px 4px 6px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.3; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .tp-oge { display:flex; align-items:center; gap:6px; min-height:44px; width:100%; text-align:left; padding:6px 4px 6px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:12.5px; line-height:1.3; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .tp-oge .tp-ad { flex:1; min-width:0; overflow-wrap:anywhere; }
     .tp-oge.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
     .tp-oge .tp-tur { flex-shrink:0; font-size:10px; padding:1px 5px; border-radius:3px; background:var(--steel-soft); color:var(--steel); }
@@ -1204,9 +1212,6 @@
     .tp-oge.active .tp-yildiz { color:#fff; }
     .tp-bos { padding:12px 4px; font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
     .tp-surum { margin:22px 2px 0; font-size:10.5px; color:var(--ink-soft); }
-    /* Sayfa açıklaması katlı gelir: "ⓘ Bu sayfa ne işe yarar?" ile açılır */
-    .pagehead:not(.ph-acik) p:not(#ozetAyEtiket) { display:none; }
-    .ph-bilgi { display:inline-flex; align-items:center; min-height:32px; margin-top:2px; padding:0; background:none; border:none; color:var(--accent); font-family:inherit; font-size:12px; cursor:pointer; }
     /* Liste satırı ayrıntısı (teklif / sipariş kalemleri) satır genişliğini aşmasın; geniş tablo kendi içinde kaydırılır */
     .recordrow > .rmain { align-self:stretch; width:100%; }
   }
@@ -1216,7 +1221,7 @@
 <body>
 <div id="topBanner"></div>
 <div id="girisOverlay"><div id="girisBox">
-  <div class="gate-marka" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:.18em;color:var(--accent)">OZerp</div>
+  <div class="gate-marka" style="font-weight:700;font-size:13px;letter-spacing:.18em;color:var(--accent)">OZerp</div>
   <div id="girisNormal" style="display:flex;flex-direction:column;gap:10px">
     <h1>Giriş</h1>
     <p>Ortak veriye erişmek için hesabınızla giriş yapın.</p>
@@ -1337,7 +1342,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r161</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r162</div>
   </nav>
   <main>
     <div class="topbar">
@@ -3833,8 +3838,8 @@ Dikkat edilmesi gereken 2 nokta:
       var x = padL + i*((W-padL-10)/ayToplam.length) + barGap/2;
       var y = H - padB - h;
       return '<rect x="'+x+'" y="'+y+'" width="'+Math.max(1,barW)+'" height="'+h+'" fill="var(--steel)"></rect>'+
-        '<text x="'+(x+barW/2)+'" y="'+(H-4)+'" font-size="10" text-anchor="middle" font-family="IBM Plex Mono, monospace" fill="var(--ink-soft)">'+esc(ayEtiketleri[i])+'</text>'+
-        '<text x="'+(x+barW/2)+'" y="'+(y-4)+'" font-size="10" text-anchor="middle" font-family="IBM Plex Mono, monospace" fill="var(--ink)">'+fmt(v)+'</text>';
+        '<text x="'+(x+barW/2)+'" y="'+(H-4)+'" font-size="10" text-anchor="middle" font-family="IBM Plex Sans, system-ui, sans-serif" fill="var(--ink-soft)">'+esc(ayEtiketleri[i])+'</text>'+
+        '<text x="'+(x+barW/2)+'" y="'+(y-4)+'" font-size="10" text-anchor="middle" font-family="IBM Plex Sans, system-ui, sans-serif" fill="var(--ink)">'+fmt(v)+'</text>';
     }).join('');
     wrap.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;height:auto;display:block">'+bars+'</svg>';
   }
@@ -14867,7 +14872,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (ic.__sonHtml !== 'planla'){
       ic.innerHTML =
         '<div class="block"><div class="block-body" style="padding:10px 12px">'+
-          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><b style="font-family:\'Space Grotesk\',sans-serif">Ay seçin</b>'+
+          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><b>Ay seçin</b>'+
           '<button class="btn secondary small" data-kvact="onceki">◀</button><button class="btn secondary small" data-kvact="sonraki">▶</button><button class="btn secondary small" data-kvact="bugun">Bu ay</button><button class="btn secondary small" data-kvact="hepsiTemizle" title="Tüm aylarda elle girilen değerleri sil">Tüm elle girilenleri temizle</button>'+
           '<span id="kvKayitDurum" class="helper" style="margin:0 0 0 auto"></span></div>'+
           '<div class="kv-aybar" id="kvAyBar"></div>'+
@@ -15818,13 +15823,13 @@ Dikkat edilmesi gereken 2 nokta:
       : '<input id="'+id+'" data-kvkey="'+f[0]+'" data-kvtur="num" type="number" step="any"'+(/^₺/.test(f[3]||'') ? ' data-para="TRY"' : '')+' value="'+escAttr(v)+'">';
     var ref = P._ref && P._ref[f[0]], ozel = P.ozel && P.ozel[f[0]] && kvTanimRef(f[0]) !== undefined;
     if (ref) inp = inp.replace(/^<(input|select) /, '<$1 disabled ');
-    return '<div class="kv-satir'+(ref ? ' kv-ref' : '')+'"><label class="kv-s-ad" for="'+id+'">'+esc(f[1])+(f[4] ? '<span class="kv-s-acik">'+esc(f[4])+'</span>' : '')+
+    return '<div class="kv-satir'+(ref ? ' kv-ref' : '')+'"><label class="kv-s-ad" for="'+id+'">'+esc(f[1])+(f[4] ? ' '+infoIco(f[4]) : '')+
       (ref ? '<span class="kv-ref-not">Tanımlar\'dan · <a href="#" data-kvozel="'+f[0]+'">bu planda değiştir</a></span>' : ozel ? '<span class="kv-ref-not ozel">Bu plana özel · <a href="#" data-kvozelkaldir="'+f[0]+'">Tanımlar\'daki değere dön</a></span>' : '')+'</label>'+
       '<div class="kv-s-deger">'+inp+'<span class="kv-birim">'+esc(f[3]||'')+'</span>'+
       (KV_MODEL.GIDER_SECIM.indexOf(f[0]) > -1 ? '<label class="kv-dahil" title="İşareti kaldırılan kalem planda 0 sayılır (ör. kiraya veren öderse); tutar saklı kalır"><input type="checkbox" data-kvdahil="'+f[0]+'"'+((P.giderHaric || []).indexOf(f[0]) < 0 ? ' checked' : '')+'> planda</label>' : '')+'</div></div>';
   }
   function kvGrupHtml(g, P){
-    return '<div class="block"><div class="block-head"><h3>'+esc(g[0])+'</h3></div><div class="block-body">'+(g[1] ? '<div class="kv-grup-acik">'+esc(g[1])+'</div>' : '')+g[2].map(function(f){ return kvFormSatir(f, P); }).join('')+'</div></div>';
+    return '<div class="block"><div class="block-head"><h3>'+esc(g[0])+(g[1] ? ' '+infoIco(g[1]) : '')+'</h3></div><div class="block-body">'+g[2].map(function(f){ return kvFormSatir(f, P); }).join('')+'</div></div>';
   }
   var _kvVarBolum = 'plan', _kvButceYil = null;
   var KV_VAR_BOLUMLER = [['plan','Plan ve kuruluş modeli','dönem, kuruluş tarihi, satın al / kirala'],['uretim','Üretim ve satış','vardiya, ürünler, tahsilat'],['personel','Personel','kadro, maaş artışı, SGK'],
@@ -19228,17 +19233,25 @@ Dikkat edilmesi gereken 2 nokta:
     // ekran genişleyince (telefon yan çevrildi, pencere büyütüldü) açık panel kapanır
     window.addEventListener('resize', function(){ if (_telPanel && !(window.matchMedia && window.matchMedia('(max-width: 767px)').matches)) telPanelKapat(); });
   })();
-  // Sayfa açıklaması (.pagehead p) telefonda katlı: başlığın altına "ⓘ Bu sayfa ne işe yarar?" düğmesi
+  // Menü başlıkları büyük harf yazılmış (KARTLAR, FİNANS & MUHASEBE…): ekranda Türkçe baş harfi büyük gösterilir (Kartlar, Finans & Muhasebe)
+  function trBaslik(t){ return t.toLocaleLowerCase('tr').replace(/(^|[\s&\/(-])(\S)/g, function(m, a, b){ return a + b.toLocaleUpperCase('tr'); }); }
+  function menuBasliklariDuzelt(){
+    document.querySelectorAll('.navlabel .nl-ad, .tp-grup, .ym-fbaslik').forEach(function(el){
+      el.childNodes.forEach(function(n){ var v = n.nodeValue; if (n.nodeType === 3 && /[A-ZÇĞİÖŞÜÂ]{3}/.test(v) && v === v.toLocaleUpperCase('tr')) n.nodeValue = trBaslik(v); });
+    });
+  }
+  menuBasliklariDuzelt(); EK_HER_ZAMAN.push(menuBasliklariDuzelt);
+  // Sayfa açıklaması (.pagehead p) her ekranda katlı: başlığın yanında "ⓘ" düğmesi
   (function(){
     document.querySelectorAll('.pagehead').forEach(function(ph){
       var p = Array.prototype.find.call(ph.querySelectorAll('p'), function(x){ return x.id !== 'ozetAyEtiket'; }); if (!p) return;
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'ph-bilgi'; b.textContent = 'ⓘ Bu sayfa ne işe yarar?'; b.setAttribute('aria-expanded', 'false');
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'ph-bilgi'; b.textContent = 'ⓘ'; b.title = 'Bu sayfa ne işe yarar?'; b.setAttribute('aria-expanded', 'false');
       p.parentNode.insertBefore(b, p);
     });
     document.addEventListener('click', function(e){
       var b = e.target.closest('.ph-bilgi'); if (!b) return;
       var ph = b.closest('.pagehead'), acik = !ph.classList.contains('ph-acik');
-      ph.classList.toggle('ph-acik', acik); b.textContent = acik ? 'ⓘ Açıklamayı gizle' : 'ⓘ Bu sayfa ne işe yarar?'; b.setAttribute('aria-expanded', acik ? 'true' : 'false');
+      ph.classList.toggle('ph-acik', acik); b.textContent = acik ? 'ⓘ gizle' : 'ⓘ'; b.title = acik ? 'Açıklamayı gizle' : 'Bu sayfa ne işe yarar?'; b.setAttribute('aria-expanded', acik ? 'true' : 'false');
     });
   })();
   EK_HER_ZAMAN.push(altCubukGuncelle);
