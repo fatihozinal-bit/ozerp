@@ -1009,6 +1009,14 @@
   .kf-tablo .kf-birim { width: 50px; color: var(--ink-soft); }
   .kf-tablo .kf-net { width: 90px; color: var(--ink-soft); } .kf-tablo .kf-tutar { width: 110px; }
   .kf-tablo td:nth-child(10) { min-width: 140px; }
+  .ff-tablo { grid-column:1/-1; }
+  .kf-parca { font-size:10.5px; margin-top:1px; }
+  .kf-parca:empty { display:none; }
+  #printArea .print-bilgi, .oniz-kagit .print-bilgi { width:auto; margin:6px 0 10px; font-size:11px; }
+  #printArea .print-bilgi td, .oniz-kagit .print-bilgi td { border:none; padding:1px 12px 1px 0; }
+  #printArea .print-toplam, .oniz-kagit .print-toplam { width:auto; margin:8px 0 8px auto; min-width:260px; }
+  #formBox.wide #formFields > .field.ff-tablo { display:block; grid-row:auto; }
+  .ff-tablo .edit-tablo input[type=text], .ff-tablo .edit-tablo select { width:100%; }
   .kf-sil { border: none; background: none; color: var(--ink-soft); font-size: 18px; line-height: 1; cursor: pointer; width: 26px; height: 26px; border-radius: 4px; }
   .kf-sil:hover { color: var(--bad); background: var(--bad-soft); }
   .kf-arac { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0 12px; }
@@ -1343,7 +1351,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r166</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r167</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2169,6 +2177,15 @@ Dikkat edilmesi gereken 2 nokta:
     if (/₺/.test(f.label||'')) return 'TRY';
     return null;
   }
+  // Formdaki "tablo" alanının bir satırı (ör. yetkili: ad · görev · telefon · e-posta · varsayılan)
+  function ffTabloSatir(f, r){
+    return '<tr>'+f.kolonlar.map(function(c){
+      var v = r[c.key];
+      if (c.type === 'select') return '<td><select data-ffc="'+c.key+'">'+c.options.map(function(o){ return '<option'+(String(v||c.options[0]) === o ? ' selected' : '')+'>'+esc(o)+'</option>'; }).join('')+'</select></td>';
+      if (c.type === 'checkbox') return '<td style="text-align:center"><input type="checkbox" data-ffc="'+c.key+'"'+(v === true || v === 'true' ? ' checked' : '')+' style="width:auto"></td>';
+      return '<td><input type="text" data-ffc="'+c.key+'" value="'+escAttr(v == null ? '' : v)+'" placeholder="'+escAttr(c.placeholder || '')+'"'+(c.width ? ' style="width:'+c.width+'"' : '')+'></td>';
+    }).join('')+'<td><button type="button" class="kf-sil" data-fftsil="1" title="Satırı sil" aria-label="Satırı sil">×</button></td></tr>';
+  }
   function openForm(opts){
     // opts: {title, fields:[{key,label,type,options,placeholder}], values:{}, onSave: function(values){...}}
     var overlay = document.getElementById('formOverlay');
@@ -2211,6 +2228,13 @@ Dikkat edilmesi gereken 2 nokta:
       if (f.type === 'section'){
         return '<div class="form-section">'+esc(f.label)+'</div>';
       }
+      if (f.type === 'tablo'){
+        var satirlar = Array.isArray(v) && v.length ? v : (f.eskiden ? f.eskiden(vals) : []);
+        return '<div class="field ff-tablo"><label>'+esc(f.label)+(f.hint ? ' <span class="muted" style="font-weight:400">— '+esc(f.hint)+'</span>' : '')+'</label><div class="tablewrap"><table class="edit-tablo" data-ffkey="'+i+'" data-fftablo="1"><thead><tr>'+
+          f.kolonlar.map(function(c){ return '<th>'+esc(c.label)+'</th>'; }).join('')+'<th></th></tr></thead><tbody>'+
+          (satirlar.length ? satirlar : [{}]).map(function(r){ return ffTabloSatir(f, r); }).join('')+'</tbody></table></div>'+
+          '<button type="button" class="btn secondary small" data-fftekle="'+i+'">+ Satır</button></div>';
+      }
       var isEuro = !!alanPara(f);
       return '<div class="field"><label>'+esc(f.label)+(f.required ? '<span class="zorunlu" title="Zorunlu alan">*</span>' : '')+'</label><input type="'+(f.type||'text')+'" '+(f.type==='number'?'step="any"':'')+
         ' data-ffkey="'+i+'" value="'+escAttr(v==null?'':v)+'" placeholder="'+escAttr(f.placeholder||'')+'" style="width:100%">'+
@@ -2237,10 +2261,20 @@ Dikkat edilmesi gereken 2 nokta:
       opts.fields.forEach(function(f, i){
         var el = fieldsEl.querySelector('[data-ffkey="'+i+'"]');
         if (!el) return;
+        if (f.type === 'tablo'){
+          out[f.key] = Array.prototype.map.call(el.querySelectorAll('tbody tr'), function(tr){ var r = {}; tr.querySelectorAll('[data-ffc]').forEach(function(x){ r[x.dataset.ffc] = x.type === 'checkbox' ? x.checked : x.value.trim(); }); return r; })
+            .filter(function(r){ return f.kolonlar.some(function(c){ return c.type !== 'checkbox' && c.type !== 'select' && r[c.key]; }); });
+          return;
+        }
         out[f.key] = f.type === 'number' ? (Number(el.value)||0) : el.value;
       });
       return out;
     }
+    function tabloTikla(e){
+      var ek = e.target.closest('[data-fftekle]'); if (ek){ var f = opts.fields[Number(ek.dataset.fftekle)], tb = fieldsEl.querySelector('[data-ffkey="'+ek.dataset.fftekle+'"] tbody'); if (f && tb){ tb.insertAdjacentHTML('beforeend', ffTabloSatir(f, {})); var ilk = tb.lastElementChild.querySelector('input'); if (ilk) ilk.focus(); } return; }
+      var sl = e.target.closest('[data-fftsil]'); if (sl){ var tr = sl.closest('tr'), tb2 = tr.parentNode; tr.remove(); if (!tb2.children.length){ var f2 = opts.fields[Number(tb2.closest('[data-ffkey]').dataset.ffkey)]; tb2.insertAdjacentHTML('beforeend', ffTabloSatir(f2, {})); } }
+    }
+    fieldsEl.addEventListener('click', tabloTikla);
     function canliGuncelle(e){
       if (e && e.type === 'change' && opts.onFieldChange && e.target.dataset.ffkey != null){
         var degisen = opts.fields[Number(e.target.dataset.ffkey)];
@@ -2259,6 +2293,7 @@ Dikkat edilmesi gereken 2 nokta:
     setTimeout(firstInput, 30);
     function cleanup(){
       overlay.classList.remove('open');
+      fieldsEl.removeEventListener('click', tabloTikla);
       fieldsEl.removeEventListener('input', canliGuncelle);
       fieldsEl.removeEventListener('change', canliGuncelle);
       saveBtn.removeEventListener('click', onSave);
@@ -4237,27 +4272,69 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Cari / Müşteri ----------
   // Cari açılışında muhasebe/fatura süreci için gerekli olabilecek detaylar da isteniyor
   // (vergi dairesi, e-posta, IBAN, ödeme vadesi, şehir) — sadece ad/telefon yeterli değil.
+  // Cari kart: Logo / Canias cari hesap kartı kapsamı. Eski tek satırlık "kisiler" ve "sevkAdresi" metinleri formu açınca tabloya çevrilir.
+  var TESLIM_SEKILLERI = ['', 'Fabrika teslim (EXW)', 'FCA', 'FOB', 'CFR', 'CIF', 'CPT', 'DAP', 'DDP', 'Müşteri adresine teslim', 'Müşteri teslim alır'];
+  var SEVK_YONTEMLERI = ['', 'Kendi aracımız', 'Kargo', 'Nakliye firması', 'Müşteri alır'];
+  var ODEME_SEKILLERI = ['', 'Havale / EFT', 'Çek', 'Senet', 'Nakit', 'Kredi kartı', 'Mahsup'];
+  function satirlariAyir(t){ return String(t || '').split(/\n+/).map(function(x){ return x.trim(); }).filter(Boolean); }
   var MUSTERI_FIELDS = [
+    {type:'section', label:'Kimlik'},
     {key:'kod', label:'Cari kodu', type:'text'},
-    {key:'ad', label:'Firma / Ad', type:'text', required:true},
+    {key:'ad', label:'Kısa ad', type:'text', required:true},
+    {key:'unvan', label:'Resmî ünvan (faturada)', type:'text', placeholder:'ör. ABC Makine Sanayi ve Ticaret A.Ş.'},
     {key:'cariTipi', label:'Cari tipi', type:'select', options:['Müşteri','Tedarikçi','Fasoncu','Her ikisi']},
-    {key:'yetkili', label:'Yetkili', type:'text'},
-    {key:'telefon', label:'Telefon', type:'text'},
-    {key:'eposta', label:'E-posta', type:'text'},
-    {key:'adres', label:'Adres', type:'text'},
-    {key:'sehir', label:'Şehir', type:'text'},
-    {key:'vergiDairesi', label:'Vergi Dairesi', type:'text'},
-    {key:'vergiNo', label:'Vergi No', type:'text'},
-    {key:'iban', label:'IBAN (opsiyonel)', type:'text'},
-    {key:'odemeVadesiGun', label:'Ödeme vadesi (gün)', type:'number'},
-    {key:'paraBirimi', label:'Para birimi', type:'select', options:['EUR','TRY','USD']},
+    {key:'kisiTuru', label:'Kişi türü', type:'select', options:['Tüzel kişi (şirket)','Gerçek kişi (şahıs)']},
+    {key:'grup', label:'Cari grubu', type:'text', placeholder:'ör. Ana müşteri, Distribütör, Hammadde'},
+    {key:'sektor', label:'Sektör', type:'text', placeholder:'ör. Hidrolik, Otomotiv'},
+    {key:'temsilci', label:'Satış temsilcisi', type:'select', options: function(){ return [''].concat((state.kullanicilar || []).map(function(u){ return u.ad || u.adSoyad || u.eposta || ''; }).filter(Boolean)); }},
+    {key:'aktif', label:'Durum', type:'select', options:['Aktif','Pasif']},
+    {type:'section', label:'Vergi ve resmî bilgiler'},
+    {key:'vergiDairesi', label:'Vergi dairesi', type:'text'},
+    {key:'vergiNo', label:'Vergi no (10 hane) / TCKN (11 hane)', type:'text'},
+    {key:'mersisNo', label:'MERSİS no', type:'text'},
+    {key:'ticaretSicilNo', label:'Ticaret sicil no', type:'text'},
     {key:'eFaturaMukellefi', label:'e-Fatura mükellefi mi? (değilse e-Arşiv kesilir)', type:'select', options:['Bilinmiyor','Evet','Hayır']},
+    {key:'eFaturaEtiket', label:'e-Fatura posta kutusu (PK) etiketi', type:'text', placeholder:'urn:mail:defaultpk@…'},
+    {key:'eIrsaliyeMukellefi', label:'e-İrsaliye mükellefi mi?', type:'select', options:['Bilinmiyor','Evet','Hayır']},
+    {key:'kepAdresi', label:'KEP adresi', type:'text'},
+    {type:'section', label:'İletişim'},
+    {key:'telefon', label:'Telefon', type:'text'},
+    {key:'telefon2', label:'Cep / ikinci telefon', type:'text'},
+    {key:'eposta', label:'E-posta (genel)', type:'text'},
+    {key:'faturaEposta', label:'Fatura e-postası', type:'text'},
+    {key:'web', label:'Web sitesi', type:'text'},
+    {type:'section', label:'Fatura adresi'},
+    {key:'adres', label:'Adres (mahalle, cadde, no)', type:'text'},
+    {key:'ilce', label:'İlçe', type:'text'},
+    {key:'sehir', label:'İl', type:'text'},
+    {key:'postaKodu', label:'Posta kodu', type:'text'},
+    {key:'ulke', label:'Ülke', type:'text', placeholder:'Türkiye'},
+    {key:'sevkAdresleri', label:'Sevk adresleri', type:'tablo', hint:'teslimat yapılan depolar / şubeler; varsayılan olan siparişe gelir',
+      kolonlar:[{key:'ad', label:'Adres adı', placeholder:'ör. Merkez depo', width:'130px'}, {key:'adres', label:'Adres', placeholder:'mahalle, cadde, no, ilçe / il'}, {key:'yetkili', label:'Teslim alan', width:'130px'}, {key:'telefon', label:'Telefon', width:'120px'}, {key:'varsayilan', label:'Varsayılan', type:'checkbox'}],
+      eskiden: function(v){ return satirlariAyir(v.sevkAdresi).map(function(x, i){ return { ad: 'Sevk ' + (i + 1), adres: x, varsayilan: i === 0 }; }); }},
+    {key:'yetkililer', label:'Yetkililer', type:'tablo', hint:'teklif ve siparişte "ilgili kişi" bu listeden seçilir',
+      kolonlar:[{key:'ad', label:'Ad soyad', width:'150px'}, {key:'gorev', label:'Görev', placeholder:'satınalma, kalite…', width:'130px'}, {key:'telefon', label:'Telefon', width:'120px'}, {key:'eposta', label:'E-posta'}, {key:'varsayilan', label:'Varsayılan', type:'checkbox'}],
+      eskiden: function(v){ var l = []; if (v.yetkili) l.push({ ad: v.yetkili, telefon: v.telefon || '', eposta: v.eposta || '', varsayilan: true });
+        satirlariAyir(v.kisiler).forEach(function(x){ var p = x.split(/\s*[·|,;]\s*/); if (p[0] && !l.some(function(y){ return y.ad === p[0]; })) l.push({ ad: p[0], gorev: p[1] || '', telefon: p[2] || '', eposta: p[3] || '' }); }); return l; }},
+    {type:'section', label:'Ticari koşullar'},
+    {key:'paraBirimi', label:'Para birimi', type:'select', options:['EUR','TRY','USD']},
+    {key:'odemeVadesiGun', label:'Ödeme vadesi (gün)', type:'number'},
+    {key:'odemeSekli', label:'Ödeme şekli', type:'select', options: ODEME_SEKILLERI},
+    {key:'iskontoOrani', label:'Cari iskontosu (%)', type:'number', hint:'yeni teklif / sipariş satırlarına önerilir'},
+    {key:'teslimSekli', label:'Teslim şekli', type:'select', options: TESLIM_SEKILLERI},
+    {key:'sevkYontemi', label:'Sevk yöntemi', type:'select', options: SEVK_YONTEMLERI},
     {key:'riskLimiti', label:'Risk limiti (€)', type:'number'},
-    {key:'sevkAdresi', label:'Sevk adres(ler)i', type:'textarea'},
-    {key:'kisiler', label:'İletişim kişileri (ad · görev · tel, her satıra bir kişi)', type:'textarea'},
+    {key:'teminatTutari', label:'Alınan teminat (€)', type:'number', hint:'teminat mektubu, çek vb.'},
+    {type:'section', label:'Banka ve kalite'},
+    {key:'bankaAdi', label:'Banka', type:'text'},
+    {key:'iban', label:'IBAN', type:'text'},
     {key:'onayliTedarikci', label:'Onaylı tedarikçi mi?', type:'select', options:['-','Evet','Hayır']},
-    {key:'aktif', label:'Durum', type:'select', options:['Aktif','Pasif']}
+    {key:'notlar', label:'Notlar', type:'textarea'}
   ];
+  // Carinin varsayılan yetkilisi / sevk adresi (yeni tablolar; yoksa eski alanlar)
+  function cariYetkililer(m){ if (!m) return []; if (Array.isArray(m.yetkililer) && m.yetkililer.length) return m.yetkililer; var f = MUSTERI_FIELDS.find(function(x){ return x.key === 'yetkililer'; }); return f.eskiden(m); }
+  function cariSevkAdresleri(m){ if (!m) return []; if (Array.isArray(m.sevkAdresleri) && m.sevkAdresleri.length) return m.sevkAdresleri; var f = MUSTERI_FIELDS.find(function(x){ return x.key === 'sevkAdresleri'; }); return f.eskiden(m); }
+  function cariVarsayilan(l){ return l.find(function(x){ return x.varsayilan === true || x.varsayilan === 'true'; }) || l[0] || null; }
   function renderMusteriler(){
     renderSimpleList('cariListe', state.musteriler, 'musteriler', {
       emptyText: 'Cari eklenmedi',
@@ -4661,7 +4738,7 @@ Dikkat edilmesi gereken 2 nokta:
     function satirHtml(k, i){
       var st = stokKart(k.stokId);
       return '<tr data-kr="' + i + '"><td class="kf-sira">' + (i + 1) + '</td>' +
-        '<td class="kf-stok"><input type="text" list="kfStokListe" data-kc="stok" value="' + escAttr(stokLbl(st)) + '" placeholder="Stok kodu ya da adı yazın"></td>' +
+        '<td class="kf-stok"><input type="text" list="kfStokListe" data-kc="stok" value="' + escAttr(stokLbl(st)) + '" placeholder="Stok kodu ya da adı yazın"><div class="muted kf-parca">' + (st && st.musteriParcaNo && cariEtiket === 'Müşteri' ? 'Müşteri no: ' + esc(st.musteriParcaNo) : '') + '</div></td>' +
         '<td><input type="number" step="any" class="num" data-kc="miktar" value="' + (k.miktar || '') + '"></td>' +
         '<td class="kf-birim">' + esc(k.birim || (st && st.birim) || '') + '</td>' +
         '<td><div class="kf-fiyat"><input type="number" step="any" class="num" data-kc="listeFiyat" value="' + (k.listeFiyat || '') + '"><button type="button" class="kf-fiyat-sec" data-kffiyat="' + i + '" title="Fiyat seç: fiyat listesi, stok kartı, son fiyatlar" aria-label="Fiyat seç">▾</button></div></td>' +
@@ -4703,7 +4780,7 @@ Dikkat edilmesi gereken 2 nokta:
         .map(function(m){ return '<option value="' + m.id + '"' + (init.musteriId === m.id ? ' selected' : '') + '>' + esc(m.ad + (m.kod ? ' · ' + m.kod : '')) + '</option>'; }).join(''); // adla başlar: listede harf yazınca ada göre bulunur
       var ekstra = (opts.extraFields || []).map(function(f, xi){
         var v = init[f.key] != null ? init[f.key] : (f.def != null ? f.def : '');
-        if (f.type === 'select') return '<div class="field"><label>' + esc(f.label) + '</label><select data-kfx="' + xi + '" data-kfxkey="' + escAttr(f.key) + '">' + f.options.map(function(o){ return '<option' + (String(v) === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></div>';
+        if (f.type === 'select') return '<div class="field"><label>' + esc(f.label) + '</label><select data-kfx="' + xi + '" data-kfxkey="' + escAttr(f.key) + '">' + (typeof f.options === 'function' ? f.options(init) : f.options).map(function(o){ if (o && typeof o === 'object') return '<option value="' + escAttr(o.value) + '"' + (String(v) === String(o.value) ? ' selected' : '') + '>' + esc(o.label) + '</option>'; return '<option' + (String(v) === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></div>';
         return '<div class="field"><label>' + esc(f.label) + '</label><input type="' + (f.type || 'text') + '" data-kfx="' + xi + '" data-kfxkey="' + escAttr(f.key) + '" value="' + escAttr(v) + '"></div>';
       }).join('');
       fieldsEl.innerHTML =
@@ -4848,11 +4925,25 @@ Dikkat edilmesi gereken 2 nokta:
       var gun = c ? Number(c.odemeVadesiGun) || 0 : 0; if (!(gun > 0)) return;
       var tanim = (opts.extraFields || []).find(function(f){ return f.key === 'odemeKosulu'; }) || {};
       if (ok.value !== '' && ok.value !== (tanim.def || '') && ok.value !== odemeOto) return;
-      ok.value = init.odemeKosulu = odemeOto = gun + ' gün vadeli';
+      ok.value = init.odemeKosulu = odemeOto = gun + ' gün vadeli' + (c.odemeSekli ? ', ' + c.odemeSekli : '');
+    }
+    // Cari seçilince kartındaki varsayılanlar gelir (Logo / Canias gibi): para birimi, teslim şekli, temsilci, ilgili kişi, sevk adresi.
+    // Kullanıcının elle seçtiği değere dokunulmaz; ilgili kişi ve sevk adresi cariye özgü olduğu için cari değişince yenilenir.
+    function caridenAl(degisti){
+      var cariAlanlar = (opts.extraFields || []).filter(function(f){ return f.cariden; }); if (!cariAlanlar.length) return;
+      fieldsEl.querySelectorAll('[data-kfxkey]').forEach(function(x){ init[x.dataset.kfxkey] = x.value; });
+      var t = byId('kfTarih'); if (t) init.tarih = t.value; var g = byId('kfGecerlilik'); if (g) init.gecerlilik = g.value; var n = byId('kfNot'); if (n) init.not_ = n.value;
+      var c = state.musteriler.find(function(m){ return m.id === init.musteriId; }) || {};
+      cariAlanlar.forEach(function(f){
+        var v = f.cariden(c, init); if (v == null) return;
+        var bos = init[f.key] == null || init[f.key] === '' || init[f.key] === (f.def != null ? String(f.def) : '');
+        if (f.cariyeOzgu ? degisti : bos) init[f.key] = v;
+      });
+      build(); teslimGuncelle();
     }
     function onDegisim(e){
       var x = e.target;
-      if (x.id === 'kfMusteri'){ init.musteriId = x.value; odemeKosuluCaridenAl(); K.forEach(function(k, i){ fiyatYenile(i, false); satirGuncelle(i); }); return; }
+      if (x.id === 'kfMusteri'){ init.musteriId = x.value; odemeKosuluCaridenAl(); caridenAl(true); K.forEach(function(k, i){ fiyatYenile(i, false); satirGuncelle(i); }); return; }
       if (x.dataset.kfxkey){ init[x.dataset.kfxkey] = x.value; if (x.dataset.kfxkey === 'paraBirimi'){ K.forEach(function(k, i){ fiyatYenile(i, false); satirGuncelle(i); }); }
         if (x.dataset.kfxkey === 'termin') teslimCiz(); else if (x.dataset.kfxkey === 'musteriMalzemesi') teslimGuncelle(); return; }
       var tr = x.closest('[data-kr]'); if (!tr || !x.dataset.kc) return;
@@ -4863,6 +4954,9 @@ Dikkat edilmesi gereken 2 nokta:
         x.classList.toggle('alan-hata', !!x.value.trim() && !st);
         if (st){ var yeni = st.id !== k.stokId; k.stokId = st.id; k.birim = st.birim || 'adet'; if (st.kdvOrani != null && st.kdvOrani !== '') k.kdvOrani = Number(st.kdvOrani); x.value = stokLbl(st);
           var sel = tr.querySelector('[data-kc="kdvOrani"]'); if (sel) sel.value = String(k.kdvOrani);
+          var cr = state.musteriler.find(function(m){ return m.id === init.musteriId; }), ci = cr && Number(cr.iskontoOrani) || 0;
+          if (yeni && ci > 0 && !(Number(k.iskonto) > 0)){ k.iskonto = ci; var ik = tr.querySelector('[data-kc="iskonto"]'); if (ik) ik.value = ci; }
+          var pn = tr.querySelector('.kf-parca'); if (pn) pn.textContent = st.musteriParcaNo ? 'Müşteri no: ' + st.musteriParcaNo : '';
           if (yeni) fiyatYenile(i, true); }
         else if (!x.value.trim()){ k.stokId = ''; }
       } else if (c === 'aciklama'){ k.aciklama = x.value; return; }
@@ -4928,7 +5022,7 @@ Dikkat edilmesi gereken 2 nokta:
     }
     build();
     teslimGuncelle(0); // form önce açılsın, hesap hemen ardından
-    if (!init.id) odemeKosuluCaridenAl();
+    if (!init.id){ odemeKosuluCaridenAl(); if (init.musteriId) caridenAl(false); }
     fieldsEl.addEventListener('input', onDegisim);
     fieldsEl.addEventListener('change', onDegisim);
     fieldsEl.addEventListener('keydown', onTus);
@@ -5077,7 +5171,9 @@ Dikkat edilmesi gereken 2 nokta:
           siparisNo: kb.kod,
           teklifId: t.id, musteriId: t.musteriId, tarih: todayISO(),
           durum: 'Bekliyor', kalemler: kalemlerSevk, toplam: t.toplam, not_: t.not_||'',
-          termin: t.teslimSuresiGun ? tarihEkle(todayISO(), Number(t.teslimSuresiGun)) : '', oncelik: 'Normal', musteriMalzemesi: 'Hayır', odemeKosulu: t.odemeKosulu||''
+          termin: t.teslimSuresiGun ? tarihEkle(todayISO(), Number(t.teslimSuresiGun)) : '', oncelik: 'Normal', musteriMalzemesi: 'Hayır', odemeKosulu: t.odemeKosulu||'',
+          paraBirimi: belgePB(t), ilgiliKisi: t.ilgiliKisi || '', temsilci: t.temsilci || '', teslimSekli: t.teslimSekli || '', nakliye: t.nakliye || '', talepNo: t.talepNo || '',
+          sevkAdresi: (function(){ var c = state.musteriler.find(function(m){ return m.id === t.musteriId; }), a = cariVarsayilan(cariSevkAdresleri(c)); return a ? (a.ad ? a.ad + ' — ' : '') + (a.adres || '') : ''; })()
         }).then(function(){
           configWrite(kb.kodPayload).catch(function(){});
           toast('✓ Sipariş oluşturuldu');
@@ -5803,21 +5899,32 @@ Dikkat edilmesi gereken 2 nokta:
   }
 
   // ---------- Teklif: yazdır & CSV ----------
+  // Teklif çıktısı: firma başlığı, müşteri ve ilgili kişi, teklif bilgileri (talep no, temsilci, teslim, ödeme, para birimi),
+  // kalemler (kod, açıklama, müşteri parça no, miktar, birim, fiyat, iskonto, KDV, tutar), KDV oranlarına göre toplamlar, notlar ve banka
   function yazdirTeklif(id){
     var t = state.teklifler.find(function(x){ return x.id===id; });
     if (!t) return;
     if (teklifIskontoBekliyor(t) && !onayYetkili()){ uyariGoster(esc(teklifAdi(t.id))+' %'+fmt2(teklifMaxIskonto(t))+' iskonto içeriyor ve henüz onaylanmadı — onaylanmadan yazdırılamaz.'); return; }
-    var kalemSatir = (t.kalemler||[]).map(function(k){ return '<tr><td>'+esc(k.ad)+'</td><td>'+fmt2(k.miktar)+'</td><td>€'+fmt2(k.birimFiyat)+'</td><td>€'+fmt2(k.tutar)+'</td></tr>'; }).join('');
-    document.getElementById('printArea').innerHTML =
-      '<div class="print-doc-head"><div><h2>TEKLİF</h2><div>'+esc(t.teklifNo)+'</div></div><div style="text-align:right">'+
-      '<div>'+esc(musteriAdiById(t.musteriId))+'</div><div>'+esc(t.tarih||'')+'</div>'+
-      (t.gecerlilik?'<div class="muted">Geçerlilik: '+esc(t.gecerlilik)+'</div>':'')+'</div></div>'+
-      '<table><thead><tr><th>Ürün</th><th>Miktar</th><th>B.Fiyat</th><th>Tutar</th></tr></thead><tbody>'+kalemSatir+'</tbody></table>'+
-      '<p><strong>Toplam: €'+fmt2(t.toplam)+'</strong></p>'+
-      (t.not_?'<p>Not: '+esc(t.not_)+'</p>':'');
-    printBaslikEkle();
-    document.body.classList.add('printing');
-    setTimeout(function(){ window.print(); setTimeout(function(){ document.body.classList.remove('printing'); }, 300); }, 50);
+    var pb = belgePB(t), para = function(x){ return pbFmt(x, pb); }, brut = 0, isk = 0, ara = 0, kdv = {};
+    var satirlar = (t.kalemler||[]).map(function(k, i){
+      var st = stokKart(k.stokId) || {}, mk = Number(k.miktar) || 0, lf = k.listeFiyat != null ? Number(k.listeFiyat) || 0 : Number(k.birimFiyat) || 0, nf = Number(k.birimFiyat) || lf * (1 - (Number(k.iskonto) || 0) / 100);
+      var tut = Number(k.tutar) || mk * nf, o = Number(k.kdvOrani != null ? k.kdvOrani : 20);
+      brut += mk * lf; ara += tut; isk += mk * lf - tut; kdv[o] = (kdv[o] || 0) + tut * o / 100;
+      var aciklama = esc(k.ad || st.ad || '') + (st.ad2 && yazdirmaDili() !== 'TR' ? '<div class="muted">' + esc(st.ad2) + '</div>' : '') + (st.musteriParcaNo ? '<div class="muted">' + pL('Müşteri no', 'Customer P/N') + ': ' + esc(st.musteriParcaNo) + '</div>' : '') +
+        (st.resimNo ? '<div class="muted">' + pL('Resim', 'Drawing') + ': ' + esc(st.resimNo) + (st.resimRev ? ' rev. ' + esc(st.resimRev) : '') + '</div>' : '') + (k.aciklama ? '<div class="muted">' + esc(k.aciklama) + '</div>' : '');
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(st.kod || '') + '</td><td>' + aciklama + '</td><td class="num">' + fmt2(mk) + '</td><td>' + esc(k.birim || st.birim || '') + '</td><td class="num">' + para(lf) + '</td><td class="num">' + (Number(k.iskonto) ? '%' + fmt2(k.iskonto) : '') + '</td><td class="num">%' + o + '</td><td class="num">' + para(tut) + '</td></tr>';
+    }).join('');
+    var kdvT = 0; Object.keys(kdv).forEach(function(o){ kdvT += kdv[o]; });
+    var bilgi = [[pL('Teklif tarihi', 'Date'), kvTarihTR(t.tarih)], [pL('Geçerlilik', 'Valid until'), t.gecerlilik ? kvTarihTR(t.gecerlilik) : ''], [pL('Talep no', 'Your ref.'), t.talepNo], [pL('İlgili kişi', 'Attn.'), t.ilgiliKisi],
+      [pL('Temsilci', 'Sales rep.'), t.temsilci], [pL('Teslim süresi', 'Lead time'), t.teslimSuresiGun ? t.teslimSuresiGun + ' ' + pL('gün', 'days') : ''], [pL('Teslim şekli', 'Delivery terms'), t.teslimSekli],
+      [pL('Nakliye', 'Freight'), t.nakliye], [pL('Ödeme', 'Payment'), t.odemeKosulu], [pL('Para birimi', 'Currency'), pb]].filter(function(x){ return x[1]; });
+    yazdirHtml('<div class="print-doc-head"><div><h2>' + pL('TEKLİF', 'QUOTATION') + '</h2><div>' + esc(t.teklifNo || '') + '</div></div><div style="text-align:right">' + cariBaskiHtml(t.musteriId) + '</div></div>' +
+      '<table class="print-bilgi"><tbody>' + bilgi.map(function(x){ return '<tr><td class="muted">' + x[0] + '</td><td>' + esc(String(x[1])) + '</td></tr>'; }).join('') + '</tbody></table>' +
+      '<table><thead><tr><th>#</th><th>' + pL('Kod', 'Code') + '</th><th>' + pL('Açıklama', 'Description') + '</th><th class="num">' + pL('Miktar', 'Qty') + '</th><th>' + pL('Birim', 'Unit') + '</th><th class="num">' + pL('Birim fiyat', 'Unit price') + '</th><th class="num">' + pL('İsk.', 'Disc.') + '</th><th class="num">' + pL('KDV', 'VAT') + '</th><th class="num">' + pL('Tutar', 'Amount') + '</th></tr></thead><tbody>' + satirlar + '</tbody></table>' +
+      '<table class="print-toplam"><tbody>' + (isk > 0.004 ? '<tr><td>' + pL('Brüt', 'Gross') + '</td><td class="num">' + para(brut) + '</td></tr><tr><td>' + pL('İskonto', 'Discount') + '</td><td class="num">−' + para(isk) + '</td></tr>' : '') +
+      '<tr><td>' + pL('Ara toplam', 'Subtotal') + '</td><td class="num">' + para(ara) + '</td></tr>' + Object.keys(kdv).filter(function(o){ return Number(o) > 0; }).map(function(o){ return '<tr><td>' + pL('KDV', 'VAT') + ' %' + o + '</td><td class="num">' + para(kdv[o]) + '</td></tr>'; }).join('') +
+      '<tr><td><b>' + pL('Genel toplam', 'Total') + '</b></td><td class="num"><b>' + para(ara + kdvT) + '</b></td></tr></tbody></table>' +
+      (t.not_ ? '<p>' + esc(t.not_).replace(/\n/g, '<br>') + '</p>' : '') + firmaBankaHtml());
   }
   function disaAktarTeklifCSV(id){
     var t = state.teklifler.find(function(x){ return x.id===id; });
@@ -6364,20 +6471,43 @@ Dikkat edilmesi gereken 2 nokta:
       function(v, eski, devam){ kayitKontrolu(cariKartKontrolu(v, eski), devam); });
   });
   var STOK_TIPLERI = ['Hammadde','Yarı Mamul','Mamul','Müşteri Malı','Sarf','Yedek Parça','Ambalaj'];
+  // Stok kartı: Logo / Canias malzeme kartı kapsamı (kimlik, teknik, birim, vergi / dış ticaret, tedarik, maliyet)
   var STOK_FIELDS = [
     {type:'section', label:'Kimlik'},
     {key:'kod', label:'Kod', type:'text'},
     {key:'ad', label:'Ad', type:'text', required:true},
+    {key:'ad2', label:'İngilizce / ihracat adı', type:'text'},
     {key:'tip', label:'Tip', type:'select', options: STOK_TIPLERI},
-    {key:'birim', label:'Birim (adet, kg, boy, m)', type:'text'},
+    {key:'grup', label:'Stok grubu', type:'text', placeholder:'ör. Rakor, Nipel, Çubuk malzeme'},
+    {key:'marka', label:'Marka', type:'text'},
+    {key:'barkod', label:'Barkod', type:'text'},
+    {key:'musteriParcaNo', label:'Müşteri parça no', type:'text', hint:'müşterinin bu parça için kullandığı numara; teklif / sipariş satırında görünür'},
+    {key:'durum', label:'Durum', type:'select', options:['Aktif','Pasif']},
+    {type:'section', label:'Teknik'},
     {key:'malzemeCinsi', label:'Malzeme cinsi (ör. 316Ti)', type:'text'},
     {key:'olcu', label:'Ölçü (çap / HEX, mm)', type:'text'},
+    {key:'norm', label:'Norm / standart', type:'text', placeholder:'ör. DIN 2353, ISO 8434-1'},
+    {key:'yuzeyIslem', label:'Yüzey işlemi', type:'text', placeholder:'ör. Zn-Ni, pasivasyon'},
+    {key:'tolerans', label:'Tolerans / kalite sınıfı', type:'text'},
     {key:'resimNo', label:'Teknik resim no', type:'text'},
     {key:'resimRev', label:'Resim revizyonu', type:'text'},
-    {type:'section', label:'Stok'},
+    {key:'agirlikKg', label:'Birim ağırlık (kg)', type:'number'},
+    {type:'section', label:'Birim ve vergi'},
+    {key:'birim', label:'Birim (adet, kg, boy, m)', type:'text'},
+    {key:'birim2', label:'İkinci birim', type:'text', placeholder:'ör. kg, kutu'},
+    {key:'birim2Carpan', label:'1 birim = kaç ikinci birim', type:'number', hint:'ör. 1 adet = 0,12 kg'},
+    {key:'kdvOrani', label:'KDV oranı (%)', type:'select', options:['20','10','1','0']},
+    {key:'gtip', label:'GTİP kodu', type:'text'},
+    {key:'mense', label:'Menşe', type:'text', placeholder:'Türkiye'},
+    {type:'section', label:'Stok ve tedarik'},
     {key:'miktar', label:'Açılış miktarı', type:'number'},
-    {key:'kritikSeviye', label:'Kritik seviye', type:'number'},
+    {key:'kritikSeviye', label:'Kritik seviye (sipariş noktası)', type:'number'},
+    {key:'maxSeviye', label:'Azami stok', type:'number'},
+    {key:'minSiparis', label:'En az sipariş miktarı', type:'number'},
+    {key:'teminSuresiGun', label:'Temin süresi (gün)', type:'number'},
+    {key:'varsayilanTedarikci', label:'Varsayılan tedarikçi', type:'select', options: function(){ return [{value:'', label:'—'}].concat(state.musteriler.filter(tedarikciMi).map(function(m){ return {value:m.id, label:m.ad}; })); }},
     {key:'varsayilanDepo', label:'Varsayılan depo', type:'select', options: function(){ return [{value:'', label:'(tipine göre otomatik)'}].concat(depoAdlari().map(function(d){ return {value:d, label:d}; })); }},
+    {key:'rafYeri', label:'Raf / lokasyon', type:'text'},
     {key:'lotTakibi', label:'Lot / heat takibi', type:'select', options:['Hayır','Evet']},
     {type:'section', label:'Maliyet & fiyat'},
     {key:'maliyet', label:'Malzeme maliyeti (€) — ağırlıklı ortalama', type:'number', hint:'Fiyatlı her mal kabulde (satınalma siparişi fiyatı ya da mal kabulde girilen fiyat) kendiliğinden güncellenir: (eldeki × eski maliyet + gelen × alış fiyatı) ÷ toplam. Elle de değiştirebilirsiniz.'},
@@ -10289,15 +10419,33 @@ Dikkat edilmesi gereken 2 nokta:
   // makine saat ücreti & iş emri gerçek maliyeti, finans raporları, e-belge
   // =====================================================================
   var TEKLIF_GECERLILIK_GUN = 30; // yeni teklif, kopya ve revizyonda geçerlilik: tarih + bu kadar gün
+  // Teklif / sipariş başlığı: Logo / Canias satış belgesi başlığı kapsamı; cariden gelenler cari seçilince dolar
+  function kullaniciAdlari(){ return [''].concat((state.kullanicilar || []).map(function(u){ return u.ad || u.adSoyad || u.eposta || ''; }).filter(Boolean)); }
+  var EK_ILGILI_KISI = {key:'ilgiliKisi', label:'İlgili kişi', type:'select', cariyeOzgu: true,
+    options: function(init){ var c = state.musteriler.find(function(m){ return m.id === init.musteriId; }); var l = cariYetkililer(c).map(function(y){ return { value: y.ad, label: y.ad + (y.gorev ? ' · ' + y.gorev : '') }; });
+      if (init.ilgiliKisi && !l.some(function(x){ return x.value === init.ilgiliKisi; })) l.unshift({ value: init.ilgiliKisi, label: init.ilgiliKisi }); return [{ value: '', label: '—' }].concat(l); },
+    cariden: function(c){ var y = cariVarsayilan(cariYetkililer(c)); return y ? y.ad : ''; }};
+  var EK_TEMSILCI = {key:'temsilci', label:'Satış temsilcisi', type:'select', options: kullaniciAdlari, cariden: function(c){ return c.temsilci || null; }};
+  var EK_TESLIM_SEKLI = {key:'teslimSekli', label:'Teslim şekli', type:'select', options: TESLIM_SEKILLERI, cariden: function(c){ return c.teslimSekli || null; }};
   var TEKLIF_EK_ALANLAR = [
+    {key:'talepNo', label:'Müşteri talep / RFQ no', type:'text'},
+    EK_ILGILI_KISI, EK_TEMSILCI,
     {key:'teslimSuresiGun', label:'Teslim süresi (gün)', type:'number', def: 21},
+    EK_TESLIM_SEKLI,
+    {key:'nakliye', label:'Nakliye kime ait', type:'select', options:['', 'Bize ait', 'Müşteriye ait']},
     {key:'odemeKosulu', label:'Ödeme koşulu', type:'text', def: '30 gün vadeli'},
-    {key:'paraBirimi', label:'Para birimi', type:'select', options:['EUR','TRY','USD'], def:'EUR'}
+    {key:'paraBirimi', label:'Para birimi', type:'select', options:['EUR','TRY','USD'], def:'EUR', cariden: function(c){ return c.paraBirimi || null; }}
   ];
   var SIPARIS_EK_ALANLAR = [
     {key:'musteriSiparisNo', label:'Müşteri sipariş no', type:'text'},
+    EK_ILGILI_KISI, EK_TEMSILCI,
     {key:'termin', label:'Termin', type:'date'},
     {key:'oncelik', label:'Öncelik', type:'select', options:['Normal','Acil','Düşük'], def:'Normal'},
+    EK_TESLIM_SEKLI,
+    {key:'sevkAdresi', label:'Sevk adresi', type:'select', cariyeOzgu: true,
+      options: function(init){ var c = state.musteriler.find(function(m){ return m.id === init.musteriId; }); var l = cariSevkAdresleri(c).map(function(a){ var t = (a.ad ? a.ad + ' — ' : '') + (a.adres || ''); return { value: t, label: t }; });
+        if (init.sevkAdresi && !l.some(function(x){ return x.value === init.sevkAdresi; })) l.unshift({ value: init.sevkAdresi, label: init.sevkAdresi }); return [{ value: '', label: 'Fatura adresi' }].concat(l); },
+      cariden: function(c){ var a = cariVarsayilan(cariSevkAdresleri(c)); return a ? (a.ad ? a.ad + ' — ' : '') + (a.adres || '') : ''; }},
     {key:'resimRev', label:'Teknik resim revizyonu', type:'text'},
     {key:'musteriMalzemesi', label:'Malzeme müşteriden mi?', type:'select', options:['Hayır','Evet'], def:'Hayır'},
     {key:'odemeKosulu', label:'Ödeme koşulu', type:'text'}
@@ -10305,7 +10453,7 @@ Dikkat edilmesi gereken 2 nokta:
   function musteriMi(m){ return !m.cariTipi || m.cariTipi === 'Müşteri' || m.cariTipi === 'Her ikisi'; }
   function tedarikciMi(m){ return m.cariTipi === 'Tedarikçi' || m.cariTipi === 'Fasoncu' || m.cariTipi === 'Her ikisi'; }
   function teklifEkBilgiHtml(t){
-    var p = [t.teslimSuresiGun ? 'Teslim: '+t.teslimSuresiGun+' gün' : '', t.odemeKosulu ? 'Ödeme: '+t.odemeKosulu : '', t.paraBirimi && t.paraBirimi !== 'EUR' ? 'Para birimi: '+t.paraBirimi : '',
+    var p = [t.ilgiliKisi ? 'İlgili: '+t.ilgiliKisi : '', t.talepNo ? 'Talep no: '+t.talepNo : '', t.temsilci ? 'Temsilci: '+t.temsilci : '', t.teslimSuresiGun ? 'Teslim: '+t.teslimSuresiGun+' gün' : '', t.teslimSekli ? t.teslimSekli : '', t.nakliye ? 'Nakliye '+t.nakliye.toLocaleLowerCase('tr') : '', t.odemeKosulu ? 'Ödeme: '+t.odemeKosulu : '', t.paraBirimi && t.paraBirimi !== 'EUR' ? 'Para birimi: '+t.paraBirimi : '',
       t.durum === 'Reddedildi' && t.kayipNedeni ? 'Kayıp nedeni: '+t.kayipNedeni+(t.kayipAciklama?' — '+t.kayipAciklama:'') : ''].filter(Boolean);
     return p.length ? '<div class="muted" style="margin-bottom:6px">'+p.map(esc).join(' · ')+'</div>' : '';
   }
@@ -10375,7 +10523,8 @@ Dikkat edilmesi gereken 2 nokta:
   });
   function siparisEkBilgiHtml(s){
     var p = [s.termin ? 'Termin: '+terminHtml(s.termin, siparisAcikMi(s)) : '', s.musteriSiparisNo ? 'Müşteri sipariş no: '+esc(s.musteriSiparisNo) : '', s.resimRev ? 'Resim rev: '+esc(s.resimRev) : '',
-      s.musteriMalzemesi === 'Evet' ? '<b>Malzeme müşteriden</b> (fatura: fason işçilik)' : '', s.odemeKosulu ? 'Ödeme: '+esc(s.odemeKosulu) : ''].filter(Boolean);
+      s.musteriMalzemesi === 'Evet' ? '<b>Malzeme müşteriden</b> (fatura: fason işçilik)' : '', s.odemeKosulu ? 'Ödeme: '+esc(s.odemeKosulu) : '',
+      s.ilgiliKisi ? 'İlgili: '+esc(s.ilgiliKisi) : '', s.temsilci ? 'Temsilci: '+esc(s.temsilci) : '', s.teslimSekli ? esc(s.teslimSekli) : '', s.sevkAdresi ? 'Sevk: '+esc(s.sevkAdresi) : ''].filter(Boolean);
     var ies = state.isemirleri.filter(function(ie){ return ie.siparisId === s.id; });
     if (ies.length) p.push('İş emirleri: '+ies.map(function(ie){ return esc(ie.isEmriNo)+' ('+fmt(isEmriUretilen(ie.id))+'/'+fmt(ie.planlanan)+')'; }).join(', '));
     return p.length ? '<div class="muted" style="margin-bottom:6px">'+p.join(' · ')+'</div>' : '';
@@ -10407,7 +10556,7 @@ Dikkat edilmesi gereken 2 nokta:
     openKalemForm({
       title: 'Yeni teklif — kopya: '+teklifAdi(t.id).replace(/^Teklif /, ''), showGecerlilik: true, extraFields: TEKLIF_EK_ALANLAR,
       initial: { musteriId: t.musteriId, tarih: bugun, gecerlilik: tarihEkle(bugun, TEKLIF_GECERLILIK_GUN), not_: t.not_ || '', kalemler: belgeKopyaKalemleri(t),
-        teslimSuresiGun: t.teslimSuresiGun, odemeKosulu: t.odemeKosulu, paraBirimi: belgePB(t) },
+        teslimSuresiGun: t.teslimSuresiGun, odemeKosulu: t.odemeKosulu, paraBirimi: belgePB(t), ilgiliKisi: t.ilgiliKisi || '', temsilci: t.temsilci || '', teslimSekli: t.teslimSekli || '', nakliye: t.nakliye || '' },
       onSave: yeniTeklifKaydet
     });
   }
@@ -10418,7 +10567,7 @@ Dikkat edilmesi gereken 2 nokta:
     openKalemForm({
       title: 'Yeni sipariş — kopya: '+(s.siparisNo || ''), showGecerlilik: false, extraFields: SIPARIS_EK_ALANLAR,
       initial: Object.assign({ musteriId: s.musteriId, tarih: todayISO(), not_: s.not_ || '', kalemler: belgeKopyaKalemleri(s),
-        resimRev: s.resimRev || '', musteriMalzemesi: s.musteriMalzemesi || 'Hayır', odemeKosulu: s.odemeKosulu || '' }, pb),
+        resimRev: s.resimRev || '', musteriMalzemesi: s.musteriMalzemesi || 'Hayır', odemeKosulu: s.odemeKosulu || '', ilgiliKisi: s.ilgiliKisi || '', temsilci: s.temsilci || '', teslimSekli: s.teslimSekli || '', sevkAdresi: s.sevkAdresi || '' }, pb),
       onSave: function(vals){ delete vals.gecerlilik; yeniSiparisKaydet(Object.assign(vals, pb)); }
     });
   }
