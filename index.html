@@ -355,6 +355,17 @@
   .recordrow .rsub { font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; }
   .recordrow .ractions { display: flex; gap: 6px; flex-shrink: 0; align-items:flex-start; }
   .rdetail { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  /* Satırdaki "⋯" menüsü: Sil düğmesi Düzenle'nin yanında durmasın (yanlışlıkla basılmasın) */
+  .satir-menu { position: relative; display: inline-block; }
+  .satir-menu > summary { list-style: none; cursor: pointer; min-width: 30px; text-align: center; font-weight: 700; letter-spacing: 1px; }
+  .satir-menu > summary::-webkit-details-marker { display: none; }
+  .satir-menu-ic { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.14); display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
+  .satir-menu-ic .btn { text-align: left; }
+  body.no-delete .satir-menu { display: none !important; }
+  .tg-tablo tr.tg-ac .satir-menu-ic { position: static; box-shadow: none; margin-top: 4px; } /* tablo görünümünde açılan satır hücresi taşanı kırpar */
+  .silinenler-kutu { margin: 0 0 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-alt); }
+  .silinenler-kutu > summary { cursor: pointer; padding: 8px 10px; font-weight: 600; }
+  .silinenler-kutu .tablewrap { margin: 0 10px 10px; }
   .rdetail .helper { margin-top: 0; }
   #userGateOverlay {
     position: fixed; inset: 0; z-index: 300; display: none;
@@ -498,6 +509,11 @@
   .arama-sonuc button { display:block; width:100%; text-align:left; border:none; border-bottom:1px solid var(--border); background:none; padding:8px 12px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; cursor:pointer; color:var(--ink); }
   .arama-sonuc button:hover, .arama-sonuc button.secili { background:var(--accent-soft); }
   .arama-sonuc .tur { font-size:10.5px; color:var(--ink-soft); margin-right:6px; }
+  .arama-sonuc { min-width:min(440px, calc(100vw - 32px)); }
+  .arama-sonuc .tur-komut { color:var(--accent); font-weight:600; }
+  .arama-sonuc .arama-ek { font-size:10.5px; color:var(--ink-soft); margin-left:8px; }
+  .arama-sonuc .arama-baslik { padding:6px 12px 4px; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); border-bottom:1px solid var(--border); }
+  tr.muh-satir.flash { animation: flashbg 1.6s ease-out; }
   .recordrow.flash { animation: flashbg 1.6s ease-out; }
   .recordrow.son-kayit { box-shadow: inset 3px 0 0 var(--good); background: var(--good-soft); }
   .sonraki-adim { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; justify-content:space-between; margin:-4px 0 12px; padding:8px 10px; border:1px solid var(--good); border-radius:2px; background:var(--good-soft); font-size:13px; }
@@ -1120,6 +1136,57 @@
   .kv-ay-urun td:first-child { min-width:110px; font-size:12px; }
   .kv-ay-urun tfoot td { font-size:12px; border-top:2px solid var(--border); white-space:nowrap; }
   .kv-ay-makine { font-size:12.5px; padding:6px 0; }
+  /* ===== Telefon (767 px ve altı): altta sabit çubuk (Özet · Ara · Favoriler · Menü) + tam ekran menü =====
+     Yatay menü şeridi (kenar çubuğu) telefonda kalkar; tablet ve masaüstü değişmez. Atölye modunda ve giriş ekranında çubuk yok. */
+  .alt-cubuk, .tel-panel, .ph-bilgi { display:none; }
+  @media (max-width: 767px) {
+    :root { --alt-h: 56px; }
+    .sidebar { display:none; }
+    body.alt-hazir:not(.atolye) .alt-cubuk { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:340; height:calc(var(--alt-h) + env(safe-area-inset-bottom, 0px)); padding:0 4px env(safe-area-inset-bottom, 0px); background:var(--ink); border-top:1px solid var(--side-line); box-shadow:0 -4px 14px rgba(21,32,43,.18); }
+    body:has(#userGateOverlay.open) .alt-cubuk, body:has(#girisOverlay.open) .alt-cubuk { display:none !important; }
+    .alt-cubuk button { flex:1 1 0; min-width:0; min-height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; position:relative; background:none; border:none; color:#C9CDD2; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; padding:4px 2px; border-radius:6px; -webkit-tap-highlight-color:transparent; }
+    .alt-cubuk button svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+    .alt-cubuk button.active { color:#fff; }
+    .alt-cubuk button.active::before { content:''; position:absolute; top:0; left:22%; right:22%; height:3px; border-radius:0 0 3px 3px; background:var(--side-link); }
+    .alt-cubuk .alt-rozet { position:absolute; top:4px; left:calc(50% + 6px); min-width:16px; padding:0 4px; line-height:16px; border-radius:8px; background:var(--accent); color:#fff; font-size:10px; }
+    .alt-cubuk .alt-rozet:empty { display:none; }
+    /* sayfanın son satırı ve bildirimler çubuğun altında kalmasın */
+    body.alt-hazir:not(.atolye) main { padding-bottom:calc(30px + var(--alt-h) + env(safe-area-inset-bottom, 0px)); }
+    :where(body.alt-hazir:not(.atolye)) .toast-yigin { bottom:calc(var(--alt-h) + 8px + env(safe-area-inset-bottom, 0px)); }
+    /* Tam ekran menü / favoriler: üstte, çubuk görünür kalır (Menü'ye yeniden dokununca kapanır) */
+    body.alt-hazir:not(.atolye) .tel-panel.acik { display:block; position:fixed; left:0; right:0; top:0; bottom:calc(var(--alt-h) + env(safe-area-inset-bottom, 0px)); z-index:335; background:var(--bg); overflow-y:auto; overscroll-behavior:contain; }
+    body.tel-panel-acik { overflow:hidden; }
+    .tp-ust { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top, 0px)) 8px 10px 14px; background:var(--ink); color:#fff; }
+    .tp-ust .tp-marka { flex:1; min-width:0; display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; }
+    .tp-ust .tp-marka .brand-logo { max-height:28px; max-width:90px; background:#fff; padding:2px 4px; border-radius:3px; }
+    .tp-ust .tp-marka .brand-logo + .brand-ad { display:none; }
+    .tp-ust .tp-marka small { display:none; }
+    .tp-ust .tp-baslik { flex:1; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; }
+    .tp-kapat { flex-shrink:0; width:44px; height:44px; border:none; background:none; color:#fff; font-size:24px; line-height:1; border-radius:6px; cursor:pointer; }
+    .tp-kullanici { display:flex; align-items:center; gap:8px; padding:8px 14px; font-size:12px; color:var(--ink-soft); border-bottom:1px solid var(--border); background:var(--surface); }
+    .tp-kullanici b { color:var(--ink); }
+    .tp-kullanici .btn { margin-left:auto; min-height:36px; }
+    .tp-govde { padding:4px 12px 20px; }
+    .tp-alan { display:flex; align-items:center; gap:7px; margin:16px 2px 6px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:12px; letter-spacing:.08em; color:var(--steel); }
+    .tp-alan .navgicon { width:16px; height:16px; stroke:var(--steel); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+    .tp-alt { margin:10px 2px 4px; font-size:11px; color:var(--ink-soft); }
+    .tp-izgara { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px; }
+    .tp-oge { display:flex; align-items:center; gap:6px; min-height:44px; width:100%; text-align:left; padding:6px 4px 6px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.3; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .tp-oge .tp-ad { flex:1; min-width:0; overflow-wrap:anywhere; }
+    .tp-oge.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+    .tp-oge .tp-tur { flex-shrink:0; font-size:10px; padding:1px 5px; border-radius:3px; background:var(--steel-soft); color:var(--steel); }
+    .tp-yildiz { flex-shrink:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--side-muted); border-radius:4px; }
+    .tp-yildiz.on { color:var(--warn-strong); }
+    .tp-oge.active .tp-yildiz { color:#fff; }
+    .tp-bos { padding:12px 4px; font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+    .tp-surum { margin:22px 2px 0; font-size:10.5px; color:var(--ink-soft); }
+    /* Sayfa açıklaması katlı gelir: "ⓘ Bu sayfa ne işe yarar?" ile açılır */
+    .pagehead:not(.ph-acik) p:not(#ozetAyEtiket) { display:none; }
+    .ph-bilgi { display:inline-flex; align-items:center; min-height:32px; margin-top:2px; padding:0; background:none; border:none; color:var(--accent); font-family:inherit; font-size:12px; cursor:pointer; }
+    /* Liste satırı ayrıntısı (teklif / sipariş kalemleri) satır genişliğini aşmasın; geniş tablo kendi içinde kaydırılır */
+    .recordrow > .rmain { align-self:stretch; width:100%; }
+  }
+  @media print { .alt-cubuk, .tel-panel { display:none !important; } }
 </style>
 </head>
 <body>
@@ -1246,11 +1313,11 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-16-r152</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r156</div>
   </nav>
   <main>
     <div class="topbar">
-      <div class="arama-wrap"><input type="search" id="globalArama" autocomplete="off" placeholder="Ara: kod, belge no, müşteri, lot… (Ctrl+K) — QR / barkod okuyucu da buraya yazar"><div id="aramaSonuc" class="arama-sonuc"></div></div>
+      <div class="arama-wrap"><input type="search" id="globalArama" autocomplete="off" placeholder="Ara: sayfa, işlem (yeni fatura…), belge no, müşteri, lot… (Ctrl+K) — QR / barkod okuyucu da buraya yazar"><div id="aramaSonuc" class="arama-sonuc"></div></div>
       <div class="kur-box" title="Bu kur, € tutarların ₺ karşılığını göstermek için kullanılır. Her gün ilk açılışta TCMB döviz satış kuru otomatik alınır; elle de değiştirilebilir."><span>1 € = ₺</span><input type="number" step="0.01" id="gKur" min="0" placeholder="55,00" aria-label="1 Euro kaç TL"><span class="kur-tarih" id="gKurBilgi"></span><button class="kur-btn" id="gKurKaydet">Kaydet</button></div>
       <button class="btn secondary small" id="qrKameraBtn" title="Kamera ile QR okut">📷 QR</button>
       <button class="btn secondary small" id="uyariBtn" title="Uyarı merkezi">🔔 <span id="uyariSayi">0</span></button>
@@ -1909,6 +1976,13 @@ Dikkat edilmesi gereken 2 nokta:
   </main>
   <div id="printArea"></div>
 </div>
+<nav id="altCubuk" class="alt-cubuk" aria-label="Telefon menüsü">
+  <button type="button" data-alt="ozet"><svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Özet<span class="alt-rozet" id="altOzetRozet"></span></button>
+  <button type="button" data-alt="ara"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>Ara</button>
+  <button type="button" data-alt="fav"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>Favoriler</button>
+  <button type="button" data-alt="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menü</button>
+</nav>
+<div id="telPanel" class="tel-panel" role="dialog" aria-modal="true" aria-label="Menü"></div>
 <div id="toast" class="toast-yigin" aria-live="polite"></div>
 <div id="confirmOverlay"><div id="confirmBox" role="alertdialog" aria-modal="true" aria-labelledby="confirmMsg">
   <p id="confirmMsg"></p>
@@ -1960,13 +2034,16 @@ Dikkat edilmesi gereken 2 nokta:
   // Aynı mesaj art arda gelirse yenisi eklenmez, var olanın süresi yenilenir.
   var TOAST_EN_COK = 3;
   function toastSure(msg, secenek){
+    if (secenek && secenek.sure) return secenek.sure;
     var ms = Math.min(8000, Math.max(3000, 2500 + String(msg).length * 55));
     return secenek && secenek.eylem ? Math.max(ms, 6000) : ms;
   }
+  var _sonSilBildirimi = 0; // "… silindi · Geri al" bildirimi az önce gösterildiyse ekranın kendi düz "Silindi" yazısı tekrar çıkmaz
   function toast(msg, isErr, secenek){
     var yigin = document.getElementById('toast');
     msg = msg == null ? '' : String(msg);
     isErr = !!isErr; secenek = secenek || {};
+    if (msg === 'Silindi' && !isErr && Date.now() - _sonSilBildirimi < 4000) return;
     if (yigin){
       var kutu = Array.prototype.find.call(yigin.children, function(k){ return k._mesaj === msg && k._hata === isErr && !k._eylem && !secenek.eylem; });
       if (kutu){
@@ -2020,6 +2097,7 @@ Dikkat edilmesi gereken 2 nokta:
     clearTimeout(kutu._zaman);
     if (kutu.parentNode) kutu.parentNode.removeChild(kutu);
   }
+  var _silOnayZamani = 0; // kullanıcı onay kutusunda "Evet" dedi: hemen ardından gelen silme "Geri al" bildirimi gösterir
   function confirmSil(mesaj, fn, onayMetni, vazgecFn){
     var overlay = document.getElementById('confirmOverlay');
     var msgEl = document.getElementById('confirmMsg');
@@ -2038,7 +2116,7 @@ Dikkat edilmesi gereken 2 nokta:
       vazgecBtn.removeEventListener('click', onVazgec);
       overlay.removeEventListener('click', onOverlayClick);
     }
-    function onOnayla(){ cleanup(); fn(); }
+    function onOnayla(){ cleanup(); _silOnayZamani = Date.now(); fn(); }
     function onVazgec(){ cleanup(); if (vazgecFn) vazgecFn(); }
     function onOverlayClick(e){ if (e.target === overlay){ cleanup(); if (vazgecFn) vazgecFn(); } }
     onayBtn.addEventListener('click', onOnayla);
@@ -2171,6 +2249,12 @@ Dikkat edilmesi gereken 2 nokta:
     overlay.addEventListener('click', onOverlayClick);
   }
 
+  // Satırdaki "⋯" menüsü (şimdilik yalnız Sil): Düzenle satırda kalır, Sil bir tık arkada durur
+  function satirMenuHtml(ic){ return '<details class="satir-menu"><summary class="btn secondary small" title="Diğer işlemler (Sil)" aria-label="Diğer işlemler">⋯</summary><div class="satir-menu-ic">'+ic+'</div></details>'; }
+  document.addEventListener('click', function(e){
+    document.querySelectorAll('details.satir-menu[open]').forEach(function(d){ if (!d.contains(e.target)) d.open = false; });
+    var b = e.target.closest && e.target.closest('.satir-menu-ic button'); if (b){ var d = b.closest('details'); if (d) d.open = false; }
+  });
   function renderSimpleList(containerId, items, collection, opts){
     var el = document.getElementById(containerId);
     if (!el) return;
@@ -2178,7 +2262,7 @@ Dikkat edilmesi gereken 2 nokta:
     el.innerHTML = items.map(function(item){
       var r = opts.rowFn(item), kilitli = opts.kilitliSatir && opts.kilitliSatir(item);
       return '<div class="recordrow" data-rid="'+item.id+'"'+(kilitli ? ' style="opacity:.6"' : '')+'><div class="rmain"><div class="rtitle">'+r.title+'</div>'+(r.sub?'<div class="rsub">'+r.sub+'</div>':'')+'</div>'+
-        '<div class="ractions">'+(opts.extraActions ? opts.extraActions(item) : '')+(opts.noEdit || kilitli?'':'<button class="btn secondary small" data-editid="'+item.id+'">Düzenle</button>')+(kilitli ? '' : '<button class="btn danger" data-delid="'+item.id+'">Sil</button>')+'</div></div>';
+        '<div class="ractions">'+(opts.extraActions ? opts.extraActions(item) : '')+(opts.noEdit || kilitli?'':'<button class="btn secondary small" data-editid="'+item.id+'">Düzenle</button>')+(kilitli ? '' : satirMenuHtml('<button class="btn danger" data-delid="'+item.id+'">Sil</button>'))+'</div></div>';
     }).join('');
     el.querySelectorAll('[data-editid]').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -2205,7 +2289,8 @@ Dikkat edilmesi gereken 2 nokta:
       btn.addEventListener('click', function(){
         if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
         if (silmeEngeli(btn.dataset.delid, collection, opts)) return;
-        confirmSil(opts.deleteMsg || 'Bu kaydı silmek istediğinize emin misiniz?', function(){
+        var kay = items.find(function(x){ return x.id === btn.dataset.delid; });
+        confirmSil(silOnayMesaji(collection, kay, opts.deleteMsg), function(){
           if (opts.onDelete){ opts.onDelete(btn.dataset.delid); return; }
           db.collection(collection).doc(btn.dataset.delid).delete()
             .then(function(){ toast('Silindi'); })
@@ -2246,7 +2331,7 @@ Dikkat edilmesi gereken 2 nokta:
       return '<div class="recordrow" data-rid="'+item.id+'"><div class="rmain"><div class="rtitle">'+r.title+'</div>'+(r.sub?'<div class="rsub">'+r.sub+'</div>':'')+
         (r.detailHtml ? '<div class="rdetail" id="rdetail-'+item.id+'" style="display:'+(acik?'block':'none')+'">'+r.detailHtml+'</div>' : '')+
         '</div>'+
-        '<div class="ractions">'+(r.detailHtml ? '<button class="btn secondary small" data-detoggle="'+item.id+'">'+(acik?'Kapat':'Detay')+'</button>' : (r.extraActions||''))+'<button class="btn secondary small" data-cedit="'+item.id+'">Düzenle</button><button class="btn danger" data-cdel="'+item.id+'">Sil</button></div></div>';
+        '<div class="ractions">'+(r.detailHtml ? '<button class="btn secondary small" data-detoggle="'+item.id+'">'+(acik?'Kapat':'Detay')+'</button>' : (r.extraActions||''))+'<button class="btn secondary small" data-cedit="'+item.id+'">Düzenle</button>'+satirMenuHtml('<button class="btn danger" data-cdel="'+item.id+'">Sil</button>')+'</div></div>';
     }).join('');
     el.querySelectorAll('[data-detoggle]').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -2269,7 +2354,8 @@ Dikkat edilmesi gereken 2 nokta:
       btn.addEventListener('click', function(){
         if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
         if (silmeEngeli(btn.dataset.cdel, opts.collection, opts)) return;
-        confirmSil(opts.deleteMsg || 'Bu kaydı silmek istediğinize emin misiniz?', function(){
+        var kay = items.find(function(x){ return x.id === btn.dataset.cdel; });
+        confirmSil(silOnayMesaji(opts.collection, kay, opts.deleteMsg), function(){
           if (opts.onDelete){ opts.onDelete(btn.dataset.cdel); return; }
           db.collection(opts.collection).doc(btn.dataset.cdel).delete()
             .then(function(){ toast('Silindi'); })
@@ -2544,11 +2630,15 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Tabs ----------
   document.querySelectorAll('.navbtn[data-tab]').forEach(function(btn){
     btn.addEventListener('click', function(){
+      var onceki = aktifSekme(), sessiz = adresSessiz();
       document.querySelectorAll('.navbtn').forEach(function(b){ b.classList.remove('active'); });
       document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
       btn.classList.add('active');
       document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
       sekmeAcildi(btn.dataset.tab);
+      // Adres çubuğu (#sayfa) ve son açılanlar; aynı sayfaya yeniden basınca geçmişe yeni satır yazılmaz
+      // (sessiz, sayfa çizilmeden önce okunur: adres düzeni bu çizim sırasında başlarsa ilk geçiş yazılmaz)
+      if (!sessiz){ adresYaz(btn.dataset.tab, '', onceki === btn.dataset.tab); sonAcilanEkle(btn.dataset.tab, ''); }
     });
   });
 
@@ -3832,7 +3922,7 @@ Dikkat edilmesi gereken 2 nokta:
         if (silmeEngeli(btn.dataset.del, 'uretim')) return;
         var uk = state.uretim.find(function(x){ return x.id === btn.dataset.del; }), ukStok = uk && Number(uk.stokGiris) > 0 ? stokKart(uk.stokId || urunStokId(uk.urunId)) : null;
         var eksiye = ukStok && Number(ukStok.miktar) - Number(uk.stokGiris) < -1e-9 ? '\n\nDİKKAT: ' + stokEtiket(ukStok.id) + ' stoğu ' + fmt2(ukStok.miktar) + '; bu kayıt silinince ' + fmt2(Number(ukStok.miktar) - Number(uk.stokGiris)) + ' olur (bu üretimden sevk edilmiş olabilir).' : '';
-        confirmSil('Bu üretim kaydını silmek istediğinize emin misiniz? Stoğa giriş yapıldıysa geri alınır.' + eksiye, function(){
+        confirmSil(silOnayMesaji('uretim', uk, 'Stoğa giriş yapıldıysa geri alınır.' + eksiye), function(){
           uretimKaydiSil(btn.dataset.del);
         });
       });
@@ -4437,7 +4527,7 @@ Dikkat edilmesi gereken 2 nokta:
       btn.addEventListener('click', function(){
         if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
         if (silmeEngeli(btn.dataset.mhdel, 'maliyethesaplari')) return;
-        confirmSil('Bu hesaplamayı silmek istediğinize emin misiniz?', function(){
+        confirmSil(silOnayMesaji('maliyethesaplari', (state.maliyetHesaplari || []).find(function(x){ return x.id === btn.dataset.mhdel; })), function(){
           db.collection('maliyethesaplari').doc(btn.dataset.mhdel).delete()
             .then(function(){ toast('Silindi'); })
             .catch(function(e){ toast('Silinemedi: '+dbErrMsg(e), true); });
@@ -5296,7 +5386,7 @@ Dikkat edilmesi gereken 2 nokta:
           toast('Kesilmiş irsaliye silinmez; durumunu "İptal" yapın.', true);
           return;
         }
-        confirmSil('Bu irsaliyeyi silmek istediğinize emin misiniz? Sipariş sevk miktarı ve stok geri alınacak.', function(){
+        confirmSil(silOnayMesaji('sevkiyatlar', irsKontrol, 'Sipariş sevk miktarı ve stok geri alınacak.'), function(){
           var irs = state.sevkiyatlar.find(function(x){ return x.id===btn.dataset.irsdel; });
           if (!irs || irs.durum === 'İptal'){ return; }
           irsaliyeEtkisiniGeriAl(irs, 'İrsaliye silindi');
@@ -5610,7 +5700,7 @@ Dikkat edilmesi gereken 2 nokta:
           return;
         }
         var silId = btn.dataset.ftrdel;
-        confirmSil('Bu faturayı silmek istediğinize emin misiniz?' + (ftrKontrol && ftrKontrol.irsaliyeYerine ? ' Stoktan düşülen mal stoğa geri girer.' : ''), function(){
+        confirmSil(silOnayMesaji('faturalar', ftrKontrol, ftrKontrol && ftrKontrol.irsaliyeYerine ? 'Stoktan düşülen mal stoğa geri girer.' : ''), function(){
           db.collection('faturalar').doc(silId).delete()
             .then(function(){
               belgeStokEsitle('fatura', silId, ftrKontrol ? ftrKontrol.faturaNo : '', {}, 'Fatura silindi (stoğa geri)');
@@ -6391,7 +6481,8 @@ Dikkat edilmesi gereken 2 nokta:
     {col:'muhasebeFisleri', state:'muhasebeFisleri', limit:3000},
     {col:'kurFarklari', state:'kurFarklari', limit:1000},
     {col:'muhDonemler', state:'muhDonemler', limit:240},
-    {col:'irsaliyeler', state:'irsaliyeler', limit:2000}
+    {col:'irsaliyeler', state:'irsaliyeler', limit:2000},
+    {col:'silinenler', state:'silinenler', limit:500}
   ]; }
 
   function ekAbonelikler(){
@@ -6541,6 +6632,83 @@ Dikkat edilmesi gereken 2 nokta:
   }
 
   function aktifSekme(){ var b = document.querySelector('.navbtn.active[data-tab]'); return b ? b.dataset.tab : 'ozet'; }
+
+  // ---------- Sayfa adresleri (#teklifler, #teklifler/ID) ve tarayıcının Geri / İleri düğmesi ----------
+  // Sayfa ya da kayıt değişince adres çubuğu güncellenir ve tarayıcı geçmişine bir satır yazılır (sayfa içindeki
+  // küçük değişiklikler yazılmaz). Geri / İleri önceki sayfaya döner; yenileyince aynı sayfa (ve kayıt) açılır.
+  // Supabase davet / şifre yenileme bağlantısı adresin #type=…&access_token=… kısmını kullanır: o parametreler
+  // varken adres okunmaz ve değiştirilmez; giriş tamamlanıp veriler yüklenene kadar (adresBaslat) hiç dokunulmaz.
+  var _adres = { aktif: false, sessiz: false, son: '' };
+  function adresSessiz(){ return !_adres || !_adres.aktif || _adres.sessiz; }
+  function adresGirisParcasi(h){ return /(^|[#&?])(access_token|refresh_token|type|error|error_code|error_description|code)=/.test(String(h || '')); }
+  function adresMetni(tab, id){ return '#' + tab + (id ? '/' + encodeURIComponent(id) : ''); }
+  // degistir: geçmişe yeni satır açmadan bulunulan satırı günceller
+  function adresYaz(tab, id, degistir){
+    if (adresSessiz() || !tab) return;
+    var h = adresMetni(tab, id);
+    if (location.hash === h){ _adres.son = h; return; }
+    // davet / yenileme anahtarları geçmişte kalmasın: o satır yeni adresle değiştirilir
+    if (adresGirisParcasi(location.hash)) degistir = true;
+    try { history[degistir ? 'replaceState' : 'pushState']({ ozerp: 1 }, '', h); } catch(e){}
+    _adres.son = location.hash;
+  }
+  function adresOku(){
+    var ham = String(location.hash || '');
+    if (adresGirisParcasi(ham)) return { giris: true };
+    var h = ham.replace(/^#\/?/, ''); if (!h) return { tab: '', id: '' };
+    try { var p = h.split('/'); return { tab: decodeURIComponent(p[0] || ''), id: p.length > 1 ? decodeURIComponent(p.slice(1).join('/')) : '' }; }
+    catch(e){ return { tab: '\u0000', id: '' }; }
+  }
+  function sekmeVar(tab){ return /^[a-z0-9_-]+$/i.test(tab || '') && !!document.querySelector('.sidebar .navbtn[data-tab="' + tab + '"]') && !!byId('panel-' + tab); }
+  // Rolün açabildiği ilk sayfa (Özet izinliyse Özet; yetkileriUygula ile aynı sıra)
+  function ilkIzinliSekme(){
+    if (sekmeIzinli('ozet')) return 'ozet';
+    var b = Array.prototype.find.call(document.querySelectorAll('.sidebar .navbtn[data-tab]'), function(x){ return sekmeIzinli(x.dataset.tab); });
+    return b ? b.dataset.tab : 'ozet';
+  }
+  // Adresteki sayfayı / kaydı açar (ilk açılış, yenileme, Geri / İleri). Geçersiz adres Özet'e, yetkisiz sayfa izinli ilk sayfaya düşer.
+  function adresUygula(ilk){
+    var a = adresOku();
+    if (a.giris){ if (ilk) return; a = { tab: 'ozet', id: '' }; }
+    var tab = a.tab || (ilk ? aktifSekme() : 'ozet'), id = a.id, uyari = '';
+    if (!sekmeVar(tab)){ uyari = 'Adres geçersiz (' + String(a.tab).slice(0, 40) + '); ' + (sekmeIzinli('ozet') ? 'Özet' : 'izinli ilk sayfa') + ' açıldı.'; tab = ilkIzinliSekme(); id = ''; }
+    else if (!sekmeIzinli(tab)){ uyari = 'Bu sayfaya erişim yetkiniz yok; izinli ilk sayfa açıldı.'; tab = ilkIzinliSekme(); id = ''; }
+    else if (id && !/^[\w-]{1,80}$/.test(id)){ uyari = 'Adresteki kayıt numarası geçersiz; sayfa açıldı.'; id = ''; }
+    _adres.sessiz = true;
+    try {
+      if (id) gitKayit(tab, id, function(){ toast('Adresteki kayıt bulunamadı (silinmiş olabilir); sayfa açıldı.'); try { history.replaceState({ ozerp: 1 }, '', adresMetni(tab, '')); } catch(e){} _adres.son = location.hash; });
+      else if (!ilk || aktifSekme() !== tab) gitSekme(tab);
+    } finally { _adres.sessiz = false; }
+    if (uyari || !a.tab){ try { history.replaceState({ ozerp: 1 }, '', adresMetni(tab, id)); } catch(e){} }
+    _adres.son = location.hash;
+    if (uyari) toast(uyari);
+  }
+  // Geri / İleri: açık pencere (form, onay sorusu, telefonda menü) varken sayfadan çıkılmaz, önce pencere kapanmayı dener
+  // (kaydedilmemiş değişiklik sorusu açılır); giriş ekranında ve atölye modundaki operatör ekranında sayfa değişmez.
+  function adresGeriIleri(){
+    if (!_adres || !_adres.aktif || location.hash === _adres.son) return;
+    if (adresGirisParcasi(location.hash)) return;
+    // sayfa içi bağlantı (href="#", "#bolum-…"): sayfa değişmez, adres eski hâline döner
+    var ham = String(location.hash || '').replace(/^#/, '');
+    if (!ham || (!sekmeVar(ham.split('/')[0]) && document.getElementById(ham))){ try { history.replaceState({ ozerp: 1 }, '', _adres.son || adresMetni(aktifSekme(), '')); } catch(e){} return; }
+    var acik = function(id){ var el = byId(id); return !!(el && el.classList.contains('open')); };
+    var onay = acik('confirmOverlay'), form = acik('formOverlay');
+    var atolye = document.body.classList.contains('atolye') && aktifSekme() === 'operator';
+    var telPanel = telPanelAcik();
+    if (onay || form || telPanel || atolye || acik('userGateOverlay') || acik('girisOverlay')){
+      try { history.pushState({ ozerp: 1 }, '', _adres.son || adresMetni(aktifSekme(), '')); } catch(e){}
+      _adres.son = location.hash;
+      if (onay) byId('confirmVazgec').click();
+      else if (form) byId('formKapat').click();
+      else if (telPanel) telPanelKapat(); // telefonda açık menü / favoriler önce kapanır
+      else if (atolye) toast('Atölye modunda Geri operatör ekranından çıkarmaz. Menüye dönmek için atölye modunu kapatın.');
+      return;
+    }
+    adresUygula(false);
+  }
+  window.addEventListener('popstate', adresGeriIleri);
+  window.addEventListener('hashchange', adresGeriIleri);
+
   function gitSekme(tab){
     var b = document.querySelector('.navbtn[data-tab="'+tab+'"]');
     if (b) b.click();
@@ -6825,7 +6993,7 @@ Dikkat edilmesi gereken 2 nokta:
   var KOLEKSIYON_STATE = { maliyethesaplari:'maliyetHesaplari' };
   // puantaj ve makine kontrolleri aylık kova belgelerinde durur: belge yazımı burada sayılmaz, kayıt bazında kovaEkle/kovaGuncelle/kovaSil yazar.
   // Ayarlar (config) ayrı işlenir: hangi ayarın değiştiği okunur hâle getirilir, art arda değişiklikler tek satırda birleşir.
-  var DENETIM_HARIC = { islemGecmisi:1, stokHareketleri:1, puantaj:1, makineKontrolleri:1, arsiv:1 };
+  var DENETIM_HARIC = { islemGecmisi:1, stokHareketleri:1, puantaj:1, makineKontrolleri:1, arsiv:1, silinenler:1 };
   var KOVA_DENETIM = { puantaj:1, makineKontrolleri:1 };
   // ---------- Aynı anda düzenleme: "bu kaydı siz düzenlerken başkası değiştirdi" ----------
   // Düzenleme formu açılınca kaydın o anki hâli saklanır. Kaydederken, başkasının sizin de değiştirdiğiniz bir alanı
@@ -6997,12 +7165,189 @@ Dikkat edilmesi gereken 2 nokta:
     if (!o) return '';
     return o.teklifNo || o.siparisNo || o.isEmriNo || o.irsaliyeNo || o.faturaNo || o.lotNo || o.no || o.kod || o.ad || o.baslik || o.tarih || '';
   }
+  // ---------- Silinenler kovası: silinen kaydın tam kopyası 30 gün saklanır ----------
+  // Her silmede (işlem geçmişine "Silme" yazılırken) kaydın tamamı (fatura / teklif kalemleri dahil) "silinenler" koleksiyonuna
+  // ayrı bir belge olarak yazılır: { olusturma, silen, koleksiyon, kayitId, etiket, tur, kayit }. Yerel klasörde ve Supabase'de
+  // diğer kayıtlar gibi genel tabloda durur (ek tablo gerekmez); 30 günden eski kopyalar açılışta ve her yeni silmede temizlenir.
+  // Geri yükleme yalnız stok / cari / muhasebe etkisi olmayan kayıtlarda yapılır (aynı kimlikle, silinmeden önceki hâliyle);
+  // etkili belgelerde (fatura, irsaliye, tahsilat, ödeme, gider, üretim kaydı, muhasebe fişi…) kopya yalnız gösterilir ya da
+  // uygun form varsa yeni belge olarak dolu açılır: stok / cari / muhasebe etkisi o yeni belgeyle yeniden işlenir.
+  var SILINEN_GUN = 30;
+  var SILINEN_GUVENLI = { personel:1, makineler:1, urunler:1, musteriler:1, stok:1, teklifler:1, siparisler:1, maliyethesaplari:1, kullanicilar:1,
+    isemirleri:1, projeler:1, projeGorevleri:1, lotlar:1, duruslar:1, vardiyaDevir:1, kaliteKontroller:1, ncr:1, fasonSiparisleri:1,
+    satinalmaTalepleri:1, satinalmaSiparisleri:1, bakimKayitlari:1, izinler:1, isgKayitlari:1, dokumanlar:1 };
+  // Tanım kayıtlarında türe göre: kredi, bordro, vergi ödemesi, virman, sabit kıymet, şüpheli alacak muhasebe fişi doğurur
+  var SILINEN_GUVENLI_TANIM = { fiyat:1, olcuAleti:1, hesap:1, teminat:1, bakimPlani:1, gorusme:1, muhHesap:1 };
+  var TANIM_TUR_ADI = { fiyat:'Fiyat', olcuAleti:'Ölçü aleti', hesap:'Kasa / banka hesabı', kredi:'Kredi', teminat:'Teminat mektubu', bordro:'Bordro',
+    vergiOdeme:'Vergi ödemesi', supheliAlacak:'Şüpheli alacak', bakimPlani:'Bakım planı', sabitKiymet:'Sabit kıymet', gorusme:'Görüşme', virman:'Virman', muhHesap:'Alt hesap' };
+  var _geriYuklenen = {}, _sonSilinenler = {}, _silinenSilindi = {}, _silinenTemizlendi = false;
+  function silinenGuvenli(col, k){
+    if (col === 'tanimKayitlari'){
+      var t = k && k.tur;
+      if (t === 'hesap') return !(Math.abs(Number(k.acilis) || 0) > 0.004); // açılış bakiyeli hesap açılış fişi doğurur
+      return !!SILINEN_GUVENLI_TANIM[t];
+    }
+    return !!SILINEN_GUVENLI[col];
+  }
+  function koleksiyonAdi(col, k){ return (col === 'tanimKayitlari' && k && TANIM_TUR_ADI[k.tur]) || KOLEKSIYON_ADI[col] || 'Kayıt'; }
+  // "CRI-26-0016 · Ambalaj Plus", "TKL-26-0003 · Ambalaj Plus": numara / kod + ad (adı yoksa carinin adı)
+  function kayitTamEtiket(col, k){
+    if (!k) return '';
+    var e = String(kayitEtiketi(k) || ''), ek = '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(e)) e = kvTarihTR(e); // numarasız kayıt (tahsilat, gider…) tarihiyle anılır
+    if (k.ad && String(k.ad) !== e) ek = String(k.ad);
+    else {
+      var cid = k.musteriId || k.cariId || k.tedarikciId, m = cid && (state.musteriler || []).find(function(x){ return x.id === cid; });
+      if (m && m.ad && m.ad !== e) ek = m.ad;
+    }
+    if (!ek && k.aciklama) ek = String(k.aciklama).slice(0, 50);
+    return e && ek ? e+' · '+ek : (e || ek);
+  }
+  function silinenNotu(col, k){
+    return silinenGuvenli(col, k)
+      ? 'Silinen kayıt '+SILINEN_GUN+' gün "Silinenler"de saklanır; yönetici İşlem Geçmişi\'nden aynı hâliyle geri yükleyebilir.'
+      : 'Belgenin tam kopyası '+SILINEN_GUN+' gün "Silinenler"de saklanır; stok / cari / muhasebe etkisi olduğu için doğrudan geri yüklenmez (gerekirse kopyasından yeni belge açılır).';
+  }
+  // Silme onayı: kaydın türü ve adı + ekranın ek açıklaması ("Bu … emin misiniz?" kalıbı atılır) + kova notu
+  function silOnayMesaji(col, k, ekMetin){
+    var et = kayitTamEtiket(col, k);
+    var ek = String(ekMetin || '').replace(/^\s*Bu [^?]*\?\s*/, '').trim();
+    return koleksiyonAdi(col, k)+(et ? ' '+et : '')+' silinsin mi?'+(ek ? '\n\n'+ek : '')+'\n\n'+silinenNotu(col, k);
+  }
+  function silinenKopyaYaz(col, id, eski){
+    if (!hamDb || !eski || !id || col === 'silinenler') return '';
+    var kayit = {};
+    Object.keys(eski).forEach(function(k){ if (k !== 'id' && k.charAt(0) !== '_') kayit[k] = eski[k]; });
+    var sid = 'sl'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+    var belge = temizle({ olusturma: nowISO(), silen: aktifKullaniciAdi() || '', koleksiyon: col, kayitId: id, etiket: kayitTamEtiket(col, eski).slice(0, 80),
+      tur: silinenGuvenli(col, kayit) ? 'guvenli' : 'etkili', kayit: kayit });
+    _sonSilinenler[sid] = Object.assign({ id: sid }, belge);
+    hamDb.doc('silinenler/'+sid).set(belge).catch(function(e){ toast('Silinen kaydın kopyası saklanamadı: '+dbErrMsg(e), true); });
+    silinenleriTemizle();
+    return sid;
+  }
+  function silinenBul(sid){ return (state.silinenler || []).find(function(x){ return x.id === sid; }) || _sonSilinenler[sid] || null; }
+  function silinenGecerliMi(s){ var t = Date.parse(s && s.olusturma || ''); return !isNaN(t) && t >= Date.now() - SILINEN_GUN*864e5; }
+  function silinenleriTemizle(){
+    if (!hamDb) return;
+    (state.silinenler || []).forEach(function(s){
+      if (silinenGecerliMi(s) || _silinenSilindi[s.id]) return;
+      _silinenSilindi[s.id] = 1;
+      hamDb.doc('silinenler/'+s.id).delete().catch(function(){ delete _silinenSilindi[s.id]; });
+    });
+  }
+  EK_HER_ZAMAN.push(function(){ if (!_silinenTemizlendi && tumVeriGeldi()){ _silinenTemizlendi = true; silinenleriTemizle(); } });
+  // Onay kutusunda "Evet, sil" denince gelen ilk silme: güvenli kayıtta 10 sn "Geri al" (silen kişi kendi silmesini geri alır)
+  function silmeGeriAlBildirimi(col, sid, eski){
+    if (!silinenGuvenli(col, eski) || Date.now() - _silOnayZamani > 15000) return;
+    _silOnayZamani = 0; _sonSilBildirimi = Date.now();
+    var et = kayitTamEtiket(col, eski);
+    toast(koleksiyonAdi(col, eski)+(et ? ' '+et : '')+' silindi.', false, { eylem: 'Geri al', sure: 10000, fn: function(){ silineniGeriYukle(sid, true); } });
+  }
+  // geriAl: silen kişinin bildirimdeki "Geri al"ı (yönetici şartı yok, kayıt yazma yetkisi yeter); değilse İşlem Geçmişi'nden yönetici
+  function silineniGeriYukle(sid, geriAl){
+    var s = silinenBul(sid);
+    if (!s || !s.kayit){ toast('Silinen kaydın kopyası bulunamadı ('+SILINEN_GUN+' günden eski olabilir).', true); return; }
+    if (!geriAl && aktifRol() !== 'Yönetici'){ toast('Silinen kaydı geri yüklemeyi yalnız yönetici yapabilir.', true); return; }
+    var col = s.koleksiyon, id = s.kayitId, ad = koleksiyonAdi(col, s.kayit)+' '+(kayitTamEtiket(col, s.kayit) || s.etiket || '');
+    if (!silinenGuvenli(col, s.kayit)){ silinenKopyaGoster(sid); return; }
+    if (kayitMevcut(col, id)){ uyariGoster(esc(ad)+' geri yüklenmedi: bu kimlikle bir kayıt zaten var (kayıt daha önce geri yüklenmiş olabilir). Kaydı kendi ekranında açıp kontrol edin.'); return; }
+    var e = kayitEtiketi(s.kayit), arr = state[KOLEKSIYON_STATE[col] || col] || [];
+    var ayni = e && arr.find(function(x){ return kayitEtiketi(x) === e && (col !== 'tanimKayitlari' || x.tur === s.kayit.tur); });
+    function yap(){
+      var v = temizle(s.kayit);
+      _geriYuklenen[col+'/'+id] = 1;
+      db.collection(col).doc(id).set(v).then(function(){
+        delete _sonSilinenler[sid];
+        if (hamDb) hamDb.doc('silinenler/'+sid).delete().catch(function(){});
+        toast('✓ '+ad+' geri yüklendi', false, KAYIT_SEKMESI[col] ? { eylem: 'Aç', fn: function(){ gecmistenKayit(col, id, 'ac'); } } : null);
+        if (aktifSekme() === 'islemgecmisi' && EK_RENDER.islemgecmisi) setTimeout(EK_RENDER.islemgecmisi, 300);
+      }).catch(function(err){ delete _geriYuklenen[col+'/'+id]; toast('Geri yüklenemedi: '+dbErrMsg(err), true); });
+    }
+    if (ayni){ onayIste(ad+' geri yüklensin mi?\n\nAynı numara / kodla başka bir kayıt var: '+koleksiyonAdi(col, ayni)+' '+kayitTamEtiket(col, ayni)+'. Geri yüklenirse ikisi birlikte durur; gerekirse birinin numarasını değiştirin.', 'Yine de geri yükle', yap); return; }
+    if (geriAl){ yap(); return; }
+    onayIste(ad+' geri yüklensin mi?\n\nKayıt aynı kimlikle, silinmeden önceki hâliyle geri gelir; ona bağlı kayıtlar (teklif, fatura…) onu yeniden görür.', 'Geri yükle', yap);
+  }
+  // ---------- Etkili belgenin kopyası: içerik gösterilir, uygun form varsa yeni belge olarak dolu açılır ----------
+  function kopyaKalemleri(k){
+    return (k.kalemler || []).map(function(x){ return kopyaSec(x || {}, ['stokId','ad','miktar','birim','listeFiyat','birimFiyat','iskonto','kdvOrani','aciklama','gtip']); });
+  }
+  function kopyaSec(k, alanlar){ var o = {}; alanlar.forEach(function(a){ if (k[a] !== undefined && k[a] !== null) o[a] = k[a]; }); return o; }
+  var KOPYA_IZ_ALANLARI = ['id','olusturma','olusturan','guncelleme','guncelleyen','durum','no','ettn','eBelgeDurumu','resmiFaturaNo','resmiNo','yazdirmaSayisi',
+    'irsaliyeIdleri','irsaliyeNolari','irsaliyeId','faturaId','odemeId','tahsilatId','ciroOdemeId','riskOnay'];
+  function kopyaIzsiz(k){ var o = JSON.parse(JSON.stringify(k)); KOPYA_IZ_ALANLARI.forEach(function(a){ delete o[a]; }); Object.keys(o).forEach(function(a){ if (a.charAt(0) === '_') delete o[a]; }); o.tarih = todayISO(); return o; }
+  var SILINEN_KOPYA_ACICI = {
+    faturalar: { not: 'İrsaliye bağlantısı kopyalanmaz: irsaliyeli fatura yeniden kesilecekse irsaliyeden faturalayın.',
+      ac: function(k){ satisFaturaEditor(null, Object.assign(kopyaSec(k, ['musteriId','faturaTipi','senaryo','tevkifatOrani','tevkifatKodu','istisnaKodu','istisnaAciklama','paraBirimi',
+        'ozelMatrah','ozelMatrahKdvOrani','ozelMatrahKodu','konaklamaOrani','asilSaticiUnvan','asilSaticiVkn','teslimSarti','tasimaSekli','gumrukBeyanNo','gumrukTarih',
+        'refFaturaNo','refFaturaTarih','musteriSiparisNo','irsaliyeYerine','not_']), { tarih: todayISO(), kalemler: kopyaKalemleri(k) })); } },
+    alisFaturalari: { not: 'Satınalma siparişi, fason ve irsaliye bağlantısı kopyalanmaz.',
+      ac: function(k){ alisFaturaEditor(null, Object.assign(kopyaSec(k, ['tedarikciId','faturaNo','vadeTarihi','faturaTipi','stokIsle','paraBirimi','tevkifatOrani','gumrukBeyanNo','gumrukTarih',
+        'gumrukKdv','gumrukKdvTL','gumrukKdvOrani','gumrukKdvHesapId','refFaturaNo','refFaturaTarih','aciklama']), { tarih: k.tarih && !donemKilitli(k.tarih) ? k.tarih : todayISO(), kalemler: JSON.parse(JSON.stringify(k.kalemler || [])) })); } },
+    giderler: { ac: function(k){ crudYeni(GIDER_TANIM, kopyaIzsiz(k)); } },
+    odemeler: { ac: function(k){ crudYeni(ODEME_TANIM, kopyaIzsiz(k)); } },
+    tahsilatlar: { ac: tahsilatKopyaAc }
+  };
+  function tahsilatKopyaAc(k){
+    if (!sekmeIzinli('carihesap')){ toast('Cari Hesap sayfasına erişim yetkiniz yok.', true); return; }
+    gitSekme('carihesap');
+    setTimeout(function(){
+      var mSel = byId('chMusteri'); if (!mSel) return;
+      function yaz(id, v, olay){ var el = byId(id); if (!el || v == null) return; el.value = v; if (olay) el.dispatchEvent(new Event(olay)); }
+      _tahsilDolduruyor = true;
+      try {
+        yaz('chMusteri', k.musteriId, 'change');
+        var fSel = byId('chFatura');
+        if (k.faturaId && fSel && Array.prototype.some.call(fSel.options, function(o){ return o.value === k.faturaId; })) yaz('chFatura', k.faturaId, 'change');
+        yaz('chPb', k.paraBirimi || 'EUR', 'change');
+        yaz('chYontem', k.yontem, 'change');
+        yaz('chTutar', Number(k.belgeTutar) || Number(k.tutar) || '', 'input');
+        var hSel = byId('chHesap'); if (k.hesapId && hSel && Array.prototype.some.call(hSel.options, function(o){ return o.value === k.hesapId; })) hSel.value = k.hesapId;
+        yaz('chNot', k.not_ || ''); yaz('chBelgeNo', k.belgeNo || ''); yaz('chTarih', todayISO());
+      } finally { _tahsilDolduruyor = false; }
+      byId('chMsg').textContent = 'Silinen tahsilatın kopyası forma yazıldı (tarih bugün). Kontrol edip Kaydet\'e basın; kaydedene kadar kayıt oluşmaz.';
+      var blok = mSel.closest('.block'); if (blok){ formBlokAc(blok, true); try { blok.scrollIntoView({ block: 'start' }); } catch(err){} blok.classList.remove('flash'); void blok.offsetWidth; blok.classList.add('flash'); }
+    }, 120);
+  }
+  function silinenIcerikHtml(k){
+    var duz = Object.keys(k).filter(function(a){ var v = k[a]; return v !== '' && v != null && typeof v !== 'object' && !/^(parola|pin$)/.test(a); });
+    function deger(a, v){ // kimlik alanları adla gösterilir
+      if (/^(musteri|cari|tedarikci)Id$/.test(a)) return cariAdi(v);
+      if (a === 'stokId') return stokEtiket(v);
+      if (a === 'hesapId' && typeof hesapAdi === 'function') return hesapAdi(v);
+      return String(v);
+    }
+    var html = '<table class="no-arac"><tbody>'+duz.map(function(a){ return '<tr><td class="muted" style="white-space:nowrap">'+esc(a)+'</td><td>'+esc(deger(a, k[a]))+'</td></tr>'; }).join('')+'</tbody></table>';
+    ['kalemler','satirlar'].forEach(function(alan){
+      var l = k[alan]; if (!Array.isArray(l) || !l.length) return;
+      var kol = ['stokId','ad','hesap','miktar','birim','birimFiyat','iskonto','kdvOrani','borc','alacak','tutar','aciklama'].filter(function(c){ return l.some(function(x){ return x && x[c] !== undefined && x[c] !== '' && x[c] != null; }); });
+      html += '<h4 style="margin:12px 0 6px">'+(alan === 'kalemler' ? 'Kalemler' : 'Satırlar')+' ('+l.length+')</h4><div class="tablewrap"><table class="no-arac"><thead><tr>'+kol.map(function(c){ return '<th>'+esc(c === 'stokId' ? 'stok' : c)+'</th>'; }).join('')+'</tr></thead><tbody>'+
+        l.map(function(x){ return '<tr>'+kol.map(function(c){ var v = x ? x[c] : ''; if (c === 'stokId') v = v ? stokEtiket(v) : ''; return '<td>'+esc(v == null ? '' : String(v))+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div>';
+    });
+    return html;
+  }
+  function silinenKopyaGoster(sid){
+    var s = silinenBul(sid); if (!s || !s.kayit){ toast('Silinen kaydın kopyası bulunamadı.', true); return; }
+    var col = s.koleksiyon, k = s.kayit, acici = SILINEN_KOPYA_ACICI[col], ad = koleksiyonAdi(col, k)+' '+(kayitTamEtiket(col, k) || s.etiket || '');
+    var acabilir = acici && izinVar('ekle');
+    var bilgi = '<div class="helper" style="margin:0 0 10px">'+esc(kvTarihTR((s.olusturma||'').slice(0,10)))+' tarihinde '+esc(s.silen || '-')+' sildi. '+
+      '<b>Bu belge stok / cari / muhasebeyi etkilediği için doğrudan geri yüklenmez.</b> Silinirken stok, bakiye ve fiş etkisi kalktı; aynen geri yazmak dönem kilidini, stok düzeltmelerini ve bağlı fişleri sessizce değiştirebilir. '+
+      (acici ? 'Aşağıdaki düğme kopyasını <b>yeni belge</b> olarak dolu açar: numara ve tarih yeniden verilir, etkiler kaydederken yeni belgeyle işlenir; kaydedene kadar kayıt oluşmaz.'+(acici.not ? ' '+esc(acici.not) : '')
+        : 'Bu belge türü için dolu açılan form yok: gerekiyorsa aşağıdaki bilgilerle kendi ekranında yeni belge girin.')+'</div>';
+    modalAc({ title: 'Silinen kopya — '+ad, genislik: 'orta', html: bilgi+silinenIcerikHtml(k)+'<div style="margin-top:10px"><button class="btn secondary small" type="button" id="silinenJson">⇩ Kopyayı dosya olarak indir (JSON)</button></div>',
+      kaydetYok: !acabilir, kaydetEtiket: '⧉ Kopyasını yeni belge olarak aç', onSave: function(){ setTimeout(function(){ acici.ac(JSON.parse(JSON.stringify(k))); }, 0); } });
+    var jb = byId('silinenJson'); if (jb) jb.addEventListener('click', function(){ dosyaIndir('silinen-'+col+'-'+(kayitEtiketi(k) || s.kayitId)+'.json', JSON.stringify(s, null, 1), 'application/json'); });
+  }
   function denetimliDb(ham){
     if (!ham || ham.__denetimli) return ham;
     hamDb = ham;
     function yaz(col, id, islem, veri, eski){
       if (DENETIM_HARIC[col] || denetimSessiz) return;
       if (col === 'config'){ ayarYaz(id, veri, eski); return; }
+      var geriYukleme = islem === 'Ekleme' && _geriYuklenen[col+'/'+id];
+      if (geriYukleme){ delete _geriYuklenen[col+'/'+id]; islem = 'Geri yükleme'; }
+      // Silinen kaydın tam kopyası (kalemler dahil) 30 gün "Silinenler" kovasında durur; geçmiş satırı kopyayı gösterir
+      var silinenId = islem === 'Silme' && eski ? silinenKopyaYaz(col, id, eski) : '';
       var ayrinti = '';
       try {
         if (islem === 'Güncelleme' && veri){
@@ -7013,15 +7358,19 @@ Dikkat edilmesi gereken 2 nokta:
             if (es === ys) return null;
             return k+': '+(es!==''?es+' → ':'')+ys;
           }).filter(Boolean).join(' · ');
-        } else if ((islem === 'Ekleme' && veri) || (islem === 'Silme' && eski)){
+        } else if (((islem === 'Ekleme' || islem === 'Geri yükleme') && veri) || (islem === 'Silme' && eski)){
           var kay = islem === 'Silme' ? eski : veri;
           ayrinti = Object.keys(kay).filter(function(k){ return ['olusturma','olusturan','guncelleme','guncelleyen','id','parolaHash','parolaTuz','pin'].indexOf(k)<0 && !/Id$/.test(k) && typeof kay[k] !== 'object' && kay[k] !== '' && kay[k] != null; }).slice(0,6)
             .map(function(k){ return k+': '+kay[k]; }).join(' · ');
         }
       } catch(e){}
       if (islem === 'Güncelleme' && !ayrinti) return;
-      kovaEkle('islemGecmisi', { kullanici: aktifKullaniciAdi() || '-', koleksiyon: col, kayitId: id || '', islem: islem,
-        etiket: String(kayitEtiketi(veri) || kayitEtiketi(eski) || '').slice(0,60), ayrinti: ayrinti.slice(0, 220) }).catch(function(){});
+      if (geriYukleme) ayrinti = 'Silinenler kovasından aynı kimlikle geri yüklendi'+(ayrinti ? ' · '+ayrinti : '');
+      var satir = { kullanici: aktifKullaniciAdi() || '-', koleksiyon: col, kayitId: id || '', islem: islem,
+        etiket: String(kayitEtiketi(veri) || kayitEtiketi(eski) || '').slice(0,60), ayrinti: ayrinti.slice(0, 220) };
+      if (silinenId) satir.silinenId = silinenId;
+      kovaEkle('islemGecmisi', satir).catch(function(){});
+      if (silinenId) silmeGeriAlBildirimi(col, silinenId, eski);
     }
     // Ayar değişikliği: aynı kullanıcının 3 dakika içindeki ayar değişiklikleri tek satırda birleşir (canlı kaydedilen formlar her tuşta yazar)
     function ayarYaz(id, veri, eski){
@@ -7191,7 +7540,7 @@ Dikkat edilmesi gereken 2 nokta:
     k = bul('data-kusil');
     if (k){
       if (kulRol(k) === 'Yönetici' && !yoneticiSayisi(k.id)){ toast('En az bir yönetici kalmalı.', true); return; }
-      onayIste('"'+k.ad+'" kullanıcısı silinsin mi? Bu kişi artık giriş yapamaz. (Geçmiş kayıtlardaki adı değişmez.)', 'Sil', function(){
+      onayIste('"'+k.ad+'" kullanıcısı silinsin mi? Bu kişi artık giriş yapamaz. (Geçmiş kayıtlardaki adı değişmez.)\n\n'+silinenNotu('kullanicilar', k), 'Sil', function(){
         db.collection('kullanicilar').doc(k.id).delete().then(function(){ toast('✓ Kullanıcı silindi'); }).catch(function(e){ toast('Silinemedi: '+dbErrMsg(e), true); });
       });
     }
@@ -7350,7 +7699,16 @@ Dikkat edilmesi gereken 2 nokta:
   }
 
   // ---------- Global arama (Ctrl+K) + QR / barkod ----------
+  // Arama metni: Türkçe küçük harf + aksansız (ı/i, ş/s, ğ/g, ü/u, ö/o, ç/c): "kdv beyani" "KDV Beyanı"nı, "musteri" "Müşteri"yi bulur
+  function aramaNorm(s){ return String(s == null ? '' : s).toLocaleLowerCase('tr').replace(/ı/g, 'i').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
+  // Sorgunun bütün kelimeleri metinde geçmeli; skor: 0 etiket sorguyla başlıyor, 1 bir kelime ilk sorgu kelimesiyle başlıyor, 2 içinde geçiyor
+  function aramaSkor(q, kelimeler, etiket, metin){
+    for (var i = 0; i < kelimeler.length; i++) if (metin.indexOf(kelimeler[i]) < 0) return -1;
+    if (aramaNorm(etiket).indexOf(q) === 0) return 0;
+    return (' ' + metin.replace(/[^a-z0-9]+/g, ' ')).indexOf(' ' + kelimeler[0].replace(/[^a-z0-9]+/g, ' ').trim()) > -1 ? 1 : 2;
+  }
   function aramaKaynaklari(){
+    var tutar = function(x){ return belgePB(x) !== 'EUR' && x.belgeTutar != null ? pbFmt(x.belgeTutar, belgePB(x)) : euro(x.tutar); };
     return [
       {tur:'Cari', tab:'musteriler', list: state.musteriler, e: function(m){ return (m.kod?m.kod+' · ':'')+m.ad; }, ara: function(m){ return [m.kod,m.ad,m.vergiNo,m.yetkili].join(' '); }},
       {tur:'Stok', tab:'stok', list: state.stok, e: function(s){ return (s.kod?s.kod+' · ':'')+s.ad; }, ara: function(s){ return [s.kod,s.ad,s.resimNo,s.malzemeCinsi].join(' '); }},
@@ -7358,16 +7716,119 @@ Dikkat edilmesi gereken 2 nokta:
       {tur:'Sipariş', tab:'siparisler', list: state.siparisler, e: function(s){ return s.siparisNo+' · '+musteriAdiById(s.musteriId); }, ara: function(s){ return [s.siparisNo, s.musteriSiparisNo, musteriAdiById(s.musteriId)].join(' '); }},
       {tur:'İş emri', tab:'isemirleri', list: state.isemirleri, e: function(ie){ return ie.isEmriNo+' · '+ie.urunAdi; }, ara: function(ie){ return [ie.isEmriNo, ie.urunAdi, ie.lotNo, ie.heatNo].join(' '); }},
       {tur:'İrsaliye', tab:'sevkiyat', list: state.sevkiyatlar, e: function(i){ return i.irsaliyeNo+' · '+musteriAdiById(i.musteriId); }, ara: function(i){ return [i.irsaliyeNo, i.lotNo, musteriAdiById(i.musteriId)].join(' '); }},
+      {tur:'İrsaliye', tab:'irsaliyeler', list: state.irsaliyeler, e: function(r){ return (r.resmiNo||r.no||'')+' · '+(r.tip||'')+(r.cariId?' · '+cariAdi(r.cariId):''); }, ara: function(r){ return [r.no, r.resmiNo, r.tip, r.cariId ? cariAdi(r.cariId) : '', r.plaka].join(' '); }},
       {tur:'Fatura', tab:'faturalar', list: state.faturalar, e: function(f){ return f.faturaNo+' · '+musteriAdiById(f.musteriId); }, ara: function(f){ return [f.faturaNo, musteriAdiById(f.musteriId)].join(' '); }},
+      {tur:'Satış iadesi', tab:'satisiade', list: state.satisIadeleri, e: function(s){ return (s.no||'')+' · '+cariAdi(s.cariId); }, ara: function(s){ return [s.no, cariAdi(s.cariId), s.neden, s.iadeFaturaNo].join(' '); }},
+      {tur:'Tahsilat', tab:'carihesap', list: state.tahsilatlar, e: function(t){ return (t.belgeNo?t.belgeNo+' · ':'')+musteriAdiById(t.musteriId)+' · '+kvTarihTR(t.tarih)+' · '+tutar(t); }, ara: function(t){ return [t.belgeNo, musteriAdiById(t.musteriId), t.yontem, t.not_].join(' '); }},
+      {tur:'Ödeme', tab:'kasabanka', list: state.odemeler, e: function(o){ return (o.belgeNo?o.belgeNo+' · ':'')+cariAdi(o.cariId)+' · '+kvTarihTR(o.tarih)+' · '+tutar(o); }, ara: function(o){ return [o.belgeNo, cariAdi(o.cariId), o.yontem, o.aciklama].join(' '); }},
+      {tur:'Gider', tab:'giderler', list: state.giderler, e: function(g){ return (g.belgeNo?g.belgeNo+' · ':'')+(g.tur||'')+(g.aciklama?' · '+g.aciklama:'')+' · '+kvTarihTR(g.tarih); }, ara: function(g){ return [g.belgeNo, g.tur, g.aciklama, g.cariId ? cariAdi(g.cariId) : ''].join(' '); }},
+      {tur:'Çek / senet', tab:'ceksenet', list: state.cekSenet, e: function(c){ return (c.tur||'')+(c.seriNo?' no '+c.seriNo:'')+' · '+cariAdi(c.cariId)+' · vade '+kvTarihTR(c.vade); }, ara: function(c){ return [c.tur, c.seriNo, c.banka, cariAdi(c.cariId)].join(' '); }},
+      {tur:'Muhasebe fişi', tab:'muhfis', list: state.muhasebeFisleri, e: function(f){ return (f.no||'')+' · '+(f.tur||'Mahsup')+' · '+kvTarihTR(f.tarih)+(f.aciklama?' · '+f.aciklama:''); }, ara: function(f){ return [f.no, f.belgeNo, f.tur, f.aciklama].join(' '); }},
       {tur:'Lot', tab:'lotlar', list: state.lotlar, e: function(l){ return l.lotNo+(l.heatNo?' · heat '+l.heatNo:'')+' · '+stokEtiket(l.stokId); }, ara: function(l){ return [l.lotNo, l.heatNo, l.sertifikaNo, stokEtiket(l.stokId)].join(' '); }},
+      {tur:'Satınalma talebi', tab:'satinalmatalep', list: state.satinalmaTalepleri, e: function(t){ return (t.no||'')+' · '+stokEtiket(t.stokId); }, ara: function(t){ return [t.no, stokEtiket(t.stokId), t.talepEden, t.aciklama].join(' '); }},
       {tur:'Satınalma', tab:'satinalmasiparis', list: state.satinalmaSiparisleri, e: function(s){ return s.no+' · '+cariAdi(s.tedarikciId); }, ara: function(s){ return [s.no, cariAdi(s.tedarikciId)].join(' '); }},
       {tur:'Alış faturası', tab:'alisfatura', list: state.alisFaturalari, e: function(f){ return (f.faturaNo||f.no)+' · '+cariAdi(f.tedarikciId); }, ara: function(f){ return [f.faturaNo, f.no, cariAdi(f.tedarikciId)].join(' '); }},
+      {tur:'Görüşme', tab:'gorusmeler', list: gorusmeler(), e: function(g){ return kvTarihTR(g.tarih)+' · '+cariAdi(g.cariId)+(g.konu?' · '+g.konu:''); }, ara: function(g){ return [g.konu, cariAdi(g.cariId), g.gorusmeTuru, g.kisi].join(' '); }},
+      {tur:'Proje', tab:'projeler', list: state.projeler, e: function(p){ return p.ad||'(adsız proje)'; }, ara: function(p){ return [p.ad, p.aciklama].join(' '); }},
       {tur:'NCR', tab:'ncr', list: state.ncr, e: function(n){ return n.no+' · '+(n.tanim||''); }, ara: function(n){ return [n.no, n.tanim, n.lotNo].join(' '); }},
       {tur:'Kalite', tab:'kalitekontrol', list: state.kaliteKontroller, e: function(k){ return k.no+' · '+k.tur+' · '+stokEtiket(k.stokId); }, ara: function(k){ return [k.no, k.tur, k.lotNo, stokEtiket(k.stokId)].join(' '); }},
       {tur:'Makine', tab:'tanimlar', list: state.makineler, e: function(m){ return m.ad; }, ara: function(m){ return [m.ad, m.model, m.seriNo].join(' '); }},
       {tur:'Personel', tab:'tanimlar', list: state.personel, e: function(p){ return p.ad; }, ara: function(p){ return p.ad; }},
       {tur:'Doküman', tab:'dokumanlar', list: state.dokumanlar, e: function(d){ return (d.no||'')+' · '+(d.aciklama||d.tur); }, ara: function(d){ return [d.no, d.aciklama, d.tur].join(' '); }}
     ];
+  }
+  // Sayfaların eş anlamlı adları (menüdeki ad ve sayfa başlığı ayrıca aranır)
+  var SAYFA_ES_ANLAM = {
+    ozet: 'ana sayfa anasayfa pano gösterge uyarılar', musteriler: 'cari müşteri tedarikçi firma cari kart açılış', cariekstre: 'ekstre hesap ekstresi mutabakat',
+    stok: 'stok kartı malzeme hammadde mamul ürün depo envanter', urunteknik: 'ürün ağacı reçete bom rota operasyon kontrol planı teknik resim', lotlar: 'lot heat şarj sertifika izlenebilirlik mal kabul',
+    fiyatlar: 'fiyat listesi', olcualetleri: 'ölçü aleti kalibrasyon mikrometre kumpas', amortisman: 'sabit kıymet demirbaş amortisman', hesapplani: 'hesap planı tdhp hesap kodu',
+    teklifler: 'teklif fiyat teklifi', siparisler: 'sipariş satış siparişi', gorusmeler: 'görüşme müşteri görüşmesi ziyaret telefon crm',
+    satinalmatalep: 'satınalma talebi talep ihtiyaç mrp malzeme ihtiyacı', satinalmasiparis: 'satınalma siparişi tedarikçi siparişi',
+    faturalar: 'fatura satış faturası e-fatura e-arşiv efatura earsiv', alisfatura: 'alış faturası gelen fatura tedarikçi faturası', satisiade: 'iade satış iadesi', kurfarki: 'kur farkı faturası',
+    sevkiyat: 'sevkiyat sevk irsaliye teslimat', irsaliyeler: 'irsaliye e-irsaliye tüm irsaliyeler', edefter: 'e-defter edefter berat',
+    stokhareket: 'stok hareketleri giriş çıkış', musterimali: 'müşteri malı', gidenfason: 'fason dış işlem kaplama ısıl işlem',
+    uretimplani: 'üretim planı plan kapasite takvim makine sırası', isemirleri: 'iş emri', operator: 'operatör tablet atölye sayaç', uretim: 'üretim girişi adet giriş vardiya',
+    kayitlar: 'üretim kayıtları', duruslar: 'duruş arıza bekleme', vardiyadevir: 'vardiya devri', bakim: 'bakım arıza periyodik bakım',
+    kalitekontrol: 'kalite kontrol muayene ölçüm ilk parça final giriş kontrol', ncr: 'uygunsuzluk ncr hata ret', puantaj: 'puantaj izin devam mesai', isg: 'iş güvenliği isg kaza', projeler: 'proje görev',
+    carihesap: 'cari hesap tahsilat alacak bakiye', kasabanka: 'kasa banka ödeme virman hesap kredi', ceksenet: 'çek senet', giderler: 'gider masraf harcama', bordro: 'bordro maaş sgk',
+    muhfis: 'muhasebe fişi yevmiye fiş mahsup', defterler: 'defter yevmiye defteri büyük defter kebir muavin', mizan: 'mizan', malitablolar: 'bilanço gelir tablosu mali tablolar',
+    kdvbeyan: 'kdv beyanı kdv-1 kdv-2 beyanname', vergiodeme: 'vergi sgk ödemesi muhtasar', donemsonu: 'dönem sonu ay sonu kapanış',
+    maliyethesap: 'maliyet hesabı', karlilik: 'kârlılık kar zarar vergi', raporlar: 'rapor', finansrapor: 'finans raporları nakit akışı yaşlandırma', cikti: 'çıktı önizleme yazdır şablon',
+    tanimlar: 'tanımlar ayarlar firma bilgileri makine personel parametre', kullanicilar: 'kullanıcı rol yetki şifre parola', dokumanlar: 'doküman belge arşiv',
+    islemgecmisi: 'işlem geçmişi kim değiştirdi denetim', veri: 'veri yedek yedekleme geri yükleme excel aktarım'
+  };
+  // Sayfa listesi: yeni menüdeki adlar (gösterilen ad: menüdeki ilk ad), eski menü adı, sayfa başlığı ve eş anlamlar
+  var _komutSayfalari = null;
+  function komutSayfalari(){
+    if (_komutSayfalari) return _komutSayfalari;
+    var l = [], m = {};
+    function ekle(tab, ad, yer){
+      if (!tab || !sekmeVar(tab)) return;
+      var s = m[tab]; if (!s){ s = m[tab] = { tab: tab, ad: ad, yer: yer || '', adlar: [] }; l.push(s); }
+      s.adlar.push(ad);
+    }
+    (typeof MENU_YENI !== 'undefined' ? MENU_YENI : []).forEach(function(a){
+      var alan = a.alan.charAt(0) + a.alan.slice(1).toLocaleLowerCase('tr');
+      a.ogeler.forEach(function(o){
+        if (o.tab) ekle(o.tab, o.ad, alan);
+        else ymKolonlar(o).forEach(function(k){ k.forEach(function(x){ if (x.tab && !x.yap) ekle(x.tab, x.ad, alan + ' › ' + o.ad); }); });
+      });
+    });
+    document.querySelectorAll('.sidebar .navbtn[data-tab]').forEach(function(b){ ekle(b.dataset.tab, b.dataset.ad || b.textContent.replace(/[☆★]/g, '').trim(), ''); });
+    l.forEach(function(s){
+      var h = document.querySelector('#panel-' + s.tab + ' .pagehead h1');
+      s.ara = aramaNorm(s.adlar.join(' ') + ' ' + (h ? h.textContent : '') + ' ' + (SAYFA_ES_ANLAM[s.tab] || ''));
+    });
+    _komutSayfalari = l;
+    return l;
+  }
+  function sayfaAdi(tab){ var s = komutSayfalari().find(function(x){ return x.tab === tab; }); return s ? s.ad : tab; }
+  // İşlemler: sayfaya gidip o sayfanın "Yeni …" düğmesine basar (dugme: düğme id, secici: sayfadaki öğe, blok: "Yeni …" başlıklı form, odak: ilk kutu)
+  var KOMUT_ISLEMLERI = [
+    { ad: 'Yeni teklif', tab: 'teklifler', dugme: 'tYeniBtn', es: 'teklif ver' },
+    { ad: 'Yeni satış siparişi', tab: 'siparisler', dugme: 'sipYeniBtn' },
+    { ad: 'Yeni sevkiyat (siparişten irsaliye)', tab: 'sevkiyat', blok: 'Yeni sevkiyat', es: 'sevk et' },
+    { ad: 'Yeni satış faturası', tab: 'faturalar', dugme: 'fSerbestBtn', es: 'fatura kes e-arşiv ihracat' },
+    { ad: 'Siparişten fatura', tab: 'faturalar', blok: 'Yeni fatura', es: 'yeni fatura kes' },
+    { ad: 'Yeni tahsilat', tab: 'carihesap', blok: 'Yeni tahsilat', es: 'tahsil et para girişi' },
+    { ad: 'Yeni ödeme', tab: 'kasabanka', dugme: 'odemeYeniBtn', es: 'öde tedarikçi ödemesi' },
+    { ad: 'Yeni gider', tab: 'giderler', dugme: 'giderYeniBtn', es: 'masraf harcama' },
+    { ad: 'Yeni çek / senet', tab: 'ceksenet', dugme: 'cekYeniBtn' },
+    { ad: 'Yeni alış faturası', tab: 'alisfatura', dugme: 'alfYeniBtn', es: 'gelen fatura' },
+    { ad: 'Yeni satınalma talebi', tab: 'satinalmatalep', dugme: 'talepYeniBtn' },
+    { ad: 'Yeni satınalma siparişi', tab: 'satinalmasiparis', dugme: 'sasYeniBtn' },
+    { ad: 'Yeni irsaliye (alış, iade, fason…)', tab: 'irsaliyeler', dugme: 'irdYeniBtn', es: 'mal kabul transfer' },
+    { ad: 'Yeni satış iadesi', tab: 'satisiade', dugme: 'siadeYeniBtn', es: 'iade al' },
+    { ad: 'Yeni cari kart', tab: 'musteriler', dugme: 'cariEkleBtn', es: 'müşteri tedarikçi aç' },
+    { ad: 'Yeni stok kartı', tab: 'stok', dugme: 'stokEkleBtn', es: 'malzeme ürün' },
+    { ad: 'Yeni iş emri', tab: 'isemirleri', blok: 'Yeni iş emri' },
+    { ad: 'Üretim girişi', tab: 'uretim', odak: true, es: 'yeni üretim kaydı adet gir' },
+    { ad: 'Yeni duruş kaydı', tab: 'duruslar', dugme: 'durusYeniBtn' },
+    { ad: 'Yeni kalite kontrol', tab: 'kalitekontrol', dugme: 'kaliteYeniBtn', es: 'muayene ölçüm' },
+    { ad: 'Yeni uygunsuzluk (NCR)', tab: 'ncr', dugme: 'ncrlYeniBtn' },
+    { ad: 'Yeni mal kabul (lot)', tab: 'lotlar', dugme: 'lotYeniBtn' },
+    { ad: 'Yeni arıza / bakım kaydı', tab: 'bakim', dugme: 'bkayitYeniBtn' },
+    { ad: 'Yeni muhasebe fişi', tab: 'muhfis', secici: '[data-muhyenifis]', es: 'mahsup yevmiye' },
+    { ad: 'Yeni müşteri görüşmesi', tab: 'gorusmeler', dugme: 'gorYeniBtn' },
+    { ad: 'Yeni proje', tab: 'projeler', dugme: 'projeEkleBtn' },
+    { ad: 'Yeni maliyet hesabı', tab: 'maliyethesap', dugme: 'mhYeniBtn' },
+    { ad: 'Yeni doküman', tab: 'dokumanlar', dugme: 'dokYeniBtn' }
+  ];
+  function komutIslemCalistir(x){
+    if (!sekmeIzinli(x.tab) || !izinVar('ekle')){ toast('Bu işlem için yetkiniz yok.', true); return; }
+    if (aktifSekme() !== x.tab) gitSekme(x.tab);
+    setTimeout(function(){
+      var p = byId('panel-' + x.tab); if (!p) return;
+      var el = x.dugme ? byId(x.dugme) : (x.secici ? p.querySelector(x.secici) : null);
+      if (el){ el.click(); return; }
+      var hedef = x.blok ? Array.prototype.find.call(p.querySelectorAll('.block'), function(b){ var h = b.querySelector(':scope > .block-head > h3'); return h && h.textContent.trim() === x.blok; }) : (x.odak ? p : null);
+      if (!hedef){ toast('"' + x.ad + '" bu sayfada açılamadı.', true); return; }
+      if (x.blok) formBlokAc(hedef, true);
+      try { hedef.scrollIntoView({ block: 'start' }); } catch(e){}
+      if (x.blok){ hedef.classList.remove('flash'); void hedef.offsetWidth; hedef.classList.add('flash'); }
+      var ilk = hedef.querySelector('.block-body input:not([type=hidden]):not([disabled]), .block-body select, .block-body textarea');
+      if (ilk) setTimeout(function(){ try { ilk.focus({ preventScroll: true }); } catch(e){} }, 80);
+    }, 60);
   }
   var QR_TUR_TAB = { IE:'isemirleri', LOT:'lotlar', IRS:'sevkiyat', STK:'stok', SIP:'siparisler', FTR:'faturalar' };
   function qrMetni(tur, id){ return 'OZ|'+tur+'|'+id; }
@@ -7384,27 +7845,99 @@ Dikkat edilmesi gereken 2 nokta:
     toast('Eşleşen kayıt bulunamadı: '+metin, true);
     return false;
   }
+  // Kayıt araması (barkod okuyucu ve QR da bunu kullanır); rolün açamadığı sayfanın kayıtları listelenmez
   function aramaYap(q){
-    q = (q||'').toLocaleLowerCase('tr').trim();
+    q = aramaNorm(q);
     if (q.length < 2) return [];
-    var out = [];
+    var kel = q.split(' '), out = [];
     aramaKaynaklari().forEach(function(k){
+      if (!sekmeIzinli(k.tab)) return;
       (k.list||[]).forEach(function(x){
-        var metin = String(k.ara(x)||'').toLocaleLowerCase('tr');
-        var idx = metin.indexOf(q);
-        if (idx > -1) out.push({ tur:k.tur, tab:k.tab, id:x.id, etiket:k.e(x), skor: idx === 0 ? 0 : 1 });
+        var etiket = k.e(x), skor = aramaSkor(q, kel, etiket, aramaNorm(k.ara(x)));
+        if (skor > -1) out.push({ tur:k.tur, tab:k.tab, id:x.id, etiket:etiket, skor: skor });
       });
     });
     out.sort(function(a,b){ return a.skor - b.skor; });
     return out.slice(0, 25);
   }
-  function gitKayit(tab, id){
+  // Komut kutusu: sayfalar ("Sayfa"), işlemler ("İşlem") ve kayıtlar; sorguda rakam varsa (belge no, barkod) kayıtlar öne gelir
+  function komutAra(q){
+    var qn = aramaNorm(q);
+    if (qn.length < 2) return [];
+    var kel = qn.split(' '), sayfa = [], islem = [];
+    komutSayfalari().forEach(function(s){
+      if (!sekmeIzinli(s.tab)) return;
+      var skor = aramaSkor(qn, kel, s.ad, s.ara);
+      if (skor > -1) sayfa.push({ tur: 'Sayfa', tab: s.tab, etiket: s.ad, ek: s.yer, skor: skor });
+    });
+    if (izinVar('ekle')) KOMUT_ISLEMLERI.forEach(function(x){
+      if (!sekmeVar(x.tab) || !sekmeIzinli(x.tab)) return;
+      var skor = aramaSkor(qn, kel, x.ad, aramaNorm(x.ad + ' ' + (x.es || '')));
+      if (skor > -1) islem.push({ tur: 'İşlem', tab: x.tab, etiket: x.ad, ek: sayfaAdi(x.tab), islem: x, skor: skor });
+    });
+    var sira = function(a, b){ return a.skor - b.skor; };
+    sayfa.sort(sira); islem.sort(sira);
+    var kayit = aramaYap(q), rakam = /\d/.test(qn);
+    var hepsi = rakam ? kayit.concat(sayfa.slice(0, 6), islem.slice(0, 6)) : sayfa.slice(0, 6).concat(islem.slice(0, 6), kayit);
+    hepsi.forEach(function(r, i){ r._i = i; });
+    hepsi.sort(function(a, b){ return a.skor - b.skor || a._i - b._i; });
+    return hepsi.slice(0, 30);
+  }
+  // Son açılan 5 sayfa / kayıt: bu cihazda, kullanıcıya göre saklanır
+  var SON_ACILAN_KEY = 'ozerp_son_acilanlar_v1';
+  function sonAcilanOku(){ try { var o = JSON.parse(localStorage.getItem(SON_ACILAN_KEY) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch(e){ return {}; } }
+  function sonAcilanEkle(tab, id){
+    if (!tab) return;
+    try {
+      var o = sonAcilanOku(), k = aktifKullaniciId() || '-';
+      var l = (Array.isArray(o[k]) ? o[k] : []).filter(function(x){ return x && !(x.tab === tab && (x.id || '') === (id || '')); });
+      l.unshift({ tab: tab, id: id || '' }); o[k] = l.slice(0, 12);
+      localStorage.setItem(SON_ACILAN_KEY, JSON.stringify(o));
+    } catch(e){}
+  }
+  function sonAcilanSonuclari(){
+    var l = sonAcilanOku()[aktifKullaniciId() || '-'], out = [], kaynak = null;
+    (Array.isArray(l) ? l : []).forEach(function(x){
+      if (out.length >= 5 || !x || !sekmeVar(x.tab) || !sekmeIzinli(x.tab)) return;
+      if (!x.id){ out.push({ tur: 'Sayfa', tab: x.tab, etiket: sayfaAdi(x.tab) }); return; }
+      kaynak = kaynak || aramaKaynaklari();
+      for (var i = 0; i < kaynak.length; i++){
+        if (kaynak[i].tab !== x.tab) continue;
+        var r = (kaynak[i].list || []).find(function(y){ return y.id === x.id; });
+        if (r){ out.push({ tur: kaynak[i].tur, tab: x.tab, id: x.id, etiket: kaynak[i].e(r) }); return; }
+      }
+    });
+    return out;
+  }
+  // Kendi satır listesi (data-rid) olmayan sayfalarda kaydı açan işlev: tab → function(id, bulunamazsa)
+  var KAYIT_ACICI = {
+    muhfis: function(id, bulunamazsa){
+      var f = muhTumFisler().find(function(x){ return x.id === id; });
+      if (!f){ if (bulunamazsa) bulunamazsa(); return; }
+      _muhFisFiltre.ay = String(f.tarih || '').slice(0, 7); _muhFisFiltre.tur = ''; _muhFisFiltre.kaynak = ''; _muhFisFiltre.ara = '';
+      _muhFisAcik[id] = true; muhYeniden('muhfis');
+      setTimeout(function(){
+        var r = document.querySelector('#panel-muhfis [data-muhfisac="' + id + '"]');
+        if (!r){ if (bulunamazsa) bulunamazsa(); return; }
+        try { r.scrollIntoView({ block: 'center' }); } catch(e){}
+        r.classList.remove('flash'); void r.offsetWidth; r.classList.add('flash');
+      }, 60);
+    }
+  };
+  // Kayıt sayfadaki bir süzgeç yüzünden çizilmemişse süzgeci temizler
+  var KAYIT_SUZGEC_TEMIZLE = { irsaliyeler: function(){ if (!_irsFiltre) return; _irsFiltre = ''; var s = byId('irsFiltre'); if (s) s.value = ''; } };
+  function gitKayit(tab, id, bulunamazsa){
     if (!sekmeIzinli(tab)){ toast('Bu kayda erişim yetkiniz yok.', true); return; }
-    gitSekme(tab);
+    // sayfa geçişi geçmişe ayrı satır yazmasın: adres tek seferde #sayfa/ID olur
+    var sessiz = adresSessiz(), eski = _adres.sessiz; _adres.sessiz = true;
+    try { gitSekme(tab); } finally { _adres.sessiz = eski; }
+    if (!sessiz){ adresYaz(tab, id); sonAcilanEkle(tab, id); }
+    if (KAYIT_ACICI[tab]){ KAYIT_ACICI[tab](id, bulunamazsa); return; }
     setTimeout(function(){
-      var satir = document.querySelector('#panel-'+tab+' [data-rid="'+id+'"]');
-      if (!satir){ renderAllNow(); satir = document.querySelector('#panel-'+tab+' [data-rid="'+id+'"]'); }
-      if (satir) satiriGoster(satir, id);
+      var sec = '#panel-'+tab+' [data-rid="'+id+'"]';
+      var satir = document.querySelector(sec);
+      if (!satir){ if (KAYIT_SUZGEC_TEMIZLE[tab]) KAYIT_SUZGEC_TEMIZLE[tab](); renderAllNow(); satir = document.querySelector(sec); }
+      if (satir) satiriGoster(satir, id); else if (bulunamazsa) bulunamazsa();
     }, 90);
   }
   function satiriGoster(satir, id){
@@ -7452,11 +7985,16 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function gecmistenKayit(col, id, aksiyon){
     var izinli = [].concat(KAYIT_SEKMESI[col] || []).some(sekmeIzinli);
-    var satir = kayitSatiriBul(col, id);
+    // kayıt aranırken gezilen sayfalar geçmişe yazılmaz; adres yalnız sonunda açılan sayfa / kayıt olur
+    var sessiz = adresSessiz(), eski = _adres.sessiz, satir; _adres.sessiz = true;
+    try { satir = kayitSatiriBul(col, id); } finally { _adres.sessiz = eski; }
     if (!satir && !(aksiyon === 'sil' && izinli && kayitMevcut(col, id))){ gitSekme('islemgecmisi'); toast('Kayıt bulunamadı: silinmiş olabilir ya da bu ekrana erişim yetkiniz yok.', true); return; }
+    var ridli = !!(satir && satir.hasAttribute('data-rid'));
+    if (!sessiz){ adresYaz(aktifSekme(), ridli ? id : ''); if (ridli) sonAcilanEkle(aktifSekme(), id); }
     if (satir) satiriGoster(satir, id);
     if (aksiyon === 'ac') return;
     var metin = aksiyon === 'sil' ? 'Sil' : 'Düzenle';
+    if (satir && aksiyon === 'sil') satir.querySelectorAll('details.satir-menu').forEach(function(d){ d.open = true; }); // Sil "⋯" menüsünde
     var btn = satir && Array.prototype.find.call(satir.querySelectorAll('button'), function(b){ return b.offsetParent && b.textContent.trim() === metin; });
     if (btn) btn.click();
     else if (aksiyon === 'sil') gecmistenDogrudanSil(col, id);
@@ -7466,7 +8004,7 @@ Dikkat edilmesi gereken 2 nokta:
   function gecmistenDogrudanSil(col, id){
     if (silmeEngeli(id, col)) return;
     var kay = (state[KOLEKSIYON_STATE[col] || col] || []).find(function(x){ return x.id === id; });
-    confirmSil((KOLEKSIYON_ADI[col] || 'Kayıt')+' '+(kayitEtiketi(kay) || '')+' silinsin mi? Bu işlem geri alınamaz.', function(){
+    confirmSil(silOnayMesaji(col, kay), function(){
       var is = col === 'uretim' ? (uretimKaydiSil(id), Promise.resolve())
         : KOVA_DENETIM[col] ? kovaSil(col, id) : db.collection(col).doc(id).delete();
       Promise.resolve(is).then(function(){ toast('Silindi'); }).catch(function(e){ toast('Silinemedi: '+dbErrMsg(e), true); });
@@ -7475,19 +8013,34 @@ Dikkat edilmesi gereken 2 nokta:
   (function(){
     var inp = byId('globalArama'), kutu = byId('aramaSonuc');
     if (!inp) return;
-    var secili = 0, sonuclar = [];
+    var secili = 0, sonuclar = [], sonMu = false;
     function ciz(){
       if (!sonuclar.length){ kutu.classList.remove('acik'); kutu.innerHTML = ''; return; }
-      kutu.innerHTML = sonuclar.map(function(r, i){ return '<button type="button" data-i="'+i+'" class="'+(i===secili?'secili':'')+'"><span class="tur">'+esc(r.tur)+'</span>'+esc(r.etiket)+'</button>'; }).join('');
+      kutu.innerHTML = (sonMu ? '<div class="arama-baslik">Son açılanlar</div>' : '') + sonuclar.map(function(r, i){ return '<button type="button" data-i="'+i+'" class="'+(i===secili?'secili':'')+'"><span class="tur'+(r.tur === 'Sayfa' || r.tur === 'İşlem' ? ' tur-komut' : '')+'">'+esc(r.tur)+'</span>'+esc(r.etiket)+(r.ek ? '<span class="arama-ek">'+esc(r.ek)+'</span>' : '')+'</button>'; }).join('');
       kutu.classList.add('acik');
-      kutu.querySelectorAll('button').forEach(function(b){ b.addEventListener('mousedown', function(e){ e.preventDefault(); var r = sonuclar[Number(b.dataset.i)]; kapat(); gitKayit(r.tab, r.id); }); });
+      kutu.querySelectorAll('button').forEach(function(b){ b.addEventListener('mousedown', function(e){ e.preventDefault(); var r = sonuclar[Number(b.dataset.i)]; kapat(); sonucAc(r); }); });
+      var s = kutu.querySelector('button.secili'); if (s && s.scrollIntoView) try { s.scrollIntoView({ block: 'nearest' }); } catch(e){}
     }
-    function kapat(){ sonuclar = []; ciz(); inp.value = ''; inp.blur(); }
-    inp.addEventListener('input', function(){ secili = 0; sonuclar = /^OZ\|/.test(inp.value) ? [] : aramaYap(inp.value); ciz(); });
+    function sonucAc(r){
+      if (!r) return;
+      if (r.islem) komutIslemCalistir(r.islem);
+      else if (r.id) gitKayit(r.tab, r.id);
+      else gitSekme(r.tab);
+    }
+    function kapat(){ sonuclar = []; sonMu = false; ciz(); inp.value = ''; inp.blur(); }
+    function guncelle(){
+      secili = 0; var v = inp.value;
+      if (/^OZ\|/.test(v)){ sonuclar = []; sonMu = false; }
+      else if (!v.trim()){ sonuclar = sonAcilanSonuclari(); sonMu = true; }
+      else { sonuclar = komutAra(v); sonMu = false; }
+      ciz();
+    }
+    inp.addEventListener('input', guncelle);
+    inp.addEventListener('focus', function(){ if (!inp.value.trim()) guncelle(); });
     inp.addEventListener('keydown', function(e){
       if (e.key === 'ArrowDown'){ secili = Math.min(sonuclar.length-1, secili+1); ciz(); e.preventDefault(); }
       else if (e.key === 'ArrowUp'){ secili = Math.max(0, secili-1); ciz(); e.preventDefault(); }
-      else if (e.key === 'Enter'){ e.preventDefault(); var v = inp.value; if (sonuclar[secili] && !/^OZ\|/.test(v)){ var r = sonuclar[secili]; kapat(); gitKayit(r.tab, r.id); } else { kapat(); aramaIsle(v); } }
+      else if (e.key === 'Enter'){ e.preventDefault(); var v = inp.value; if (sonuclar[secili] && !/^OZ\|/.test(v)){ var r = sonuclar[secili]; kapat(); sonucAc(r); } else if (v.trim()){ kapat(); aramaIsle(v); } else kapat(); }
       else if (e.key === 'Escape'){ kapat(); }
     });
     inp.addEventListener('blur', function(){ setTimeout(function(){ kutu.classList.remove('acik'); }, 150); });
@@ -7495,6 +8048,16 @@ Dikkat edilmesi gereken 2 nokta:
     var kb = byId('qrKameraBtn'); if (kb) kb.addEventListener('click', function(){ kameraIleOku(); });
     var ub = byId('uyariBtn'); if (ub) ub.addEventListener('click', uyariMerkeziAc);
   })();
+  // Adres düzeni giriş tamamlanıp veriler yüklenince başlar: adresteki sayfa / kayıt açılır (yenileme, paylaşılan bağlantı)
+  function adresBaslat(){
+    if (!_adres || _adres.aktif || !db) return;
+    var id = oturumId(); if (!id || !state.kullanicilar.some(function(k){ return k.id === id; })) return;
+    var acik = function(x){ var el = byId(x); return !!(el && el.classList.contains('open')); };
+    if (acik('userGateOverlay') || acik('girisOverlay')) return;
+    _adres.aktif = true;
+    setTimeout(function(){ try { adresUygula(true); } catch(e){ renderHatasi('adres', e); } }, 0);
+  }
+  EK_HER_ZAMAN.push(adresBaslat);
   // isle: okunan metni işleyen fonksiyon (varsayılan: üst çubuktaki arama); operatör ekranı kendi işleyicisini verir
   function kameraIleOku(isle){
     if (typeof isle !== 'function') isle = aramaIsle;
@@ -12225,21 +12788,42 @@ Dikkat edilmesi gereken 2 nokta:
       if (kapandi > 4000 || Date.now() - bas > 120000) clearInterval(t);
     }, 250);
   }
+  // Silinenler kutusu (yalnız yönetici): son 30 günün silinen kayıtları; güvenli olanda "Geri yükle", etkili belgede "Kopyasını aç"
+  function silinenDugmesi(sl){
+    return sl.tur === 'guvenli' && silinenGuvenli(sl.koleksiyon, sl.kayit)
+      ? '<button class="btn small" data-silgeri="'+escAttr(sl.id)+'" title="Kaydı aynı kimlikle, silinmeden önceki hâliyle geri yükler">↺ Geri yükle</button>'
+      : '<button class="btn secondary small" data-silkopya="'+escAttr(sl.id)+'" title="Stok / cari / muhasebe etkili belge doğrudan geri yüklenmez: içeriği gösterilir, uygun olanı yeni belge olarak açılır">⧉ Kopyasını aç</button>';
+  }
+  function silinenlerPaneli(yonetici){
+    var kutu = byId('igSilinenlerKutu'); if (!kutu) return;
+    var l = yonetici ? (state.silinenler || []).filter(silinenGecerliMi).sort(function(a, b){ return String(b.olusturma||'').localeCompare(String(a.olusturma||'')); }) : [];
+    kutu.style.display = l.length ? '' : 'none';
+    if (!l.length) return;
+    byId('igSilinenlerBaslik').textContent = '🗑 Silinenler — son '+SILINEN_GUN+' gün: '+l.length+' kayıt';
+    var goster = l.slice(0, 200);
+    setHtmlIdle('igSilinenler', '<div class="tablewrap"><table class="no-arac"><thead><tr><th>Silinme</th><th>Silen</th><th>Kayıt türü</th><th>Kayıt</th><th>Geri dönüş</th><th></th></tr></thead><tbody>'+
+      goster.map(function(sl){ var guv = sl.tur === 'guvenli' && silinenGuvenli(sl.koleksiyon, sl.kayit), var_ = kayitMevcut(sl.koleksiyon, sl.kayitId);
+        return '<tr><td style="white-space:nowrap">'+esc(new Date(sl.olusturma).toLocaleString('tr-TR'))+'</td><td>'+esc(sl.silen || '-')+'</td><td>'+esc(koleksiyonAdi(sl.koleksiyon, sl.kayit))+'</td><td>'+esc(sl.etiket || '')+'</td>'+
+          '<td style="font-size:11.5px">'+(var_ ? '<span class="muted">aynı kimlikle kayıt var</span>' : guv ? 'aynen geri yüklenir' : '<span class="muted">stok / cari / muhasebe etkili: yeni belge olarak</span>')+'</td><td>'+silinenDugmesi(sl)+'</td></tr>'; }).join('')+
+      '</tbody></table></div>'+(l.length > goster.length ? '<div class="helper">İlk '+goster.length+' gösteriliyor.</div>' : '')+
+      '<div class="helper">Kopyalar '+SILINEN_GUN+' gün sonra kendiliğinden silinir. Geri yüklenen kaydın kopyası kutudan çıkar; işlem geçmişine "Geri yükleme" yazılır.</div>');
+  }
   EK_RENDER.islemgecmisi = function(){
     var host = byId('islemgecmisiIcerik'); if (!host) return;
     if (!host.dataset.kuruldu){
       host.dataset.kuruldu = '1';
       host.innerHTML = '<div class="block"><div class="block-body">'+
+          '<details class="silinenler-kutu" id="igSilinenlerKutu" style="display:none"><summary id="igSilinenlerBaslik"></summary><div id="igSilinenler"></div></details>'+
           '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">'+
             '<div class="field" style="flex:1;min-width:150px;margin:0"><label>Dönem</label><div id="igDonemKutu" class="lf" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div></div>'+
             '<div class="field" style="flex:2;min-width:180px;margin:0"><label>Ara</label><input type="search" id="igAra" placeholder="belge no, ad, ayrıntı…"></div>'+
             '<div class="field" style="flex:1;min-width:130px;margin:0"><label>Kullanıcı</label><select id="igKullanici"></select></div>'+
             '<div class="field" style="flex:1;min-width:130px;margin:0"><label>Kayıt türü</label><select id="igKol"></select></div>'+
-            '<div class="field" style="flex:1;min-width:120px;margin:0"><label>İşlem</label><select id="igIslem"><option value="">Tümü</option><option>Ekleme</option><option>Güncelleme</option><option>Silme</option></select></div>'+
+            '<div class="field" style="flex:1;min-width:120px;margin:0"><label>İşlem</label><select id="igIslem"><option value="">Tümü</option><option>Ekleme</option><option>Güncelleme</option><option>Silme</option><option>Geri yükleme</option></select></div>'+
             '<button class="btn secondary small" id="igCsv" type="button" title="Filtreye uyan işlemleri CSV olarak indir">⇩ CSV</button>'+
           '</div>'+
           '<div class="tablewrap" id="igSonuc"></div>'+
-          '<div class="helper">Buradan kayıt silmek (kayıt her yerden silinir) yalnız yöneticiye açıktır. Aç: kaydı kendi ekranında gösterir. Düzenle / Sil: kaydın kendi ekranındaki butonu çalıştırır; stok gibi bağlı kayıtlar da o ekranın kurallarıyla güncellenir. Silme sırası: önce bağlı kayıtlar silinir (ör. teklifi silmek için önce ona bağlı siparişi, siparişi silmek için önce iş emri / irsaliye / faturayı); engel olursa hangi kayıtların önce silinmesi gerektiği gösterilir. Sil ile silinen kaydın geçmiş satırları da (yönetici için) kaldırılır. Son 3 ayın işlemleri tutulur. Stok giriş/çıkışları kendi belgelerinden (üretim kaydı, irsaliye…) düzeltilir; her hareket Stok Hareketleri ekranında kaynağıyla görünür.</div>'+
+          '<div class="helper">Buradan kayıt silmek (kayıt her yerden silinir) yalnız yöneticiye açıktır. Aç: kaydı kendi ekranında gösterir. Düzenle / Sil: kaydın kendi ekranındaki butonu çalıştırır; stok gibi bağlı kayıtlar da o ekranın kurallarıyla güncellenir. Silme sırası: önce bağlı kayıtlar silinir (ör. teklifi silmek için önce ona bağlı siparişi, siparişi silmek için önce iş emri / irsaliye / faturayı); engel olursa hangi kayıtların önce silinmesi gerektiği gösterilir. Sil ile silinen kaydın geçmiş satırları da (yönetici için) kaldırılır. Silinen her kaydın tam kopyası '+SILINEN_GUN+' gün "Silinenler"de durur (yalnız yönetici görür): stok / cari / muhasebe etkisi olmayan kayıt (cari, stok kartı, teklif, sipariş, iş emri, görüşme, doküman, tanım…) "Geri yükle" ile aynı kimlikle geri gelir; fatura, irsaliye, tahsilat, ödeme, gider, üretim kaydı, muhasebe fişi gibi etkili belgeler doğrudan geri yüklenmez, "Kopyasını aç" ile içeriği görülür ve uygun olanlar yeni belge olarak dolu açılır. Son 3 ayın işlemleri tutulur. Stok giriş/çıkışları kendi belgelerinden (üretim kaydı, irsaliye…) düzeltilir; her hareket Stok Hareketleri ekranında kaynağıyla görünür.</div>'+
         '</div></div>';
       byId('igAra').addEventListener('input', function(){ IG_FILTRE.ara = this.value; IG_GOSTER = 300; EK_RENDER.islemgecmisi(); });
       byId('igDonemKutu').addEventListener('change', function(e){
@@ -12254,6 +12838,10 @@ Dikkat edilmesi gereken 2 nokta:
       host.addEventListener('click', function(e){
         var b = e.target.closest && e.target.closest('[data-igak]');
         if (b){ var p = b.dataset.igak.split('|'); if (p[2] === 'sil') igKayitSil(p[0], p[1]); else gecmistenKayit(p[0], p[1], p[2]); return; }
+        var sg = e.target.closest && e.target.closest('[data-silgeri]');
+        if (sg){ silineniGeriYukle(sg.dataset.silgeri); return; }
+        var sk = e.target.closest && e.target.closest('[data-silkopya]');
+        if (sk){ silinenKopyaGoster(sk.dataset.silkopya); return; }
         var gs = e.target.closest && e.target.closest('[data-igsil]');
         if (gs){ var kid = gs.dataset.igsil, idler = igKayitSatirlari(kid); igGecmistenSil(idler, 'Bu kayıt zaten silinmiş. Geçmişteki '+idler.length+' satırı da kaldırılsın mı?'); return; }
         if (e.target.id === 'igHepsiniSil'){ e.target.blur();
@@ -12292,20 +12880,24 @@ Dikkat edilmesi gereken 2 nokta:
     function duruyor(g){ return !!(g.kayitId && KAYIT_SEKMESI[g.koleksiyon] && kayitMevcut(g.koleksiyon, g.kayitId)); }
     function aksiyonlar(g){
       if (!g.kayitId || !KAYIT_SEKMESI[g.koleksiyon]) return '';
-      if (!duruyor(g)) return '<span class="muted" style="font-size:11px">silinmiş</span>';
+      if (!duruyor(g)){
+        var sl = yonetici && g.islem === 'Silme' && g.silinenId && silinenBul(g.silinenId);
+        return sl && silinenGecerliMi(sl) ? silinenDugmesi(sl) : '<span class="muted" style="font-size:11px">silinmiş</span>';
+      }
       var k = g.koleksiyon+'|'+g.kayitId+'|';
       return '<div style="display:flex;gap:4px;flex-wrap:nowrap"><button class="btn secondary small" data-igak="'+k+'ac">Aç</button>'+
         '<button class="btn secondary small" data-igak="'+k+'duzenle">Düzenle</button>'+
         (yonetici ? '<button class="btn danger" data-igak="'+k+'sil" title="Kaydı sil; geçmişteki satırları da kaldırılır">Sil</button>' : '')+'</div>';
     }
     var gosterilen = f.slice(0, IG_GOSTER), yonetici = aktifRol() === 'Yönetici';
+    silinenlerPaneli(yonetici);
     IG_SON_LISTE = f.map(function(g){ return { id: g.id, duruyor: duruyor(g) }; }); IG_SON_F = f;
     // Kaydı duran satırda ayrı "×" yok: kaydı "Sil" ile silmek geçmişini de temizler
     function geSil(g){ return yonetici && g.kayitId && !duruyor(g) ? '<button class="btn danger" data-igsil="'+escAttr(g.kayitId)+'" title="Silinmiş kaydın geçmiş satırlarını kaldır">×</button>' : ''; }
     setHtmlIdle('igSonuc', !l.length ? '<div class="empty">Henüz işlem kaydı yok.</div>' : !f.length ? '<div class="empty">'+(igAr ? lfDonemAdi(IG_FILTRE.donem, IG_FILTRE.bas, IG_FILTRE.bit)+' döneminde ' : '')+'filtreye uyan işlem yok.'+(igAr ? ' Daha eskileri için Dönem\'i genişletin (ör. "Tüm tarihler").' : '')+'</div>' :
       '<table id="igTablo" class="no-arac"><thead><tr><th>Zaman</th><th>Kullanıcı</th><th>Kayıt türü</th><th>Kayıt</th><th>İşlem</th><th>Ayrıntı</th><th></th></tr></thead><tbody>'+
       gosterilen.map(function(g){ return '<tr><td style="white-space:nowrap">'+esc(new Date(g.olusturma).toLocaleString('tr-TR'))+'</td><td>'+esc(g.kullanici)+'</td><td>'+esc(KOLEKSIYON_ADI[g.koleksiyon]||g.koleksiyon)+'</td><td>'+esc(g.etiket||'')+'</td><td>'+
-        (g.islem==='Silme'?'<span class="neg">Silme</span>':esc(g.islem))+(g.sonradan ? ' <span class="muted" title="Bu kaydın kendi oluşturma işlemi geçmişte yoktu (eski sürümde açılmış ya da geçmiş satırı silinmiş); kayıt geçmişte görünsün diye sonradan eklendi.">(sonradan)</span>' : '')+'</td><td style="font-size:11.5px;max-width:380px">'+esc(g.ayrinti||'')+'</td><td><div style="display:flex;gap:4px;align-items:center">'+aksiyonlar(g)+geSil(g)+'</div></td></tr>'; }).join('')+'</tbody></table>'+
+        (g.islem==='Silme'?'<span class="neg">Silme</span>':g.islem==='Geri yükleme'?'<span class="pos">Geri yükleme</span>':esc(g.islem))+(g.sonradan ? ' <span class="muted" title="Bu kaydın kendi oluşturma işlemi geçmişte yoktu (eski sürümde açılmış ya da geçmiş satırı silinmiş); kayıt geçmişte görünsün diye sonradan eklendi.">(sonradan)</span>' : '')+'</td><td style="font-size:11.5px;max-width:380px">'+esc(g.ayrinti||'')+'</td><td><div style="display:flex;gap:4px;align-items:center">'+aksiyonlar(g)+geSil(g)+'</div></td></tr>'; }).join('')+'</tbody></table>'+
       (yonetici ? '<div style="margin-top:8px"><button class="btn danger" id="igHepsiniSil">Listelenen '+f.length+' satırı geçmişten sil</button> <span class="muted">Sadece kaydı zaten silinmiş satırları kaldırır; sadece yönetici görür.</span></div>' : '')+
       '<div class="helper">'+(igAr ? lfDonemAdi(IG_FILTRE.donem, IG_FILTRE.bas, IG_FILTRE.bit)+': ' : '')+f.length+' işlem'+(f.length !== l.length ? ' (yüklenen toplam '+l.length+')' : '')+(f.length > gosterilen.length ? ' · ilk '+gosterilen.length+' gösteriliyor <button class="btn secondary small" id="igDahaFazla">Daha fazla</button>' : '')+'</div>');
   };
@@ -13124,6 +13716,7 @@ Dikkat edilmesi gereken 2 nokta:
     var s = byId('uyariSayi'); if (s) s.textContent = u.length;
     var b = document.querySelector('.navbtn[data-tab="ozet"]');
     if (b){ var r = b.querySelector('.nav-badge'); if (!r){ r = document.createElement('span'); r.className = 'nav-badge'; b.appendChild(r); } r.textContent = n; r.style.display = n ? '' : 'none'; }
+    var ar = byId('altOzetRozet'); if (ar) ar.textContent = n ? n : ''; // telefondaki alt çubuk
     return u;
   }
   // Zildeki sayı çizimden hemen sonra değil, kısa bir aradan sonra güncellenir (art arda gelen değişikliklerde bir kez)
@@ -13278,13 +13871,16 @@ Dikkat edilmesi gereken 2 nokta:
       '2026-10-28':0.5,'2026-10-29':1,
       '2027-01-01':1,'2027-03-08':0.5,'2027-03-09':1,'2027-03-10':1,'2027-03-11':1,'2027-04-23':1,
       '2027-05-17':1,'2027-05-18':1,'2027-05-19':1,'2027-07-15':1,'2027-08-30':1,'2027-10-28':0.5,'2027-10-29':1,
-      '2028-02-25':0.5,'2028-02-28':1,'2028-05-01':1,'2028-05-03':0.5,'2028-05-04':1,'2028-05-05':1,'2028-05-19':1,'2028-08-30':1
+      '2028-02-25':0.5,'2028-02-28':1,'2028-05-01':1,'2028-05-03':0.5,'2028-05-04':1,'2028-05-05':1,'2028-05-19':1,'2028-08-30':1,
+      // 2029 dinî bayramlar hesaplanmış takvime göre (Ramazan 14–16 Şubat, Kurban 24–27 Nisan); Diyanet takvimi çıkınca kontrol edilmeli
+      '2029-01-01':1,'2029-02-13':0.5,'2029-02-14':1,'2029-02-15':1,'2029-02-16':1,'2029-04-23':1,'2029-04-24':1,'2029-04-25':1,'2029-04-26':1,'2029-04-27':1,
+      '2029-05-01':1,'2029-08-30':1,'2029-10-29':1
     };
     var TATIL_AD = { '10-29':'Cumhuriyet Bayramı', '10-28':'Cumhuriyet Bayramı arifesi', '01-01':'Yılbaşı', '04-23':'23 Nisan', '05-01':'1 Mayıs', '05-19':'19 Mayıs', '07-15':'15 Temmuz', '08-30':'30 Ağustos' };
     // Şirkete özel değerler (makine, adet, fiyat, personel, gider, yatırım) 0 başlar, Varsayımlar'dan elle girilir.
     // Vergi / SGK oranları, yasal vardiya süreleri ve amortisman ömrü mevzuattan gelir, dolu kalır.
     function varsayilan(){ return {
-      baslangicAy: '2026-11', sureAy: 24, kurulusTarihi: '2026-11-01', // şirket 01.11.2026'da kuruluyor; kurulusTarihi boş = plan başlangıcından 14 gün önce
+      baslangicAy: '2028-01', sureAy: 24, kurulusTarihi: '2028-01-01', // kuruluş 19.10.2026'da 01.01.2028'e ertelendi (makineler bir yıl Virgo Hidrolik'te); kurulusTarihi boş = plan başlangıcından 14 gün önce
       // Üretim
       aktifMakine: 0, gunduzAdet: 0, gunduzSaat: 9, geceSaat: 7.5, geceVardiya: false, cumartesi: false, cumartesiKisi: 0,
       cumartesiSaat: 5, pazar: false, pazarSaat: 5, pazarKisi: 0, cumartesiZam: 50, pazarZam: 100,
@@ -13759,7 +14355,7 @@ Dikkat edilmesi gereken 2 nokta:
     }
     function ayAdiUzun(ay){ return ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][Number(ay.slice(5,7))-1]+' '+ay.slice(0,4); }
     function ozetle(r){
-      var ilkTamYil = Number(r.P.baslangicAy.slice(0,4)) + 1, Y = r.yillar[ilkTamYil] || {};
+      var ilkTamYil = Number(r.P.baslangicAy.slice(0,4)) + (r.P.baslangicAy.slice(5,7) === '01' ? 0 : 1), Y = r.yillar[ilkTamYil] || {};
       return { yil: ilkTamYil, ciro: Y.gelir||0, kar: Y.karOncesi||0, kv: Y.kv != null ? Y.kv : Math.max(0, Y.karOncesi||0) * r.P.kvOrani/100,
         net: (Y.karOncesi||0) - (Y.kv != null ? Y.kv : Math.max(0, Y.karOncesi||0) * r.P.kvOrani/100), geriDonus: r.geriDonusAy, nakitIhtiyaci: -r.minKasa,
         adetAy: (Y.adet||0) / Math.max(1, Y.ay||1) };
@@ -14653,7 +15249,7 @@ Dikkat edilmesi gereken 2 nokta:
     var satir = function(ad, v, not, cls, k){ return '<tr'+(k ? ' data-kvhesap="'+k+'" data-kvhay="'+a3.ay+'" data-kvnorm="1"' : '')+'><td>'+ad+(not?' <span class="muted">'+not+'</span>':'')+'</td><td class="num '+(cls||'')+'">'+kvTl(v)+'</td><td class="num muted">'+(a3.adet ? fmt2(v/a3.adet)+' ₺/adet' : '')+'</td></tr>'; };
     var amN = r.basaBas.amortNorm, karN = a3.gelir - (a3.personel + a3.kira + a3.elektrik + a3.uc + a3.sabit + a3.ekGider + amN);
     var kvAy = Math.max(0, karN) * P.kvOrani/100, giderN = a3.gelir - karN;
-    var yardim = '<div class="helper" style="margin:0 0 10px">Bu sayfadaki rakamlar üç yerden hesaplanır: aşağıdaki <a href="#" data-kvsekme="urunler">Ürünler ve çalışan makineler</a> tablosu (hangi ürün, kaç makinede, makine başı kaç adet, hangi fiyata), <a href="#" data-kvsekme="varsayim">Varsayımlar</a> (vardiya, personel, kira, giderler, yatırım, vergi oranları — tüm plan için başlangıç değerleri) ve <a href="#" data-kvsekme="planla">Ay ay planım</a> (belirli bir ayı farklı yapmak için; oraya girilen değer Varsayımlar\'ın önüne geçer). Kartlardaki yıl toplamları ilk tam yıl olan '+(Number(r.P.baslangicAy.slice(0,4))+1)+' içindir.</div>';
+    var yardim = '<div class="helper" style="margin:0 0 10px">Bu sayfadaki rakamlar üç yerden hesaplanır: aşağıdaki <a href="#" data-kvsekme="urunler">Ürünler ve çalışan makineler</a> tablosu (hangi ürün, kaç makinede, makine başı kaç adet, hangi fiyata), <a href="#" data-kvsekme="varsayim">Varsayımlar</a> (vardiya, personel, kira, giderler, yatırım, vergi oranları — tüm plan için başlangıç değerleri) ve <a href="#" data-kvsekme="planla">Ay ay planım</a> (belirli bir ayı farklı yapmak için; oraya girilen değer Varsayımlar\'ın önüne geçer). Kartlardaki yıl toplamları ilk tam yıl olan '+KV_MODEL.ozetle(r).yil+' içindir.</div>';
     var html = '<div class="block"><div class="block-head"><h3>Tipik bir ay — '+kvAyAdi(a3.ay)+' ('+fmt2(a3.gun)+' iş günü) '+infoIco('Kuruluş ayından sonraki ilk ay. Varsayım: her Ocak ayında fiyat %'+fmt(P.fiyatArtisOcak)+', net maaşlar %'+fmt(P.maasArtisOcak)+', kira %'+fmt(P.kiraArtisOcak)+', diğer giderler %'+fmt(P.giderArtisOcak)+' artar. Gündüz vardiyası 9 saat net, gece vardiyası yasal sınır olan 7,5 saat net. Hurda %'+fmt2(P.hurdaYuzde)+' faturalanmaz. Ay ay değiştirmek için "Ay ay planım" sekmesini kullanın.')+'</h3><div class="bh-actions"><button class="btn small" data-kvsekme="planla">Ay ay planla ✎</button></div></div><div class="block-body tablewrap"><table><thead><tr><th>Kalem</th><th class="num">Tutar (KDV hariç)</th><th class="num">Adet başı</th></tr></thead><tbody>'+
       '<tr data-kvhesap="satis" data-kvhay="'+a3.ay+'"><td><b>Satış</b> <span class="muted">'+fmt(a3.adet)+' adet × ortalama '+fmt2(a3.fiyat)+' ₺</span></td><td class="num pos">'+kvTl(a3.gelir)+'</td><td class="num muted">'+fmt2(a3.fiyat)+' ₺/adet</td></tr>'+
       (function(){ var us = (a3.urunler || []).filter(function(x){ return x.satis > 0 || x.makine > 0; }); if (us.length < 2) return '';
@@ -14815,7 +15411,7 @@ Dikkat edilmesi gereken 2 nokta:
     var P = r.P, yillar = Object.keys(r.yillar).map(function(k){ return r.yillar[k]; });
     var th = '<th>Kalem</th>'+yillar.map(function(Y){ return '<th class="num">'+Y.yil+' <span class="muted">('+Y.ay+' ay)</span></th>'; }).join('');
     function sat(ad, fn, cls){ return '<tr><td>'+ad+'</td>'+yillar.map(function(Y){ var v = fn(Y); return '<td class="num '+(typeof cls==='function'?cls(v):(cls||''))+'">'+(v==null?'<span class="muted">—</span>':kvTl(v))+'</td>'; }).join('')+'</tr>'; }
-    var html = '<div class="block"><div class="block-head"><h3>Yıllık gelir tablosu '+infoIco('Bilanço esasında amortisman, makinenin alındığı yıl tam yıl olarak ayrılır (kıst amortisman yok) — 2026\'da 3 ay çalışılsa da 1 yıllık amortisman gider yazılır. Geçici vergi 3 dönem verilir (Mart, Haziran, Eylül sonu); Ekim–Aralık için geçici beyan yoktur. Yıllık kurumlar vergisi ertesi yıl Nisan\'da ödenir, ödenen geçici vergiler mahsup edilir. 2025–2027 hesap dönemlerinde enflasyon düzeltmesi yapılmıyor. Yeni kurulan şirkete ilk 3 yıl asgari kurumlar vergisi uygulanmaz.')+'</h3></div><div class="block-body tablewrap"><table class="kv-tablo"><thead><tr>'+th+'</tr></thead><tbody>'+
+    var html = '<div class="block"><div class="block-head"><h3>Yıllık gelir tablosu '+infoIco('Bilanço esasında amortisman, makinenin alındığı yıl tam yıl olarak ayrılır (kıst amortisman yok) — ilk yıl birkaç ay çalışılsa da 1 yıllık amortisman gider yazılır. Geçici vergi 3 dönem verilir (Mart, Haziran, Eylül sonu); Ekim–Aralık için geçici beyan yoktur. Yıllık kurumlar vergisi ertesi yıl Nisan\'da ödenir, ödenen geçici vergiler mahsup edilir. 2025–2027 hesap dönemlerinde enflasyon düzeltmesi yapılmıyor. Yeni kurulan şirkete ilk 3 yıl asgari kurumlar vergisi uygulanmaz.')+'</h3></div><div class="block-body tablewrap"><table class="kv-tablo"><thead><tr>'+th+'</tr></thead><tbody>'+
       '<tr><td>Üretilen/satılan adet</td>'+yillar.map(function(Y){ return '<td class="num">'+fmt(Y.adet)+'</td>'; }).join('')+'</tr>'+
       sat('<b>Ciro</b>', function(Y){ return Y.gelir; }, 'pos')+
       sat('Personel', function(Y){ return -Y.personel; })+
@@ -16024,7 +16620,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (!silmeIzinli()){ toast(izinYokMesaji('sil'), true); return; }
     if (donemKilitli(f.tarih)){ toast(kilitMesaji(f.tarih), true); return; }
     if (muhAyKesin(f.tarih)){ toast(muhAyAdi(f.tarih.slice(0, 7)) + ' kesinleşmiş; fiş silinemez. Açık bir aya ters kayıt girin.', true); return; }
-    confirmSil('Muhasebe fişi ' + (f.no || '') + ' (' + kvTarihTR(f.tarih) + ', ' + (f.aciklama || '') + ') silinsin mi?', function(){
+    confirmSil('Muhasebe fişi ' + (f.no || '') + ' (' + kvTarihTR(f.tarih) + ', ' + (f.aciklama || '') + ') silinsin mi?\n\n' + silinenNotu('muhasebeFisleri', f), function(){
       db.collection('muhasebeFisleri').doc(id).delete().then(function(){ toast('Fiş silindi'); }).catch(function(e){ toast('Silinemedi: ' + dbErrMsg(e), true); });
     });
   }
@@ -16104,7 +16700,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kullanim = muhSatirlar('', '').filter(function(s){ return s.hesap === t.kod; }).length;
     var esle = muhAyar(); var eslesen = Object.keys(esle.eslestirme).filter(function(g){ return esle.eslestirme[g] === t.kod; });
     if (kullanim || eslesen.length){ toast(t.kod + ' kullanılıyor (' + (kullanim ? kullanim + ' fiş satırı' : '') + (eslesen.length ? ' eşleştirme: ' + eslesen.join(', ') : '') + '); silinemez.', true); return; }
-    confirmSil(t.kod + ' ' + t.ad + ' alt hesabı silinsin mi?', function(){ db.collection('tanimKayitlari').doc(id).delete().then(function(){ toast('Silindi'); }); });
+    confirmSil(t.kod + ' ' + t.ad + ' alt hesabı silinsin mi?\n\n' + silinenNotu('tanimKayitlari', t), function(){ db.collection('tanimKayitlari').doc(id).delete().then(function(){ toast('Silindi'); }); });
   }
 
   // ---------- 3) Defterler: yevmiye, büyük defter (kebir), muavin ----------
@@ -18285,6 +18881,129 @@ Dikkat edilmesi gereken 2 nokta:
     var sbar = document.querySelector('.sidebar'); if (sbar) sbar.addEventListener('scroll', ymFlyKapat);
   })();
   EK_HER_ZAMAN.push(ymCiz);
+
+// ===== m12b — Telefon: altta sabit çubuk (Özet · Ara · Favoriler · Menü) ve tam ekran menü =====
+  // Görünürlük CSS'te (767 px ve altı); tablet ve masaüstünde öğeler gizli kalır. Menü MENU_YENI'den çizilir, yetkisiz sayfa çıkmaz.
+  var _telPanel = ''; // '' kapalı · 'menu' · 'fav'
+  function telPanelAcik(){ return !!_telPanel; }
+  function telPanelKapat(){
+    if (!_telPanel) return;
+    _telPanel = ''; var p = byId('telPanel'); if (p){ p.classList.remove('acik'); p.innerHTML = ''; }
+    document.body.classList.remove('tel-panel-acik'); altCubukGuncelle();
+  }
+  function telOgeHtml(tab, ad, aktif, yildiz){
+    var on = favoriler().indexOf(tab) > -1;
+    return '<button type="button" class="tp-oge' + (aktif ? ' active' : '') + '" data-tpgit="' + tab + '"' + (aktif ? ' aria-current="page"' : '') + '><span class="tp-ad">' + esc(ad) + '</span>' +
+      (yildiz ? '<span class="tp-yildiz' + (on ? ' on' : '') + '" data-tpfav="' + tab + '" role="button" aria-label="' + (on ? 'Favorilerden çıkar' : 'Favorilere ekle') + '">' + (on ? '★' : '☆') + '</span>' : '') + '</button>';
+  }
+  // Masaüstü menüsünün alanları ve alt başlıkları; "+ yeni belge" satırları (yap) telefonda yok, Ara ile bulunur
+  function telMenuHtml(){
+    var aktif = aktifSekme(), isaretli = false;
+    function oge(tab, ad){ var a = !isaretli && tab === aktif; if (a) isaretli = true; return telOgeHtml(tab, ad, a, true); }
+    return MENU_YENI.map(function(a){
+      var dogrudan = '', gruplar = '';
+      a.ogeler.forEach(function(o){
+        if (o.tab){ if (ymIzinli(o.tab)) dogrudan += oge(o.tab, o.ad); return; }
+        var kolonlar = ymKolonlar(o).map(function(k){
+          return { baslik: (k.find(function(x){ return x.baslik; }) || {}).baslik || '', ogeler: k.filter(function(x){ return x.tab && !x.yap && ymIzinli(x.tab); }) };
+        }).filter(function(k){ return k.ogeler.length; });
+        kolonlar.forEach(function(k){
+          var bas = kolonlar.length > 1 ? o.ad + ' › ' + k.baslik : o.ad;
+          gruplar += '<div class="tp-alt">' + esc(bas) + '</div><div class="tp-izgara">' + k.ogeler.map(function(x){ return oge(x.tab, x.ad); }).join('') + '</div>';
+        });
+      });
+      if (!dogrudan && !gruplar) return '';
+      return '<div class="tp-alan">' + YM_IKON[a.ikon] + esc(a.alan) + '</div>' + (dogrudan ? '<div class="tp-izgara">' + dogrudan + '</div>' : '') + gruplar;
+    }).join('');
+  }
+  // Favoriler; altında bu cihazda son açılan sayfa / kayıtlar (Ctrl+K kutusunun boşken gösterdiği liste)
+  function telFavHtml(){
+    var aktif = aktifSekme();
+    var f = favoriler().filter(function(tab){ return sekmeVar(tab) && sekmeIzinli(tab); });
+    var html = f.length ? '<div class="tp-izgara">' + f.map(function(tab){ return telOgeHtml(tab, sayfaAdi(tab), tab === aktif, true); }).join('') + '</div>'
+      : '<div class="tp-bos">Henüz favori sayfanız yok. Menü\'de bir sayfanın yanındaki ☆ işaretine dokunarak ekleyebilirsiniz.</div>';
+    var son = sonAcilanSonuclari();
+    if (son.length) html += '<div class="tp-alan">SON AÇILANLAR</div><div class="tp-izgara" style="grid-template-columns:1fr">' + son.map(function(r, i){
+      return '<button type="button" class="tp-oge" data-tpson="' + i + '"><span class="tp-tur">' + esc(r.tur) + '</span><span class="tp-ad">' + esc(r.etiket) + '</span></button>';
+    }).join('') + '</div>';
+    return html;
+  }
+  function telPanelAc(tur){
+    var p = byId('telPanel'); if (!p) return;
+    if (_telPanel === tur){ telPanelKapat(); return; }
+    _telPanel = tur;
+    var ust, govde;
+    if (tur === 'menu'){
+      var marka = document.querySelector('.sidebar .brand');
+      ust = '<div class="tp-marka">' + (marka ? marka.innerHTML : 'OZerp') + '</div>';
+      var ad = oturumId() ? aktifKullaniciAdi() : '';
+      govde = (ad ? '<div class="tp-kullanici">Kullanıcı: <b>' + esc(ad) + '</b> · ' + esc(aktifRol()) + '<button type="button" class="btn secondary small" data-tpcikis>Çıkış</button></div>' : '') +
+        '<div class="tp-govde">' + telMenuHtml() + '<div class="tp-surum">' + esc((Array.prototype.find.call(document.querySelectorAll('.sidebar .status'), function(s){ return /sürüm:/.test(s.textContent); }) || {}).textContent || '') + '</div></div>';
+    } else {
+      ust = '<div class="tp-baslik">Favoriler</div>';
+      govde = '<div class="tp-govde">' + telFavHtml() + '</div>';
+      p.__son = sonAcilanSonuclari();
+    }
+    p.setAttribute('aria-label', tur === 'menu' ? 'Menü' : 'Favoriler');
+    p.innerHTML = '<div class="tp-ust">' + ust + '<button type="button" class="tp-kapat" data-tpkapat aria-label="Kapat">×</button></div>' + govde;
+    p.classList.add('acik'); p.scrollTop = 0;
+    document.body.classList.add('tel-panel-acik'); altCubukGuncelle();
+    var akt = p.querySelector('.tp-oge.active'); if (akt && tur === 'menu') try { akt.scrollIntoView({ block: 'center' }); } catch(e){}
+  }
+  function altCubukGuncelle(){
+    var c = byId('altCubuk'); if (!c) return;
+    document.body.classList.toggle('alt-hazir', !!oturumId());
+    var o = c.querySelector('[data-alt="ozet"]');
+    o.style.display = sekmeIzinli('ozet') ? '' : 'none';
+    o.classList.toggle('active', !_telPanel && aktifSekme() === 'ozet');
+    c.querySelector('[data-alt="fav"]').classList.toggle('active', _telPanel === 'fav');
+    var m = c.querySelector('[data-alt="menu"]'); m.classList.toggle('active', _telPanel === 'menu'); m.setAttribute('aria-expanded', _telPanel === 'menu' ? 'true' : 'false');
+  }
+  (function(){
+    var c = byId('altCubuk'), p = byId('telPanel'); if (!c || !p) return;
+    c.addEventListener('click', function(e){
+      var b = e.target.closest('[data-alt]'); if (!b) return;
+      var t = b.dataset.alt;
+      if (t === 'ozet'){ telPanelKapat(); if (aktifSekme() !== 'ozet') gitSekme('ozet'); else try { window.scrollTo(0, 0); } catch(x){} }
+      else if (t === 'ara'){
+        telPanelKapat(); try { window.scrollTo(0, 0); } catch(x){}
+        var inp = byId('globalArama'); if (inp){ inp.focus(); inp.select(); }
+      }
+      else telPanelAc(t === 'fav' ? 'fav' : 'menu');
+    });
+    p.addEventListener('click', function(e){
+      var y = e.target.closest('[data-tpfav]');
+      if (y){
+        e.stopPropagation(); favoriDegistir(y.dataset.tpfav);
+        var on = favoriler().indexOf(y.dataset.tpfav) > -1;
+        y.textContent = on ? '★' : '☆'; y.classList.toggle('on', on); y.setAttribute('aria-label', on ? 'Favorilerden çıkar' : 'Favorilere ekle');
+        return;
+      }
+      if (e.target.closest('[data-tpkapat]')){ telPanelKapat(); return; }
+      if (e.target.closest('[data-tpcikis]')){ telPanelKapat(); oturumKapat(); return; }
+      var g = e.target.closest('[data-tpgit]');
+      if (g){ telPanelKapat(); if (aktifSekme() !== g.dataset.tpgit) gitSekme(g.dataset.tpgit); else try { window.scrollTo(0, 0); } catch(x){} return; }
+      var s = e.target.closest('[data-tpson]');
+      if (s){ var r = (p.__son || [])[+s.dataset.tpson]; telPanelKapat(); if (r){ if (r.id) gitKayit(r.tab, r.id); else gitSekme(r.tab); } }
+    });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && _telPanel && !document.querySelector('#formOverlay.open, #confirmOverlay.open')) telPanelKapat(); });
+    // ekran genişleyince (telefon yan çevrildi, pencere büyütüldü) açık panel kapanır
+    window.addEventListener('resize', function(){ if (_telPanel && !(window.matchMedia && window.matchMedia('(max-width: 767px)').matches)) telPanelKapat(); });
+  })();
+  // Sayfa açıklaması (.pagehead p) telefonda katlı: başlığın altına "ⓘ Bu sayfa ne işe yarar?" düğmesi
+  (function(){
+    document.querySelectorAll('.pagehead').forEach(function(ph){
+      var p = Array.prototype.find.call(ph.querySelectorAll('p'), function(x){ return x.id !== 'ozetAyEtiket'; }); if (!p) return;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'ph-bilgi'; b.textContent = 'ⓘ Bu sayfa ne işe yarar?'; b.setAttribute('aria-expanded', 'false');
+      p.parentNode.insertBefore(b, p);
+    });
+    document.addEventListener('click', function(e){
+      var b = e.target.closest('.ph-bilgi'); if (!b) return;
+      var ph = b.closest('.pagehead'), acik = !ph.classList.contains('ph-acik');
+      ph.classList.toggle('ph-acik', acik); b.textContent = acik ? 'ⓘ Açıklamayı gizle' : 'ⓘ Bu sayfa ne işe yarar?'; b.setAttribute('aria-expanded', acik ? 'true' : 'false');
+    });
+  })();
+  EK_HER_ZAMAN.push(altCubukGuncelle);
 
 
 // ===== m13_tanimlar.js — Tanımlar: tek kaydet düğmesi =====
