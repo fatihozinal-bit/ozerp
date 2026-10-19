@@ -779,6 +779,28 @@
   .kv-lej.elle { background:var(--accent-soft); border-left:3px solid var(--accent); }
   .kv-lej.gercek { background:var(--good-soft); }
   .kv-lej.eksi { border-bottom:3px solid var(--bad); }
+  .kv-var-duzen { display:grid; grid-template-columns:230px minmax(0, 1fr); gap:20px; align-items:start; margin-bottom:16px; }
+  .kv-var-nav { position:sticky; top:12px; display:flex; flex-direction:column; gap:2px; border-right:1px solid var(--border); padding-right:12px; }
+  .kv-var-nav button { text-align:left; padding:8px 10px; border:none; background:none; border-radius:8px; cursor:pointer; color:var(--ink); font-size:13px; font-weight:500; line-height:1.3; }
+  .kv-var-nav button span { display:block; font-size:11px; color:var(--ink-soft); font-weight:400; margin-top:2px; }
+  .kv-var-nav button:hover { background:var(--surface-alt); }
+  .kv-var-nav button.aktif { background:var(--accent-soft); color:var(--ink); font-weight:600; box-shadow:inset 3px 0 0 var(--accent); }
+  .kv-var-govde { min-width:0; max-width:760px; }
+  .kv-var-govde.genis { max-width:none; }
+  .kv-var-govde > .block { margin-bottom:16px; }
+  .kv-ayar-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(360px, 100%), 1fr)); column-gap:28px; }
+  .kv-ayar-grid .kv-satir:last-child { border-bottom:1px dashed var(--border); }
+  .kv-butce-tablo { font-size:12px; }
+  .kv-butce-tablo th, .kv-butce-tablo td { padding:4px 5px; white-space:nowrap; }
+  .kv-butce-tablo th:first-child, .kv-butce-tablo td:first-child { position:sticky; left:0; background:var(--surface); z-index:1; min-width:170px; }
+  .kv-butce-tablo input[type=number] { width:78px; text-align:right; padding:3px 5px; font-size:12px; }
+  .kv-butce-tablo td:nth-child(2) input { width:80px; }
+  .kv-butce-tablo input.elle { background:var(--accent-soft); font-weight:600; border-color:var(--accent); }
+  .kv-butce-tablo input[type=checkbox] { width:auto; }
+  .kv-butce-tablo tr.kv-haric td { color:var(--ink-soft); }
+  .kv-butce-tablo tr.kv-haric input[type=number] { opacity:.45; }
+  .kv-fatura-al { border:1px solid var(--border); background:var(--surface); border-radius:4px; font-size:11px; padding:0 4px; cursor:pointer; line-height:1.4; }
+  @media (max-width:767px){ .kv-var-duzen { grid-template-columns:1fr; } .kv-var-nav { position:static; flex-direction:row; overflow-x:auto; border-right:none; border-bottom:1px solid var(--border); padding:0 0 6px; } .kv-var-nav button { flex:0 0 auto; } .kv-var-nav button span { display:none; } }
   .kv-var-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap:16px; align-items:start; margin-bottom:20px; }
   .kv-var-grid .block { margin-bottom:0; }
   .kv-var-grid > div > .block + .block { margin-top:16px; }
@@ -1315,7 +1337,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r160</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r161</div>
   </nav>
   <main>
     <div class="topbar">
@@ -14544,7 +14566,7 @@ Dikkat edilmesi gereken 2 nokta:
         : '<div class="card"><div class="label">Yatırımın nakden geri dönüşü</div><div class="value">—</div><div class="sub">yatırım girilmedi</div></div>')+
       '<div class="card tiklanir" data-kvhesap="basaBas" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Başa baş noktası <span class="kart-ok">›</span></div><div class="value">'+(r.basaBas.adet == null ? '—' : fmt(r.basaBas.adet)+' adet/ay')+'</div><div class="sub">'+(r.basaBas.adet == null ? 'fiyat girilmedi' : '~'+fmt(r.basaBas.gunluk)+' adet/gün')+' · plan ('+kvAyAdi(kararli.ay)+') '+fmt(kararli.adet)+'/ay</div></div>');
     kvSet('kvSekmeBar', KV_SEKMELER.map(function(s){ return '<button data-kvsekme="'+s[0]+'" class="'+(_kvSekme===s[0]?'aktif':'')+'">'+s[1]+'</button>'; }).join(''));
-    if (_kvSekme === 'varsayim'){ var ic = byId('kvIcerik'); if (ic.__sonHtml !== 'varsayim'){ ic.__sonHtml = 'varsayim'; kvFormCiz(kvParam()); } return; }
+    if (_kvSekme === 'varsayim'){ var ic = byId('kvIcerik'); if (ic.__sonHtml !== 'varsayim'){ ic.__sonHtml = 'varsayim'; kvFormCiz(kvParam()); } else kvButceGuncelle(r); return; }
     if (_kvSekme === 'planla'){ kvPlanlayici(r); return; }
     if (_kvSekme === 'ozet'){
       var oic = byId('kvIcerik');
@@ -14607,6 +14629,8 @@ Dikkat edilmesi gereken 2 nokta:
     // Planlayıcı
     var ayb = t.closest('[data-kvay]'); if (ayb){ _kvAy = ayb.dataset.kvay; EK_RENDER.karlilik(); return; }
     var gun = t.closest('[data-kvgun]'); if (gun){ kvGunDegistir(gun.dataset.kvgun); return; }
+    var vb = t.closest('[data-kvvb]'); if (vb){ _kvVarBolum = vb.dataset.kvvb; byId('kvIcerik').__sonHtml = null; EK_RENDER.karlilik(); return; }
+    var byl = t.closest('[data-kvbyil]'); if (byl){ _kvButceYil = byl.dataset.kvbyil; byId('kvIcerik').__sonHtml = null; EK_RENDER.karlilik(); return; }
     var act = t.closest('[data-kvact]'); if (act){ kvEylem(act.dataset.kvact, act); return; }
     var td = t.closest('[data-kvtodo]'); if (td && td.tagName === 'INPUT'){ kvTodoIsaretle(td.dataset.kvtodo, td.checked); return; }
     var tds = t.closest('[data-kvtodosil]'); if (tds){ kvDegistir(function(P){ P.yapilacak.ozel = P.yapilacak.ozel.filter(function(x){ return x.id !== tds.dataset.kvtodosil; }); delete P.yapilacak.bitti[tds.dataset.kvtodosil]; }); return; }
@@ -14646,6 +14670,17 @@ Dikkat edilmesi gereken 2 nokta:
       else v = el.value === '' ? null : Number(el.value);
       if (v !== null && typeof v === 'number' && isNaN(v)) return;
       kvDegistir(function(P){ var o = kvAyObj(P, ay, true); if (v === null) delete o[k]; else o[k] = v; kvAyTemizle(P, ay); });
+      return;
+    }
+    if (el.dataset.kvbg){
+      var bk = el.dataset.kvbg, bay = el.dataset.kvbgay, bv = el.value === '' ? null : Number(el.value);
+      if (bv !== null && isNaN(bv)) return;
+      kvDegistir(function(P){
+        var o = kvAyObj(P, bay, true);
+        if (bk.indexOf('g:') === 0){ var gk3 = bk.slice(2); o.gider = o.gider || {}; if (bv === null) delete o.gider[gk3]; else o.gider[gk3] = bv; if (!Object.keys(o.gider).length) delete o.gider; }
+        else if (bv === null) delete o[bk]; else o[bk] = bv;
+        kvAyTemizle(P, bay);
+      });
       return;
     }
     if (el.dataset.kvag){
@@ -14727,13 +14762,15 @@ Dikkat edilmesi gereken 2 nokta:
       kvDegistir(function(P){ kvAyObj(P, ay, true).adet = adet; }); kvFormYenile(); toast('✓ '+fmt(adet)+' adet üretim kayıtlarından alındı'); return;
     }
     if (ad === 'faturaAl'){
+      if (el && el.dataset.ay) ay = el.dataset.ay;
       var fk = kvFaturaKalemler(ay), anahtar = Object.keys(fk).filter(function(k){ return fk[k] > 0; });
       if (!anahtar.length){ toast('Bu ay için Giderler / Alış Faturaları\'nda plan kalemine giren kayıt yok.', true); return; }
       kvDegistir(function(P){
         var o = kvAyObj(P, ay, true);
         anahtar.forEach(function(k){ var v = Math.round(fk[k]); if (k === 'kira' || k === 'elektrik' || k === 'uc') o[k] = v; else { o.gider = o.gider || {}; o.gider[k] = v; } });
       });
-      kvFormYenile(); toast('✓ '+anahtar.length+' kalem faturalardan alındı'); return;
+      if (_kvSekme === 'varsayim'){ byId('kvIcerik').__sonHtml = null; EK_RENDER.karlilik(); } else kvFormYenile();
+      toast('✓ '+kvAyAdi(ay)+': '+anahtar.length+' kalem faturalardan alındı'); return;
     }
     if (ad === 'ayTemizle'){ onayIste(KV_MODEL.ayAdiUzun(ay)+' için elle girdiğiniz tüm değerler silinsin mi? Ay otomatik hesaba döner.', 'Temizle', function(){ kvDegistir(function(P){ delete P.aylik[ay]; }); kvFormYenile(); }); return; }
     if (ad === 'hepsiTemizle'){ onayIste('Tüm aylarda elle girdiğiniz değerler silinsin mi? Plan sadece Varsayımlar\'la hesaplanır.', 'Hepsini temizle', function(){ kvDegistir(function(P){ P.aylik = {}; }); kvFormYenile(); }); return; }
@@ -15789,6 +15826,61 @@ Dikkat edilmesi gereken 2 nokta:
   function kvGrupHtml(g, P){
     return '<div class="block"><div class="block-head"><h3>'+esc(g[0])+'</h3></div><div class="block-body">'+(g[1] ? '<div class="kv-grup-acik">'+esc(g[1])+'</div>' : '')+g[2].map(function(f){ return kvFormSatir(f, P); }).join('')+'</div></div>';
   }
+  var _kvVarBolum = 'plan', _kvButceYil = null;
+  var KV_VAR_BOLUMLER = [['plan','Plan ve kuruluş modeli','dönem, kuruluş tarihi, satın al / kirala'],['uretim','Üretim ve satış','vardiya, ürünler, tahsilat'],['personel','Personel','kadro, maaş artışı, SGK'],
+    ['gider','Gider bütçesi','kira, elektrik, sabit giderler — ay ay'],['yatirim','Yatırım ve finansman','makine, kuruluş, Kadir Bey'],['vergi','Vergi oranları','asgari ücret, KDV, kurumlar']];
+  function kvAlanBul(k){ var f = null; KV_ALANLAR.forEach(function(g){ g[2].forEach(function(x){ if (x[0] === k) f = x; }); }); return f; }
+  // Gider bütçesi: satırda kalem, sütunda ay (bütçe programlarındaki gibi). Başlangıç = Varsayımlar değeri (her Ocak artar);
+  // ay hücresine yazılan tutar o aydan itibaren geçer (elektrik ve uç yalnız o ay), boş hücre hesaplanan değeri gri gösterir
+  function kvButceSatirlar(P, r){
+    var sat = [
+      { k: 'kira', ad: 'Kira (net)', bas: 'kira', birim: '₺/ay', haric: 'kira', d: function(a){ return a.kiraNet; }, e: function(o){ return o.kira; }, kalici: true },
+      { k: 'makineKira', ad: r.kiraAd || 'Makine kirası', bas: 'makineKiraAylik', birim: '₺/ay', d: function(a){ return a.makineKira; }, e: function(o){ return o.makineKira; }, kalici: true, gizli: !r.makineKiraAy && !r.aylar.some(function(a){ return a.makineKira; }) },
+      { k: 'elektrik', ad: 'Elektrik', bas: 'elektrikFiyat', birim: '₺/kWh', haric: 'elektrikFiyat', d: function(a){ return a.elektrik; }, e: function(o){ return o.elektrik; } },
+      { k: 'uc', ad: 'Uç / takım / malzeme', bas: 'ucAdet', birim: '₺/adet', haric: 'ucAdet', d: function(a){ return a.uc; }, e: function(o){ return o.uc; } }
+    ];
+    KV_MODEL.SABIT_KALEMLER.forEach(function(k){ sat.push({ k: 'g:'+k, ad: kvKalemEtiket(k), bas: k, birim: '₺/ay', haric: k, d: function(a){ return (a.giderKalem || {})[k] || 0; }, e: function(o){ return (o.gider || {})[k]; }, kalici: true }); });
+    return sat.filter(function(x){ return !x.gizli; });
+  }
+  function kvButceHtml(P){
+    var r = kvSonuc(), yillar = [];
+    r.aylar.forEach(function(a){ var y = a.ay.slice(0,4); if (yillar.indexOf(y) < 0) yillar.push(y); });
+    if (yillar.indexOf(_kvButceYil) < 0) _kvButceYil = yillar.indexOf(thisMonthKey().slice(0,4)) > -1 ? thisMonthKey().slice(0,4) : yillar[0];
+    var aylar = r.aylar.filter(function(a){ return a.ay.slice(0,4) === _kvButceYil; }), bugun = thisMonthKey(), har = P.giderHaric || [];
+    var ayar = ['kiraVerenSirket','kiraArtisOcak','kiraOdemeGunu','elektrikArtisOcak','giderArtisOcak','kwMakine','kwGenel'].map(kvAlanBul).filter(Boolean);
+    var sat = kvButceSatirlar(P, r);
+    var html = '<div class="block"><div class="block-head"><h3>Gider ayarları</h3></div><div class="block-body kv-ayar-grid">'+ayar.map(function(f){ return kvFormSatir(f, P); }).join('')+'</div></div>'+
+      '<div class="block kv-butce"><div class="block-head"><h3>Gider bütçesi — '+esc(_kvButceYil)+' '+infoIco('Başlangıç sütunu planın ilk ayındaki tutardır; her Ocak Gider ayarları\'ndaki oranda artar. Bir ay hücresine yazdığınız tutar o aydan itibaren geçer (elektrik ve uç yalnız o ay); renkli hücreler elle yazılanlardır. Boş hücre hesaplanan değeri gösterir. İşareti kaldırılan kalem planda sayılmaz. Geçmiş aylarda ⇩ o ayın gider ve alış faturalarını kalemlere yazar.')+'</h3>'+
+      '<div class="bh-actions">'+yillar.map(function(y){ return '<button type="button" class="btn small '+(y === _kvButceYil ? '' : 'secondary')+'" data-kvbyil="'+y+'">'+y+'</button>'; }).join(' ')+'</div></div>'+
+      '<div class="block-body tablewrap"><table class="kv-tablo kv-butce-tablo"><thead><tr><th>Kalem</th><th class="num">Başlangıç</th><th title="Planda say">✓</th>'+
+      aylar.map(function(a){ return '<th class="num">'+kvAyAdi(a.ay)+(a.ay <= bugun ? ' <button type="button" class="kv-fatura-al" data-kvact="faturaAl" data-ay="'+a.ay+'" title="Bu ayın faturalarından al">⇩</button>' : '')+'</th>'; }).join('')+
+      '<th class="num">'+esc(_kvButceYil)+' toplam</th></tr></thead><tbody>'+
+      sat.map(function(x){
+        var f = kvAlanBul(x.bas) || [x.bas, x.ad, 'num', x.birim], bv = P[x.bas];
+        var top = 0;
+        return '<tr'+(x.haric && har.indexOf(x.haric) > -1 ? ' class="kv-haric"' : '')+'><td>'+esc(x.ad)+(x.kalici ? '' : ' <span class="muted" title="Yazılan tutar yalnız o ay">·1 ay</span>')+'</td>'+
+          '<td class="num"><input type="number" step="any" min="0" data-kvkey="'+x.bas+'" data-kvtur="num" value="'+escAttr(bv == null ? '' : bv)+'"'+(P._ref && P._ref[x.bas] ? ' disabled' : '')+'> <span class="kv-birim">'+esc(x.birim)+'</span></td>'+
+          '<td>'+(x.haric ? '<input type="checkbox" data-kvdahil="'+x.haric+'"'+(har.indexOf(x.haric) < 0 ? ' checked' : '')+'>' : '')+'</td>'+
+          aylar.map(function(a){ var o = P.aylik[a.ay] || {}, ev = x.e(o), dv = x.d(a); top += dv;
+            return '<td><input type="number" step="any" min="0" data-kvbg="'+x.k+'" data-kvbgay="'+a.ay+'" class="'+(ev != null ? 'elle' : '')+'" value="'+escAttr(ev == null ? '' : ev)+'" placeholder="'+Math.round(dv)+'"></td>'; }).join('')+
+          '<td class="num" data-kvbgsat="'+x.k+'">'+kvTl(top)+'</td></tr>';
+      }).join('')+'</tbody><tfoot><tr class="kv-toplam"><td colspan="3"><b>Toplam gider</b> <span class="muted">(kira brüt, KDV hariç)</span></td>'+
+      aylar.map(function(a){ return '<td class="num" data-kvbgtop="'+a.ay+'">'+kvTl(kvButceAyTop(a))+'</td>'; }).join('')+'<td class="num" data-kvbgtop="yil">'+kvTl(aylar.reduce(function(t, a){ return t + kvButceAyTop(a); }, 0))+'</td></tr></tfoot></table></div></div>';
+    return html;
+  }
+  function kvButceAyTop(a){ return a.kira + a.makineKira + a.elektrik + a.uc + a.sabit; }
+  // Hücreye yazınca tablo yeniden çizilmez (imleç kaybolmasın): gri değerler ve toplamlar güncellenir
+  function kvButceGuncelle(r){
+    var tablo = document.querySelector('#kvIcerik .kv-butce-tablo'); if (!tablo) return;
+    var P = r.P, A = {}; r.aylar.forEach(function(a){ A[a.ay] = a; });
+    var sat = {}; kvButceSatirlar(P, r).forEach(function(x){ sat[x.k] = x; });
+    var top = {};
+    tablo.querySelectorAll('[data-kvbg]').forEach(function(el){ var x = sat[el.dataset.kvbg], a = A[el.dataset.kvbgay]; if (!x || !a) return; var v = x.d(a); top[x.k] = (top[x.k] || 0) + v; var ph = String(Math.round(v)); if (el.placeholder !== ph) el.placeholder = ph; el.classList.toggle('elle', el.value !== ''); });
+    tablo.querySelectorAll('[data-kvbgsat]').forEach(function(td){ td.textContent = kvTl(top[td.dataset.kvbgsat] || 0); });
+    var yil = 0;
+    tablo.querySelectorAll('[data-kvbgtop]').forEach(function(td){ var a = A[td.dataset.kvbgtop]; if (a){ var t = kvButceAyTop(a); yil += t; td.textContent = kvTl(t); } });
+    var ty = tablo.querySelector('[data-kvbgtop="yil"]'); if (ty) ty.textContent = kvTl(yil);
+  }
   function kvFormCiz(P){
     var ic = byId('kvIcerik'), G = {};
     KV_ALANLAR.forEach(function(g){ G[g[0]] = kvGrupHtml(g, P); });
@@ -15805,14 +15897,17 @@ Dikkat edilmesi gereken 2 nokta:
       '<div class="kv-grup-acik">Net maaş (₺/ay, ele geçen). Brüt, SGK ve vergiler otomatik hesaplanır.</div><table class="edit-tablo"><thead><tr><th>Ad / görev</th><th>Net maaş (₺/ay)</th><th></th></tr></thead><tbody>'+
       P.personel.map(function(p, i){ return '<tr><td><input data-kvpers="'+i+'" data-kvalan="ad" value="'+escAttr(p.ad)+'"></td><td><input type="number" step="any" data-para="TRY" data-kvpers="'+i+'" data-kvalan="net" value="'+escAttr(p.net)+'"></td><td><button class="btn danger" data-kvperssil="'+i+'">Sil</button></td></tr>'; }).join('')+
       '</tbody></table></div></div>';
-    var html = '<div class="helper" style="margin:0 0 12px">Buradaki değerler tüm plan için başlangıç varsayımlarıdır. Belirli bir ayı farklı yapmak için <a href="#" data-kvsekme="planla">Ay ay planım</a> sekmesini kullanın; oraya girdiğiniz değerler bu varsayımların önüne geçer.</div>'+
-      '<div class="kv-var-grid">'+G['Plan dönemi']+G['Kuruluş modeli']+'</div>'+
-      '<div class="kv-var-grid">'+G['Üretim kapasitesi']+'<div></div></div>'+
-      urunHtml+
-      '<div class="kv-var-grid">'+G['Satış ve tahsilat']+G['Kira ve enerji']+'</div>'+
-      persHtml+
-      '<div class="kv-var-grid">'+G['Personel ayarları']+G['Vergi ve SGK oranları']+'</div>'+
-      '<div class="kv-var-grid">'+G['Diğer aylık giderler']+'<div>'+G['Yatırım (tek seferlik)']+G['Finansman (Kadir Bey)']+'</div></div>'+
+    var B = {
+      plan: G['Plan dönemi']+G['Kuruluş modeli'],
+      uretim: G['Üretim kapasitesi']+urunHtml+G['Satış ve tahsilat'],
+      personel: persHtml+G['Personel ayarları'],
+      gider: kvButceHtml(P),
+      yatirim: G['Yatırım (tek seferlik)']+G['Finansman (Kadir Bey)'],
+      vergi: G['Vergi ve SGK oranları']
+    };
+    if (!B[_kvVarBolum]) _kvVarBolum = 'plan';
+    var html = '<div class="kv-var-duzen"><nav class="kv-var-nav">'+KV_VAR_BOLUMLER.map(function(b){ return '<button type="button" data-kvvb="'+b[0]+'" class="'+(b[0] === _kvVarBolum ? 'aktif' : '')+'">'+esc(b[1])+'<span>'+esc(b[2])+'</span></button>'; }).join('')+'</nav>'+
+      '<div class="kv-var-govde'+(_kvVarBolum === 'gider' ? ' genis' : '')+'">'+B[_kvVarBolum]+'</div></div>'+
       '<div class="row" style="margin-bottom:20px"><button class="btn" id="kvKaydet">Kaydet ve özete dön</button><button class="btn secondary" id="kvSifirla">Sıfırla</button><span class="helper" style="margin:0">Değiştirdiğiniz her değer anında hesaplanır ve otomatik kaydedilir (tüm kullanıcılar için ortak).</span><span id="kvKayitDurum" class="helper" style="margin:0 0 0 auto"></span></div>';
     ic.innerHTML = html; ic.__sonHtml = 'varsayim';
   }
