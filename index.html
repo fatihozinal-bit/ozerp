@@ -993,7 +993,7 @@
   .kf-mini { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 10px; border: 1px dashed var(--border); border-radius: 6px; background: var(--surface-alt); }
   .kf-mini .field { margin-bottom: 0; }
   .kf-tablo-wrap { border: 1px solid var(--border); border-radius: 6px; max-height: 46vh; overflow: auto; }
-  table.kf-tablo { width: 100%; min-width: 1060px; border-collapse: collapse; font-size: 12.5px; }
+  table.kf-tablo { width: 100%; min-width: 1180px; border-collapse: collapse; font-size: 12.5px; }
   .kf-tablo thead th { position: sticky; top: 0; z-index: 1; background: var(--steel-soft); color: var(--steel); font-size: 11px; font-weight: 600; text-transform: none; padding: 7px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; }
   .kf-tablo td { padding: 3px 4px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   .kf-tablo tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg) 60%, transparent); }
@@ -1008,8 +1008,12 @@
   .kf-tablo .kf-dar { width: 64px; }
   .kf-tablo .kf-birim { width: 50px; color: var(--ink-soft); }
   .kf-tablo .kf-net { width: 90px; color: var(--ink-soft); } .kf-tablo .kf-tutar { width: 110px; }
-  .kf-tablo td:nth-child(10) { min-width: 140px; }
+  .kf-tablo .kf-acik { min-width: 140px; } .kf-tablo .kf-termin { width: 128px; }
+  .kf-b2 { font-size:10.5px; text-align:right; padding-right:6px; white-space:nowrap; } .kf-b2:empty { display:none; }
   .ff-tablo { grid-column:1/-1; }
+  #printArea .kart-bolum, .oniz-kagit .kart-bolum { font-size:12px; margin:12px 0 4px; padding-bottom:2px; border-bottom:1px solid #999; }
+  #printArea .kart-tablo, .oniz-kagit .kart-tablo { width:100%; font-size:11px; }
+  #printArea .kart-tablo td, .oniz-kagit .kart-tablo td { border:none; border-bottom:1px dotted #ccc; padding:2px 6px 2px 0; width:25%; }
   .kf-parca { font-size:10.5px; margin-top:1px; }
   .kf-parca:empty { display:none; }
   #printArea .print-bilgi, .oniz-kagit .print-bilgi { width:auto; margin:6px 0 10px; font-size:11px; }
@@ -1351,7 +1355,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r167</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r169</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2326,6 +2330,35 @@ Dikkat edilmesi gereken 2 nokta:
     document.querySelectorAll('details.satir-menu[open]').forEach(function(d){ if (!d.contains(e.target)) d.open = false; });
     var b = e.target.closest && e.target.closest('.satir-menu-ic button'); if (b){ var d = b.closest('details'); if (d) d.open = false; }
   });
+  // Kart çıktısı: formun alan tanımından bölüm bölüm ayrıntılı kart (Logo / Canias kart dökümü gibi); firma başlığı ve önizlemedeki PDF / Excel ile
+  function kartDegerMetni(f, v){
+    if (v == null || v === '') return '';
+    if (f.type === 'select'){ var op = typeof f.options === 'function' ? f.options() : (f.options || []); var o = op.find(function(x){ return x && typeof x === 'object' && String(x.value) === String(v); }); return o ? o.label : String(v); }
+    if (f.type === 'number') return fmt2(Number(v) || 0);
+    if (f.type === 'date') return kvTarihTR(String(v).slice(0, 10));
+    return String(v);
+  }
+  function kartYazdir(baslik, fields, kayit){
+    var html = '<div class="print-doc-head"><div><h2>' + esc(String(baslik).toLocaleUpperCase('tr')) + '</h2><div>' + esc(kayit.kod || kayit.no || kayit.ad || '') + '</div></div><div style="text-align:right"><div>' + pL('Döküm tarihi', 'Printed') + ': ' + kvTarihTR(todayISO()) + '</div>' +
+      (kayit.guncelleme ? '<div class="muted">' + pL('Son güncelleme', 'Last update') + ': ' + esc(String(kayit.guncelleme).slice(0, 10)) + (kayit.guncelleyen ? ' · ' + esc(kayit.guncelleyen) : '') + '</div>' : '') + '</div></div>';
+    var acik = false, bekleyen = [];
+    function tabloKapat(){ if (bekleyen.length){ var sat = []; for (var i = 0; i < bekleyen.length; i += 2){ var a = bekleyen[i], b = bekleyen[i + 1];
+      sat.push('<tr><td class="muted">' + esc(a[0]) + '</td><td>' + esc(a[1]) + '</td>' + (b ? '<td class="muted">' + esc(b[0]) + '</td><td>' + esc(b[1]) + '</td>' : '<td></td><td></td>') + '</tr>'); }
+      html += '<table class="kart-tablo"><tbody>' + sat.join('') + '</tbody></table>'; bekleyen = []; } }
+    (fields || []).forEach(function(f){
+      if (f.type === 'section'){ tabloKapat(); html += '<h3 class="kart-bolum">' + esc(f.label) + '</h3>'; return; }
+      if (f.type === 'tablo'){
+        tabloKapat(); var l = Array.isArray(kayit[f.key]) && kayit[f.key].length ? kayit[f.key] : (f.eskiden ? f.eskiden(kayit) : []);
+        html += '<h3 class="kart-bolum">' + esc(f.label) + '</h3>' + (l.length ? '<table><thead><tr>' + f.kolonlar.map(function(c){ return '<th>' + esc(c.label) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+          l.map(function(r){ return '<tr>' + f.kolonlar.map(function(c){ var v = r[c.key]; return '<td>' + (c.type === 'checkbox' ? (v === true || v === 'true' ? '✓' : '') : esc(v || '')) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>' : '<p class="muted">—</p>');
+        return;
+      }
+      if (!f.key) return;
+      bekleyen.push([String(f.label).replace(/\s*\(.*?\)\s*$/, '') + (/\(([€₺]|%)\)/.test(f.label) ? ' ' + f.label.match(/\(([€₺]|%)\)/)[0] : ''), kartDegerMetni(f, kayit[f.key]) || '—']);
+    });
+    tabloKapat();
+    yazdirHtml(html);
+  }
   function renderSimpleList(containerId, items, collection, opts){
     var el = document.getElementById(containerId);
     if (!el) return;
@@ -2333,8 +2366,15 @@ Dikkat edilmesi gereken 2 nokta:
     el.innerHTML = items.map(function(item){
       var r = opts.rowFn(item), kilitli = opts.kilitliSatir && opts.kilitliSatir(item);
       return '<div class="recordrow" data-rid="'+item.id+'"'+(kilitli ? ' style="opacity:.6"' : '')+'><div class="rmain"><div class="rtitle">'+r.title+'</div>'+(r.sub?'<div class="rsub">'+r.sub+'</div>':'')+'</div>'+
-        '<div class="ractions">'+(opts.extraActions ? opts.extraActions(item) : '')+(opts.noEdit || kilitli?'':'<button class="btn secondary small" data-editid="'+item.id+'">Düzenle</button>')+(kilitli ? '' : satirMenuHtml('<button class="btn danger" data-delid="'+item.id+'">Sil</button>'))+'</div></div>';
+        '<div class="ractions">'+(opts.extraActions ? opts.extraActions(item) : '')+(opts.noEdit || kilitli?'':'<button class="btn secondary small" data-editid="'+item.id+'">Düzenle</button>')+(kilitli ? '' : satirMenuHtml((opts.fields ? '<button class="btn secondary" data-kartyaz="'+item.id+'">🖨 Kart çıktısı (PDF / Excel)</button>' : '')+'<button class="btn danger" data-delid="'+item.id+'">Sil</button>'))+'</div></div>';
     }).join('');
+    el.querySelectorAll('[data-kartyaz]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var item = items.find(function(x){ return x.id === btn.dataset.kartyaz; }); if (!item) return;
+        var fields = typeof opts.fields === 'function' ? opts.fields(item) : opts.fields;
+        kartYazdir(opts.kartBaslik || String(opts.editTitle || 'Kayıt').replace(/ düzenle$|i düzenle$/i, '').replace(/^Kaydı$/, 'Kayıt') + ' kartı', fields, opts.degerler ? opts.degerler(item) : item);
+      });
+    });
     el.querySelectorAll('[data-editid]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var item = items.find(function(x){ return x.id === btn.dataset.editid; });
@@ -4102,7 +4142,7 @@ Dikkat edilmesi gereken 2 nokta:
     renderKapasiteHesap();
     renderKodParametreleri();
 
-    renderSimpleList('personelListe', state.personel, 'personel', {
+    renderSimpleList('personelListe', state.personel, 'personel', { kartBaslik: 'Personel kartı',
       emptyText: 'Personel eklenmedi',
       rowFn: function(p){
         var net = personelNetTL(p), isv = personelIsverenTL(p), kur = state.config ? Number(state.config.eurTryKuru)||0 : 0;
@@ -4121,7 +4161,7 @@ Dikkat edilmesi gereken 2 nokta:
       baglantiKontrol: true, baglantiIpucu: 'Personeli silmek için önce ona bağlı kayıtları (puantaj, izin, üretim vb.) silmeniz gerekir.'
     });
 
-    renderSimpleList('makineListe', state.makineler, 'makineler', {
+    renderSimpleList('makineListe', state.makineler, 'makineler', { kartBaslik: 'Makine kartı',
       emptyText: 'Makine eklenmedi',
       rowFn: function(m){ var u = makineSaatUcreti(m); return { title: esc(m.ad)+' '+makineDurumBadge(m), sub: [m.marka, m.model, m.modelYili, m.seriNo?'SN '+m.seriNo:''].filter(Boolean).map(esc).join(' · ')+' · Aylık kapasite: '+sureStrOlustur(tekMakineAylikSaat()*60)+' · <b>€'+fmt2(u.toplam)+'/saat</b> '+infoIco('Makine saat ücreti\nAmortisman: €'+fmt2(u.amortisman)+'/sa'+(u.bedelTanim ? ' (alış bedeli Kârlılık planından: makine yatırımı ÷ aktif makine = €'+fmt(u.bedel)+')' : '')+'\nBakım: €'+fmt2(u.bakim)+'/sa'+(u.bakimTanim ? ' (kartta yok; şirketin bakım-onarım gideri genel gider payında)' : '')+'\nEnerji: €'+fmt2(u.enerji)+'/sa ('+fmt2(u.kw)+' kW'+(u.kwTanim ? ', Tanımlar ortalaması' : '')+')\nGenel gider payı (personel+kira+diğer / aylık makine-saat): €'+fmt2(u.genel)+'/sa') }; },
       fields: MAKINE_FIELDS,
@@ -4336,7 +4376,7 @@ Dikkat edilmesi gereken 2 nokta:
   function cariSevkAdresleri(m){ if (!m) return []; if (Array.isArray(m.sevkAdresleri) && m.sevkAdresleri.length) return m.sevkAdresleri; var f = MUSTERI_FIELDS.find(function(x){ return x.key === 'sevkAdresleri'; }); return f.eskiden(m); }
   function cariVarsayilan(l){ return l.find(function(x){ return x.varsayilan === true || x.varsayilan === 'true'; }) || l[0] || null; }
   function renderMusteriler(){
-    renderSimpleList('cariListe', state.musteriler, 'musteriler', {
+    renderSimpleList('cariListe', state.musteriler, 'musteriler', { kartBaslik: 'Cari hesap kartı',
       emptyText: 'Cari eklenmedi',
       rowFn: function(m){
         var vergiStr = m.vergiDairesi && m.vergiNo ? (m.vergiDairesi+' '+m.vergiNo) : (m.vergiNo||'');
@@ -4405,7 +4445,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function renderStok(){
     var serbestH = stokSerbestHaritasi();
-    renderSimpleList('stokListe', state.stok, 'stok', {
+    renderSimpleList('stokListe', state.stok, 'stok', { kartBaslik: 'Stok kartı',
       emptyText: 'Stok kartı açılmadı',
       rowFn: function(s){
         var h = stokHesapla(s);
@@ -4713,12 +4753,12 @@ Dikkat edilmesi gereken 2 nokta:
     var ekAlanVar = function(key){ return (opts.extraFields || []).some(function(f){ return f.key === key; }); };
     var teslimModu = cariEtiket !== 'Müşteri' ? '' : (ekAlanVar('teslimSuresiGun') ? 'teklif' : (ekAlanVar('termin') ? 'siparis' : ''));
     var teslimSon = null, teslimZaman = null;
-    function bosSatir(){ return { stokId: '', miktar: 1, birim: '', listeFiyat: 0, iskonto: 0, kdvOrani: 20, aciklama: '', otoFiyat: true }; }
+    function bosSatir(){ return { stokId: '', miktar: 1, birim: '', listeFiyat: 0, iskonto: 0, kdvOrani: 20, aciklama: '', termin: '', otoFiyat: true }; }
     kalemFormDraft.kalemler = (init.kalemler || []).map(function(k){
       var st = stokKart(k.stokId);
       return { stokId: k.stokId || '', miktar: Number(k.miktar) || 0, birim: k.birim || (st && st.birim) || 'adet',
         listeFiyat: k.listeFiyat != null ? Number(k.listeFiyat) || 0 : Number(k.birimFiyat) || 0, iskonto: Number(k.iskonto) || 0,
-        kdvOrani: k.kdvOrani != null ? Number(k.kdvOrani) : 20, aciklama: k.aciklama || '', otoFiyat: false };
+        kdvOrani: k.kdvOrani != null ? Number(k.kdvOrani) : 20, aciklama: k.aciklama || '', termin: k.termin || '', otoFiyat: false };
     });
     if (!kalemFormDraft.kalemler.length) kalemFormDraft.kalemler.push(bosSatir());
     var K = kalemFormDraft.kalemler;
@@ -4735,18 +4775,21 @@ Dikkat edilmesi gereken 2 nokta:
       var e = muhKur(todayISO()), r = pbKur(p, todayISO());
       return e && r ? Math.round(f * e / r * 100) / 100 : f;
     }
+    // İkinci birim bilgisi (stok kartında birim2 ve çarpan varsa): ör. 100 adet = 12 kg
+    function b2Metin(k){ var t = ikinciBirimMetni(k.stokId, k.miktar); return t ? '= ' + esc(t) : ''; }
     function satirHtml(k, i){
       var st = stokKart(k.stokId);
       return '<tr data-kr="' + i + '"><td class="kf-sira">' + (i + 1) + '</td>' +
         '<td class="kf-stok"><input type="text" list="kfStokListe" data-kc="stok" value="' + escAttr(stokLbl(st)) + '" placeholder="Stok kodu ya da adı yazın"><div class="muted kf-parca">' + (st && st.musteriParcaNo && cariEtiket === 'Müşteri' ? 'Müşteri no: ' + esc(st.musteriParcaNo) : '') + '</div></td>' +
-        '<td><input type="number" step="any" class="num" data-kc="miktar" value="' + (k.miktar || '') + '"></td>' +
+        '<td><input type="number" step="any" class="num" data-kc="miktar" value="' + (k.miktar || '') + '"><div class="muted kf-b2">' + b2Metin(k) + '</div></td>' +
         '<td class="kf-birim">' + esc(k.birim || (st && st.birim) || '') + '</td>' +
         '<td><div class="kf-fiyat"><input type="number" step="any" class="num" data-kc="listeFiyat" value="' + (k.listeFiyat || '') + '"><button type="button" class="kf-fiyat-sec" data-kffiyat="' + i + '" title="Fiyat seç: fiyat listesi, stok kartı, son fiyatlar" aria-label="Fiyat seç">▾</button></div></td>' +
         '<td><input type="number" step="any" class="num kf-dar" data-kc="iskonto" value="' + (k.iskonto || '') + '" placeholder="0"></td>' +
         '<td class="num kf-net">' + fmt2(net(k)) + '</td>' +
         '<td><select data-kc="kdvOrani" class="kf-dar">' + KF_KDV_ORANLARI.map(function(o){ return '<option value="' + o + '"' + (Number(k.kdvOrani) === o ? ' selected' : '') + '>%' + o + '</option>'; }).join('') + '</select></td>' +
         '<td class="num kf-tutar"><b>' + fmt2(tutar(k)) + '</b></td>' +
-        '<td><input type="text" data-kc="aciklama" value="' + escAttr(k.aciklama || '') + '" placeholder="satır notu"></td>' +
+        (teslimModu ? '<td class="kf-termin"><input type="date" data-kc="termin" value="' + escAttr(k.termin || '') + '" title="Bu satırın teslim tarihi; boşsa başlıktaki ' + (teslimModu === 'teklif' ? 'teslim süresi' : 'termin') + ' geçerli"></td>' : '') +
+        '<td class="kf-acik"><input type="text" data-kc="aciklama" value="' + escAttr(k.aciklama || '') + '" placeholder="satır notu"></td>' +
         '<td><button type="button" class="kf-sil" data-kfdel="' + i + '" title="Satırı sil" aria-label="Satırı sil">×</button></td></tr>';
     }
     function toplamHtml(){
@@ -4795,7 +4838,7 @@ Dikkat edilmesi gereken 2 nokta:
         '</div>' +
         '<div id="kfMusteriMini" class="kf-mini" style="display:none"><div class="field"><label>' + esc(cariEtiket) + ' adı</label><input type="text" id="kfMAd"></div>' +
           '<div class="field"><label>Telefon</label><input type="text" id="kfMTel"></div><button type="button" class="btn small" id="kfMusteriEkleBtn">Kartı aç</button></div>' +
-        '<div class="tablewrap kf-tablo-wrap"><table class="kf-tablo"><thead><tr><th>#</th><th>Stok kodu / adı</th><th class="num">Miktar</th><th>Birim</th><th class="num">Liste fiyatı</th><th class="num">İsk. %</th><th class="num">Net fiyat</th><th>KDV</th><th class="num">Tutar</th><th>Açıklama</th><th></th></tr></thead>' +
+        '<div class="tablewrap kf-tablo-wrap"><table class="kf-tablo"><thead><tr><th>#</th><th>Stok kodu / adı</th><th class="num">Miktar</th><th>Birim</th><th class="num">Liste fiyatı</th><th class="num">İsk. %</th><th class="num">Net fiyat</th><th>KDV</th><th class="num">Tutar</th>' + (teslimModu ? '<th title="Boşsa başlıktaki ' + (teslimModu === 'teklif' ? 'teslim süresi' : 'termin') + ' geçerli">Termin</th>' : '') + '<th>Açıklama</th><th></th></tr></thead>' +
           '<tbody id="kfKalemler">' + K.map(satirHtml).join('') + '</tbody></table></div>' +
         '<div class="kf-arac"><button type="button" class="btn secondary small" id="kfKalemEkle">+ Satır</button>' +
           '<button type="button" class="btn secondary small" id="kfUrunYeniBtn">+ Yeni stok kartı</button>' +
@@ -4811,6 +4854,7 @@ Dikkat edilmesi gereken 2 nokta:
       var k = K[i], st = stokKart(k.stokId);
       tr.querySelector('.kf-birim').textContent = k.birim || (st && st.birim) || '';
       tr.querySelector('.kf-net').textContent = fmt2(net(k));
+      tr.querySelector('.kf-b2').innerHTML = b2Metin(k);
       tr.querySelector('.kf-tutar').innerHTML = '<b>' + fmt2(tutar(k)) + '</b>';
       byId('kfToplam').innerHTML = toplamHtml();
     }
@@ -4960,6 +5004,7 @@ Dikkat edilmesi gereken 2 nokta:
           if (yeni) fiyatYenile(i, true); }
         else if (!x.value.trim()){ k.stokId = ''; }
       } else if (c === 'aciklama'){ k.aciklama = x.value; return; }
+      else if (c === 'termin'){ k.termin = x.value; return; }
       else {
         k[c] = Number(x.value) || 0;
         if (c === 'listeFiyat' && e.type === 'input') k.otoFiyat = false;
@@ -5051,7 +5096,7 @@ Dikkat edilmesi gereken 2 nokta:
       if (cozulmemis){ cozulmemis.focus(); toast('Listede olmayan stok yazıldı: "' + cozulmemis.value + '". Listeden seçin ya da "+ Yeni stok kartı" ile açın.', true); return; }
       var kalemler = K.filter(function(k){ return k.stokId && Number(k.miktar) > 0; }).map(function(k){
         return { stokId: k.stokId, ad: stokAdiById(k.stokId), miktar: Number(k.miktar) || 0, birim: k.birim || 'adet', listeFiyat: Number(k.listeFiyat) || 0, iskonto: Number(k.iskonto) || 0,
-          birimFiyat: net(k), kdvOrani: Number(k.kdvOrani) || 0, aciklama: k.aciklama || '', tutar: tutar(k) };
+          birimFiyat: net(k), kdvOrani: Number(k.kdvOrani) || 0, aciklama: k.aciklama || '', tutar: tutar(k), termin: teslimModu ? k.termin || '' : '' };
       });
       if (!musteriId){ byId('kfMusteri').classList.add('alan-hata'); byId('kfMusteri').focus(); toast(cariEtiket + ' seçin.', true); return; }
       if (!kalemler.length){ satirOdak(0); toast('En az bir kalem girin (stok ve miktar).', true); return; }
@@ -5083,14 +5128,14 @@ Dikkat edilmesi gereken 2 nokta:
 
   // Teklif / sipariş detayında kalem tablosu: liste fiyatı, iskonto, net fiyat, KDV, tutar
   function belgeKalemTabloHtml(b){
-    var p = b.paraBirimi || 'EUR', kl = b.kalemler || [], iskVar = kl.some(function(k){ return Number(k.iskonto) > 0; });
+    var p = b.paraBirimi || 'EUR', kl = b.kalemler || [], iskVar = kl.some(function(k){ return Number(k.iskonto) > 0; }), terVar = kl.some(function(k){ return k.termin; });
     var ara = toplamla(kl, function(k){ return k.tutar != null ? k.tutar : (Number(k.miktar)||0) * (Number(k.birimFiyat)||0); });
     var kdv = toplamla(kl, function(k){ return (k.tutar != null ? k.tutar : (Number(k.miktar)||0) * (Number(k.birimFiyat)||0)) * (Number(k.kdvOrani != null ? k.kdvOrani : 0)) / 100; });
-    return '<div class="tablewrap"><table><thead><tr><th>#</th><th>Kalem</th><th class="num">Miktar</th>'+(iskVar ? '<th class="num">Liste fiyatı</th><th class="num">İsk. %</th>' : '')+'<th class="num">Net fiyat</th><th class="num">KDV</th><th class="num">Tutar</th><th>Açıklama</th></tr></thead><tbody>'+
+    return '<div class="tablewrap"><table><thead><tr><th>#</th><th>Kalem</th><th class="num">Miktar</th>'+(iskVar ? '<th class="num">Liste fiyatı</th><th class="num">İsk. %</th>' : '')+'<th class="num">Net fiyat</th><th class="num">KDV</th><th class="num">Tutar</th>'+(terVar ? '<th>Termin</th>' : '')+'<th>Açıklama</th></tr></thead><tbody>'+
       kl.map(function(k, i){ var t = k.tutar != null ? k.tutar : (Number(k.miktar)||0) * (Number(k.birimFiyat)||0);
-        return '<tr><td class="muted">'+(i+1)+'</td><td>'+esc(k.ad)+'</td><td class="num">'+fmt2(k.miktar)+' '+esc(k.birim||'')+'</td>'+(iskVar ? '<td class="num">'+pbFmt(k.listeFiyat != null ? k.listeFiyat : k.birimFiyat, p)+'</td><td class="num">'+(Number(k.iskonto) ? '%'+fmt2(k.iskonto) : '-')+'</td>' : '')+
-          '<td class="num">'+pbFmt(k.birimFiyat, p)+'</td><td class="num">'+(k.kdvOrani != null ? '%'+fmt(k.kdvOrani) : '-')+'</td><td class="num"><b>'+pbFmt(t, p)+'</b></td><td class="muted">'+esc(k.aciklama||'')+'</td></tr>'; }).join('')+
-      '<tr class="muh-toplam"><td colspan="'+(iskVar ? 5 : 3)+'">Ara toplam '+pbFmt(ara, p)+(kdv ? ' · KDV '+pbFmt(kdv, p) : '')+'</td><td colspan="4" class="num"><b>'+pbFmt(ara + kdv, p)+'</b></td></tr></tbody></table></div>';
+        return '<tr><td class="muted">'+(i+1)+'</td><td>'+esc(k.ad)+'</td><td class="num">'+fmt2(k.miktar)+' '+esc(k.birim||'')+(ikinciBirimMetni(k.stokId, k.miktar) ? '<div class="muted" style="font-size:11px">= '+esc(ikinciBirimMetni(k.stokId, k.miktar))+'</div>' : '')+'</td>'+(iskVar ? '<td class="num">'+pbFmt(k.listeFiyat != null ? k.listeFiyat : k.birimFiyat, p)+'</td><td class="num">'+(Number(k.iskonto) ? '%'+fmt2(k.iskonto) : '-')+'</td>' : '')+
+          '<td class="num">'+pbFmt(k.birimFiyat, p)+'</td><td class="num">'+(k.kdvOrani != null ? '%'+fmt(k.kdvOrani) : '-')+'</td><td class="num"><b>'+pbFmt(t, p)+'</b></td>'+(terVar ? '<td>'+(k.termin ? kvTarihTR(k.termin) : '<span class="muted">başlıktaki</span>')+'</td>' : '')+'<td class="muted">'+esc(k.aciklama||'')+'</td></tr>'; }).join('')+
+      '<tr class="muh-toplam"><td colspan="'+(iskVar ? 5 : 3)+'">Ara toplam '+pbFmt(ara, p)+(kdv ? ' · KDV '+pbFmt(kdv, p) : '')+'</td><td colspan="'+(terVar ? 5 : 4)+'" class="num"><b>'+pbFmt(ara + kdv, p)+'</b></td></tr></tbody></table></div>';
   }
   function renderTeklifListesi(){
     renderSimpleListCustom('teklifListesi', state.teklifler, function(t){
@@ -5202,14 +5247,16 @@ Dikkat edilmesi gereken 2 nokta:
 
   // Sipariş kalemlerinin durumu: iş emrine verilen, üretilen (iş emri tamamlanan), sevk edilen, faturalanan, sevk bekleyen
   function siparisKalemDurumHtml(s){
-    var ftr = siparisFaturaKalemleri(s, 'kalan');
-    return '<div class="tablewrap"><table><thead><tr><th>Kalem</th><th class="num">Miktar</th><th class="num">B.Fiyat</th><th class="num">İş emri</th><th class="num">Üretilen</th><th class="num">Sevk</th><th class="num">Faturalanan</th><th class="num">Sevk bekleyen</th></tr></thead><tbody>'+
+    var ftr = siparisFaturaKalemleri(s, 'kalan'), terVar = (s.kalemler||[]).some(function(k){ return k.termin; });
+    return '<div class="tablewrap"><table><thead><tr><th>Kalem</th><th class="num">Miktar</th><th class="num">B.Fiyat</th>'+(terVar ? '<th>Termin</th>' : '')+'<th class="num">İş emri</th><th class="num">Üretilen</th><th class="num">Sevk</th><th class="num">Faturalanan</th><th class="num">Sevk bekleyen</th></tr></thead><tbody>'+
       (s.kalemler||[]).map(function(k, i){
         var ieler = state.isemirleri.filter(function(ie){ return ie.siparisId === s.id && ie.stokId === k.stokId && ie.durum !== 'İptal'; });
         var plan = toplamla(ieler, function(ie){ return ie.planlanan; }), ur = toplamla(ieler, function(ie){ return isEmriTamamlanan(ie); });
         var mik = Number(k.miktar)||0, sevk = Number(k.sevkEdilen)||0, kalan = siparisKalanMiktar(k), f = ftr[i] ? ftr[i].ftr : 0;
         var tamam = function(x){ return x >= mik - 1e-9 && mik > 0 ? ' pos' : ''; };
-        return '<tr><td>'+esc(k.ad)+'</td><td class="num">'+fmt2(mik)+'</td><td class="num">€'+fmt2(k.birimFiyat)+'</td>'+
+        var b2 = ikinciBirimMetni(k.stokId, mik);
+        return '<tr><td>'+esc(k.ad)+'</td><td class="num">'+fmt2(mik)+(b2 ? '<div class="muted" style="font-size:11px">= '+esc(b2)+'</div>' : '')+'</td><td class="num">'+pbFmt(k.birimFiyat, belgePB(s))+'</td>'+
+          (terVar ? '<td>'+(k.termin ? terminHtml(k.termin, siparisAcikMi(s) && siparisKalanMiktar(k) > 0) : '<span class="muted">'+(s.termin ? kvTarihTR(s.termin) : '—')+'</span>')+'</td>' : '')+
           '<td class="num'+tamam(plan)+'">'+(plan ? fmt2(plan) : '—')+'</td><td class="num'+tamam(ur)+'">'+(ieler.length ? fmt2(ur) : '—')+'</td>'+
           '<td class="num'+tamam(sevk)+'">'+fmt2(sevk)+'</td><td class="num'+tamam(f)+'">'+fmt2(f)+'</td><td class="num'+(kalan > 0 ? '' : ' pos')+'"><b>'+(kalan > 0 ? fmt2(kalan) : '✓')+'</b></td></tr>';
       }).join('')+'</tbody></table></div>';
@@ -5534,20 +5581,25 @@ Dikkat edilmesi gereken 2 nokta:
     });
   }
 
+  // Sevk irsaliyesi, teklif düzeninde: sipariş / müşteri sipariş no, ilgili kişi, teslim şekli, sevk adresi, araç; kalemde kod, müşteri parça no, ikinci birim;
+  // imzada teslim alanın adı
   function yazdirIrsaliye(id){
     var irs = state.sevkiyatlar.find(function(x){ return x.id===id; });
     if (!irs) return;
-    var kalemSatir = (irs.kalemler||[]).map(function(k){ return '<tr><td>'+esc(k.ad)+'</td><td>'+fmt2(k.miktar)+'</td></tr>'; }).join('');
-    document.getElementById('printArea').innerHTML = (irs.durum === 'İptal' ? '<div style="border:2px solid #b91c1c;color:#b91c1c;font-weight:700;text-align:center;padding:6px;margin-bottom:10px;letter-spacing:2px">İPTAL EDİLMİŞTİR'+(irs.iptalNedeni ? ' — '+esc(irs.iptalNedeni) : '')+'</div>' : '')+
-      '<div class="print-doc-head"><div><h2>'+pL('SEVK İRSALİYESİ','DELIVERY NOTE')+'</h2><div>'+esc(irs.irsaliyeNo)+'</div></div><div style="text-align:right">'+
-      '<div>'+esc(musteriAdiById(irs.musteriId))+'</div><div>'+esc(irs.tarih||'')+'</div></div></div>'+
-      '<table><thead><tr><th>'+pL('Ürün','Product')+'</th><th>'+pL('Miktar','Quantity')+'</th></tr></thead><tbody>'+kalemSatir+'</tbody></table>'+
-      irsaliyeEkBilgiHtml(irs, true)+
-      (irs.not_?'<p>Not: '+esc(irs.not_)+'</p>':'')+
-      '<div style="display:flex;justify-content:space-between;margin-top:40px"><div>'+pL('Teslim eden','Delivered by')+'<br><br>........................</div><div>'+pL('Teslim alan','Received by')+'<br><br>........................</div></div>';
-    printBaslikEkle();
-    document.body.classList.add('printing');
-    setTimeout(function(){ window.print(); setTimeout(function(){ document.body.classList.remove('printing'); }, 300); }, 50);
+    var sip = state.siparisler.find(function(x){ return x.id === irs.siparisId; }) || {}, cari = state.musteriler.find(function(m){ return m.id === irs.musteriId; }) || {};
+    var satirlar = (irs.kalemler||[]).map(function(k, i){
+      var st = stokKart(k.stokId) || {}, sk = (sip.kalemler || []).find(function(x){ return x.stokId && x.stokId === k.stokId; }) || {};
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(st.kod || '') + '</td><td>' + printKalemAciklama({ ad: k.ad, aciklama: sk.aciklama }, st) + '</td><td class="num">' + printMiktarHtml(k) + '</td><td>' + esc(sk.birim || st.birim || '') + '</td></tr>';
+    }).join('');
+    var bilgi = [[pL('Sevk tarihi', 'Dispatch date'), kvTarihTR(irs.tarih)], [pL('Sipariş no', 'Order no'), sip.siparisNo], [pL('Müşteri sipariş no', 'Your order no'), sip.musteriSiparisNo],
+      [pL('İlgili kişi', 'Attn.'), sip.ilgiliKisi], [pL('Teslim şekli', 'Delivery terms'), sip.teslimSekli], [pL('Sevk adresi', 'Ship to'), sip.sevkAdresi || [cari.adres, cari.sehir].filter(Boolean).join(' ')],
+      [pL('Plaka', 'Vehicle'), irs.plaka], [pL('Şoför', 'Driver'), irs.sofor], ['Lot', irs.lotNo], [pL('Koli', 'Packages'), irs.koliAdedi || ''], [pL('Brüt ağırlık', 'Gross weight'), irs.brutKg ? fmt2(irs.brutKg) + ' kg' : '']];
+    yazdirHtml((irs.durum === 'İptal' ? printIptalHtml(irs.iptalNedeni) : '') +
+      '<div class="print-doc-head"><div><h2>' + pL('SEVK İRSALİYESİ', 'DELIVERY NOTE') + '</h2><div>' + esc(irs.irsaliyeNo || '') + '</div></div><div style="text-align:right">' + cariBaskiHtml(irs.musteriId) + '</div></div>' +
+      printBilgiHtml(bilgi) +
+      '<table><thead><tr><th>#</th><th>' + pL('Kod', 'Code') + '</th><th>' + pL('Açıklama', 'Description') + '</th><th class="num">' + pL('Miktar', 'Qty') + '</th><th>' + pL('Birim', 'Unit') + '</th></tr></thead><tbody>' + satirlar + '</tbody></table>' +
+      (irs.not_ ? '<p>' + esc(irs.not_).replace(/\n/g, '<br>') + '</p>' : '') +
+      '<div class="cikti-imza"><div><div class="cikti-imza-cizgi"></div>' + pL('Teslim eden', 'Delivered by') + '</div><div><div class="cikti-imza-cizgi"></div>' + pL('Teslim alan', 'Received by') + (irs.teslimAlan ? ': ' + esc(irs.teslimAlan) : '') + '</div></div>');
   }
 
   // ---------- Faturalar ----------
@@ -5858,33 +5910,43 @@ Dikkat edilmesi gereken 2 nokta:
     var yeniSayi = (Number(f.yazdirmaSayisi)||0) + (proforma ? 0 : 1);
     // sayaç yalnız gerçekten yazdırılınca artar (önizlemede kapatılırsa artmaz)
     if (db && !proforma) yazdirildiktanSonra(function(){ db.collection('faturalar').doc(id).update({ yazdirmaSayisi: yeniSayi }).catch(function(){}); });
-    var ayr = !!f.serbest;
-    var kalemSatir = (f.kalemler||[]).map(function(k){ return '<tr><td>'+esc(k.ad)+(k.gtip?'<div style="font-size:10px">GTİP '+esc(k.gtip)+'</div>':'')+'</td><td>'+fmt2(k.miktar)+(k.birim?' '+esc(k.birim):'')+'</td><td>'+CS+fmt2(k.birimFiyat)+'</td>'+(ayr?'<td>'+(k.iskonto?'%'+fmt2(k.iskonto):'')+'</td><td>%'+fmt2(k.kdvOrani)+'</td>':'')+'<td>'+CS+fmt2(k.tutar)+'</td></tr>'; }).join('');
+    var ayr = !!f.serbest, para = function(x){ return pbFmt(x, PB); };
+    var sip = (f.siparisId && state.siparisler.find(function(x){ return x.id === f.siparisId; })) || {}, cari = state.musteriler.find(function(m){ return m.id === f.musteriId; }) || {};
+    var kalemSatir = (f.kalemler||[]).map(function(k, i){
+      var st = stokKart(k.stokId) || {};
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(st.kod||'')+'</td><td>'+printKalemAciklama(k, st)+(k.gtip?'<div class="muted">GTİP '+esc(k.gtip)+'</div>':'')+'</td><td class="num">'+printMiktarHtml(k)+'</td><td>'+esc(k.birim||st.birim||'')+'</td><td class="num">'+para(k.birimFiyat)+'</td>'+
+        (ayr?'<td class="num">'+(Number(k.iskonto)?'%'+fmt2(k.iskonto):'')+'</td><td class="num">%'+fmt2(k.kdvOrani)+'</td>':'')+'<td class="num">'+para(k.tutar)+'</td></tr>';
+    }).join('');
     var tipBaslik = { 'SGK': ['FATURA (SGK)','INVOICE (SGK)'], 'Komisyoncu satışı': ['FATURA (KOMİSYONCU)','INVOICE (COMMISSION AGENT)'], 'HKS satış': ['FATURA (HKS)','INVOICE (HKS)'], 'Konaklama': ['FATURA (KONAKLAMA)','INVOICE (ACCOMMODATION)'], 'Özel matrah': ['FATURA (ÖZEL MATRAH)','INVOICE (SPECIAL BASE)'], 'İhracat': ['FATURA (İHRACAT)','EXPORT INVOICE'], 'Hizmet ihracatı': ['FATURA (HİZMET İHRACATI)','SERVICE EXPORT INVOICE'], 'İhraç kayıtlı': ['FATURA (İHRAÇ KAYITLI)','INVOICE (EXPORT-REGISTERED)'], 'İstisna (diğer)': ['FATURA (İSTİSNA)','INVOICE (EXEMPT)'], 'Hurda / talaş satışı': ['FATURA (HURDA)','INVOICE (SCRAP)'], 'Fiyat farkı': ['FİYAT FARKI FATURASI','PRICE DIFFERENCE INVOICE'], 'Hizmet': ['FATURA (HİZMET)','INVOICE (SERVICE)'] }[f.faturaTipi];
-    var ekBilgi = [f.irsaliyeYerine ? pL('İrsaliye yerine geçer','Also serves as delivery note') : (f.irsaliyeNolari ? pL('İrsaliye','Delivery note')+': '+esc(f.irsaliyeNolari) : ''), f.musteriSiparisNo ? pL('Sipariş no','Order no')+': '+esc(f.musteriSiparisNo) : '',
+    var ekBilgi = [
       f.refFaturaNo ? pL('İlgili fatura','Related invoice')+': '+esc(f.refFaturaNo)+(f.refFaturaTarih?' ('+kvTarihTR(f.refFaturaTarih)+')':'') : '', f.istisnaKodu ? pL('KDV istisnası','VAT exemption')+': '+esc(f.istisnaKodu)+(f.istisnaAciklama?' — '+esc(f.istisnaAciklama):'') : '',
-      f.teslimSarti ? 'Incoterms: '+esc(f.teslimSarti)+(f.tasimaSekli?' · '+esc(f.tasimaSekli):'') : '', f.gumrukBeyanNo ? pL('Gümrük beyannamesi','Customs declaration')+': '+esc(f.gumrukBeyanNo)+(f.gumrukTarih?' ('+kvTarihTR(f.gumrukTarih)+')':'') : '',
+      f.gumrukBeyanNo ? pL('Gümrük beyannamesi','Customs declaration')+': '+esc(f.gumrukBeyanNo)+(f.gumrukTarih?' ('+kvTarihTR(f.gumrukTarih)+')':'') : '',
       f.faturaTipi === 'Özel matrah' ? 'Özel matrah: '+CS+fmt2(BT.ozelMatrah)+(f.ozelMatrahKodu?' (kod '+esc(f.ozelMatrahKodu)+')':'')+' — KDV özel matrah üzerinden hesaplanmıştır.' : '',
       BT.konaklamaVergisi ? 'Konaklama vergisi (%'+fmt2(f.konaklamaOrani)+'): '+CS+fmt2(BT.konaklamaVergisi) : '',
       f.faturaTipi === 'Komisyoncu satışı' ? 'Komisyoncu satışıdır — asıl satıcı: '+esc(f.asilSaticiUnvan||'')+(f.asilSaticiVkn?' (VKN '+esc(f.asilSaticiVkn)+')':'') : '',
       f.hksKunye ? 'HKS künye no: '+esc(f.hksKunye) : '',
       f.faturaTipi === 'SGK' ? 'SGK dönemi: '+kvTarihTR(f.sgkDonemBas)+' – '+kvTarihTR(f.sgkDonemBit)+' · mükellef kodu '+esc(f.sgkMukellefKodu||'')+(f.sgkMukellefAdi?' ('+esc(f.sgkMukellefAdi)+')':'')+(f.sgkDosyaNo?' · dosya no '+esc(f.sgkDosyaNo):'') : '',
       f.faturaTipi === 'İhraç kayıtlı' ? '3065 sayılı KDV Kanunu 11/1-c maddesi kapsamında ihraç kaydıyla teslim edildiğinden KDV tahsil edilmemiştir (tecil).' : ''].filter(Boolean);
-    document.getElementById('printArea').innerHTML =
-      '<div class="print-doc-head"><div><h2>'+(proforma ? pL('PROFORMA FATURA','PROFORMA INVOICE') : '')+(proforma ? '' : (tipBaslik ? pL(tipBaslik[0], tipBaslik[1]) : pL(f.faturaTipi==='Fason işçilik'?'FATURA (FASON İŞÇİLİK)':'FATURA','INVOICE')))+'</h2><div>'+(proforma ? 'PF-' : '')+esc(f.faturaNo)+'</div></div><div style="text-align:right">'+
-      cariBaskiHtml(f.musteriId)+'<div>'+pL('Tarih','Date')+': '+esc(f.tarih||'')+'</div>'+(f.vadeTarihi?'<div>'+pL('Vade','Due date')+': '+esc(f.vadeTarihi)+'</div>':'')+
-      (proforma ? '' : '<div class="muted" style="margin-top:4px">Yazdırma sayısı: '+yeniSayi+'</div>')+'</div></div>'+
-      '<table><thead><tr><th>'+pL('Ürün','Product')+'</th><th>'+pL('Miktar','Qty')+'</th><th>'+pL('B.Fiyat','Unit price')+'</th>'+(ayr?'<th>'+pL('İsk.','Disc.')+'</th><th>'+pL('KDV','VAT')+'</th>':'')+'<th>'+pL('Tutar','Amount')+'</th></tr></thead><tbody>'+kalemSatir+'</tbody></table>'+
+    var kdvDag = BT.kdvDagilim && BT.kdvDagilim.length > 1 ? BT.kdvDagilim : null, tevk = Number(BT.tevkifatTutar) || 0, araKdv = (Number(BT.araToplam)||0) + (Number(BT.kdvTutar)||0);
+    var bilgi = [[pL('Fatura tarihi', 'Invoice date'), kvTarihTR(f.tarih)], [pL('Vade tarihi', 'Due date'), f.vadeTarihi ? kvTarihTR(f.vadeTarihi) : ''], [pL('Ödeme koşulu', 'Payment terms'), f.odemeKosulu || sip.odemeKosulu],
+      [pL('Ödeme şekli', 'Payment method'), f.odemeSekli || cari.odemeSekli], [pL('Sipariş no', 'Order no'), sip.siparisNo], [pL('Müşteri sipariş no', 'Your order no'), f.musteriSiparisNo || sip.musteriSiparisNo],
+      [pL('İrsaliye', 'Delivery note'), f.irsaliyeYerine ? pL('İrsaliye yerine geçer', 'Also serves as delivery note') : f.irsaliyeNolari], [pL('İlgili kişi', 'Attn.'), sip.ilgiliKisi],
+      [pL('Teslim şekli', 'Delivery terms'), f.teslimSarti ? 'Incoterms ' + f.teslimSarti + (f.tasimaSekli ? ' · ' + f.tasimaSekli : '') : sip.teslimSekli], [pL('Sevk adresi', 'Ship to'), sip.sevkAdresi], [pL('Para birimi', 'Currency'), PB]];
+    var toplam = [Number(f.iskontoOrani) && Number(BT.brutToplam) ? [pL('Brüt', 'Gross'), para(BT.brutToplam)] : null, Number(f.iskontoOrani) && Number(BT.brutToplam) ? [pL('İskonto', 'Discount') + ' %' + fmt2(f.iskontoOrani), '−' + para((Number(BT.brutToplam)||0) - (Number(BT.araToplam)||0))] : null,
+      [pL('Ara toplam', 'Subtotal'), para(BT.araToplam)]]
+      .concat(kdvDag ? kdvDag.map(function(d){ return [pL('KDV', 'VAT') + ' %' + fmt2(d.oran) + ' <span class="muted">(' + pL('matrah', 'base') + ' ' + para(d.matrah) + ')</span>', para(d.kdv)]; }) : [[pL('KDV', 'VAT') + ' %' + fmt2(f.kdvOrani), para(BT.kdvTutar)]])
+      .concat(tevk ? [[pL('Fatura toplamı', 'Invoice total'), para(araKdv)], [pL('KDV tevkifatı', 'VAT withholding') + ' (' + esc(f.tevkifatOrani || '') + ')', '−' + para(tevk)], [pL('Ödenecek tutar', 'Amount payable'), para(BT.genelToplam), true]] : [[pL('Genel toplam', 'Total'), para(BT.genelToplam), true]]);
+    yazdirHtml((f.durum === 'İptal' && !proforma ? printIptalHtml('') : '') +
+      '<div class="print-doc-head"><div><h2>'+(proforma ? pL('PROFORMA FATURA','PROFORMA INVOICE') : (tipBaslik ? pL(tipBaslik[0], tipBaslik[1]) : pL(f.faturaTipi==='Fason işçilik'?'FATURA (FASON İŞÇİLİK)':'FATURA','INVOICE')))+'</h2><div>'+(proforma ? 'PF-' : '')+esc(f.faturaNo||'')+'</div>'+
+      (proforma ? '' : '<div class="muted" style="margin-top:4px;font-size:10px">'+pL('Yazdırma sayısı','Print count')+': '+yeniSayi+'</div>')+'</div><div style="text-align:right">'+cariBaskiHtml(f.musteriId)+'</div></div>'+
+      printBilgiHtml(bilgi)+
+      '<table><thead><tr><th>#</th><th>'+pL('Kod','Code')+'</th><th>'+pL('Açıklama','Description')+'</th><th class="num">'+pL('Miktar','Qty')+'</th><th>'+pL('Birim','Unit')+'</th><th class="num">'+pL('Birim fiyat','Unit price')+'</th>'+(ayr?'<th class="num">'+pL('İsk.','Disc.')+'</th><th class="num">'+pL('KDV','VAT')+'</th>':'')+'<th class="num">'+pL('Tutar','Amount')+'</th></tr></thead><tbody>'+kalemSatir+'</tbody></table>'+
+      printToplamHtml(toplam)+
+      (PB === 'TRY' ? '' : PB !== 'EUR' ? '<p class="muted" style="text-align:right">₺ karşılığı (kur 1 '+PB+' = ₺'+fmt2(belgeKur(f))+'): ₺'+fmt2((Number(BT.genelToplam)||0)*belgeKur(f))+'</p>' : f.kur ? '<p class="muted" style="text-align:right">₺ karşılığı (fatura tarihli kur ₺'+fmt2(f.kur)+'): ₺'+fmt2((Number(f.genelToplam)||0)*Number(f.kur))+'</p>' : (tlStr(f.genelToplam) ? '<p class="muted" style="text-align:right">₺ karşılığı (resmi/vergi amaçlı referans): '+tlStr(f.genelToplam)+'</p>' : ''))+
       (ekBilgi.length ? '<p style="font-size:11px">'+ekBilgi.join('<br>')+'</p>' : '')+
-      (ayr && BT.kdvDagilim && BT.kdvDagilim.length > 1 ? '<p style="font-size:11px">'+BT.kdvDagilim.map(function(d){ return pL('KDV','VAT')+' %'+fmt2(d.oran)+': '+pL('matrah','base')+' '+CS+fmt2(d.matrah)+' — '+CS+fmt2(d.kdv); }).join('<br>')+'</p>' : '')+
       (f.faturaTipi==='Fason işçilik'?'<p class="muted">'+pL('Müşteriye ait malzeme üzerinde yapılan işçilik bedelidir; malzeme bedeli içermez.','Processing (labour) charge on customer-supplied material; excludes material value.')+'</p>':'')+
-      '<p>'+(f.iskontoOrani?pL('İskonto','Discount')+' %'+fmt2(f.iskontoOrani)+' — ':'')+pL('Ara toplam','Subtotal')+': '+CS+fmt2(BT.araToplam)+' — '+pL('KDV','VAT')+(BT.kdvDagilim && BT.kdvDagilim.length > 1 ? '' : ' (%'+fmt2(f.kdvOrani)+')')+': '+CS+fmt2(BT.kdvTutar)+(f.tevkifatTutar ? ' — '+pL('Fatura toplamı','Invoice total')+': €'+fmt2((Number(BT.araToplam)||0)+(Number(BT.kdvTutar)||0))+' — '+pL('KDV tevkifatı','VAT withholding')+' ('+esc(f.tevkifatOrani)+'): −'+CS+fmt2(BT.tevkifatTutar)+' — <strong>'+pL('Ödenecek tutar','Amount payable')+': '+CS+fmt2(BT.genelToplam)+'</strong>' : ' — <strong>'+pL('Genel toplam','Total')+': '+CS+fmt2(BT.genelToplam)+'</strong>')+'</p>'+
-      (PB === 'TRY' ? '' : PB !== 'EUR' ? '<p class="muted">₺ karşılığı (kur 1 '+PB+' = ₺'+fmt2(belgeKur(f))+'): ₺'+fmt2((Number(BT.genelToplam)||0)*belgeKur(f))+'</p>' : f.kur ? '<p class="muted">₺ karşılığı (fatura tarihli kur ₺'+fmt2(f.kur)+'): ₺'+fmt2((Number(f.genelToplam)||0)*Number(f.kur))+'</p>' : (tlStr(f.genelToplam) ? '<p class="muted">₺ karşılığı (resmi/vergi amaçlı referans): '+tlStr(f.genelToplam)+'</p>' : ''))+
       firmaBankaHtml()+
-      (proforma ? '<p class="muted">'+pL('Proforma fatura bilgi amaçlıdır; vergi belgesi değildir. Kesin fatura mal / hizmet tesliminde düzenlenir.','This proforma invoice is for information only and is not a tax document.')+'</p>' : '<p class="muted">Bu belge dahili kayıt amaçlıdır, resmi e-fatura/e-arşiv yerine geçmez.</p>');
-    printBaslikEkle();
-    document.body.classList.add('printing');
-    setTimeout(function(){ window.print(); setTimeout(function(){ document.body.classList.remove('printing'); }, 300); }, 50);
+      (proforma ? '<p class="muted">'+pL('Proforma fatura bilgi amaçlıdır; vergi belgesi değildir. Kesin fatura mal / hizmet tesliminde düzenlenir.','This proforma invoice is for information only and is not a tax document.')+'</p>' : '<p class="muted">Bu belge dahili kayıt amaçlıdır, resmi e-fatura/e-arşiv yerine geçmez.</p>'));
   }
 
   // ---------- CSV dışa aktarma ----------
@@ -5898,32 +5960,66 @@ Dikkat edilmesi gereken 2 nokta:
     dosyaIndir(filename, '\ufeff'+content0, 'text/csv;charset=utf-8;');
   }
 
+  // ---------- Satış belgesi çıktıları (teklif, sipariş onayı, irsaliye, fatura): ortak düzen ----------
+  // Bilgi tablosu: boş olanlar atlanır, çoksa iki sütun
+  function printBilgiHtml(bilgi){
+    var l = bilgi.filter(function(x){ return x[1] != null && x[1] !== ''; }), iki = l.length > 6, h = '';
+    for (var i = 0; i < l.length; i += iki ? 2 : 1){
+      h += '<tr>' + l.slice(i, i + (iki ? 2 : 1)).map(function(x){ return '<td class="muted">' + x[0] + '</td><td>' + esc(String(x[1])) + '</td>'; }).join('') + '</tr>';
+    }
+    return h ? '<table class="print-bilgi"><tbody>' + h + '</tbody></table>' : '';
+  }
+  // Kalem açıklaması: ad, yabancı ad (EN çıktıda), müşteri parça no, resim no, satır notu
+  function printKalemAciklama(k, st){
+    st = st || {};
+    return esc(k.ad || st.ad || '') + (st.ad2 && yazdirmaDili() !== 'TR' ? '<div class="muted">' + esc(st.ad2) + '</div>' : '') + (st.musteriParcaNo ? '<div class="muted">' + pL('Müşteri no', 'Customer P/N') + ': ' + esc(st.musteriParcaNo) + '</div>' : '') +
+      (st.resimNo ? '<div class="muted">' + pL('Resim', 'Drawing') + ': ' + esc(st.resimNo) + (st.resimRev ? ' rev. ' + esc(st.resimRev) : '') + '</div>' : '') + (k.aciklama ? '<div class="muted">' + esc(k.aciklama) + '</div>' : '');
+  }
+  // İkinci birim bilgisi (stok kartı: 1 birim = birim2Carpan ikinci birim), ör. 100 adet → "12 kg"
+  function ikinciBirimMetni(stokId, miktar){
+    var st = stokId && stokKart(stokId), c = st ? Number(st.birim2Carpan) || 0 : 0;
+    if (!st || !st.birim2 || !(c > 0) || !(Number(miktar) > 0)) return '';
+    return fmt2(Math.round(Number(miktar) * c * 1000) / 1000) + ' ' + st.birim2;
+  }
+  function printMiktarHtml(k){ var b2 = ikinciBirimMetni(k.stokId, k.miktar); return fmt2(k.miktar) + (b2 ? '<div class="muted">= ' + esc(b2) + '</div>' : ''); }
+  // Toplam tablosu: [etiket, tutar, kalın mı]
+  function printToplamHtml(satirlar){
+    return '<table class="print-toplam"><tbody>' + satirlar.filter(Boolean).map(function(r){ return '<tr><td>' + (r[2] ? '<b>' + r[0] + '</b>' : r[0]) + '</td><td class="num">' + (r[2] ? '<b>' + r[1] + '</b>' : r[1]) + '</td></tr>'; }).join('') + '</tbody></table>';
+  }
+  // Teklif / sipariş onayı kalemleri ve toplamları: kod, açıklama, miktar (ikinci birim), birim, fiyat, iskonto, KDV, termin, tutar; KDV oranlarına göre toplam.
+  // Satır termini boşsa başlıktaki teslim (bosTermin) yazılır; termin sütunu yalnız bir satırda termin varsa çıkar.
+  function printSatisKalemHtml(kalemler, pb, bosTermin){
+    var para = function(x){ return pbFmt(x, pb); }, brut = 0, isk = 0, ara = 0, kdv = {};
+    var terminVar = kalemler.some(function(k){ return k.termin; });
+    var satirlar = kalemler.map(function(k, i){
+      var st = stokKart(k.stokId) || {}, mk = Number(k.miktar) || 0, lf = k.listeFiyat != null ? Number(k.listeFiyat) || 0 : Number(k.birimFiyat) || 0, nf = Number(k.birimFiyat) || lf * (1 - (Number(k.iskonto) || 0) / 100);
+      var tut = Number(k.tutar) || mk * nf, o = Number(k.kdvOrani != null ? k.kdvOrani : 20);
+      brut += mk * lf; ara += tut; isk += mk * lf - tut; kdv[o] = (kdv[o] || 0) + tut * o / 100;
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(st.kod || '') + '</td><td>' + printKalemAciklama(k, st) + '</td><td class="num">' + printMiktarHtml(k) + '</td><td>' + esc(k.birim || st.birim || '') + '</td><td class="num">' + para(lf) + '</td><td class="num">' + (Number(k.iskonto) ? '%' + fmt2(k.iskonto) : '') + '</td><td class="num">%' + o + '</td>' +
+        (terminVar ? '<td>' + (k.termin ? kvTarihTR(k.termin) : esc(bosTermin || '')) + '</td>' : '') + '<td class="num">' + para(tut) + '</td></tr>';
+    }).join('');
+    var kdvT = 0; Object.keys(kdv).forEach(function(o){ kdvT += kdv[o]; });
+    return '<table><thead><tr><th>#</th><th>' + pL('Kod', 'Code') + '</th><th>' + pL('Açıklama', 'Description') + '</th><th class="num">' + pL('Miktar', 'Qty') + '</th><th>' + pL('Birim', 'Unit') + '</th><th class="num">' + pL('Birim fiyat', 'Unit price') + '</th><th class="num">' + pL('İsk.', 'Disc.') + '</th><th class="num">' + pL('KDV', 'VAT') + '</th>' +
+      (terminVar ? '<th>' + pL('Termin', 'Delivery') + '</th>' : '') + '<th class="num">' + pL('Tutar', 'Amount') + '</th></tr></thead><tbody>' + satirlar + '</tbody></table>' +
+      printToplamHtml([isk > 0.004 ? [pL('Brüt', 'Gross'), para(brut)] : null, isk > 0.004 ? [pL('İskonto', 'Discount'), '−' + para(isk)] : null, [pL('Ara toplam', 'Subtotal'), para(ara)]]
+        .concat(Object.keys(kdv).filter(function(o){ return Number(o) > 0; }).map(function(o){ return [pL('KDV', 'VAT') + ' %' + o, para(kdv[o])]; }))
+        .concat([[pL('Genel toplam', 'Total'), para(ara + kdvT), true]]));
+  }
+  function printIptalHtml(neden){ return '<div style="border:2px solid #b91c1c;color:#b91c1c;font-weight:700;text-align:center;padding:6px;margin-bottom:10px;letter-spacing:2px">' + pL('İPTAL EDİLMİŞTİR', 'CANCELLED') + (neden ? ' — ' + esc(neden) : '') + '</div>'; }
+
   // ---------- Teklif: yazdır & CSV ----------
   // Teklif çıktısı: firma başlığı, müşteri ve ilgili kişi, teklif bilgileri (talep no, temsilci, teslim, ödeme, para birimi),
-  // kalemler (kod, açıklama, müşteri parça no, miktar, birim, fiyat, iskonto, KDV, tutar), KDV oranlarına göre toplamlar, notlar ve banka
+  // kalemler (kod, açıklama, müşteri parça no, miktar, birim, fiyat, iskonto, KDV, termin, tutar), KDV oranlarına göre toplamlar, notlar ve banka
   function yazdirTeklif(id){
     var t = state.teklifler.find(function(x){ return x.id===id; });
     if (!t) return;
     if (teklifIskontoBekliyor(t) && !onayYetkili()){ uyariGoster(esc(teklifAdi(t.id))+' %'+fmt2(teklifMaxIskonto(t))+' iskonto içeriyor ve henüz onaylanmadı — onaylanmadan yazdırılamaz.'); return; }
-    var pb = belgePB(t), para = function(x){ return pbFmt(x, pb); }, brut = 0, isk = 0, ara = 0, kdv = {};
-    var satirlar = (t.kalemler||[]).map(function(k, i){
-      var st = stokKart(k.stokId) || {}, mk = Number(k.miktar) || 0, lf = k.listeFiyat != null ? Number(k.listeFiyat) || 0 : Number(k.birimFiyat) || 0, nf = Number(k.birimFiyat) || lf * (1 - (Number(k.iskonto) || 0) / 100);
-      var tut = Number(k.tutar) || mk * nf, o = Number(k.kdvOrani != null ? k.kdvOrani : 20);
-      brut += mk * lf; ara += tut; isk += mk * lf - tut; kdv[o] = (kdv[o] || 0) + tut * o / 100;
-      var aciklama = esc(k.ad || st.ad || '') + (st.ad2 && yazdirmaDili() !== 'TR' ? '<div class="muted">' + esc(st.ad2) + '</div>' : '') + (st.musteriParcaNo ? '<div class="muted">' + pL('Müşteri no', 'Customer P/N') + ': ' + esc(st.musteriParcaNo) + '</div>' : '') +
-        (st.resimNo ? '<div class="muted">' + pL('Resim', 'Drawing') + ': ' + esc(st.resimNo) + (st.resimRev ? ' rev. ' + esc(st.resimRev) : '') + '</div>' : '') + (k.aciklama ? '<div class="muted">' + esc(k.aciklama) + '</div>' : '');
-      return '<tr><td>' + (i + 1) + '</td><td>' + esc(st.kod || '') + '</td><td>' + aciklama + '</td><td class="num">' + fmt2(mk) + '</td><td>' + esc(k.birim || st.birim || '') + '</td><td class="num">' + para(lf) + '</td><td class="num">' + (Number(k.iskonto) ? '%' + fmt2(k.iskonto) : '') + '</td><td class="num">%' + o + '</td><td class="num">' + para(tut) + '</td></tr>';
-    }).join('');
-    var kdvT = 0; Object.keys(kdv).forEach(function(o){ kdvT += kdv[o]; });
+    var pb = belgePB(t), sure = t.teslimSuresiGun ? t.teslimSuresiGun + ' ' + pL('gün', 'days') : '';
     var bilgi = [[pL('Teklif tarihi', 'Date'), kvTarihTR(t.tarih)], [pL('Geçerlilik', 'Valid until'), t.gecerlilik ? kvTarihTR(t.gecerlilik) : ''], [pL('Talep no', 'Your ref.'), t.talepNo], [pL('İlgili kişi', 'Attn.'), t.ilgiliKisi],
-      [pL('Temsilci', 'Sales rep.'), t.temsilci], [pL('Teslim süresi', 'Lead time'), t.teslimSuresiGun ? t.teslimSuresiGun + ' ' + pL('gün', 'days') : ''], [pL('Teslim şekli', 'Delivery terms'), t.teslimSekli],
-      [pL('Nakliye', 'Freight'), t.nakliye], [pL('Ödeme', 'Payment'), t.odemeKosulu], [pL('Para birimi', 'Currency'), pb]].filter(function(x){ return x[1]; });
-    yazdirHtml('<div class="print-doc-head"><div><h2>' + pL('TEKLİF', 'QUOTATION') + '</h2><div>' + esc(t.teklifNo || '') + '</div></div><div style="text-align:right">' + cariBaskiHtml(t.musteriId) + '</div></div>' +
-      '<table class="print-bilgi"><tbody>' + bilgi.map(function(x){ return '<tr><td class="muted">' + x[0] + '</td><td>' + esc(String(x[1])) + '</td></tr>'; }).join('') + '</tbody></table>' +
-      '<table><thead><tr><th>#</th><th>' + pL('Kod', 'Code') + '</th><th>' + pL('Açıklama', 'Description') + '</th><th class="num">' + pL('Miktar', 'Qty') + '</th><th>' + pL('Birim', 'Unit') + '</th><th class="num">' + pL('Birim fiyat', 'Unit price') + '</th><th class="num">' + pL('İsk.', 'Disc.') + '</th><th class="num">' + pL('KDV', 'VAT') + '</th><th class="num">' + pL('Tutar', 'Amount') + '</th></tr></thead><tbody>' + satirlar + '</tbody></table>' +
-      '<table class="print-toplam"><tbody>' + (isk > 0.004 ? '<tr><td>' + pL('Brüt', 'Gross') + '</td><td class="num">' + para(brut) + '</td></tr><tr><td>' + pL('İskonto', 'Discount') + '</td><td class="num">−' + para(isk) + '</td></tr>' : '') +
-      '<tr><td>' + pL('Ara toplam', 'Subtotal') + '</td><td class="num">' + para(ara) + '</td></tr>' + Object.keys(kdv).filter(function(o){ return Number(o) > 0; }).map(function(o){ return '<tr><td>' + pL('KDV', 'VAT') + ' %' + o + '</td><td class="num">' + para(kdv[o]) + '</td></tr>'; }).join('') +
-      '<tr><td><b>' + pL('Genel toplam', 'Total') + '</b></td><td class="num"><b>' + para(ara + kdvT) + '</b></td></tr></tbody></table>' +
+      [pL('Temsilci', 'Sales rep.'), t.temsilci], [pL('Teslim süresi', 'Lead time'), sure], [pL('Teslim şekli', 'Delivery terms'), t.teslimSekli],
+      [pL('Nakliye', 'Freight'), t.nakliye], [pL('Ödeme', 'Payment'), t.odemeKosulu], [pL('Para birimi', 'Currency'), pb]];
+    yazdirHtml('<div class="print-doc-head"><div><h2>' + pL('TEKLİF', 'QUOTATION') + '</h2><div>' + esc(t.teklifNo || '') + (t.revizyon ? '/R' + t.revizyon : '') + '</div></div><div style="text-align:right">' + cariBaskiHtml(t.musteriId) + '</div></div>' +
+      printBilgiHtml(bilgi) + printSatisKalemHtml(t.kalemler || [], pb, sure) +
       (t.not_ ? '<p>' + esc(t.not_).replace(/\n/g, '<br>') + '</p>' : '') + firmaBankaHtml());
   }
   function disaAktarTeklifCSV(id){
@@ -5945,19 +6041,20 @@ Dikkat edilmesi gereken 2 nokta:
   }
 
   // ---------- Sipariş: yazdır & CSV ----------
+  // Sipariş onayı (order confirmation), teklif düzeninde: müşteri sipariş no, ilgili kişi, temsilci, termin, teslim şekli, sevk adresi, ödeme
   function yazdirSiparis(id){
     var s = state.siparisler.find(function(x){ return x.id===id; });
     if (!s) return;
-    var kalemSatir = (s.kalemler||[]).map(function(k){ return '<tr><td>'+esc(k.ad)+'</td><td>'+fmt2(k.miktar)+'</td><td>€'+fmt2(k.birimFiyat)+'</td><td>€'+fmt2(k.tutar)+'</td><td>'+fmt2(k.sevkEdilen||0)+'</td></tr>'; }).join('');
-    document.getElementById('printArea').innerHTML =
-      '<div class="print-doc-head"><div><h2>SİPARİŞ</h2><div>'+esc(s.siparisNo)+'</div></div><div style="text-align:right">'+
-      '<div>'+esc(musteriAdiById(s.musteriId))+'</div><div>'+esc(s.tarih||'')+'</div><div class="muted">Durum: '+esc(s.durum||'')+'</div></div></div>'+
-      '<table><thead><tr><th>Ürün</th><th>Miktar</th><th>B.Fiyat</th><th>Tutar</th><th>Sevk Edilen</th></tr></thead><tbody>'+kalemSatir+'</tbody></table>'+
-      '<p><strong>Toplam: €'+fmt2(s.toplam)+'</strong></p>'+
-      (s.not_?'<p>Not: '+esc(s.not_)+'</p>':'');
-    printBaslikEkle();
-    document.body.classList.add('printing');
-    setTimeout(function(){ window.print(); setTimeout(function(){ document.body.classList.remove('printing'); }, 300); }, 50);
+    var pb = belgePB(s), tk = s.teklifId && state.teklifler.find(function(x){ return x.id === s.teklifId; });
+    var bilgi = [[pL('Sipariş tarihi', 'Order date'), kvTarihTR(s.tarih)], [pL('Müşteri sipariş no', 'Your order no'), s.musteriSiparisNo], [pL('Teklif', 'Quotation'), tk ? tk.teklifNo + (tk.revizyon ? '/R' + tk.revizyon : '') : ''],
+      [pL('Talep no', 'Your ref.'), s.talepNo], [pL('İlgili kişi', 'Attn.'), s.ilgiliKisi], [pL('Temsilci', 'Sales rep.'), s.temsilci], [pL('Termin', 'Delivery date'), s.termin ? kvTarihTR(s.termin) : ''],
+      [pL('Teslim şekli', 'Delivery terms'), s.teslimSekli], [pL('Nakliye', 'Freight'), s.nakliye], [pL('Sevk adresi', 'Ship to'), s.sevkAdresi], [pL('Resim revizyonu', 'Drawing rev.'), s.resimRev],
+      [pL('Ödeme', 'Payment'), s.odemeKosulu], [pL('Para birimi', 'Currency'), pb]];
+    yazdirHtml((s.durum === 'İptal' ? printIptalHtml('') : '') +
+      '<div class="print-doc-head"><div><h2>' + pL('SİPARİŞ ONAYI', 'ORDER CONFIRMATION') + '</h2><div>' + esc(s.siparisNo || '') + '</div></div><div style="text-align:right">' + cariBaskiHtml(s.musteriId) + '</div></div>' +
+      printBilgiHtml(bilgi) + printSatisKalemHtml(s.kalemler || [], pb, s.termin ? kvTarihTR(s.termin) : '') +
+      (s.musteriMalzemesi === 'Evet' ? '<p class="muted">' + pL('Malzeme müşteri tarafından sağlanır; fiyatlar işçilik bedelidir.', 'Material is supplied by the customer; prices are processing charges.') + '</p>' : '') +
+      (s.not_ ? '<p>' + esc(s.not_).replace(/\n/g, '<br>') + '</p>' : ''));
   }
   function disaAktarSiparisCSV(id){
     var s = state.siparisler.find(function(x){ return x.id===id; });
@@ -7119,7 +7216,7 @@ Dikkat edilmesi gereken 2 nokta:
       });
     } else {
       renderSimpleList(t.key+'Liste', items, t.collection, {
-        emptyText: t.bos || 'Kayıt yok', rowFn: t.rowFn, fields: t.fields, editTitle: t.duzenleBaslik || 'Kaydı düzenle',
+        emptyText: t.bos || 'Kayıt yok', rowFn: t.rowFn, fields: t.fields, editTitle: t.duzenleBaslik || 'Kaydı düzenle', kartBaslik: t.kartBaslik || String(t.listeBaslik || 'Kayıt').replace(/\s*(listesi|kayıtları)$/i, '') + ' kartı',
         onUpdate: function(vals, item){ crudGuncelle(t, vals, item); }, extraActions: t.ekAksiyon, onDelete: sil, deleteMsg: t.silMesaj, kilitliSatir: t.kilitliSatir, formAcildi: t.formAcildi,
         kayitOncesi: t.kayitOncesi ? function(vals, item, devam){ t.kayitOncesi(Object.assign({}, item, vals), item, devam); } : null
       });
@@ -8338,8 +8435,8 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // ---------- Çıktı şablonu (Tanımlar › Çıktı şablonu): renk, yazı tipi, logo boyu, belge notları, imza alanı, alt bilgi ----------
   var CIKTI_TURLERI = [['teklif','Teklif'],['siparis','Sipariş'],['fatura','Fatura / proforma'],['irsaliye','İrsaliye'],['sas','Satınalma siparişi']];
-  var CIKTI_YAZI = { mono: "'IBM Plex Mono', monospace", sans: "'Space Grotesk', 'Helvetica Neue', Arial, sans-serif", serif: "Georgia, 'Times New Roman', serif" };
-  function ciktiSablonu(){ var c = state.config || {}; return Object.assign({ renk: '#000000', yazi: 'mono', logoBoy: 60, imza: { teklif: false, siparis: false, fatura: false, irsaliye: true, sas: false }, notlar: {}, altBilgi: '' }, c.ciktiSablon || {}); }
+  var CIKTI_YAZI = { mono: "'IBM Plex Mono', monospace", sans: "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif", serif: "Georgia, 'Times New Roman', serif" };
+  function ciktiSablonu(){ var c = state.config || {}; return Object.assign({ renk: '#000000', yazi: 'sans', logoBoy: 60, imza: { teklif: false, siparis: false, fatura: false, irsaliye: true, sas: false }, notlar: {}, altBilgi: '' }, c.ciktiSablon || {}); }
   function ciktiBelgeTuru(pa){
     var h = pa.querySelector('h2'); if (!h) return '';
     var t = h.textContent.toLocaleUpperCase('tr');
@@ -8364,7 +8461,7 @@ Dikkat edilmesi gereken 2 nokta:
     ciktiStilGuncelle();
     if (pa.querySelector('.cikti-alt')) return;
     var tur = ciktiBelgeTuru(pa); if (!tur) return;
-    var sb = ciktiSablonu(), not = (sb.notlar || {})[tur] || '', imza = sb.imza && sb.imza[tur], alt = sb.altBilgi || '';
+    var sb = ciktiSablonu(), not = (sb.notlar || {})[tur] || '', imza = sb.imza && sb.imza[tur] && !pa.querySelector('.cikti-imza'), alt = sb.altBilgi || ''; // belgenin kendi imza alanı varsa (irsaliye) tekrarlanmaz
     if (!not && !imza && !alt) return;
     var kutular = tur === 'irsaliye' ? [pL('Teslim eden','Delivered by'), pL('Teslim alan','Received by')] : tur === 'teklif' ? [pL('Hazırlayan','Prepared by'), pL('Müşteri onayı (kaşe / imza)','Customer approval (stamp / signature)')] : [pL('Hazırlayan','Prepared by'), pL('Onaylayan','Approved by')];
     pa.insertAdjacentHTML('beforeend', '<div class="cikti-alt">' +
@@ -19041,6 +19138,60 @@ Dikkat edilmesi gereken 2 nokta:
     if (!onizlemeAcik()){ onizSonraCalistir(); return _asilPrint(); }
     onizlemeGoster(pa.innerHTML);
   };
+  // ---------- Belgeyi dosya olarak indirme: PDF (html2pdf) ve Excel (SheetJS); kütüphaneler ilk kullanımda yüklenir ----------
+  var _scriptSoz = {};
+  function scriptYukle(url){
+    if (!_scriptSoz[url]) _scriptSoz[url] = new Promise(function(ok, hata){ var sc = document.createElement('script'); sc.src = url; sc.onload = ok; sc.onerror = function(){ delete _scriptSoz[url]; hata(new Error('Kütüphane yüklenemedi (internet bağlantısı?)')); }; document.head.appendChild(sc); });
+    return _scriptSoz[url];
+  }
+  function dosyaIndir(blob, ad){ var u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = ad; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 4000); }
+  function belgeDosyaAdi(){
+    var k = byId('onizKagit'), h = k && k.querySelector('.print-doc-head h2'), no = h && h.parentNode.querySelector('div');
+    var ad = ((h ? h.textContent : 'Belge') + (no ? ' ' + no.textContent : '')).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    return ad || 'Belge';
+  }
+  function belgePdfIndir(){
+    var k = byId('onizKagit'); if (!k) return;
+    toast('PDF hazırlanıyor…');
+    scriptYukle('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js').then(function(){
+      var kap = document.createElement('div'); kap.style.cssText = 'position:fixed;left:-10000px;top:0;';
+      var kopya = document.createElement('div'); kopya.className = 'oniz-kagit' + (_onizYatay ? ' yatay' : ''); kopya.style.transform = 'none'; kopya.style.boxShadow = 'none'; kopya.innerHTML = k.innerHTML;
+      kap.appendChild(kopya); document.body.appendChild(kap);
+      return window.html2pdf().set({ margin: [8, 8, 10, 8], filename: belgeDosyaAdi() + '.pdf', image: { type: 'jpeg', quality: 0.96 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: _onizYatay ? 'landscape' : 'portrait' }, pagebreak: { mode: ['css', 'legacy'], avoid: 'tr' } }).from(kopya).outputPdf('blob')
+        .then(function(blob){ kap.remove(); dosyaIndir(blob, belgeDosyaAdi() + '.pdf'); onizSonraCalistir(); toast('✓ PDF indirildi'); }, function(e){ kap.remove(); throw e; });
+    }).catch(function(e){ toast('PDF oluşturulamadı: ' + (e && e.message || e) + ' — "Yazdır" › "PDF olarak kaydet" kullanılabilir.', true); });
+  }
+  // Excel: firma başlığı, belge başlığı, bilgi satırları ve tablolar sırayla satır satır; "₺1.234,56" gibi tutarlar sayıya çevrilir
+  function excelHucre(t){
+    t = String(t || '').replace(/\s+/g, ' ').trim();
+    var m = /^([−-])?\s*([€₺$])?\s*(\d{1,3}(?:\.\d{3})*|\d+)(,\d+)?\s*([€₺$])?$/.exec(t);
+    if (m && (m[2] || m[5] || m[4] || /^\d+$/.test(t))){ var n = Number(m[3].replace(/\./g, '') + (m[4] ? '.' + m[4].slice(1) : '')); return m[1] ? -n : n; }
+    return t;
+  }
+  function belgeSatirlari(kok){
+    var sat = [];
+    (function gez(n){
+      Array.prototype.forEach.call(n.children, function(c){
+        if (c.tagName === 'TABLE'){ Array.prototype.forEach.call(c.querySelectorAll('tr'), function(tr){ var r = Array.prototype.map.call(tr.children, function(td){ return excelHucre(td.innerText); }); if (r.some(function(x){ return x !== ''; })) sat.push(r); }); sat.push([]); return; }
+        if (c.tagName === 'IMG' || c.tagName === 'STYLE' || c.tagName === 'SCRIPT') return;
+        if (c.querySelector('table') || (c.children.length > 1 && /print-doc-head|firma-baslik|cikti-alt/.test(c.className))){ gez(c); return; }
+        var t = c.innerText && c.innerText.trim(); if (t) t.split(/\n+/).forEach(function(x){ if (x.trim()) sat.push([x.trim()]); });
+      });
+    })(kok);
+    return sat;
+  }
+  function belgeExcelIndir(){
+    var k = byId('onizKagit'); if (!k) return;
+    scriptYukle('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js').then(function(){
+      var X = window.XLSX, satir = belgeSatirlari(k), ws = X.utils.aoa_to_sheet(satir), gen = [];
+      satir.forEach(function(r){ r.forEach(function(v, i){ var l = String(v == null ? '' : v).length; gen[i] = Math.min(60, Math.max(gen[i] || 8, l + 2)); }); });
+      ws['!cols'] = gen.map(function(w){ return { wch: w }; });
+      var wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Belge');
+      X.writeFile(wb, belgeDosyaAdi() + '.xlsx');
+      toast('✓ Excel indirildi');
+    }).catch(function(e){ toast('Excel oluşturulamadı: ' + (e && e.message || e), true); });
+  }
   function onizlemeGoster(html){
     var ov = byId('onizOverlay');
     if (!ov){
@@ -19050,7 +19201,8 @@ Dikkat edilmesi gereken 2 nokta:
         '<button type="button" class="btn secondary small" data-oniz="sigdir">Sığdır</button>' +
         '<select id="onizYon" title="Sayfa yönü"><option value="dikey">A4 dikey</option><option value="yatay">A4 yatay</option></select>' +
         '<label style="display:flex;gap:4px;align-items:center;margin:0;font-size:12px"><input type="checkbox" id="onizHep" style="width:auto"> Her yazdırmada önce önizle</label>' +
-        '<button type="button" class="btn small" data-oniz="yazdir">🖨 Yazdır / PDF</button><button type="button" class="btn secondary small" data-oniz="kapat">Kapat</button></div>' +
+        '<button type="button" class="btn secondary small" data-oniz="pdf" title="Belgeyi PDF dosyası olarak indir (firma başlığı ve logosuyla)">⬇ PDF</button><button type="button" class="btn secondary small" data-oniz="excel" title="Belgeyi Excel (.xlsx) olarak indir: başlık, bilgiler ve tablolar satır satır">⬇ Excel</button>' +
+        '<button type="button" class="btn small" data-oniz="yazdir">🖨 Yazdır</button><button type="button" class="btn secondary small" data-oniz="kapat">Kapat</button></div>' +
         '<div class="oniz-alan" id="onizAlan"><div class="oniz-kagit" id="onizKagit"></div></div>';
       document.body.appendChild(ov);
       ov.addEventListener('click', function(e){
@@ -19058,6 +19210,8 @@ Dikkat edilmesi gereken 2 nokta:
         var a = b.dataset.oniz;
         if (a === 'kapat'){ onizKapat(); return; }
         if (a === 'yazdir'){ ov.classList.remove('open'); asilYazdir(); return; }
+        if (a === 'pdf'){ belgePdfIndir(); return; }
+        if (a === 'excel'){ belgeExcelIndir(); return; }
         if (a === 'buyut') _onizZoom = Math.min(2, _onizZoom + 0.1);
         if (a === 'kucult') _onizZoom = Math.max(0.4, _onizZoom - 0.1);
         if (a === 'sigdir'){ var w = byId('onizAlan').clientWidth - 40, kw = (_onizYatay ? 297 : 210) * 3.78; _onizZoom = Math.max(0.4, Math.min(1.5, w / kw)); }
