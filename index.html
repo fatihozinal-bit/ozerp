@@ -1359,7 +1359,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r171</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r172</div>
   </nav>
   <main>
     <div class="topbar">
@@ -14310,7 +14310,7 @@ Dikkat edilmesi gereken 2 nokta:
       makineKiraAy: 0, makineKiraAylik: 0, makineDevirBedeli: 0, // kiralama modelinde kaç ay kiralanır (0 = plan boyunca kiralık), aylık kira, kira sonunda satın alma bedeli (0 = makine bedeli)
       giderHaric: [], // planda sayılmayan gider kalemleri (ör. işletme kirasına dahil olan iş yeri kirası)
       // Finansman (Kadir Bey)
-      finansmanTutar: 0, finansmanOtomatik: false, finansFaizYillik: 0, // finansman elle girilir; 0 = yok (otomatik işaretlenirse gereken en az tutar) geriOdemeBaslangicAy: '', geriOdemeAylik: 0,
+      finansmanTutar: 0, finansmanOtomatik: false, finansmanKullanim: 'Yatırım ödemelerine doğrudan (kasadan geçmez)', finansFaizYillik: 0, // finansman elle girilir; 0 = yok (otomatik işaretlenirse gereken en az tutar) geriOdemeBaslangicAy: '', geriOdemeAylik: 0,
       // Ay ay elle girilen değerler ve yapılacaklar
       aylik: {}, yapilacak: { bitti: {}, ozel: [] },
       // Ürünler / işler: her biri kendi fiyatı, kendine ayrılan makine sayısı ve makine başı adediyle ayrı hesaplanır.
@@ -14539,7 +14539,10 @@ Dikkat edilmesi gereken 2 nokta:
       // Ürünler: fiyat / makine / adet / gece adedi girildiği aydan itibaren geçerli (ay ay P.aylik[ay].urun[id])
       var UA = P.urunler.map(function(u){ return { id: u.id, ad: String(u.ad || '').trim() || 'Ürün', fiyat: Math.max(0, Number(u.fiyat) || 0), makine: Math.max(0, Number(u.makine) || 0),
         adet: Math.max(0, Number(u.adet) || 0), gece: Math.max(0, Number(u.gece) || 0), sinir: sayi(u.sinir), degisken: sayi(u.degisken), basla: /^\d{4}-\d{2}$/.test(u.basla || '') ? u.basla : '' }; });
-      var borc = finansman, tahT = (Number(P.kdvTevkifat)||0) / 10;
+      // Finansman: varsayılan olarak yatırım ödemelerine doğrudan gider (Kadir Bey makine / devir / tesisat faturasını öder, para şirket kasasına girmez);
+      // borç ancak para kullanıldıkça oluşur, faiz ve geri ödeme kullanılan tutar üzerindendir. "Şirket kasasına yatırılır" seçilirse tamamı ilk ay kasaya girer.
+      var finDogrudan = P.finansmanKullanim !== 'Şirket kasasına yatırılır', finKalan = finansman, finKum = 0;
+      var borc = finDogrudan ? 0 : finansman, tahT = (Number(P.kdvTevkifat)||0) / 10;
       var bosHafta = P.cumartesi;
       for (var i = 0; i < P.sureAy; i++){
         var ay = ayEkle(P.baslangicAy, i), yil = Number(ay.slice(0,4)), ayNo = Number(ay.slice(5,7));
@@ -14684,7 +14687,9 @@ Dikkat edilmesi gereken 2 nokta:
           }
           amortAy += yil === y0 ? v.yillik[yil] / (12 - Number(v.ay.slice(5,7)) + 1) : v.yillik[yil] / 12;
         });
-        // --- Finansman: faiz + geri ödeme
+        // --- Finansman: doğrudan modda bu ayın yatırım ödemeleri (KDV dahil) kalan finansmandan karşılanır, kasadan çıkmaz
+        var finKullan = 0;
+        if (finDogrudan){ var yatOde = (i === 0 ? yatirimKdvHaric + yatirimKdv : 0) + (makineAlim + tekAktif) * (1 + P.kdvOrani/100); finKullan = Math.min(finKalan, yatOde); finKalan -= finKullan; borc += finKullan; finKum += finKullan; }
         var faiz = borc * (P.finansFaizYillik/100) / 12;
         var geriOdeme = 0;
         if (P.geriOdemeBaslangicAy && ay >= P.geriOdemeBaslangicAy && borc > 0) geriOdeme = Math.min(borc, Number(P.geriOdemeAylik)||0);
@@ -14737,7 +14742,7 @@ Dikkat edilmesi gereken 2 nokta:
           kiraNet: kiraNet, kira: kiraBrut, kiraStopaj: kiraStopaj, giderKalem: giderKalem, tekGider: tekGiderKdvli + tekGiderKdvsiz, tekAktif: tekAktif, gElle: Object.keys(o.gider || {}), yemek: yemek, elektrikBirim: P.elektrikFiyat * elektrikKatsayi, makineKira: makineKira, makineAlim: makineAlim, damgaMakineKira: damgaMakineKira, elektrik: elektrik, elektrikHesap: elektrikHesap, kwh: kwh, uc: uc, ucHesap: ucHesap,
           sabit: sabitKdvli + sabitKdvsiz, sabitHesap: sabitHesap, ekGider: ekGider, ekGiderKdvli: ekGiderKdvli, tekSefer: tekSefer, amortisman: amortAy, faiz: faiz, gider: gider, karOncesi: karOncesi, kidem: kidem,
           hesaplananKdv: hesaplanan, indirilecekKdv: indirilecek, devredenOnceki: devredenOnceki, kdvOde: kdvOde, devredenKdv: devredenKdv, pers: pers,
-          geciciOde: geciciOde, yilKumKar: Y.karOncesi, borc: borc, geriOdeme: geriOdeme, elle: !!A[ay] && Object.keys(A[ay]).length > 0, gercek: !!o.gercek, not: o.not || '' });
+          geciciOde: geciciOde, yilKumKar: Y.karOncesi, borc: borc, geriOdeme: geriOdeme, finKullan: finKullan, finKum: finKum, elle: !!A[ay] && Object.keys(A[ay]).length > 0, gercek: !!o.gercek, not: o.not || '' });
       }
       // Nakit: ikinci tur (ertesi aya kalan vergiler + tahsilat gecikmesi + maaş günü)
       var gecikme = Math.round(P.tahsilatGun / 30);
@@ -14745,7 +14750,7 @@ Dikkat edilmesi gereken 2 nokta:
       kasa = -(yatirimKdvHaric + yatirimKdv); // Ay 0: makine+nakliye+takım (KDV dahil) ödemesi
       var yatirimNakit = -kasa;
       minKasa = kasa;
-      var sirketKasa = finansman + kasa, minSirketKasa = sirketKasa, topGeriOdeme = 0;
+      var sirketKasa = (finDogrudan ? (aylar[0] ? aylar[0].finKum : 0) : finansman) + kasa, minSirketKasa = sirketKasa, topGeriOdeme = 0;
       aylar.forEach(function(a, i){
         var onceki = aylar[i - gecikme];
         var tahsilat = onceki ? onceki.satis * (1 + P.kdvOrani/100 * (1 - tahT)) + onceki.kdvliDigerGelir * (1 + P.kdvOrani/100) + onceki.talasGelir : 0;
@@ -14759,7 +14764,7 @@ Dikkat edilmesi gereken 2 nokta:
         a.netNakit = tahsilat - cikis;
         kasa += a.netNakit; a.kasa = kasa;
         topGeriOdeme += a.geriOdeme;
-        sirketKasa = finansman + kasa - topGeriOdeme; a.sirketKasa = sirketKasa;
+        sirketKasa = (finDogrudan ? a.finKum : finansman) + kasa - topGeriOdeme; a.sirketKasa = sirketKasa;
         if (kasa < minKasa) minKasa = kasa;
         if (sirketKasa < minSirketKasa) minSirketKasa = sirketKasa;
         if (geriDonusAy === null && kasa >= 0) geriDonusAy = i + 1;
@@ -14815,7 +14820,7 @@ Dikkat edilmesi gereken 2 nokta:
         a.basaBas = a.fiyat - db > 0 ? sb / (a.fiyat - db) : null;
       });
       return { P: P, refIndex: refI, aylar: aylar, yillar: yillar, odemeler: odemeler, nakitTakvim: nakitTakvim, yatirimNakit: yatirimNakit, yatirimKdv: yatirimKdv, minKasa: minKasa, geriDonusAy: geriDonusAy,
-        finansman: finansman, minSirketKasa: minSirketKasa, kalanBorc: borc,
+        finansman: finansman, finansmanDogrudan: finDogrudan, finansmanKullanilan: finKum, minSirketKasa: minSirketKasa, kalanBorc: borc,
         kalanYukumluluk: kalanYukumluluk, basaBas: { adet: basaBasAdet, gunluk: basaBasAdet == null ? null : basaBasAdet / Math.max(1, ref.gun), degiskenBirim: degiskenBirim, sabitAylik: sabitAylik, refAy: ref.ay, amortNorm: amortNorm },
         amortismanaTabi: amortismanaTabi, makineKiraAy: kiraAy, makineKiraAylik: makineKiraAylik, makineAlimAy: kiraAy && varliklar.length ? varliklar[0].ay : null, makineDevir: kiraAy ? amortismanaTabi : 0, kiraAd: kiraAd, makineAlimlar: varliklar.filter(function(v){ return !v.omur; }).map(function(v){ return { ay: v.ay, tutar: v.tutar }; }) };
     }
@@ -14968,7 +14973,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kararli = r.aylar[r.refIndex];
     kvSet('kvKartlar',
       '<div class="card accent tiklanir" data-kvhesap="yatirim" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Başlangıç yatırımı (KDV dahil nakit) <span class="kart-ok">›</span></div><div class="value">'+kvTlK(r.yatirimNakit)+'</div><div class="sub">KDV '+kvTlK(r.yatirimKdv)+' ilk aylarda satış KDV\'sinden geri döner</div></div>'+
-      '<div class="card '+(r.minSirketKasa < 0 ? 'accent' : '')+' tiklanir" data-kvhesap="finansman" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Kadir Bey finansmanı <span class="kart-ok">›</span></div><div class="value">'+kvTlK(r.finansman)+'</div><div class="sub">'+(r.finansmanOto ? 'otomatik: gereken en az tutar' : r.finansman ? 'Varsayımlar\'da girilen' : 'girilmedi')+(r.gerekenEk ? ' · <span class="neg">en az '+kvTlK(r.gerekenEk)+' daha gerekir</span>' : '')+' · en düşük şirket kasası <span class="'+(r.minSirketKasa<0?'neg':'')+'">'+kvTlK(r.minSirketKasa)+'</span></div></div>'+
+      '<div class="card '+(r.minSirketKasa < 0 ? 'accent' : '')+' tiklanir" data-kvhesap="finansman" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Kadir Bey finansmanı <span class="kart-ok">›</span></div><div class="value">'+kvTlK(r.finansman)+'</div><div class="sub">'+(r.finansmanOto ? 'otomatik: gereken en az tutar' : !r.finansman ? 'girilmedi' : r.finansmanDogrudan ? 'yatırıma doğrudan, kullanılan '+kvTlK(r.finansmanKullanilan) : 'şirket kasasına')+(r.gerekenEk ? ' · <span class="neg">en az '+kvTlK(r.gerekenEk)+' daha gerekir</span>' : '')+' · en düşük şirket kasası <span class="'+(r.minSirketKasa<0?'neg':'')+'">'+kvTlK(r.minSirketKasa)+'</span></div></div>'+
       '<div class="card tiklanir" data-kvhesap="yil" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">'+o.yil+' ciro (KDV hariç) <span class="kart-ok">›</span></div><div class="value">'+kvTlK(o.ciro)+'</div><div class="sub">ayda ~'+fmt(o.adetAy)+' adet'+(kur?' · ≈ €'+fmt(o.ciro/kur):'')+'</div></div>'+
       '<div class="card good tiklanir" data-kvhesap="yil" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">'+o.yil+' vergi sonrası kâr <span class="kart-ok">›</span></div><div class="value">'+kvTlK(o.net)+'</div><div class="sub">vergi öncesi '+kvTlK(o.kar)+' · KV '+kvTlK(o.kv)+'</div></div>'+
       (r.yatirimNakit > 0 ? '<div class="card '+(o.geriDonus && o.geriDonus <= 18 ? 'good' : 'accent')+' tiklanir" data-kvhesap="geriDonus" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Yatırımın nakden geri dönüşü <span class="kart-ok">›</span></div><div class="value">'+(o.geriDonus ? o.geriDonus+'. ay' : '> '+P.sureAy+' ay')+'</div><div class="sub">'+(o.geriDonus ? kvAyAdi(r.aylar[o.geriDonus-1].ay)+' · hedef 12–18 ay' : 'ufuk içinde dönmüyor')+'</div></div>'
@@ -15818,7 +15823,7 @@ Dikkat edilmesi gereken 2 nokta:
       d = { t: 'Başlangıç yatırımı', f: 'Planın ilk ayında ödenen makine, taşıma ve ilk takım bedeli, KDV dahil. KDV kısmı sonraki aylarda satış KDV\'sinden düşülerek geri döner.'+(r.makineKiraAy ? ' Makineler ilk '+r.makineKiraAy+' ay kiralık: başta makine bedeli ödenmez'+(r.makineAlimAy ? ', '+kvAyAdi(r.makineAlimAy)+'\'da '+kvTl(r.makineDevir)+' + KDV ile satın alınır.' : '.') : ''),
         h: kvHesapTablo([kvHesapSatir('Makine ve ekipman', r.makineKiraAy ? 0 : P.makine), kvHesapSatir('Taşıma / montaj', P.nakliye), kvHesapSatir('İlk takım ve sarf', P.ilkTakim), kvHesapSatir('+ KDV %'+P.kdvOrani, r.yatirimKdv), kvHesapTop('Nakit ödenen', r.yatirimNakit)]), git: 'varsayim', gitAd: 'Varsayımlar (yatırım)' };
     } else if (k === 'finansman'){
-      d = { t: 'Kadir Bey finansmanı', f: r.finansmanOto ? 'Varsayımlar\'da "otomatik" işaretli: plan boyunca şirket kasasının eksiye düşmemesi için gereken en az tutar, 100 bin ₺\'ye yuvarlanır.' : (r.finansman ? 'Varsayımlar\'da girilen tutar.' : 'Finansman girilmedi: şirket kasası sıfırdan başlar.')+(r.gerekenEk ? ' Kasa eksiye düşüyor; en az '+kvTl(r.gerekenEk)+' daha para gerekir (Varsayımlar › Yatırım ve finansman).' : ''),
+      d = { t: 'Kadir Bey finansmanı', f: (r.finansmanDogrudan && r.finansman ? 'Yatırım ödemelerine doğrudan: makine / devir / taşıma / tesisat / ilk takım faturalarını Kadir Bey öder, para şirket kasasına girmez; borç kullanıldıkça oluşur. Kullanılan '+kvTl(r.finansmanKullanilan)+', kullanılmayan '+kvTl(Math.max(0, r.finansman - r.finansmanKullanilan))+'. ' : '')+(r.finansmanOto ? 'Varsayımlar\'da "otomatik" işaretli: plan boyunca şirket kasasının eksiye düşmemesi için gereken en az tutar, 100 bin ₺\'ye yuvarlanır.' : (r.finansman ? 'Varsayımlar\'da girilen tutar.' : 'Finansman girilmedi: şirket kasası sıfırdan başlar.')+(r.gerekenEk ? ' Kasa eksiye düşüyor; en az '+kvTl(r.gerekenEk)+' daha para gerekir (Varsayımlar › Yatırım ve finansman).' : '')),
         h: kvHesapTablo([kvHesapTop('Finansman', r.finansman), kvHesapSatir('Plan boyunca en düşük şirket kasası', r.minSirketKasa, r.minSirketKasa < 0 ? 'neg' : ''), kvHesapSatir('Plan sonunda kalan borç', r.kalanBorc)]), git: 'varsayim', gitAd: 'Varsayımlar (finansman)' };
     } else if (k === 'yil'){
       var oz = KV_MODEL.ozetle(r), Y = r.yillar[oz.yil] || {};
@@ -16308,7 +16313,8 @@ Dikkat edilmesi gereken 2 nokta:
       ['makineKiraAy','Kaç ay kiralansın','num','ay','Süre bitince makineler satın alınır. 0 ya da plan süresi = plan boyunca kiralık, satın alma yok.'],
       ['makineDevirBedeli','Kira sonunda satın alma bedeli (KDV hariç)','num','₺','0 = Yatırım bölümündeki makine bedeli. İlişkili taraftan alımda o günkü piyasa değeri (ekspertiz) olmalı.']]],
     ['Finansman (Kadir Bey)', 'Yatırım ve ilk ayların açığı için konan para.', [
-      ['finansmanTutar','Finansman tutarı','num','₺','Şirkete konan para (elle). 0 = finansman yok, kasa sıfırdan başlar; eksiye düşerse Özet kartında ne kadar gerektiği yazar.'],
+      ['finansmanTutar','Finansman tutarı','num','₺','Kadir Bey\'in koyacağı en çok para (elle). 0 = finansman yok; kasa eksiye düşerse Özet kartında ne kadar gerektiği yazar.'],
+      ['finansmanKullanim','Finansman nereye gider','sel','','Doğrudan: makine, devir, taşıma, tesisat ve ilk takım faturalarını Kadir Bey öder; para şirket kasasına girmez, borç ödendikçe oluşur. Kasaya: tutarın tamamı ilk ay şirket hesabına yatırılır.',['Yatırım ödemelerine doğrudan (kasadan geçmez)','Şirket kasasına yatırılır']],
       ['finansmanOtomatik','Tutar 0 ise gereken en azı otomatik hesapla','bool','','Evet: kasanın eksiye düşmemesi için gereken en az tutar hesaplanır.'],
       ['finansFaizYillik','Faiz','num','%/yıl','0 = faizsiz.'],
       ['geriOdemeBaslangicAy','Geri ödeme başlangıcı','ay','','Boş = geri ödeme yok.'],
