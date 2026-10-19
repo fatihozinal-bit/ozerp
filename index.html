@@ -744,10 +744,9 @@
   #formBox.wide #formFields .field > input:not([type=checkbox]):not([type=radio]):not([type=file]), #formBox.wide #formFields .field > select, #formBox.wide #formFields .field > textarea { width: 100%; }
   @media (max-width: 860px) { main { padding: 12px 12px 30px 12px; } }
   /* Tanımlar: bloklar iki sütunda */
-  #panel-tanimlar.active { columns: 2 480px; column-gap: 12px; }
-  #panel-tanimlar .pagehead { column-span: all; }
-  #tanimEkBloklar { display: contents; }
-  #panel-tanimlar .block { break-inside: avoid; }
+  .tanim-satir { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 12px; align-items: start; margin-bottom: 12px; }
+  .tanim-satir > .block, .tanim-kol > .block:last-child, .tanim-kol > div > .block:last-child { margin-bottom: 0; }
+  .tanim-kol > .block, .tanim-kol > div > .block { margin-bottom: 12px; }
   #panel-tanimlar .cards { margin-bottom: 0; }
   #panel-tanimlar .card .value { font-size: 15px; }
   /* Kapasite: tablo kutuya sığar, yana kaydırma çıkmaz — gün sütunları eşit paylaşır */
@@ -762,7 +761,7 @@
   #kodParamTablo input[type=text] { width: 64px !important; }
   #kodParamTablo input[type=number] { width: 58px !important; }
   #kodParamTablo th, #kodParamTablo td:first-child { white-space: nowrap; }
-  @media (max-width: 1100px) { #panel-tanimlar.active { columns: 1; } }
+
   @media (max-width: 860px) {
     .recordrow .ractions { flex-wrap: wrap; }
     #topBanner { position: relative; top: 0; }
@@ -1342,7 +1341,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r162</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r163</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1693,18 +1692,16 @@ Dikkat edilmesi gereken 2 nokta:
       </div>
       <div class="tanim-kaydet-bar" id="tanimKaydetBar"><span id="tanimKaydetDurum" class="muted">Tüm değişiklikler kaydedildi</span><button class="btn" id="tanimKaydetBtn" disabled>Değişiklikleri kaydet</button></div>
 
-      <div id="sirketSabitleri"></div>
-      <div class="block" style="display:none">
-        <div class="block-head"><h3>Sabit giderler (aylık)</h3></div>
+      <!-- İlgili tanımlar yan yana (IFS / Canias gibi): makine + enerji + kapasite · personel + ödeme düzeni · üretim tanımları · vergi, para, kilit, kodlar -->
+      <div class="tanim-satir"><div class="tanim-kol">
+      <div class="block">
+        <div class="block-head"><h3>Makineler</h3><button class="btn small" id="mEkleBtn">+ Yeni kayıt</button></div>
         <div class="block-body">
-          <div class="grid2">
-            <div class="field"><label>Kira (€)</label><input type="number" id="gKira" min="0"><span class="kur-hint empty" id="gKiraKur"></span></div>
-            <div class="field"><label>Muhasebe + sigorta (€)</label><input type="number" id="gDiger" min="0"><span class="kur-hint empty" id="gDigerKur"></span></div>
-          </div>
-          <button class="btn secondary small" id="gKaydet">Güncelle</button>
+          <div class="recordlist" id="makineListe"></div>
         </div>
       </div>
-
+      </div><div class="tanim-kol">
+      <div id="sirketMakine"></div>
       <div class="block">
         <div class="block-head"><h3>Kapasite ayarı (aylık makine-saat) <span class="info-ico" tabindex="0">!<span class="info-bubble">Hangi günler çalışıldığını ve o gün kaç saat çalışıldığını (vardiya × saat) girin — aylık toplam makine-saat kapasitesi buradan otomatik hesaplanır. Bu program, her bir makinenin tek başına aylık çalışma saatini de belirler; Özet sayfasındaki "Makine kullanım oranı" grafiği, o makinede üretilen ürünlerin birim sürelerine (dk/adet) göre bu saatin ne kadarının kullanıldığını gösterir — makine başına ayrıca kapasite girmenize gerek yok.</span></span></h3></div>
         <div class="block-body">
@@ -1719,11 +1716,32 @@ Dikkat edilmesi gereken 2 nokta:
           <div class="helper" id="kapMsg"></div>
         </div>
       </div>
-
+      </div></div>
+      <div class="tanim-satir"><div class="tanim-kol">
+      <div class="block">
+        <div class="block-head"><h3>Personel</h3><button class="btn small" id="pEkleBtn">+ Yeni kayıt</button></div>
+        <div class="block-body">
+          <div class="recordlist" id="personelListe"></div>
+        </div>
+      </div>
+      </div><div class="tanim-kol">
+      <div id="sirketPersonel"></div>
+      </div></div>
+      <div class="tanim-satir" id="tanimEkBloklar"></div>
+      <div class="tanim-satir"><div class="tanim-kol">
+      <div id="sirketVergi"></div>
+      <div class="block">
+        <div class="block-head"><h3>Para birimi</h3></div>
+        <div class="block-body">
+          <div class="helper" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span id="paraBirimiDurum"></span><span class="info-ico" tabindex="0">!<span class="info-bubble">Bu, kira/maaş/stok/teklif/sipariş/fatura gibi şu ana kadar ₺ olarak girdiğiniz tüm tutarları, Özet sayfasının sağ üstündeki güncel kur kullanılarak €'ya çevirir. Tek seferlik bir işlemdir, geri alınamaz — önce kurun doğru olduğundan emin olun.</span></span></div>
+          <button class="btn secondary small" id="euroDonusturBtn" style="margin-top:8px">Sistemdeki mevcut ₺ tutarlarını €'ya çevir</button>
+        </div>
+      </div>
       <div class="block" id="donemKilitBlok">
         <div class="block-head"><h3>Dönem kilidi <span class="info-ico" tabindex="0">!<span class="info-bubble">Mali müşavir bir ayı kapattıktan sonra o ayın kayıtları değişmesin diye kullanılır. Kilit tarihi ve öncesine tarihli fatura, irsaliye, tahsilat, ödeme, gider, alış faturası, çek/senet, satış iadesi ve fason iadesi eklenemez, değiştirilemez, silinemez, iptal edilemez. Yazdırma ve e-belge durumu serbesttir. Kilidi yalnız yönetici değiştirir.</span></span></h3></div>
         <div class="block-body" id="donemKilitIcerik"></div>
       </div>
+      </div><div class="tanim-kol">
       <div class="block" id="onayKuralBlok">
         <div class="block-head"><h3>Onay kuralları <span class="info-ico" tabindex="0">!<span class="info-bubble">Onayı Yönetici ve Kullanıcılar › Rol yetkileri'nde "Onay verir" işaretli roller verir. Satınalma: limit üstü sipariş "onay bekliyor" (Taslak) açılır, onaylanana kadar mal kabul yapılamaz; onaylı sipariş limitin üstüne çıkacak şekilde değişirse onayı düşer. İskonto: bir kalemde limit üstü iskonto olan teklif onaysız "Gönderildi" / "Onaylandı" yapılamaz ve yazdırılamaz; onaydan sonra iskonto artırılırsa yeniden onay ister. Risk limiti: cari kartındaki risk limiti (€) girilmiş müşteride açık alacak + kesilecek fatura limiti aşarsa fatura onaysız "Kesildi" yapılamaz. Onay bekleyenler onay verenlerin uyarı merkezine düşer. 0 = kural kapalı.</span></span></h3></div>
         <div class="block-body" id="onayKuralIcerik"></div>
@@ -1738,31 +1756,17 @@ Dikkat edilmesi gereken 2 nokta:
           <div class="helper" id="kodParamMsg"></div>
         </div>
       </div>
-
-      <div id="tanimEkBloklar"></div>
-      <div class="block">
-        <div class="block-head"><h3>Para birimi</h3></div>
+      </div></div>
+      <div class="block" style="display:none">
+        <div class="block-head"><h3>Sabit giderler (aylık)</h3></div>
         <div class="block-body">
-          <div class="helper" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span id="paraBirimiDurum"></span><span class="info-ico" tabindex="0">!<span class="info-bubble">Bu, kira/maaş/stok/teklif/sipariş/fatura gibi şu ana kadar ₺ olarak girdiğiniz tüm tutarları, Özet sayfasının sağ üstündeki güncel kur kullanılarak €'ya çevirir. Tek seferlik bir işlemdir, geri alınamaz — önce kurun doğru olduğundan emin olun.</span></span></div>
-          <button class="btn secondary small" id="euroDonusturBtn" style="margin-top:8px">Sistemdeki mevcut ₺ tutarlarını €'ya çevir</button>
+          <div class="grid2">
+            <div class="field"><label>Kira (€)</label><input type="number" id="gKira" min="0"><span class="kur-hint empty" id="gKiraKur"></span></div>
+            <div class="field"><label>Muhasebe + sigorta (€)</label><input type="number" id="gDiger" min="0"><span class="kur-hint empty" id="gDigerKur"></span></div>
+          </div>
+          <button class="btn secondary small" id="gKaydet">Güncelle</button>
         </div>
       </div>
-
-
-      <div class="block">
-        <div class="block-head"><h3>Personel</h3><button class="btn small" id="pEkleBtn">+ Yeni kayıt</button></div>
-        <div class="block-body">
-          <div class="recordlist" id="personelListe"></div>
-        </div>
-      </div>
-
-      <div class="block">
-        <div class="block-head"><h3>Makineler</h3><button class="btn small" id="mEkleBtn">+ Yeni kayıt</button></div>
-        <div class="block-body">
-          <div class="recordlist" id="makineListe"></div>
-        </div>
-      </div>
-
       <div class="block" id="eskiUrunBlok">
         <div class="block-head"><h3>Eski ürün listesi <span class="info-ico" tabindex="0">!<span class="info-bubble">Ürünler artık Stok Kartları'nda (tip: Mamul / Yarı Mamul) tutuluyor. Buradaki eski kayıtları "Stok kartlarına birleştir" ile tek seferde taşıyın; eşleşen ada sahip stok kartı varsa fason ücreti ve birim süre ona yazılır, yoksa yeni mamul kartı açılır. Eski üretim kayıtları otomatik olarak yeni karta bağlanır.</span></span></h3><div style="display:flex;gap:6px"><button class="btn small" id="urBirlestirBtn">Stok kartlarına birleştir</button><button class="btn secondary small" id="urEkleBtn">+ Yeni kayıt</button></div></div>
         <div class="block-body">
@@ -13938,7 +13942,7 @@ Dikkat edilmesi gereken 2 nokta:
       makineKiraAy: 0, makineKiraAylik: 0, makineDevirBedeli: 0, // kiralama modelinde kaç ay kiralanır (0 = plan boyunca kiralık), aylık kira, kira sonunda satın alma bedeli (0 = makine bedeli)
       giderHaric: [], // planda sayılmayan gider kalemleri (ör. işletme kirasına dahil olan iş yeri kirası)
       // Finansman (Kadir Bey)
-      finansmanTutar: 0, finansFaizYillik: 0, geriOdemeBaslangicAy: '', geriOdemeAylik: 0,
+      finansmanTutar: 0, finansmanOtomatik: false, finansFaizYillik: 0, // finansman elle girilir; 0 = yok (otomatik işaretlenirse gereken en az tutar) geriOdemeBaslangicAy: '', geriOdemeAylik: 0,
       // Ay ay elle girilen değerler ve yapılacaklar
       aylik: {}, yapilacak: { bitti: {}, ozel: [] },
       // Ürünler / işler: her biri kendi fiyatı, kendine ayrılan makine sayısı ve makine başı adediyle ayrı hesaplanır.
@@ -14105,7 +14109,11 @@ Dikkat edilmesi gereken 2 nokta:
       var P = Object.assign(varsayilan(), JSON.parse(JSON.stringify(Pin || {})));
       urunNormalize(P);
       giderHaricUygula(P);
-      if ((Number(P.finansmanTutar) || 0) > 0){ var rr = hesaplaIc(P, Number(P.finansmanTutar)); rr.finansmanOto = false; return rr; }
+      if ((Number(P.finansmanTutar) || 0) > 0 || !P.finansmanOtomatik){
+        var rr = hesaplaIc(P, Math.max(0, Number(P.finansmanTutar) || 0)); rr.finansmanOto = false;
+        rr.gerekenEk = rr.minSirketKasa < 0 ? Math.ceil(-rr.minSirketKasa / 100000) * 100000 : 0; // kasa eksiye düşüyorsa en az bu kadar daha para gerekir
+        return rr;
+      }
       var yuvarla = function(x){ return Math.ceil(Math.max(0, x) / 100000) * 100000; };
       var r = hesaplaIc(P, 0), F = yuvarla(-r.minKasa);
       for (var k = 0; k < 4; k++){
@@ -14564,7 +14572,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kararli = r.aylar[r.refIndex];
     kvSet('kvKartlar',
       '<div class="card accent tiklanir" data-kvhesap="yatirim" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Başlangıç yatırımı (KDV dahil nakit) <span class="kart-ok">›</span></div><div class="value">'+kvTlK(r.yatirimNakit)+'</div><div class="sub">KDV '+kvTlK(r.yatirimKdv)+' ilk aylarda satış KDV\'sinden geri döner</div></div>'+
-      '<div class="card '+(r.minSirketKasa < 0 ? 'accent' : '')+' tiklanir" data-kvhesap="finansman" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Kadir Bey finansmanı <span class="kart-ok">›</span></div><div class="value">'+kvTlK(r.finansman)+'</div><div class="sub">'+(r.finansmanOto ? 'otomatik: gereken en az tutar' : 'Varsayımlar\'da girilen')+' · en düşük şirket kasası <span class="'+(r.minSirketKasa<0?'neg':'')+'">'+kvTlK(r.minSirketKasa)+'</span></div></div>'+
+      '<div class="card '+(r.minSirketKasa < 0 ? 'accent' : '')+' tiklanir" data-kvhesap="finansman" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Kadir Bey finansmanı <span class="kart-ok">›</span></div><div class="value">'+kvTlK(r.finansman)+'</div><div class="sub">'+(r.finansmanOto ? 'otomatik: gereken en az tutar' : r.finansman ? 'Varsayımlar\'da girilen' : 'girilmedi')+(r.gerekenEk ? ' · <span class="neg">en az '+kvTlK(r.gerekenEk)+' daha gerekir</span>' : '')+' · en düşük şirket kasası <span class="'+(r.minSirketKasa<0?'neg':'')+'">'+kvTlK(r.minSirketKasa)+'</span></div></div>'+
       '<div class="card tiklanir" data-kvhesap="yil" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">'+o.yil+' ciro (KDV hariç) <span class="kart-ok">›</span></div><div class="value">'+kvTlK(o.ciro)+'</div><div class="sub">ayda ~'+fmt(o.adetAy)+' adet'+(kur?' · ≈ €'+fmt(o.ciro/kur):'')+'</div></div>'+
       '<div class="card good tiklanir" data-kvhesap="yil" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">'+o.yil+' vergi sonrası kâr <span class="kart-ok">›</span></div><div class="value">'+kvTlK(o.net)+'</div><div class="sub">vergi öncesi '+kvTlK(o.kar)+' · KV '+kvTlK(o.kv)+'</div></div>'+
       (r.yatirimNakit > 0 ? '<div class="card '+(o.geriDonus && o.geriDonus <= 18 ? 'good' : 'accent')+' tiklanir" data-kvhesap="geriDonus" title="Nasıl hesaplandığını görmek için tıklayın"><div class="label">Yatırımın nakden geri dönüşü <span class="kart-ok">›</span></div><div class="value">'+(o.geriDonus ? o.geriDonus+'. ay' : '> '+P.sureAy+' ay')+'</div><div class="sub">'+(o.geriDonus ? kvAyAdi(r.aylar[o.geriDonus-1].ay)+' · hedef 12–18 ay' : 'ufuk içinde dönmüyor')+'</div></div>'
@@ -15362,7 +15370,7 @@ Dikkat edilmesi gereken 2 nokta:
       d = { t: 'Başlangıç yatırımı', f: 'Planın ilk ayında ödenen makine, taşıma ve ilk takım bedeli, KDV dahil. KDV kısmı sonraki aylarda satış KDV\'sinden düşülerek geri döner.'+(r.makineKiraAy ? ' Makineler ilk '+r.makineKiraAy+' ay kiralık: başta makine bedeli ödenmez'+(r.makineAlimAy ? ', '+kvAyAdi(r.makineAlimAy)+'\'da '+kvTl(r.makineDevir)+' + KDV ile satın alınır.' : '.') : ''),
         h: kvHesapTablo([kvHesapSatir('Makine ve ekipman', r.makineKiraAy ? 0 : P.makine), kvHesapSatir('Taşıma / montaj', P.nakliye), kvHesapSatir('İlk takım ve sarf', P.ilkTakim), kvHesapSatir('+ KDV %'+P.kdvOrani, r.yatirimKdv), kvHesapTop('Nakit ödenen', r.yatirimNakit)]), git: 'varsayim', gitAd: 'Varsayımlar (yatırım)' };
     } else if (k === 'finansman'){
-      d = { t: 'Kadir Bey finansmanı', f: r.finansmanOto ? 'Varsayımlar\'da tutar 0 bırakıldığı için otomatik: plan boyunca şirket kasasının eksiye düşmemesi için gereken en az tutar, 100 bin ₺\'ye yuvarlanır.' : 'Varsayımlar\'da girilen tutar.',
+      d = { t: 'Kadir Bey finansmanı', f: r.finansmanOto ? 'Varsayımlar\'da "otomatik" işaretli: plan boyunca şirket kasasının eksiye düşmemesi için gereken en az tutar, 100 bin ₺\'ye yuvarlanır.' : (r.finansman ? 'Varsayımlar\'da girilen tutar.' : 'Finansman girilmedi: şirket kasası sıfırdan başlar.')+(r.gerekenEk ? ' Kasa eksiye düşüyor; en az '+kvTl(r.gerekenEk)+' daha para gerekir (Varsayımlar › Yatırım ve finansman).' : ''),
         h: kvHesapTablo([kvHesapTop('Finansman', r.finansman), kvHesapSatir('Plan boyunca en düşük şirket kasası', r.minSirketKasa, r.minSirketKasa < 0 ? 'neg' : ''), kvHesapSatir('Plan sonunda kalan borç', r.kalanBorc)]), git: 'varsayim', gitAd: 'Varsayımlar (finansman)' };
     } else if (k === 'yil'){
       var oz = KV_MODEL.ozetle(r), Y = r.yillar[oz.yil] || {};
@@ -15809,7 +15817,8 @@ Dikkat edilmesi gereken 2 nokta:
       ['makineKiraAy','Kaç ay kiralansın','num','ay','Süre bitince makineler satın alınır. 0 ya da plan süresi = plan boyunca kiralık, satın alma yok.'],
       ['makineDevirBedeli','Kira sonunda satın alma bedeli (KDV hariç)','num','₺','0 = Yatırım bölümündeki makine bedeli. İlişkili taraftan alımda o günkü piyasa değeri (ekspertiz) olmalı.']]],
     ['Finansman (Kadir Bey)', 'Yatırım ve ilk ayların açığı için konan para.', [
-      ['finansmanTutar','Finansman tutarı','num','₺','0 = gereken en az tutar otomatik hesaplanır.'],
+      ['finansmanTutar','Finansman tutarı','num','₺','Şirkete konan para (elle). 0 = finansman yok, kasa sıfırdan başlar; eksiye düşerse Özet kartında ne kadar gerektiği yazar.'],
+      ['finansmanOtomatik','Tutar 0 ise gereken en azı otomatik hesapla','bool','','Evet: kasanın eksiye düşmemesi için gereken en az tutar hesaplanır.'],
       ['finansFaizYillik','Faiz','num','%/yıl','0 = faizsiz.'],
       ['geriOdemeBaslangicAy','Geri ödeme başlangıcı','ay','','Boş = geri ödeme yok.'],
       ['geriOdemeAylik','Aylık geri ödeme','num','₺']]]
@@ -15907,7 +15916,8 @@ Dikkat edilmesi gereken 2 nokta:
       uretim: G['Üretim kapasitesi']+urunHtml+G['Satış ve tahsilat'],
       personel: persHtml+G['Personel ayarları'],
       gider: kvButceHtml(P),
-      yatirim: G['Yatırım (tek seferlik)']+G['Finansman (Kadir Bey)'],
+      yatirim: (/kirala/.test(P.kurulusModeli || '') ? '<div class="helper" style="margin:0 0 10px">Kiralama modeli seçili: makine bedeli başta ödenmez ve Başlangıç yatırımı\'na girmez; taşıma / montaj ilk ay gider yazılır. Aşağıdaki makine bedeli yalnız "Kira sonunda satın alma bedeli" boşsa satın alma ayında kullanılır.</div>' : '')+
+        G['Yatırım (tek seferlik)']+G['Finansman (Kadir Bey)'],
       vergi: G['Vergi ve SGK oranları']
     };
     if (!B[_kvVarBolum]) _kvVarBolum = 'plan';
@@ -19351,17 +19361,15 @@ Dikkat edilmesi gereken 2 nokta:
   // değiştirilen alanlar P.ozel[anahtar] ile işaretlenir. Anahtarlar planın (KV_MODEL) alan adlarıyla aynıdır.
   // [anahtar, etiket, tip ('num' | 'bool'), birim]
   var SIRKET_ALANLAR = [
-    ['Enerji', 'Makine kartında güç girilmemişse makine ortalama gücü kullanılır. Aylık giderler (kira, elektrik fiyatı, uç, müşavir, sigorta…) Kârlılık & Vergi › Ay ay planım\'da ay ay girilir.', [
-      ['kwGenel', 'Genel yük (ışık, kompresör…)', 'num', 'kW']]],
-    ['Makineler', 'Makine kartında alış bedeli veya güç 0 bırakılmışsa buradaki değerler kullanılır: alış bedeli = makine yatırımı ÷ aktif makine sayısı (Kapasite). Makine yatırımı Kârlılık planına da buradan gider.', [
-      ['makine', 'Makine yatırımı (aktif makinelerin toplamı)', 'num', '₺'], ['kwMakine', 'Çalışan makine ortalama güç', 'num', 'kW']]],
+    ['Makine yatırımı ve enerji', 'Makine kartında alış bedeli veya güç 0 bırakılmışsa buradaki değerler kullanılır: alış bedeli = makine yatırımı ÷ aktif makine sayısı (Kapasite). Makine yatırımı Kârlılık planına da buradan gider. Aylık giderler (kira, elektrik fiyatı, uç, müşavir, sigorta…) Kârlılık & Vergi › Gider bütçesi\'nde ay ay girilir.', [
+      ['makine', 'Makine yatırımı (aktif makinelerin toplamı)', 'num', '₺'], ['kwMakine', 'Çalışan makine ortalama güç', 'num', 'kW'], ['kwGenel', 'Genel yük (ışık, kompresör…)', 'num', 'kW']], 'sirketMakine'],
     ['Personel ve ödeme düzeni', 'Kadro Tanımlar › Personel listesinden gelir.', [
       ['maasOdemeGunu', 'Maaş ödeme günü', 'num', 'ayın günü'], ['kiraOdemeGunu', 'Kira ödeme günü', 'num', 'ayın günü'],
       ['yemekServisKisi', 'Yemek / servis', 'num', '₺/kişi/ay'], ['cumartesiZam', 'Cumartesi mesai zammı', 'num', '%'],
       ['pazarZam', 'Pazar mesai zammı', 'num', '%'], ['imalatTesvik', 'İmalat SGK 5 puan teşviki', 'bool', ''],
-      ['asgariDestek', 'Asgari ücret desteği', 'num', '₺/kişi/ay'], ['asgariDestekSonYil', 'Asgari ücret desteği son yılı', 'num', 'yıl']]],
+      ['asgariDestek', 'Asgari ücret desteği', 'num', '₺/kişi/ay'], ['asgariDestekSonYil', 'Asgari ücret desteği son yılı', 'num', 'yıl']], 'sirketPersonel'],
     ['Vergi ve mevzuat', 'Yasal oranlar; mevzuat değişince güncelleyin.', [
-      ['asgariBrut', 'Asgari ücret (brüt)', 'num', '₺/ay'], ['kdvOrani', 'KDV', 'num', '%'], ['kvOrani', 'Kurumlar vergisi', 'num', '%']]]
+      ['asgariBrut', 'Asgari ücret (brüt)', 'num', '₺/ay'], ['kdvOrani', 'KDV', 'num', '%'], ['kvOrani', 'Kurumlar vergisi', 'num', '%']], 'sirketVergi']
   ];
   var SIRKET_ANAHTAR = []; SIRKET_ALANLAR.forEach(function(g){ g[2].forEach(function(f){ SIRKET_ANAHTAR.push(f[0]); }); });
   // Aylık giderler Tanımlar'dan Kârlılık planına taşındı (r160); eski kayıtlardaki değerler plana bir kez aktarılır
@@ -19372,24 +19380,27 @@ Dikkat edilmesi gereken 2 nokta:
   // Tanımlar boşken (ilk açılış) plandaki değerler öneri olarak gösterilir; kaydedince Tanımlar'a yazılır
   function sirketOneri(k){ var c = state.config || {}, P = {}; try { P = c.karlilikPlanJson ? JSON.parse(c.karlilikPlanJson) : {}; } catch(e){} if (P[k] !== undefined) return P[k]; var v = KV_MODEL.varsayilan()[k]; return v; }
   function sirketCiz(){
-    var host = byId('sirketSabitleri'); if (!host || TANIM_KIRLI.sirket || host.contains(document.activeElement)) return;
+    var hostlar = SIRKET_ALANLAR.map(function(g){ return byId(g[3]); }), host = hostlar[0];
+    if (!host || TANIM_KIRLI.sirket || hostlar.some(function(h){ return h && h.contains(document.activeElement); })) return;
     var c = state.config || {}, imza = JSON.stringify([c.sirket || null, sirketKur(), c.karlilikPlanJson ? c.karlilikPlanJson.length : 0]); if (host.dataset.imza === imza) return; host.dataset.imza = imza;
     var bos = !c.sirket;
-    host.innerHTML = (bos ? '<div class="helper" style="margin:0 0 10px;color:var(--warn-strong)">Değerler kârlılık planınızdan öneri olarak getirildi. Kontrol edip üstteki "Değişiklikleri kaydet"e basın.</div>' : '') +
-      SIRKET_ALANLAR.map(function(g){
-        return '<div class="block"><div class="block-head"><h3>' + esc(g[0]) + ' ' + infoIco(g[1]) + '</h3></div><div class="block-body"><div class="sirket-grid">' +
+    var oneri = (bos ? '<div class="helper" style="margin:0 0 10px;color:var(--warn-strong)">Değerler kârlılık planınızdan öneri olarak getirildi. Kontrol edip üstteki "Değişiklikleri kaydet"e basın.</div>' : '') +
+      '';
+    SIRKET_ALANLAR.forEach(function(g, gi){
+      var h = hostlar[gi]; if (!h) return;
+      h.innerHTML = (gi === 0 ? oneri : '') + '<div class="block"><div class="block-head"><h3>' + esc(g[0]) + ' ' + infoIco(g[1]) + '</h3></div><div class="block-body"><div class="sirket-grid">' +
           g[2].map(function(f){
             var v = sirketDeger(f[0]); if (v === undefined) v = sirketOneri(f[0]);
             var inp = f[2] === 'bool' ? '<select data-sirket="' + f[0] + '" data-tip="bool"><option value="1"' + (v ? ' selected' : '') + '>Evet</option><option value="0"' + (!v ? ' selected' : '') + '>Hayır</option></select>'
               : '<input type="number" step="any" min="0" data-sirket="' + f[0] + '" value="' + escAttr(v == null ? '' : v) + '"' + (/^₺/.test(f[3]) ? ' data-para="TRY"' : '') + '>';
             return '<div class="field"><label>' + esc(f[1]) + (f[3] && f[2] !== 'bool' ? ' <span class="muted">(' + esc(f[3]) + ')</span>' : '') + '</label>' + inp + (f[2] === 'bool' && f[3] ? '<div class="muted" style="font-size:11px">' + esc(f[3]) + '</div>' : '') + '</div>';
           }).join('') + '</div></div></div>';
-      }).join('');
+    });
     sirketToplamYaz();
     // öneriyle dolan alanlar henüz kayıtlı değil: kaydet düğmesi açık gelsin
     if (bos && typeof tanimDurumCiz === 'function'){ TANIM_KIRLI.sirket = true; tanimDurumCiz(); }
   }
-  function sirketFormDeger(k){ var el = document.querySelector('#sirketSabitleri [data-sirket="' + k + '"]'); if (!el) return sirketDeger(k); return el.dataset.tip === 'bool' ? el.value === '1' : (Number(el.value) || 0); }
+  function sirketFormDeger(k){ var el = document.querySelector('#panel-tanimlar [data-sirket="' + k + '"]'); if (!el) return sirketDeger(k); return el.dataset.tip === 'bool' ? el.value === '1' : (Number(el.value) || 0); }
   function sirketToplamYaz(){
     var el = byId('sirketToplam'); if (!el) return;
     var sirketMi = !!sirketFormDeger('kiraVerenSirket'), net = Number(sirketFormDeger('kira')) || 0, kira = sirketMi ? net : net / 0.8;
@@ -19397,7 +19408,7 @@ Dikkat edilmesi gereken 2 nokta:
     el.innerHTML = 'Kira şirkete maliyeti <b>' + kvTl(kira) + '</b> <span class="muted">(' + (sirketMi ? 'şirketten: net kira; KDV ayrıca ödenir, indirilir' : 'şahıstan: net ' + kvTl(net) + ' + %20 stopaj ' + kvTl(kira - net) + ' vergi dairesine') + ')</span><br>' +
       'Toplam: kira <b>' + kvTl(kira) + '</b> + diğer giderler <b>' + kvTl(diger) + '</b> = <b>' + kvTl(kira + diger) + '/ay</b>' + (kur ? ' <span class="muted">(≈ €' + fmt2((kira + diger) / kur) + ', güncel kurla)</span>' : '');
   }
-  document.addEventListener('input', function(e){ if (e.target.closest && e.target.closest('#sirketSabitleri')) sirketToplamYaz(); });
+  document.addEventListener('input', function(e){ if (e.target.closest && e.target.closest('[data-sirket]')) sirketToplamYaz(); });
   // Kiranın şirkete maliyeti (₺/ay): şahıstan kiralamada net kira + %20 stopaj (brüt = net ÷ 0,80); şirketten kiralamada KDV indirilir, maliyet net kiradır
   function sirketKiraMaliyeti(s){ var net = Number(s.kira) || 0; return s.kiraVerenSirket ? net : net / 0.8; }
   // € kullanan hesaplar için: Tanımlar'daki ₺ değer o anki kurla çevrilir (kur değişince güncel kalsın); şirket sabitleri yoksa eski € alanları
