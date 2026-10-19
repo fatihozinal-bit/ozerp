@@ -1341,7 +1341,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r163</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r164</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4081,7 +4081,7 @@ Dikkat edilmesi gereken 2 nokta:
 
     renderSimpleList('makineListe', state.makineler, 'makineler', {
       emptyText: 'Makine eklenmedi',
-      rowFn: function(m){ var u = makineSaatUcreti(m); return { title: esc(m.ad)+' '+makineDurumBadge(m), sub: [m.marka, m.model, m.modelYili, m.seriNo?'SN '+m.seriNo:''].filter(Boolean).map(esc).join(' · ')+' · Aylık kapasite: '+sureStrOlustur(tekMakineAylikSaat()*60)+' · <b>€'+fmt2(u.toplam)+'/saat</b> '+infoIco('Makine saat ücreti\nAmortisman: €'+fmt2(u.amortisman)+'/sa'+(u.bedelTanim ? ' (alış bedeli Tanımlar\'dan: makine yatırımı ÷ aktif makine = €'+fmt(u.bedel)+')' : '')+'\nBakım: €'+fmt2(u.bakim)+'/sa'+(u.bakimTanim ? ' (kartta yok; şirketin bakım-onarım gideri genel gider payında)' : '')+'\nEnerji: €'+fmt2(u.enerji)+'/sa ('+fmt2(u.kw)+' kW'+(u.kwTanim ? ', Tanımlar ortalaması' : '')+')\nGenel gider payı (personel+kira+diğer / aylık makine-saat): €'+fmt2(u.genel)+'/sa') }; },
+      rowFn: function(m){ var u = makineSaatUcreti(m); return { title: esc(m.ad)+' '+makineDurumBadge(m), sub: [m.marka, m.model, m.modelYili, m.seriNo?'SN '+m.seriNo:''].filter(Boolean).map(esc).join(' · ')+' · Aylık kapasite: '+sureStrOlustur(tekMakineAylikSaat()*60)+' · <b>€'+fmt2(u.toplam)+'/saat</b> '+infoIco('Makine saat ücreti\nAmortisman: €'+fmt2(u.amortisman)+'/sa'+(u.bedelTanim ? ' (alış bedeli Kârlılık planından: makine yatırımı ÷ aktif makine = €'+fmt(u.bedel)+')' : '')+'\nBakım: €'+fmt2(u.bakim)+'/sa'+(u.bakimTanim ? ' (kartta yok; şirketin bakım-onarım gideri genel gider payında)' : '')+'\nEnerji: €'+fmt2(u.enerji)+'/sa ('+fmt2(u.kw)+' kW'+(u.kwTanim ? ', Tanımlar ortalaması' : '')+')\nGenel gider payı (personel+kira+diğer / aylık makine-saat): €'+fmt2(u.genel)+'/sa') }; },
       fields: MAKINE_FIELDS,
       editTitle: 'Makineyi düzenle',
       deleteMsg: 'Bu makineyi silmek istediğinize emin misiniz?',
@@ -8590,12 +8590,14 @@ Dikkat edilmesi gereken 2 nokta:
     if (acikDurus && d === 'Çalışıyor') return badgeHtml('duruşta', 'reddedildi');
     return badgeHtml(d, d === 'Çalışıyor' ? 'tamamlandi' : (d === 'Pasif' ? 'taslak' : (d === 'Bekliyor' ? 'bekliyor' : 'reddedildi')));
   }
-  // Kartta 0 bırakılan alanlar Tanımlar'dan: alış bedeli = makine yatırımı ÷ aktif makine sayısı, güç = makine ortalama gücü.
+  // Kartta 0 bırakılan alanlar: alış bedeli = Kârlılık planındaki makine yatırımı ÷ aktif makine sayısı, güç = Tanımlar'daki ortalama güç.
   // Kartta bakım yoksa şirketin bakım-onarım gideri zaten genel gider payında (iki kez sayılmaz).
+  // Kârlılık planındaki makine alımlarının toplamı (₺): ilk ay satın alma + Ay ay planım'daki alımlar; kiralamada yalnız satın alınanlar
+  function planMakineYatirimi(){ try { return toplamla(kvSonuc().makineAlimlar || [], function(v){ return v.tutar; }); } catch(e){ return 0; } }
   function makineSaatUcreti(m){
     var aylikSaat = tekMakineAylikSaat() || 1, kur = sirketKur();
     var bedel = Number(m.alisBedeli) || 0, bedelTanim = false;
-    if (!bedel && kur > 0 && Number(sirketDeger('makine')) > 0){ bedel = Number(sirketDeger('makine')) / kur / (Number(state.config && state.config.kapasiteMakineSayisi) || 1); bedelTanim = true; }
+    if (!bedel && kur > 0){ var mt = planMakineYatirimi(); if (mt > 0){ bedel = mt / kur / (Number(state.config && state.config.kapasiteMakineSayisi) || 1); bedelTanim = true; } }
     var amort = (Number(m.amortismanAy)||0) > 0 ? bedel / Number(m.amortismanAy) / aylikSaat : 0;
     var bakim = (Number(m.bakimAylik)||0) / aylikSaat;
     var elektrik = sirketEur('elektrik');
@@ -14497,6 +14499,13 @@ Dikkat edilmesi gereken 2 nokta:
     if (Object.keys(kay).length && kay.varsayimSurumu !== KV_MODEL.VARSAYIM_SURUMU) Object.assign(P, kvKopya(KV_MODEL.ESKI_VARSAYILAN));
     Object.keys(kay).forEach(function(k){ if (kay[k] != null) P[k] = kvKopya(kay[k]); });
     SIRKET_TASINAN.forEach(function(k){ if (kay[k] == null && sirketDeger(k) !== undefined) P[k] = kvKopya(sirketDeger(k)); });
+    // r164: makine yatırımı Tanımlar'dan plana taşındı; o ana kadar planda Tanımlar'daki değer (yoksa makine kartlarının alış bedeli) geçerliydi
+    if (!kay.makineTasindi){
+      var mt = Number(sirketDeger('makine')) || 0, kur0 = Number(c.eurTryKuru) || 0;
+      if (!mt && kur0) mt = Math.round(toplamla(state.makineler || [], function(m){ return Number(m.alisBedeli) || 0; }) * kur0);
+      if (mt > 0) P.makine = mt;
+      P.makineTasindi = true;
+    }
     if (!P.aylik || typeof P.aylik !== 'object' || Array.isArray(P.aylik)) P.aylik = {};
     if (!P.yapilacak || typeof P.yapilacak !== 'object') P.yapilacak = { bitti: {}, ozel: [] };
     P.yapilacak.bitti = P.yapilacak.bitti || {}; P.yapilacak.ozel = P.yapilacak.ozel || [];
@@ -15808,7 +15817,7 @@ Dikkat edilmesi gereken 2 nokta:
       ['yazilimAylik','Yazılım / CAM lisansı','num','₺/ay'],['bankaAylik','Banka masrafları','num','₺/ay'],['beklenmeyenAylik','Beklenmeyen giderler','num','₺/ay'],
       ['giderArtisOcak','Bu giderlerde her Ocak artış','num','%']]],
     ['Yatırım (tek seferlik)', 'KDV hariç. Planın ilk ayında ödenir; makine ve taşıma amortismana tabidir.', [
-      ['makine','Makine ve ekipman','num','₺'],['nakliye','Taşıma / montaj','num','₺'],['ilkTakim','İlk takım ve sarf stoğu','num','₺'],
+      ['makine','Makine ve ekipman (ilk ay)','num','₺','Planın ilk ayında satın alınan makineler. Sonradan alınan makine Ay ay planım › Makine alımı alanına o ayda yazılır.'],['nakliye','Taşıma / montaj','num','₺'],['ilkTakim','İlk takım ve sarf stoğu','num','₺'],
       ['kurulus','Şirket kuruluş masrafları','num','₺'],['saglikRapor','İşe giriş / gece sağlık raporları','num','₺'],
       ['faydaliOmur','Faydalı ömür','num','yıl'],['amortismanYontem','Amortisman yöntemi','sel','','',['normal','azalan']]]],
     ['Kuruluş modeli', 'Şirketin makineleri nasıl edineceği. Satın al: makineler planın ilk ayında alınır. Kirala: makineler (işletme kiralamada makine + iş yeri) bir şirketten (ör. Virgo) kiralanır, isterseniz süre sonunda satın alınır. Personel her modelde şirketin kendi personelidir. İş yeri kirası işletme kirasına dahilse Kira ve enerji bölümünde Kira\'nın yanındaki işareti kaldırın. Senaryolar sekmesinde satın alma ile karşılaştırılır.', [
@@ -19361,8 +19370,8 @@ Dikkat edilmesi gereken 2 nokta:
   // değiştirilen alanlar P.ozel[anahtar] ile işaretlenir. Anahtarlar planın (KV_MODEL) alan adlarıyla aynıdır.
   // [anahtar, etiket, tip ('num' | 'bool'), birim]
   var SIRKET_ALANLAR = [
-    ['Makine yatırımı ve enerji', 'Makine kartında alış bedeli veya güç 0 bırakılmışsa buradaki değerler kullanılır: alış bedeli = makine yatırımı ÷ aktif makine sayısı (Kapasite). Makine yatırımı Kârlılık planına da buradan gider. Aylık giderler (kira, elektrik fiyatı, uç, müşavir, sigorta…) Kârlılık & Vergi › Gider bütçesi\'nde ay ay girilir.', [
-      ['makine', 'Makine yatırımı (aktif makinelerin toplamı)', 'num', '₺'], ['kwMakine', 'Çalışan makine ortalama güç', 'num', 'kW'], ['kwGenel', 'Genel yük (ışık, kompresör…)', 'num', 'kW']], 'sirketMakine'],
+    ['Enerji', 'Makine kartında güç 0 bırakılmışsa ortalama güç kullanılır. Makine yatırımı (tek seferlik) Kârlılık & Vergi › Varsayımlar › Yatırım ve Ay ay planım\'da; aylık giderler Gider bütçesi\'nde girilir.', [
+      ['kwMakine', 'Çalışan makine ortalama güç', 'num', 'kW'], ['kwGenel', 'Genel yük (ışık, kompresör…)', 'num', 'kW']], 'sirketMakine'],
     ['Personel ve ödeme düzeni', 'Kadro Tanımlar › Personel listesinden gelir.', [
       ['maasOdemeGunu', 'Maaş ödeme günü', 'num', 'ayın günü'], ['kiraOdemeGunu', 'Kira ödeme günü', 'num', 'ayın günü'],
       ['yemekServisKisi', 'Yemek / servis', 'num', '₺/kişi/ay'], ['cumartesiZam', 'Cumartesi mesai zammı', 'num', '%'],
@@ -19444,11 +19453,10 @@ Dikkat edilmesi gereken 2 nokta:
   EK_HER_ZAMAN.push(sirketCiz);
   // ---------- Maliyetlendirmenin Tanımlar'dan okuduğu alanlar ----------
   // aktifMakine burada yok: Kârlılık planında çalışan makine ürün ürün elle girilir; Tanımlar › Kapasite'deki sayı orada yalnız bilgi olarak görünür
-  var KV_REF = SIRKET_ANAHTAR.concat(['gunduzSaat', 'cumartesi', 'cumartesiSaat', 'pazar', 'pazarSaat', 'personel', 'makine']);
+  var KV_REF = SIRKET_ANAHTAR.concat(['gunduzSaat', 'cumartesi', 'cumartesiSaat', 'pazar', 'pazarSaat', 'personel']);
   function kvTanimRef(k){
     var c = state.config || {};
-    if (k === 'makine' && Number(sirketDeger('makine')) > 0) return Number(sirketDeger('makine'));
-    if (SIRKET_ANAHTAR.indexOf(k) > -1 && k !== 'makine') return sirketDeger(k);
+    if (SIRKET_ANAHTAR.indexOf(k) > -1) return sirketDeger(k);
     var gun = c.kapasiteGunler && c.kapasiteGunler.length === 7 ? c.kapasiteGunler : null;
     if (k === 'aktifMakine') return Number(c.kapasiteMakineSayisi) > 0 ? Number(c.kapasiteMakineSayisi) : undefined;
     if (k === 'gunduzSaat') return gun && gun[0].calisiyor && Number(gun[0].saat) > 0 && Number(gun[0].saat) <= 12 ? Number(gun[0].saat) : undefined;
@@ -19462,7 +19470,6 @@ Dikkat edilmesi gereken 2 nokta:
       var l = (state.personel || []).filter(function(p){ return personelNetTL(p) > 0; }).map(function(p){ return { ad: p.ad + (p.rol ? ' (' + p.rol + ')' : ''), net: personelNetTL(p), giris: p.iseGiris || '', cikis: p.istenCikis || '' }; });
       return l.length ? l : undefined;
     }
-    if (k === 'makine'){ var t = toplamla(state.makineler || [], function(m){ return Number(m.alisBedeli) || 0; }); return t > 0 && kur ? Math.round(t * kur) : undefined; }
     return undefined;
   }
   function kvRefUygula(P){
