@@ -1011,6 +1011,10 @@
   .kf-tablo .kf-acik { min-width: 140px; } .kf-tablo .kf-termin { width: 128px; }
   .kf-b2 { font-size:10.5px; text-align:right; padding-right:6px; white-space:nowrap; } .kf-b2:empty { display:none; }
   .ff-tablo { grid-column:1/-1; }
+  .kf-oneri { position:fixed; z-index:3000; max-height:300px; overflow:auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,.18); font-size:12.5px; }
+  .kf-oneri > div[data-oi] { padding:5px 8px; cursor:pointer; display:flex; gap:6px; align-items:baseline; border-bottom:1px solid var(--border); }
+  .kf-oneri > div[data-oi]:hover, .kf-oneri > div.aktif { background:var(--accent-soft); }
+  .kf-oneri-sag { margin-left:auto; white-space:nowrap; }
   #printArea .kart-bolum, .oniz-kagit .kart-bolum { font-size:12px; margin:12px 0 4px; padding-bottom:2px; border-bottom:1px solid #999; }
   #printArea .kart-tablo, .oniz-kagit .kart-tablo { width:100%; font-size:11px; }
   #printArea .kart-tablo td, .oniz-kagit .kart-tablo td { border:none; border-bottom:1px dotted #ccc; padding:2px 6px 2px 0; width:25%; }
@@ -1355,7 +1359,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r169</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r170</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2383,7 +2387,7 @@ Dikkat edilmesi gereken 2 nokta:
         openForm({
           title: opts.editTitle || 'Kaydı düzenle',
           fields: fields,
-          values: opts.degerler ? opts.degerler(item) : item, onOpen: opts.formAcildi,
+          values: opts.degerler ? opts.degerler(item) : item, onOpen: opts.formAcildi, onInput: opts.onInput,
           kayitOncesi: opts.kayitOncesi ? function(vals, devam){ opts.kayitOncesi(vals, item, devam); } : null,
           onSave: function(vals){
             if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
@@ -4394,15 +4398,33 @@ Dikkat edilmesi gereken 2 nokta:
   }
 
   // ---------- Stok ----------
+  // Stok kartındaki hammadde ölçülerinden parça başı hammadde ağırlığı ve malzeme maliyeti (€/adet)
+  function stokMalzemeHesap(s){
+    if (!s || !(Number(s.hamA) > 0)) return null;
+    var m = MH_MALZEMELER.find(function(x){ return x.ad === s.hamMalzeme; }) || {};
+    var yog = Number(s.yogunluk) || m.yogunluk || 0, fiyat = Number(s.hamFiyat) || (s.hamMalzeme ? Number(mhMalzemeFiyati(s.hamMalzeme)) || 0 : 0);
+    var h = hamHesap({ profil: s.hamProfil, a: s.hamA, b: s.hamB, parcaBoy: s.parcaBoy, alinPayi: s.alinPayi, kesmePayi: s.kesmePayi, hamBoy: s.hamBoy, cubukBoy: s.cubukBoy, ucFire: s.ucFire, yogunluk: yog });
+    return { ham: h, yogunluk: yog, fiyat: fiyat, kg: h.kgParca, malzeme: h.kgParca * fiyat, eksik: !yog ? 'yoğunluk' : !fiyat ? '€/kg fiyatı' : !(h.hamBoy > 0) ? 'boy' : '' };
+  }
+  // Stok kartı formunda canlı özet: hammadde ağırlığı, çubuktan parça, malzeme ve toplam maliyet
+  function stokFormOzet(v){
+    var mh = stokMalzemeHesap(v), h = stokHesapla(v);
+    function k(ad, deger, ana){ return '<div class="ck'+(ana?' ana':'')+'">'+ad+'<b>'+deger+'</b></div>'; }
+    if (!mh) return k('Malzeme / adet', '€'+fmt2(h.malzeme)) + k('Toplam maliyet', '€'+fmt2(h.toplamMaliyet), true);
+    return k('Kesit', fmt2(mh.ham.kesit)+' mm²') + k('Hamboy', fmt2(mh.ham.hamBoy)+' mm') + k('Hammadde / adet', (mh.kg||0).toLocaleString('tr-TR', {minimumFractionDigits:3, maximumFractionDigits:3})+' kg') +
+      (mh.ham.parcaCubuk ? k('Çubuktan', mh.ham.parcaCubuk+' parça · artık '+fmt(mh.ham.artik)+' mm') : '') +
+      (mh.eksik ? k('Eksik', mh.eksik) : k('Malzeme / adet', '€'+fmt2(mh.malzeme)+(h.malzemeOlcuden ? '' : ' (kullanılmıyor)'))) + k('Toplam maliyet', '€'+fmt2(h.toplamMaliyet), true);
+  }
   function stokHesapla(s){
     var kritik = Number(s.miktar) <= Number(s.kritikSeviye||0);
-    var malzeme = Number(s.maliyet)||0;
+    var mh = stokMalzemeHesap(s), olcudenMi = mh && !mh.eksik && s.maliyetKaynagi !== 'Elle / alış ortalaması';
+    var malzeme = olcudenMi ? mh.malzeme : Number(s.maliyet)||0;
     var sureDk = Number(s.uretimSuresiDk)||0;
     var iscilik = (s.iscilikSabit != null) ? Number(s.iscilikSabit) : calcSaatMaliyeti() * (sureDk/60);
     var toplamMaliyet = malzeme + iscilik;
     var marj = s.karMarji!=null ? Number(s.karMarji) : 30;
     var onerilen = toplamMaliyet * (1 + marj/100);
-    return { kritik:kritik, malzeme:malzeme, sureDk:sureDk, iscilik:iscilik, toplamMaliyet:toplamMaliyet, marj:marj, onerilen:onerilen };
+    return { kritik:kritik, malzeme:malzeme, malzemeOlcuden: !!olcudenMi, malzemeHesap: mh, sureDk:sureDk, iscilik:iscilik, toplamMaliyet:toplamMaliyet, marj:marj, onerilen:onerilen };
   }
   // Kart başına eldeki / ayrılan / serbest / yolda / üretimde — liste başına bir kez hesaplanır (veri değişmediyse önceki sonuç).
   // Malzeme İhtiyacı (MRP) hesabıyla aynı: eldeki = karantina hariç depo miktarı; ayrılan = açık iş emirlerinin henüz çıkılmamış
@@ -4455,7 +4477,7 @@ Dikkat edilmesi gereken 2 nokta:
           (Math.round(h.onerilen*100)!==Math.round((Number(s.birimFiyat)||0)*100) ? ' <span class="muted yetki-maliyet">(önerilen €'+fmt2(h.onerilen)+')</span>' : '');
         return { title: title, sub: sub };
       },
-      fields: STOK_FIELDS.filter(function(f){ return f.key !== 'miktar'; }),
+      fields: STOK_FIELDS.filter(function(f){ return f.key !== 'miktar'; }), onInput: stokFormOzet,
       extraActions: function(s){ return '<button class="btn secondary small" data-stokrota="'+s.id+'" title="Ürün rotası, ürün ağacı ve kontrol planı">Rota / Ağaç / Kontrol</button><button class="btn secondary small" data-stokhar="'+s.id+'">Hareketler</button>'; },
       editTitle: 'Stok kartını düzenle',
       kayitOncesi: function(v, eski, devam){ kayitKontrolu(stokKartKontrolu(v, eski), devam); },
@@ -4496,10 +4518,28 @@ Dikkat edilmesi gereken 2 nokta:
   }
 
   // ---------- Ürün Maliyet Hesabı ----------
-  function mhBirimAgirlik(sekil, cap, boy, yogunluk){
-    var alan = sekil === 'hex' ? 0.8660255 * cap * cap : (Math.PI/4) * cap * cap; // mm²
-    return alan * boy * (yogunluk/1000) / 1000; // kg
+  // Hammadde kesiti (mm²): yuvarlak Ø A; hex anahtar ağzı A (iki düz yüz arası); kare kenar A; lama A × B; boru dış çap A, et kalınlığı B
+  var HAM_PROFILLER = [['yuvarlak','Yuvarlak dolu (Ø)'],['hex','Altıgen / HEX (anahtar ağzı)'],['kare','Kare'],['lama','Lama / dikdörtgen (en × kalınlık)'],['boru','Boru (dış çap × et kalınlığı)']];
+  function hamKesit(profil, a, b){
+    a = Number(a) || 0; b = Number(b) || 0;
+    if (profil === 'hex') return Math.sqrt(3) / 2 * a * a;
+    if (profil === 'kare') return a * a;
+    if (profil === 'lama') return a * b;
+    if (profil === 'boru'){ var ic = Math.max(0, a - 2 * b); return Math.PI / 4 * (a * a - ic * ic); }
+    return Math.PI / 4 * a * a;
   }
+  // Çubuktan parça kesimi: hamboy = parça boyu + alın / yüzey payı + kesme (testere / kesme ucu) genişliği. Çubuk boyu girilirse
+  // bir çubuktan çıkan tam parça sayısı (bağlama / uç firesi düşülerek) bulunur; çubuk sonundaki artık da parçalara paylaştırılır.
+  function hamHesap(o){
+    var kesit = hamKesit(o.profil, o.a, o.b), yog = Number(o.yogunluk) || 0;
+    var parca = Number(o.parcaBoy) || 0, hamBoy = parca > 0 ? parca + (Number(o.alinPayi) || 0) + (Number(o.kesmePayi) || 0) : Number(o.hamBoy) || 0;
+    var cubuk = Number(o.cubukBoy) || 0, ucFire = Number(o.ucFire) || 0, parcaCubuk = cubuk > 0 && hamBoy > 0 ? Math.floor(Math.max(0, cubuk - ucFire) / hamBoy) : 0;
+    var efBoy = parcaCubuk > 0 ? cubuk / parcaCubuk : hamBoy; // çubuk sonu artığı ve uç firesi dahil parça başına düşen boy
+    var kgMm = kesit * yog / 1e6; // kg / mm
+    return { kesit: kesit, hamBoy: hamBoy, parcaCubuk: parcaCubuk, efBoy: efBoy, artik: parcaCubuk > 0 ? cubuk - parcaCubuk * hamBoy : 0,
+      kgHam: kgMm * hamBoy, kgParca: kgMm * efBoy, kgCubuk: kgMm * cubuk, cubukAdet: function(adet){ return parcaCubuk > 0 ? Math.ceil((Number(adet) || 0) / parcaCubuk) : 0; } };
+  }
+  function mhBirimAgirlik(sekil, cap, boy, yogunluk){ return hamHesap({ profil: sekil, a: cap, hamBoy: boy, yogunluk: yogunluk }).kgParca; }
   // Malzeme seçilince yoğunluk ve €/kg fiyatı forma dolar. Fiyat: önce bu malzeme için en son
   // kaydedilen hesaptaki fiyat (config.malzemeFiyatlari), yoksa buradaki varsayılan (null = elle girilir).
   var MH_MALZEMELER = [
@@ -4539,8 +4579,11 @@ Dikkat edilmesi gereken 2 nokta:
     ata('hammaddeFiyat', fiyat || ''); // fiyatı bilinmeyen malzemede kutu boşalır, elle girilir
   }
   var MH_VARSAYILAN = { ad:'', adet:1000, malzeme:'316Ti paslanmaz', sekil:'yuvarlak', cap:28, boy:40, yogunluk:7.98, sure:4.5, hammaddeFiyat:7.5, iscilikKat:0.39, kurulum:60, kar:30, bitmisAgirlik:0, talasFiyat:0, takimYuzde:10, firePct:2, disIslem:0 };
+  function hamOlcuMetni(profil, a, b){ a = fmt2(Number(a) || 0); b = fmt2(Number(b) || 0);
+    return profil === 'hex' ? 'HEX ' + a + ' mm' : profil === 'kare' ? 'Kare ' + a + ' mm' : profil === 'lama' ? 'Lama ' + a + ' × ' + b + ' mm' : profil === 'boru' ? 'Boru Ø' + a + ' × ' + b + ' mm' : 'Ø' + a + ' mm yuvarlak'; }
   function mhHesapla(r){
-    var birimAgirlik = mhBirimAgirlik(r.sekil, Number(r.cap)||0, Number(r.boy)||0, Number(r.yogunluk)||0);
+    var ham = hamHesap({ profil: r.sekil, a: r.cap, b: r.olcuB, parcaBoy: r.parcaBoy, alinPayi: r.alinPayi, kesmePayi: r.kesmePayi, hamBoy: r.boy, cubukBoy: r.cubukBoy, ucFire: r.ucFire, yogunluk: r.yogunluk });
+    var birimAgirlik = ham.kgParca;
     var adet = Number(r.adet)||0;
     var toplamAgirlik = adet * birimAgirlik;
     var birimHammaddeBedeli = birimAgirlik * (Number(r.hammaddeFiyat)||0);
@@ -4564,7 +4607,7 @@ Dikkat edilmesi gereken 2 nokta:
     var satisFiyati = birimMaliyet * (1 + kar/100);
     var toplamSatis = adet * satisFiyati;
     var toplamSureDk = adet * (Number(r.sure)||0) + (Number(r.kurulum)||0);
-    return { birimAgirlik:birimAgirlik, toplamAgirlik:toplamAgirlik, birimHammaddeBedeli:birimHammaddeBedeli, toplamHammaddeBedeli:toplamHammaddeBedeli,
+    return { ham: ham, cubukAdet: ham.cubukAdet(adet), birimAgirlik:birimAgirlik, toplamAgirlik:toplamAgirlik, birimHammaddeBedeli:birimHammaddeBedeli, toplamHammaddeBedeli:toplamHammaddeBedeli,
       birimIscilikBedeli:birimIscilikBedeli, takimBirim:takimBirim, fireBirim:fireBirim, disIslemBirim:disIslemBirim, talasAgirlikBirim:talasAgirlikBirim, talasGeliriBirim:talasGeliriBirim,
       birimMaliyet:birimMaliyet, toplamMaliyet:toplamMaliyet, satisFiyati:satisFiyati, toplamSatis:toplamSatis, toplamSureDk:toplamSureDk };
   }
@@ -4580,9 +4623,15 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'kar', label:'Kâr oranı (%)', type:'number'},
     {type:'section', label:'Hammadde'},
     {key:'malzeme', label:'Malzeme', type:'select', options:MH_MALZEMELER.map(function(m){ return m.ad; })},
-    {key:'sekil', label:'Hammadde şekli', type:'select', options:['yuvarlak','hex']},
-    {key:'cap', label:'Ölçü (mm)', type:'number', hint:'Yuvarlakta çap; hex\'te anahtar ağzı (iki düz yüz arası, köşeden köşeye DEĞİL)'},
-    {key:'boy', label:'Hamboy (mm)', type:'number', hint:'Kesme payı dahil'},
+    {key:'sekil', label:'Hammadde profili', type:'select', options: HAM_PROFILLER.map(function(p){ return { value: p[0], label: p[1] }; })},
+    {key:'cap', label:'Ölçü A (mm)', type:'number', hint:'Yuvarlakta çap; hex\'te anahtar ağzı (iki düz yüz arası, köşeden köşeye DEĞİL); karede kenar; lamada en; boruda dış çap'},
+    {key:'olcuB', label:'Ölçü B (mm)', type:'number', hint:'Lamada kalınlık, boruda et kalınlığı; diğerlerinde boş'},
+    {key:'parcaBoy', label:'Bitmiş parça boyu (mm)', type:'number', hint:'Girilirse hamboy = parça boyu + alın payı + kesme payı'},
+    {key:'alinPayi', label:'Alın / yüzey payı (mm)', type:'number', hint:'İki alın tornalama payı toplamı; ör. 1–2 mm'},
+    {key:'kesmePayi', label:'Kesme payı (mm)', type:'number', hint:'Testere ya da kesme ucu genişliği; ör. 2–3 mm'},
+    {key:'boy', label:'Hamboy (mm)', type:'number', hint:'Parça boyu girilmediyse; kesme payı dahil'},
+    {key:'cubukBoy', label:'Çubuk boyu (mm)', type:'number', hint:'ör. 3000; girilirse çubuktan çıkan parça sayısı ve çubuk sonu artığı hesaba katılır'},
+    {key:'ucFire', label:'Çubuk sonu / bağlama firesi (mm)', type:'number', hint:'Ayna / bara besleyicide kullanılamayan son parça; ör. 150–300 mm'},
     {key:'yogunluk', label:'Yoğunluk (g/cm³)', type:'number', hint:'Malzeme seçilince dolar'},
     {key:'hammaddeFiyat', label:'Hammadde fiyatı (€/kg)', type:'number', hint:'Malzeme seçilince son kullanılan fiyat gelir'},
     {key:'bitmisAgirlik', label:'Bitmiş parça ağırlığı (kg)', type:'number', hint:'Biliniyorsa; talaş hesabı için'},
@@ -4602,6 +4651,7 @@ Dikkat edilmesi gereken 2 nokta:
     function k(ad, deger, ana){ return '<div class="ck'+(ana?' ana':'')+'">'+ad+'<b>'+deger+'</b></div>'; }
     function e2(n){ return '€'+(Number(n)||0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
     return k('Birim ağırlık', (Number(h.birimAgirlik)||0).toLocaleString('tr-TR', {minimumFractionDigits:3, maximumFractionDigits:3})+' kg') +
+      (h.ham.parcaCubuk ? k('Çubuktan', h.ham.parcaCubuk+' parça · '+fmt(h.cubukAdet)+' çubuk') : '') +
       k('Hammadde/adet', e2(h.birimHammaddeBedeli - h.talasGeliriBirim)) +
       k('İşçilik+takım/adet', e2(h.birimIscilikBedeli + h.takimBirim)) +
       ((h.fireBirim + h.disIslemBirim) > 0 ? k('Fire+dış işlem/adet', e2(h.fireBirim + h.disIslemBirim)) : '') +
@@ -4618,7 +4668,7 @@ Dikkat edilmesi gereken 2 nokta:
     wrap.innerHTML = list.map(function(r){
       var h = mhHesapla(r);
       var acik = !!OZET_ACIK_DETAYLAR[r.id];
-      return '<div class="recordrow" data-rid="'+r.id+'"><div class="rmain"><div class="rtitle">'+esc(r.ad||'(adsız)')+' <span class="pill">'+(r.sekil==='hex'?'Hex':'Yuvarlak')+'</span></div>'+
+      return '<div class="recordrow" data-rid="'+r.id+'"><div class="rmain"><div class="rtitle">'+esc(r.ad||'(adsız)')+' <span class="pill">'+esc(hamOlcuMetni(r.sekil, r.cap, r.olcuB))+'</span></div>'+
         '<div class="rsub">'+fmt(r.adet)+' adet · Birim maliyet: €'+fmt2(h.birimMaliyet)+' · Satış: €'+fmt2(h.satisFiyati)+'</div>'+
         '<div class="rdetail" id="rdetail-'+r.id+'" style="display:'+(acik?'block':'none')+'">'+
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'+
@@ -4627,7 +4677,8 @@ Dikkat edilmesi gereken 2 nokta:
         '<button class="btn danger" data-mhdel="'+r.id+'">Sil</button>'+
         '</div>'+
         '<div class="tablewrap"><table><tbody>'+
-        '<tr><td class="muted">Hammadde</td><td class="num">'+(r.malzeme ? esc(r.malzeme)+' · ' : '')+(r.sekil==='hex'?'Hex '+fmt2(r.cap)+' mm (anahtar ağzı)':'Ø'+fmt2(r.cap)+' mm yuvarlak')+' × '+fmt2(r.boy)+' mm</td></tr>'+
+        '<tr><td class="muted">Hammadde</td><td class="num">'+(r.malzeme ? esc(r.malzeme)+' · ' : '')+esc(hamOlcuMetni(r.sekil, r.cap, r.olcuB))+' × hamboy '+fmt2(h.ham.hamBoy)+' mm'+(Number(r.parcaBoy) ? ' (parça '+fmt2(r.parcaBoy)+' + alın '+fmt2(r.alinPayi||0)+' + kesme '+fmt2(r.kesmePayi||0)+')' : '')+'</td></tr>'+
+        (h.ham.parcaCubuk ? '<tr><td class="muted">Çubuk ('+fmt(r.cubukBoy)+' mm)</td><td class="num">'+h.ham.parcaCubuk+' parça / çubuk · artık '+fmt2(h.ham.artik)+' mm · '+fmt(h.cubukAdet)+' çubuk gerekir</td></tr>' : '')+
         '<tr><td class="muted">Birim hammadde ağırlığı</td><td class="num">'+fmt2(h.birimAgirlik)+' kg</td></tr>'+
         '<tr><td class="muted">Toplam hammadde ağırlığı ('+fmt(r.adet)+' adet)</td><td class="num">'+fmt2(h.toplamAgirlik)+' kg</td></tr>'+
         '<tr><td class="muted">Hammadde fiyatı</td><td class="num">€'+fmt2(r.hammaddeFiyat)+'/kg</td></tr>'+
@@ -4702,6 +4753,8 @@ Dikkat edilmesi gereken 2 nokta:
         if (stokOtoKodCakisti(kb.kod)) return;
         db.collection('stok').add({
           kod: kb.kod, ad: r.ad, tip:'Mamul', birim:'adet', miktar:0, kritikSeviye:0,
+          hamProfil: r.sekil || 'yuvarlak', hamA: Number(r.cap)||0, hamB: Number(r.olcuB)||0, parcaBoy: Number(r.parcaBoy)||0, alinPayi: Number(r.alinPayi)||0, kesmePayi: Number(r.kesmePayi)||0,
+          hamBoy: Number(r.boy)||0, cubukBoy: Number(r.cubukBoy)||0, ucFire: Number(r.ucFire)||0, hamMalzeme: r.malzeme || '', hamFiyat: Number(r.hammaddeFiyat)||0, malzemeCinsi: r.malzeme || '', agirlikKg: Math.round(h.birimAgirlik*10000)/10000,
           maliyet: Math.round((h.birimMaliyet - h.birimIscilikBedeli)*100)/100,
           uretimSuresiDk: Number(r.sure)||0,
           iscilikSabit: Math.round(h.birimIscilikBedeli*100)/100,
@@ -4738,6 +4791,10 @@ Dikkat edilmesi gereken 2 nokta:
   // ortada satır satır kalem tablosu (stok kodu / adı, miktar, birim, liste fiyatı, iskonto, net fiyat, KDV, tutar),
   // altta açıklama ve toplamlar. Satıra yazarken tablo yeniden çizilmez (odak kaybolmaz); Enter bir alt satıra / yeni satıra geçer.
   var KF_KDV_ORANLARI = [0, 1, 8, 10, 18, 20];
+  // Satır iskontosu: İsk. 1 ve İsk. 2 art arda uygulanır (Logo / Canias gibi); "iskonto" alanı ikisinin birleşik oranıdır (onay, muhasebe, raporlar bunu kullanır)
+  function iskBirlesik(i1, i2){ i1 = Number(i1) || 0; i2 = Number(i2) || 0; return Math.round((1 - (1 - i1 / 100) * (1 - i2 / 100)) * 100 * 10000) / 10000; }
+  function iskMetni(k){ var i1 = k.iskonto1 != null ? Number(k.iskonto1) || 0 : Number(k.iskonto) || 0, i2 = Number(k.iskonto2) || 0;
+    return i2 ? (i1 ? '%' + fmt2(i1) + ' + ' : '') + '%' + fmt2(i2) : (i1 ? '%' + fmt2(i1) : ''); }
   function openKalemForm(opts){
     // opts: {title, showGecerlilik, initial:{musteriId,tarih,gecerlilik,not_,kalemler}, extraFields, cariEtiket, cariFiltre, yeniCariTipi, fiyatBul, onSave(vals)}
     var overlay = byId('formOverlay'), titleEl = byId('formTitle'), fieldsEl = byId('formFields'), saveBtn = byId('formKaydet'), cancelBtn = byId('formIptal');
@@ -4753,18 +4810,18 @@ Dikkat edilmesi gereken 2 nokta:
     var ekAlanVar = function(key){ return (opts.extraFields || []).some(function(f){ return f.key === key; }); };
     var teslimModu = cariEtiket !== 'Müşteri' ? '' : (ekAlanVar('teslimSuresiGun') ? 'teklif' : (ekAlanVar('termin') ? 'siparis' : ''));
     var teslimSon = null, teslimZaman = null;
-    function bosSatir(){ return { stokId: '', miktar: 1, birim: '', listeFiyat: 0, iskonto: 0, kdvOrani: 20, aciklama: '', termin: '', otoFiyat: true }; }
+    function bosSatir(){ return { stokId: '', miktar: 1, birim: '', listeFiyat: 0, iskonto1: 0, iskonto2: 0, kdvOrani: 20, aciklama: '', termin: '', otoFiyat: true }; }
     kalemFormDraft.kalemler = (init.kalemler || []).map(function(k){
       var st = stokKart(k.stokId);
       return { stokId: k.stokId || '', miktar: Number(k.miktar) || 0, birim: k.birim || (st && st.birim) || 'adet',
-        listeFiyat: k.listeFiyat != null ? Number(k.listeFiyat) || 0 : Number(k.birimFiyat) || 0, iskonto: Number(k.iskonto) || 0,
+        listeFiyat: k.listeFiyat != null ? Number(k.listeFiyat) || 0 : Number(k.birimFiyat) || 0, iskonto1: k.iskonto1 != null ? Number(k.iskonto1) || 0 : Number(k.iskonto) || 0, iskonto2: Number(k.iskonto2) || 0,
         kdvOrani: k.kdvOrani != null ? Number(k.kdvOrani) : 20, aciklama: k.aciklama || '', termin: k.termin || '', otoFiyat: false };
     });
     if (!kalemFormDraft.kalemler.length) kalemFormDraft.kalemler.push(bosSatir());
     var K = kalemFormDraft.kalemler;
     function stokLbl(s){ return s ? (s.kod ? s.kod + ' · ' : '') + s.ad : ''; }
     function pb(){ var x = fieldsEl.querySelector('[data-kfxkey="paraBirimi"]'); return (x && x.value) || init.paraBirimi || 'EUR'; }
-    function net(k){ return muhR2((Number(k.listeFiyat) || 0) * (1 - (Number(k.iskonto) || 0) / 100) * 10000) / 10000; }
+    function net(k){ return muhR2((Number(k.listeFiyat) || 0) * (1 - (Number(k.iskonto1) || 0) / 100) * (1 - (Number(k.iskonto2) || 0) / 100) * 10000) / 10000; }
     function tutar(k){ return muhR2((Number(k.miktar) || 0) * net(k)); }
     function para(x){ return pbFmt(x, pb()); }
     // Fiyat listesi € tutar verir; belge başka para birimindeyse bugünkü kurla çevrilir
@@ -4780,11 +4837,12 @@ Dikkat edilmesi gereken 2 nokta:
     function satirHtml(k, i){
       var st = stokKart(k.stokId);
       return '<tr data-kr="' + i + '"><td class="kf-sira">' + (i + 1) + '</td>' +
-        '<td class="kf-stok"><input type="text" list="kfStokListe" data-kc="stok" value="' + escAttr(stokLbl(st)) + '" placeholder="Stok kodu ya da adı yazın"><div class="muted kf-parca">' + (st && st.musteriParcaNo && cariEtiket === 'Müşteri' ? 'Müşteri no: ' + esc(st.musteriParcaNo) : '') + '</div></td>' +
+        '<td class="kf-stok"><input type="text" autocomplete="off" data-kc="stok" value="' + escAttr(stokLbl(st)) + '" placeholder="Stok kodu ya da adı yazın"><div class="muted kf-parca">' + (st && st.musteriParcaNo && cariEtiket === 'Müşteri' ? 'Müşteri no: ' + esc(st.musteriParcaNo) : '') + '</div></td>' +
         '<td><input type="number" step="any" class="num" data-kc="miktar" value="' + (k.miktar || '') + '"><div class="muted kf-b2">' + b2Metin(k) + '</div></td>' +
         '<td class="kf-birim">' + esc(k.birim || (st && st.birim) || '') + '</td>' +
         '<td><div class="kf-fiyat"><input type="number" step="any" class="num" data-kc="listeFiyat" value="' + (k.listeFiyat || '') + '"><button type="button" class="kf-fiyat-sec" data-kffiyat="' + i + '" title="Fiyat seç: fiyat listesi, stok kartı, son fiyatlar" aria-label="Fiyat seç">▾</button></div></td>' +
-        '<td><input type="number" step="any" class="num kf-dar" data-kc="iskonto" value="' + (k.iskonto || '') + '" placeholder="0"></td>' +
+        '<td><input type="number" step="any" class="num kf-dar" data-kc="iskonto1" value="' + (k.iskonto1 || '') + '" placeholder="0"></td>' +
+        '<td><input type="number" step="any" class="num kf-dar" data-kc="iskonto2" value="' + (k.iskonto2 || '') + '" placeholder="0"></td>' +
         '<td class="num kf-net">' + fmt2(net(k)) + '</td>' +
         '<td><select data-kc="kdvOrani" class="kf-dar">' + KF_KDV_ORANLARI.map(function(o){ return '<option value="' + o + '"' + (Number(k.kdvOrani) === o ? ' selected' : '') + '>%' + o + '</option>'; }).join('') + '</select></td>' +
         '<td class="num kf-tutar"><b>' + fmt2(tutar(k)) + '</b></td>' +
@@ -4827,7 +4885,7 @@ Dikkat edilmesi gereken 2 nokta:
         return '<div class="field"><label>' + esc(f.label) + '</label><input type="' + (f.type || 'text') + '" data-kfx="' + xi + '" data-kfxkey="' + escAttr(f.key) + '" value="' + escAttr(v) + '"></div>';
       }).join('');
       fieldsEl.innerHTML =
-        '<datalist id="kfStokListe">' + state.stok.map(function(s){ return '<option value="' + escAttr(stokLbl(s)) + '">'; }).join('') + '</datalist>' +
+
         '<div class="kf-baslik">' +
           '<div class="field kf-cari"><label>' + esc(cariEtiket) + '</label><div class="kf-yanyana"><select id="kfMusteri"><option value="">Seçin</option>' + musteriOpts + '</select>' +
             '<button type="button" class="btn secondary small" id="kfMusteriYeniBtn" title="Yeni ' + escAttr(cariEtiket.toLocaleLowerCase('tr-TR')) + ' kartı">+</button></div></div>' +
@@ -4838,7 +4896,7 @@ Dikkat edilmesi gereken 2 nokta:
         '</div>' +
         '<div id="kfMusteriMini" class="kf-mini" style="display:none"><div class="field"><label>' + esc(cariEtiket) + ' adı</label><input type="text" id="kfMAd"></div>' +
           '<div class="field"><label>Telefon</label><input type="text" id="kfMTel"></div><button type="button" class="btn small" id="kfMusteriEkleBtn">Kartı aç</button></div>' +
-        '<div class="tablewrap kf-tablo-wrap"><table class="kf-tablo"><thead><tr><th>#</th><th>Stok kodu / adı</th><th class="num">Miktar</th><th>Birim</th><th class="num">Liste fiyatı</th><th class="num">İsk. %</th><th class="num">Net fiyat</th><th>KDV</th><th class="num">Tutar</th>' + (teslimModu ? '<th title="Boşsa başlıktaki ' + (teslimModu === 'teklif' ? 'teslim süresi' : 'termin') + ' geçerli">Termin</th>' : '') + '<th>Açıklama</th><th></th></tr></thead>' +
+        '<div class="tablewrap kf-tablo-wrap"><table class="kf-tablo"><thead><tr><th>#</th><th>Stok kodu / adı</th><th class="num">Miktar</th><th>Birim</th><th class="num">Liste fiyatı</th><th class="num">İsk.1 %</th><th class="num">İsk.2 %</th><th class="num">Net fiyat</th><th>KDV</th><th class="num">Tutar</th>' + (teslimModu ? '<th title="Boşsa başlıktaki ' + (teslimModu === 'teklif' ? 'teslim süresi' : 'termin') + ' geçerli">Termin</th>' : '') + '<th>Açıklama</th><th></th></tr></thead>' +
           '<tbody id="kfKalemler">' + K.map(satirHtml).join('') + '</tbody></table></div>' +
         '<div class="kf-arac"><button type="button" class="btn secondary small" id="kfKalemEkle">+ Satır</button>' +
           '<button type="button" class="btn secondary small" id="kfUrunYeniBtn">+ Yeni stok kartı</button>' +
@@ -4922,7 +4980,7 @@ Dikkat edilmesi gereken 2 nokta:
       belgeler.forEach(function(x){ (x.d.kalemler || []).forEach(function(kk){ if (kk.stokId === k.stokId) son.push({ x: x, kk: kk }); }); });
       son.sort(function(a, b){ return String(b.x.d.tarih || '').localeCompare(String(a.x.d.tarih || '')); });
       son.slice(0, 5).forEach(function(y){ var v = y.kk.listeFiyat != null ? y.kk.listeFiyat : y.kk.birimFiyat;
-        ekle(alisModu ? 'Bu tedarikçiye son fiyatlar' : 'Bu müşteriye son fiyatlar', y.x.tur + ' ' + (y.x.no || '') + ' · ' + kvTarihTR(y.x.d.tarih || '') + (Number(y.kk.iskonto) ? ' · isk. %' + fmt2(y.kk.iskonto) : ''), v, belgePB(y.x.d)); });
+        ekle(alisModu ? 'Bu tedarikçiye son fiyatlar' : 'Bu müşteriye son fiyatlar', y.x.tur + ' ' + (y.x.no || '') + ' · ' + kvTarihTR(y.x.d.tarih || '') + (Number(y.kk.iskonto) ? ' · isk. ' + iskMetni(y.kk) : ''), v, belgePB(y.x.d)); });
       return l;
     }
     function fiyatMenusuKapat(){ var m = byId('kfFiyatMenu'); if (m) m.remove(); }
@@ -4999,7 +5057,7 @@ Dikkat edilmesi gereken 2 nokta:
         if (st){ var yeni = st.id !== k.stokId; k.stokId = st.id; k.birim = st.birim || 'adet'; if (st.kdvOrani != null && st.kdvOrani !== '') k.kdvOrani = Number(st.kdvOrani); x.value = stokLbl(st);
           var sel = tr.querySelector('[data-kc="kdvOrani"]'); if (sel) sel.value = String(k.kdvOrani);
           var cr = state.musteriler.find(function(m){ return m.id === init.musteriId; }), ci = cr && Number(cr.iskontoOrani) || 0;
-          if (yeni && ci > 0 && !(Number(k.iskonto) > 0)){ k.iskonto = ci; var ik = tr.querySelector('[data-kc="iskonto"]'); if (ik) ik.value = ci; }
+          if (yeni && ci > 0 && !(Number(k.iskonto1) > 0)){ k.iskonto1 = ci; var ik = tr.querySelector('[data-kc="iskonto1"]'); if (ik) ik.value = ci; }
           var pn = tr.querySelector('.kf-parca'); if (pn) pn.textContent = st.musteriParcaNo ? 'Müşteri no: ' + st.musteriParcaNo : '';
           if (yeni) fiyatYenile(i, true); }
         else if (!x.value.trim()){ k.stokId = ''; }
@@ -5013,6 +5071,45 @@ Dikkat edilmesi gereken 2 nokta:
       satirGuncelle(i);
       if (c === 'stok' || c === 'miktar') teslimGuncelle();
     }
+    // Stok seçim listesi (her tarayıcıda): kutuya tıklayınca bütün kartlar, yazdıkça kod / ad / müşteri parça no / barkod ile süzülür; ↑ ↓ Enter, Esc
+    var oneriEl = null, oneriInp = null, oneriSec = -1, oneriListe = [];
+    function oneriKapat(){ if (oneriEl){ oneriEl.remove(); oneriEl = null; } oneriInp = null; oneriSec = -1; }
+    function oneriGoster(inp){
+      var t = String(inp.value || '').trim().toLocaleLowerCase('tr-TR'), secili = stokCoz(inp.value);
+      if (secili) t = '';
+      var satis = cariEtiket === 'Müşteri', oncelik = function(s){ var tp = s.tip || ''; return satis ? (tp === 'Mamul' ? 0 : tp === 'Yarı Mamul' ? 1 : 2) : (tp === 'Hammadde' ? 0 : tp === 'Sarf' || tp === 'Yedek Parça' ? 1 : 2); };
+      oneriListe = state.stok.filter(function(s){ if (s.durum === 'Pasif') return false; if (!t) return true;
+        return [s.kod, s.ad, s.ad2, s.musteriParcaNo, s.barkod, s.malzemeCinsi].some(function(x){ return x && String(x).toLocaleLowerCase('tr-TR').indexOf(t) > -1; }); })
+        .sort(function(a, b){ return oncelik(a) - oncelik(b) || String(a.kod || a.ad || '').localeCompare(String(b.kod || b.ad || ''), 'tr'); }).slice(0, 80);
+      if (!oneriEl){ oneriEl = document.createElement('div'); oneriEl.className = 'kf-oneri'; document.body.appendChild(oneriEl);
+        oneriEl.addEventListener('mousedown', function(e){ var d = e.target.closest('[data-oi]'); if (!d) return; e.preventDefault(); oneriSecim(Number(d.dataset.oi)); }); }
+      oneriInp = inp; oneriSec = secili ? oneriListe.indexOf(secili) : -1;
+      oneriEl.innerHTML = oneriListe.length ? oneriListe.map(function(s, i){
+        return '<div data-oi="' + i + '" class="' + (i === oneriSec ? 'aktif' : '') + '"><b>' + esc(s.kod || '') + '</b> ' + esc(s.ad || '') + ' <span class="pill">' + esc(s.tip || '') + '</span>' +
+          (s.musteriParcaNo ? ' <span class="muted">müşteri no ' + esc(s.musteriParcaNo) + '</span>' : '') + '<span class="kf-oneri-sag muted">' + fmt2(Number(s.miktar) || 0) + ' ' + esc(s.birim || '') + (Number(s.birimFiyat) && satis ? ' · €' + fmt2(s.birimFiyat) : '') + '</span></div>'; }).join('')
+        : '<div class="muted" style="padding:6px 8px">Eşleşen stok kartı yok — "+ Yeni stok kartı" ile açabilirsiniz.</div>';
+      var r = inp.getBoundingClientRect();
+      oneriEl.style.left = r.left + 'px'; oneriEl.style.width = Math.max(r.width, 420) + 'px';
+      var alt = window.innerHeight - r.bottom; if (alt < 220 && r.top > alt){ oneriEl.style.top = ''; oneriEl.style.bottom = (window.innerHeight - r.top + 2) + 'px'; } else { oneriEl.style.bottom = ''; oneriEl.style.top = (r.bottom + 2) + 'px'; }
+      var ak = oneriEl.querySelector('.aktif'); if (ak) ak.scrollIntoView({ block: 'nearest' });
+    }
+    function oneriSecim(i){
+      var st = oneriListe[i], inp = oneriInp; if (!st || !inp) return;
+      inp.value = stokLbl(st); oneriKapat();
+      inp.dispatchEvent(new Event('change', { bubbles: true }));
+      var tr = inp.closest('[data-kr]'), m = tr && tr.querySelector('[data-kc="miktar"]'); if (m){ m.focus(); m.select(); }
+    }
+    function oneriTus(e){
+      if (!oneriEl || e.target !== oneriInp) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); oneriSec = Math.max(0, Math.min(oneriListe.length - 1, oneriSec + (e.key === 'ArrowDown' ? 1 : -1)));
+        oneriEl.querySelectorAll('[data-oi]').forEach(function(d){ d.classList.toggle('aktif', Number(d.dataset.oi) === oneriSec); }); var ak = oneriEl.querySelector('.aktif'); if (ak) ak.scrollIntoView({ block: 'nearest' }); return; }
+      if (e.key === 'Enter' && oneriSec > -1){ e.preventDefault(); e.stopPropagation(); oneriSecim(oneriSec); return; }
+      if (e.key === 'Escape'){ e.stopPropagation(); oneriKapat(); }
+    }
+    function oneriOdak(e){ if (e.target.dataset && e.target.dataset.kc === 'stok') oneriGoster(e.target); }
+    function oneriAyril(e){ if (e.target === oneriInp) setTimeout(function(){ if (document.activeElement !== oneriInp) oneriKapat(); }, 150); }
+    fieldsEl.addEventListener('focusin', oneriOdak); fieldsEl.addEventListener('input', oneriOdak); fieldsEl.addEventListener('focusout', oneriAyril);
+    fieldsEl.addEventListener('keydown', oneriTus, true);
     function onTus(e){
       if (e.key !== 'Enter' || e.ctrlKey || e.metaKey) return;
       var tr = e.target.closest && e.target.closest('[data-kr]'); if (!tr || e.target.tagName === 'TEXTAREA') return;
@@ -5080,7 +5177,7 @@ Dikkat edilmesi gereken 2 nokta:
       formBox.classList.remove('tam');
       fieldsEl.removeEventListener('input', onDegisim);
       fieldsEl.removeEventListener('change', onDegisim);
-      fieldsEl.removeEventListener('keydown', onTus);
+      fieldsEl.removeEventListener('keydown', onTus); fieldsEl.removeEventListener('keydown', oneriTus, true); fieldsEl.removeEventListener('focusin', oneriOdak); fieldsEl.removeEventListener('input', oneriOdak); fieldsEl.removeEventListener('focusout', oneriAyril); oneriKapat();
       fieldsEl.removeEventListener('click', onTik);
       saveBtn.removeEventListener('click', onSaveClick);
       cancelBtn.removeEventListener('click', onCancelClick);
@@ -5095,7 +5192,7 @@ Dikkat edilmesi gereken 2 nokta:
       var cozulmemis = fieldsEl.querySelector('[data-kc="stok"].alan-hata');
       if (cozulmemis){ cozulmemis.focus(); toast('Listede olmayan stok yazıldı: "' + cozulmemis.value + '". Listeden seçin ya da "+ Yeni stok kartı" ile açın.', true); return; }
       var kalemler = K.filter(function(k){ return k.stokId && Number(k.miktar) > 0; }).map(function(k){
-        return { stokId: k.stokId, ad: stokAdiById(k.stokId), miktar: Number(k.miktar) || 0, birim: k.birim || 'adet', listeFiyat: Number(k.listeFiyat) || 0, iskonto: Number(k.iskonto) || 0,
+        return { stokId: k.stokId, ad: stokAdiById(k.stokId), miktar: Number(k.miktar) || 0, birim: k.birim || 'adet', listeFiyat: Number(k.listeFiyat) || 0, iskonto: iskBirlesik(k.iskonto1, k.iskonto2), iskonto1: Number(k.iskonto1) || 0, iskonto2: Number(k.iskonto2) || 0,
           birimFiyat: net(k), kdvOrani: Number(k.kdvOrani) || 0, aciklama: k.aciklama || '', tutar: tutar(k), termin: teslimModu ? k.termin || '' : '' };
       });
       if (!musteriId){ byId('kfMusteri').classList.add('alan-hata'); byId('kfMusteri').focus(); toast(cariEtiket + ' seçin.', true); return; }
@@ -5133,7 +5230,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kdv = toplamla(kl, function(k){ return (k.tutar != null ? k.tutar : (Number(k.miktar)||0) * (Number(k.birimFiyat)||0)) * (Number(k.kdvOrani != null ? k.kdvOrani : 0)) / 100; });
     return '<div class="tablewrap"><table><thead><tr><th>#</th><th>Kalem</th><th class="num">Miktar</th>'+(iskVar ? '<th class="num">Liste fiyatı</th><th class="num">İsk. %</th>' : '')+'<th class="num">Net fiyat</th><th class="num">KDV</th><th class="num">Tutar</th>'+(terVar ? '<th>Termin</th>' : '')+'<th>Açıklama</th></tr></thead><tbody>'+
       kl.map(function(k, i){ var t = k.tutar != null ? k.tutar : (Number(k.miktar)||0) * (Number(k.birimFiyat)||0);
-        return '<tr><td class="muted">'+(i+1)+'</td><td>'+esc(k.ad)+'</td><td class="num">'+fmt2(k.miktar)+' '+esc(k.birim||'')+(ikinciBirimMetni(k.stokId, k.miktar) ? '<div class="muted" style="font-size:11px">= '+esc(ikinciBirimMetni(k.stokId, k.miktar))+'</div>' : '')+'</td>'+(iskVar ? '<td class="num">'+pbFmt(k.listeFiyat != null ? k.listeFiyat : k.birimFiyat, p)+'</td><td class="num">'+(Number(k.iskonto) ? '%'+fmt2(k.iskonto) : '-')+'</td>' : '')+
+        return '<tr><td class="muted">'+(i+1)+'</td><td>'+esc(k.ad)+'</td><td class="num">'+fmt2(k.miktar)+' '+esc(k.birim||'')+(ikinciBirimMetni(k.stokId, k.miktar) ? '<div class="muted" style="font-size:11px">= '+esc(ikinciBirimMetni(k.stokId, k.miktar))+'</div>' : '')+'</td>'+(iskVar ? '<td class="num">'+pbFmt(k.listeFiyat != null ? k.listeFiyat : k.birimFiyat, p)+'</td><td class="num">'+(iskMetni(k) || '-')+'</td>' : '')+
           '<td class="num">'+pbFmt(k.birimFiyat, p)+'</td><td class="num">'+(k.kdvOrani != null ? '%'+fmt(k.kdvOrani) : '-')+'</td><td class="num"><b>'+pbFmt(t, p)+'</b></td>'+(terVar ? '<td>'+(k.termin ? kvTarihTR(k.termin) : '<span class="muted">başlıktaki</span>')+'</td>' : '')+'<td class="muted">'+esc(k.aciklama||'')+'</td></tr>'; }).join('')+
       '<tr class="muh-toplam"><td colspan="'+(iskVar ? 5 : 3)+'">Ara toplam '+pbFmt(ara, p)+(kdv ? ' · KDV '+pbFmt(kdv, p) : '')+'</td><td colspan="'+(terVar ? 5 : 4)+'" class="num"><b>'+pbFmt(ara + kdv, p)+'</b></td></tr></tbody></table></div>';
   }
@@ -5915,7 +6012,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kalemSatir = (f.kalemler||[]).map(function(k, i){
       var st = stokKart(k.stokId) || {};
       return '<tr><td>'+(i+1)+'</td><td>'+esc(st.kod||'')+'</td><td>'+printKalemAciklama(k, st)+(k.gtip?'<div class="muted">GTİP '+esc(k.gtip)+'</div>':'')+'</td><td class="num">'+printMiktarHtml(k)+'</td><td>'+esc(k.birim||st.birim||'')+'</td><td class="num">'+para(k.birimFiyat)+'</td>'+
-        (ayr?'<td class="num">'+(Number(k.iskonto)?'%'+fmt2(k.iskonto):'')+'</td><td class="num">%'+fmt2(k.kdvOrani)+'</td>':'')+'<td class="num">'+para(k.tutar)+'</td></tr>';
+        (ayr?'<td class="num">'+iskMetni(k)+'</td><td class="num">%'+fmt2(k.kdvOrani)+'</td>':'')+'<td class="num">'+para(k.tutar)+'</td></tr>';
     }).join('');
     var tipBaslik = { 'SGK': ['FATURA (SGK)','INVOICE (SGK)'], 'Komisyoncu satışı': ['FATURA (KOMİSYONCU)','INVOICE (COMMISSION AGENT)'], 'HKS satış': ['FATURA (HKS)','INVOICE (HKS)'], 'Konaklama': ['FATURA (KONAKLAMA)','INVOICE (ACCOMMODATION)'], 'Özel matrah': ['FATURA (ÖZEL MATRAH)','INVOICE (SPECIAL BASE)'], 'İhracat': ['FATURA (İHRACAT)','EXPORT INVOICE'], 'Hizmet ihracatı': ['FATURA (HİZMET İHRACATI)','SERVICE EXPORT INVOICE'], 'İhraç kayıtlı': ['FATURA (İHRAÇ KAYITLI)','INVOICE (EXPORT-REGISTERED)'], 'İstisna (diğer)': ['FATURA (İSTİSNA)','INVOICE (EXEMPT)'], 'Hurda / talaş satışı': ['FATURA (HURDA)','INVOICE (SCRAP)'], 'Fiyat farkı': ['FİYAT FARKI FATURASI','PRICE DIFFERENCE INVOICE'], 'Hizmet': ['FATURA (HİZMET)','INVOICE (SERVICE)'] }[f.faturaTipi];
     var ekBilgi = [
@@ -5995,7 +6092,7 @@ Dikkat edilmesi gereken 2 nokta:
       var st = stokKart(k.stokId) || {}, mk = Number(k.miktar) || 0, lf = k.listeFiyat != null ? Number(k.listeFiyat) || 0 : Number(k.birimFiyat) || 0, nf = Number(k.birimFiyat) || lf * (1 - (Number(k.iskonto) || 0) / 100);
       var tut = Number(k.tutar) || mk * nf, o = Number(k.kdvOrani != null ? k.kdvOrani : 20);
       brut += mk * lf; ara += tut; isk += mk * lf - tut; kdv[o] = (kdv[o] || 0) + tut * o / 100;
-      return '<tr><td>' + (i + 1) + '</td><td>' + esc(st.kod || '') + '</td><td>' + printKalemAciklama(k, st) + '</td><td class="num">' + printMiktarHtml(k) + '</td><td>' + esc(k.birim || st.birim || '') + '</td><td class="num">' + para(lf) + '</td><td class="num">' + (Number(k.iskonto) ? '%' + fmt2(k.iskonto) : '') + '</td><td class="num">%' + o + '</td>' +
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(st.kod || '') + '</td><td>' + printKalemAciklama(k, st) + '</td><td class="num">' + printMiktarHtml(k) + '</td><td>' + esc(k.birim || st.birim || '') + '</td><td class="num">' + para(lf) + '</td><td class="num">' + iskMetni(k) + '</td><td class="num">%' + o + '</td>' +
         (terminVar ? '<td>' + (k.termin ? kvTarihTR(k.termin) : esc(bosTermin || '')) + '</td>' : '') + '<td class="num">' + para(tut) + '</td></tr>';
     }).join('');
     var kdvT = 0; Object.keys(kdv).forEach(function(o){ kdvT += kdv[o]; });
@@ -6582,7 +6679,7 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'durum', label:'Durum', type:'select', options:['Aktif','Pasif']},
     {type:'section', label:'Teknik'},
     {key:'malzemeCinsi', label:'Malzeme cinsi (ör. 316Ti)', type:'text'},
-    {key:'olcu', label:'Ölçü (çap / HEX, mm)', type:'text'},
+    {key:'olcu', label:'Ölçü tanımı (serbest)', type:'text', placeholder:'ör. M16x1,5 – 12L'},
     {key:'norm', label:'Norm / standart', type:'text', placeholder:'ör. DIN 2353, ISO 8434-1'},
     {key:'yuzeyIslem', label:'Yüzey işlemi', type:'text', placeholder:'ör. Zn-Ni, pasivasyon'},
     {key:'tolerans', label:'Tolerans / kalite sınıfı', type:'text'},
@@ -6606,6 +6703,20 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'varsayilanDepo', label:'Varsayılan depo', type:'select', options: function(){ return [{value:'', label:'(tipine göre otomatik)'}].concat(depoAdlari().map(function(d){ return {value:d, label:d}; })); }},
     {key:'rafYeri', label:'Raf / lokasyon', type:'text'},
     {key:'lotTakibi', label:'Lot / heat takibi', type:'select', options:['Hayır','Evet']},
+    {type:'section', label:'Hammadde ve malzeme maliyeti (çubuktan işlenen parça)'},
+    {key:'hamMalzeme', label:'Hammadde malzemesi', type:'select', options: function(){ return [{value:'', label:'—'}].concat(MH_MALZEMELER.map(function(m){ return {value:m.ad, label:m.ad + (m.yogunluk ? ' (' + String(m.yogunluk).replace('.', ',') + ' g/cm³)' : '')}; })); }},
+    {key:'hamProfil', label:'Hammadde profili', type:'select', options: function(){ return HAM_PROFILLER.map(function(p){ return {value:p[0], label:p[1]}; }); }},
+    {key:'hamA', label:'Ölçü A (mm)', type:'number', hint:'yuvarlakta çap, hex\'te anahtar ağzı, karede kenar, lamada en, boruda dış çap'},
+    {key:'hamB', label:'Ölçü B (mm)', type:'number', hint:'lamada kalınlık, boruda et kalınlığı'},
+    {key:'parcaBoy', label:'Bitmiş parça boyu (mm)', type:'number'},
+    {key:'alinPayi', label:'Alın / yüzey payı (mm)', type:'number', hint:'iki alın toplamı'},
+    {key:'kesmePayi', label:'Kesme payı (mm)', type:'number', hint:'testere / kesme ucu genişliği'},
+    {key:'hamBoy', label:'Hamboy (mm)', type:'number', hint:'parça boyu girilmediyse; kesme payı dahil'},
+    {key:'cubukBoy', label:'Çubuk boyu (mm)', type:'number', hint:'ör. 3000'},
+    {key:'ucFire', label:'Çubuk sonu / bağlama firesi (mm)', type:'number'},
+    {key:'yogunluk', label:'Yoğunluk (g/cm³)', type:'number', hint:'boşsa seçilen malzemeninki'},
+    {key:'hamFiyat', label:'Hammadde fiyatı (€/kg)', type:'number', hint:'boşsa Ürün Maliyet Hesabı\'nda bu malzeme için son kullanılan fiyat'},
+    {key:'maliyetKaynagi', label:'Malzeme maliyeti', type:'select', options:['Ölçüden hesapla','Elle / alış ortalaması'], hint:'ölçü girildiyse varsayılan: ölçüden'},
     {type:'section', label:'Maliyet & fiyat'},
     {key:'maliyet', label:'Malzeme maliyeti (€) — ağırlıklı ortalama', type:'number', hint:'Fiyatlı her mal kabulde (satınalma siparişi fiyatı ya da mal kabulde girilen fiyat) kendiliğinden güncellenir: (eldeki × eski maliyet + gelen × alış fiyatı) ÷ toplam. Elle de değiştirebilirsiniz.'},
     {key:'uretimSuresiDk', label:'Üretim süresi (dk/adet)', type:'number'},
@@ -7537,7 +7648,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // ---------- Etkili belgenin kopyası: içerik gösterilir, uygun form varsa yeni belge olarak dolu açılır ----------
   function kopyaKalemleri(k){
-    return (k.kalemler || []).map(function(x){ return kopyaSec(x || {}, ['stokId','ad','miktar','birim','listeFiyat','birimFiyat','iskonto','kdvOrani','aciklama','gtip']); });
+    return (k.kalemler || []).map(function(x){ return kopyaSec(x || {}, ['stokId','ad','miktar','birim','listeFiyat','birimFiyat','iskonto','iskonto1','iskonto2','kdvOrani','aciklama','gtip']); });
   }
   function kopyaSec(k, alanlar){ var o = {}; alanlar.forEach(function(a){ if (k[a] !== undefined && k[a] !== null) o[a] = k[a]; }); return o; }
   var KOPYA_IZ_ALANLARI = ['id','olusturma','olusturan','guncelleme','guncelleyen','durum','no','ettn','eBelgeDurumu','resmiFaturaNo','resmiNo','yazdirmaSayisi',
@@ -8685,7 +8796,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kb = nextKodBilgisi('stok');
     var def = Object.assign({kod: kb.kod, ad:'', tip:'Mamul', birim:'adet', miktar:0, kritikSeviye:0, maliyet:0, uretimSuresiDk:0, fasonUcret:0, karMarji:30, birimFiyat:0,
       malzemeCinsi:'', olcu:'', resimNo:'', resimRev:'', lotTakibi:'Hayır', varsayilanDepo:''}, on||{});
-    openForm({ title:'Yeni stok kartı', fields: STOK_FIELDS, values: def,
+    openForm({ title:'Yeni stok kartı', fields: STOK_FIELDS, values: def, onInput: stokFormOzet,
       kayitOncesi: function(vals, devam){ kayitKontrolu(stokKartKontrolu(vals, null), devam); }, onSave: function(vals){
       var acilis = Number(vals.miktar)||0;
       var veri = Object.assign({}, def, vals, { miktar: 0, depoMiktar: {} });
@@ -10643,7 +10754,7 @@ Dikkat edilmesi gereken 2 nokta:
   // Kopyaya kaynak belgenin id'si yazılmaz (yazılsaydı kaynak belge "bağlı kayıt var" diye silinemezdi).
   function belgeKopyaKalemleri(b){
     return (b.kalemler || []).map(function(k){
-      return { stokId: k.stokId, miktar: k.miktar, birim: k.birim, listeFiyat: k.listeFiyat, birimFiyat: k.birimFiyat, iskonto: k.iskonto, kdvOrani: k.kdvOrani, aciklama: k.aciklama };
+      return { stokId: k.stokId, miktar: k.miktar, birim: k.birim, listeFiyat: k.listeFiyat, birimFiyat: k.birimFiyat, iskonto: k.iskonto, iskonto1: k.iskonto1 != null ? k.iskonto1 : k.iskonto, iskonto2: k.iskonto2 || 0, kdvOrani: k.kdvOrani, aciklama: k.aciklama };
     });
   }
   function teklifKopyala(id){
@@ -18431,24 +18542,26 @@ Dikkat edilmesi gereken 2 nokta:
       '<td><input type="number" step="any" min="0" data-kf="miktar" value="' + (k.miktar || '') + '" class="num" style="max-width:80px"></td>' +
       '<td><input type="text" data-kf="birim" value="' + escAttr(k.birim || 'adet') + '" style="max-width:60px"></td>' +
       '<td><input type="number" step="any" min="0" data-kf="birimFiyat" value="' + (k.birimFiyat != null ? k.birimFiyat : '') + '" class="num" style="max-width:95px"></td>' +
-      '<td><input type="number" step="any" min="0" max="100" data-kf="iskonto" value="' + (k.iskonto || '') + '" class="num" style="max-width:60px"></td>' +
+      '<td><input type="number" step="any" min="0" max="100" data-kf="iskonto1" value="' + ((k.iskonto1 != null ? k.iskonto1 : k.iskonto) || '') + '" class="num" style="max-width:56px"></td>' +
+      '<td><input type="number" step="any" min="0" max="100" data-kf="iskonto2" value="' + (k.iskonto2 || '') + '" class="num" style="max-width:56px"></td>' +
       '<td><input type="number" step="any" min="0" data-kf="kdvOrani" value="' + (o.kdvKilit ? 0 : (k.kdvOrani != null ? k.kdvOrani : o.kdvVarsayilan)) + '" class="num" style="max-width:55px"' + (o.kdvKilit ? ' disabled' : '') + '></td>' +
       '<td class="num" data-kf="tutar"></td><td><button type="button" class="btn secondary small" data-kesil="' + i + '">✕</button></td></tr>';
   }
   function kalemTabloHtml(o){
     return '<div class="tablewrap"><table class="edit-tablo kalem-ed"><thead><tr><th>Stok / açıklama</th>' + (o.gider ? '<th>Gider türü (hesap)</th>' : '') + (o.gtip ? '<th>GTİP</th>' : '') +
-      '<th>Miktar</th><th>Birim</th><th>Birim fiyat (' + pbSembol(o.pb) + ')</th><th>İsk. %</th><th>KDV %</th><th class="num">Tutar (' + pbSembol(o.pb) + ')</th><th></th></tr></thead><tbody>' +
+      '<th>Miktar</th><th>Birim</th><th>Birim fiyat (' + pbSembol(o.pb) + ')</th><th>İsk.1 %</th><th>İsk.2 %</th><th>KDV %</th><th class="num">Tutar (' + pbSembol(o.pb) + ')</th><th></th></tr></thead><tbody>' +
       o.kalemler.map(function(k, i){ return kalemSatirHtml(k, i, o); }).join('') + '</tbody></table></div><button type="button" class="btn secondary small" data-keekle="1" style="margin-top:6px">+ Kalem</button>';
   }
   function kalemOku(el, o){
     var out = [];
     el.querySelectorAll('[data-ke]').forEach(function(tr){
       function v(k){ var x = tr.querySelector('[data-kf="' + k + '"]'); return x ? x.value : ''; }
-      var k = { stokId: v('stokId'), ad: v('ad').trim(), miktar: Number(v('miktar')) || 0, birim: v('birim') || 'adet', birimFiyat: Number(v('birimFiyat')) || 0, iskonto: Number(v('iskonto')) || 0,
+      var k = { stokId: v('stokId'), ad: v('ad').trim(), miktar: Number(v('miktar')) || 0, birim: v('birim') || 'adet', birimFiyat: Number(v('birimFiyat')) || 0, iskonto1: Number(v('iskonto1')) || 0, iskonto2: Number(v('iskonto2')) || 0,
         kdvOrani: o.kdvKilit ? 0 : (Number(v('kdvOrani')) || 0) };
       if (o.gider) k.giderTuru = v('giderTuru');
       if (o.gtip) k.gtip = v('gtip').trim();
       if (!k.ad && k.stokId){ var s = stokKart(k.stokId); if (s) k.ad = s.ad; }
+      k.iskonto = iskBirlesik(k.iskonto1, k.iskonto2);
       k.brut = muhR2(k.miktar * k.birimFiyat); k.tutar = muhR2(k.brut * (1 - k.iskonto / 100)); k.kdv = muhR2(k.tutar * k.kdvOrani / 100);
       out.push(k);
     });
@@ -18754,7 +18867,7 @@ Dikkat edilmesi gereken 2 nokta:
       var pb = PB_LISTE.indexOf(r.paraBirimi) > -1 ? r.paraBirimi : 'TRY';
       var kalemler = r.kalemler.map(function(k){
         var st = state.stok.find(function(s){ return (k.kod && s.kod === k.kod) || (s.ad && s.ad.toLocaleLowerCase('tr-TR') === String(k.ad).toLocaleLowerCase('tr-TR')); });
-        return { stokId: st ? st.id : '', ad: k.ad, miktar: k.miktar, birim: st && st.birim ? st.birim : k.birim, birimFiyat: k.birimFiyat, iskonto: k.iskonto, kdvOrani: k.kdvOrani, giderTuru: st ? (st.tip === 'Sarf' || st.tip === 'Yedek Parça' ? 'Takım / sarf' : 'Hammadde / malzeme') : giderTuruTahmin(k.ad) };
+        return { stokId: st ? st.id : '', ad: k.ad, miktar: k.miktar, birim: st && st.birim ? st.birim : k.birim, birimFiyat: k.birimFiyat, iskonto: k.iskonto, iskonto1: k.iskonto1 != null ? k.iskonto1 : k.iskonto, iskonto2: k.iskonto2 || 0, kdvOrani: k.kdvOrani, giderTuru: st ? (st.tip === 'Sarf' || st.tip === 'Yedek Parça' ? 'Takım / sarf' : 'Hammadde / malzeme') : giderTuruTahmin(k.ad) };
       });
       alisFaturaEditor(null, { tedarikciId: cariId, faturaNo: r.faturaNo, ettn: r.ettn, tarih: r.tarih || todayISO(), vadeTarihi: r.vade || '', paraBirimi: pb, dovizKuru: pb !== 'TRY' ? r.kur || 0 : 0,
         tevkifatOrani: TEVKIFAT_ORANLARI.indexOf(r.tevkifat) > -1 ? r.tevkifat : '', irsaliyeNolari: r.irsaliyeler.join(', '), aciklama: (r.profil === 'EARSIVFATURA' ? 'e-Arşiv' : 'e-Fatura')+' XML'+(r.notlar[0] ? ' · '+r.notlar[0].slice(0, 120) : ''), kalemler: kalemler });
