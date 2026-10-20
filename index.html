@@ -1359,7 +1359,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-19-r173</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-20-r174</div>
   </nav>
   <main>
     <div class="topbar">
@@ -15173,6 +15173,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (ad === 'onceki' || ad === 'sonraki'){ var i = r.aylar.indexOf(a) + (ad === 'onceki' ? -1 : 1); if (r.aylar[i]){ _kvAy = r.aylar[i].ay; EK_RENDER.karlilik(); } return; }
     if (ad === 'bugun'){ var ba = thisMonthKey(); _kvAy = r.aylar.some(function(x){ return x.ay === ba; }) ? ba : r.aylar[0].ay; EK_RENDER.karlilik(); return; }
     if (ad === 'persBaslat'){ kvDegistir(function(P){ kvAyObj(P, ay, true).personel = (a.personelTum || a.personelListe).filter(function(p){ return p.durum !== 'ayrıldı'; }).map(function(p){ return { ad: p.ad, net: Math.round(p.net || 0), giris: p.giris || '', cikis: p.cikis || '' }; }); }); kvFormYenile(); return; }
+    if (ad === 'persKaldirAy'){ var ayK = el && el.dataset.ay; if (!ayK) return; kvDegistir(function(P){ var oK = P.aylik[ayK]; if (oK){ delete oK.personel; kvAyTemizle(P, ayK); } }); toast('✓ '+kvAyAdi(ayK)+' kadrosu Tanımlar\'a döndü'); return; }
     if (ad === 'persKaldir'){ kvDegistir(function(P){ delete kvAyObj(P, ay, true).personel; kvAyTemizle(P, ay); }); kvFormYenile(); return; }
     if (ad === 'persEkle'){ var yp = KV_MODEL.yilParam(r.P, Number(ay.slice(0,4))); kvDegistir(function(P){ var o = kvAyObj(P, ay, true); o.personel = o.personel || a.personelListe.map(function(p){ return { ad: p.ad, net: Math.round(p.net) }; }); o.personel.push({ ad: 'Operatör '+(o.personel.length+1), net: Math.ceil(yp.asgariNet/1000)*1000 }); }); kvFormYenile(); return; }
     if (ad === 'persSil'){ var i2 = Number(el.dataset.i); kvDegistir(function(P){ var o = kvAyObj(P, ay, true); if (o.personel) o.personel.splice(i2, 1); }); kvFormYenile(); return; }
@@ -15876,6 +15877,7 @@ Dikkat edilmesi gereken 2 nokta:
       (function(){ var us = (a3.urunler || []).filter(function(x){ return x.satis > 0 || x.makine > 0; }); if (us.length < 2) return '';
         return us.map(function(x){ return '<tr class="kv-alt"><td>· '+esc(x.ad)+' <span class="muted">'+fmt(x.satis)+' adet · '+fmt2(x.makine)+' makine</span></td><td class="num">'+kvTl(x.ciro)+'</td><td class="num muted">'+fmt2(x.fiyat)+' ₺/adet</td></tr>'; }).join(''); })()+
       satir('Personel (brüt + işveren SGK)', a3.personel, a3.personelListe.length+' kişi · net maaşlar toplamı '+kvTl(a3.netMaas), '', 'personel')+
+      (a3.persElleAy ? '<tr class="kv-alt"><td colspan="3"><span class="neg">⚠ Bu ayın kadrosu Ay ay planım\'da elle girilmiş'+(a3.persDisarida.length ? ' — planda olmayan: '+esc(a3.persDisarida.join(', ')) : '')+'.</span> <button type="button" class="btn secondary small" data-kvact="persKaldirAy" data-ay="'+a3.ay+'">Tanımlar\'daki kadroya dön</button></td></tr>' : '')+
       satir('Kira', a3.kira, P.kiraVerenSirket ? '+%20 KDV (indirilir)' : 'brüt · %20 stopaj dahil', '', 'kira')+
       (a3.makineKira ? satir(r.kiraAd, a3.makineKira, '+%20 KDV (indirilir) · '+(r.makineAlimAy ? kvAyAdi(r.makineAlimAy)+'\'da kira biter, makineler satın alınır' : 'plan boyunca kiralık'), '', 'makineKira') : '')+
       satir('Elektrik', a3.elektrik, fmt(a3.kwh)+' kWh', '', 'elektrik')+
@@ -20080,6 +20082,8 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function kvRefUygula(P){
     P.ozel = P.ozel && typeof P.ozel === 'object' ? P.ozel : {}; P._ref = {};
+    // Plana özel kadro işaretli ama liste boşsa Tanımlar'daki kadro kullanılır (boş kadro planı personelsiz bırakıyordu)
+    if (P.ozel.personel && !(Array.isArray(P.personel) && P.personel.length)) delete P.ozel.personel;
     KV_REF.forEach(function(k){ if (P.ozel[k]) return; var v = kvTanimRef(k); if (v === undefined) return; P[k] = kvKopya(v); P._ref[k] = true; });
   }
 
