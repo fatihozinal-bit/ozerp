@@ -1359,7 +1359,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-20-r175</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-20-r176</div>
   </nav>
   <main>
     <div class="topbar">
@@ -14633,6 +14633,7 @@ Dikkat edilmesi gereken 2 nokta:
           if (!(oran > 0) || !(p.net > 0)) return;
           var key = p.ad + '#' + k;
           var b = bordro(p.net, kumMatrah[key] || 0, ayNo, yp, P.imalatTesvik);
+          b.netAylik = p.net; b.maliyetAylik = b.maliyet; // tam ay tutarları (kıst ayda bilgi için)
           if (oran < 1) bordroKist(b, oran);
           kumMatrah[key] = (kumMatrah[key] || 0) + b.matrah;
           b.ad = p.ad; b.kist = oran < 1 ? oran : null;
@@ -15779,12 +15780,13 @@ Dikkat edilmesi gereken 2 nokta:
       var tp = { net:0, brut:0, sgk:0, gv:0, isv:0, des:0, mal:0 };
       a.pers.forEach(function(b){ tp.des += b.destek || 0; });
       var desS = tp.des > 0;
+      var tpA = { net: 0, mal: 0 }; a.pers.forEach(function(b){ tpA.net += b.netAylik || 0; tpA.mal += b.maliyetAylik || 0; });
       var sat = a.pers.map(function(b){ tp.net += b.net; tp.brut += b.brut; tp.sgk += b.sgkIsci + b.issizIsci; tp.gv += b.gv + b.dv; tp.isv += b.isvSgk + b.isvIssiz; tp.mal += b.maliyet;
-        return '<tr><td>'+esc(b.ad)+(b.kist ? ' <span class="muted">('+Math.round(b.kist * 30)+' gün — işe giriş / çıkış ayı)</span>' : '')+'</td><td class="num">'+kvTl(b.net)+'</td><td class="num">'+kvTl(b.brut)+'</td><td class="num">'+kvTl(b.sgkIsci + b.issizIsci)+'</td><td class="num">'+kvTl(b.gv + b.dv)+'</td><td class="num">'+kvTl(b.isvSgk + b.isvIssiz)+'</td>'+(desS ? '<td class="num">'+kvTl(-(b.destek || 0))+'</td>' : '')+'<td class="num"><b>'+kvTl(b.maliyet)+'</b></td></tr>'; });
+        return '<tr><td>'+esc(b.ad)+(b.kist ? ' <span class="muted">(bu ay '+Math.round(b.kist * 30)+' / 30 gün — işe giriş / çıkış ayı)</span>' : '')+'</td><td class="num">'+kvTl(b.netAylik)+'</td><td class="num">'+kvTl(b.maliyetAylik)+'</td><td class="num">'+kvTl(b.net)+'</td><td class="num">'+kvTl(b.brut)+'</td><td class="num">'+kvTl(b.sgkIsci + b.issizIsci)+'</td><td class="num">'+kvTl(b.gv + b.dv)+'</td><td class="num">'+kvTl(b.isvSgk + b.isvIssiz)+'</td>'+(desS ? '<td class="num">'+kvTl(-(b.destek || 0))+'</td>' : '')+'<td class="num"><b>'+kvTl(b.maliyet)+'</b></td></tr>'; });
       var ypA = KV_MODEL.yilParam(P, Number(a.ay.slice(0, 4)));
-      d = { t: 'Personel — '+adi, f: 'Net maaştan geriye brüt bulunur. Brüt − SGK işçi %14 − işsizlik %1 − gelir vergisi − damga vergisi = net. İşverene maliyet = brüt + işveren SGK %'+(P.imalatTesvik ? '16,75' : '21,75')+' + işsizlik %2'+(ypA.destek ? ' − asgari ücret desteği ₺'+fmt(ypA.destek)+' (kişi başı, ' + P.asgariDestekSonYil + ' sonuna kadar)' : '')+'. Asgari ücret kadar kısım gelir ve damga vergisinden muaf.',
-        h: '<div class="tablewrap"><table class="kv-tablo" style="font-size:12px"><thead><tr><th>Kişi</th><th class="num">Net</th><th class="num">Brüt</th><th class="num">SGK işçi</th><th class="num">GV + DV</th><th class="num">SGK işveren</th>'+(desS ? '<th class="num">Asgari ücret desteği</th>' : '')+'<th class="num">Maliyet</th></tr></thead><tbody>'+sat.join('')+
-          '<tr><td><b>Toplam</b></td><td class="num">'+kvTl(tp.net)+'</td><td class="num">'+kvTl(tp.brut)+'</td><td class="num">'+kvTl(tp.sgk)+'</td><td class="num">'+kvTl(tp.gv)+'</td><td class="num">'+kvTl(tp.isv)+'</td>'+(desS ? '<td class="num">'+kvTl(-tp.des)+'</td>' : '')+'<td class="num"><b>'+kvTl(tp.mal)+'</b></td></tr></tbody></table></div>'+
+      d = { t: 'Personel — '+adi, f: (a.pers.some(function(b){ return b.kist; }) ? 'Bu ay işe giriş / çıkış olduğu için çalışılan gün kadar (gün / 30) ödenir: "Aylık" sütunları tam ay, diğerleri bu ayın tutarıdır. ' : '')+'Net maaştan geriye brüt bulunur. Brüt − SGK işçi %14 − işsizlik %1 − gelir vergisi − damga vergisi = net. İşverene maliyet = brüt + işveren SGK %'+(P.imalatTesvik ? '16,75' : '21,75')+' + işsizlik %2'+(ypA.destek ? ' − asgari ücret desteği ₺'+fmt(ypA.destek)+' (kişi başı, ' + P.asgariDestekSonYil + ' sonuna kadar)' : '')+'. Asgari ücret kadar kısım gelir ve damga vergisinden muaf.',
+        h: '<div class="tablewrap"><table class="kv-tablo" style="font-size:12px"><thead><tr><th>Kişi</th><th class="num">Aylık net</th><th class="num">Aylık maliyet</th><th class="num">Bu ay net</th><th class="num">Brüt</th><th class="num">SGK işçi</th><th class="num">GV + DV</th><th class="num">SGK işveren</th>'+(desS ? '<th class="num">Asgari ücret desteği</th>' : '')+'<th class="num">Maliyet</th></tr></thead><tbody>'+sat.join('')+
+          '<tr><td><b>Toplam</b></td><td class="num">'+kvTl(tpA.net)+'</td><td class="num">'+kvTl(tpA.mal)+'</td><td class="num">'+kvTl(tp.net)+'</td><td class="num">'+kvTl(tp.brut)+'</td><td class="num">'+kvTl(tp.sgk)+'</td><td class="num">'+kvTl(tp.gv)+'</td><td class="num">'+kvTl(tp.isv)+'</td>'+(desS ? '<td class="num">'+kvTl(-tp.des)+'</td>' : '')+'<td class="num"><b>'+kvTl(tp.mal)+'</b></td></tr></tbody></table></div>'+
           (a.mesai || a.tatilUcret ? kvHesapTablo([kvHesapSatir('+ Hafta sonu mesaisi / tatil ücreti', a.mesai + a.tatilUcret), kvHesapTop('Personel toplamı', a.personel)]) : ''),
         git: 'varsayim', gitAd: 'Varsayımlar (personel)' };
     } else if (k === 'kira'){
@@ -15900,7 +15902,8 @@ Dikkat edilmesi gereken 2 nokta:
       '<tr data-kvhesap="satis" data-kvhay="'+a3.ay+'"><td><b>Satış</b> <span class="muted">'+fmt(a3.adet)+' adet × ortalama '+fmt2(a3.fiyat)+' ₺</span></td><td class="num pos">'+kvTl(a3.gelir)+'</td><td class="num muted">'+fmt2(a3.fiyat)+' ₺/adet</td></tr>'+
       (function(){ var us = (a3.urunler || []).filter(function(x){ return x.satis > 0 || x.makine > 0; }); if (us.length < 2) return '';
         return us.map(function(x){ return '<tr class="kv-alt"><td>· '+esc(x.ad)+' <span class="muted">'+fmt(x.satis)+' adet · '+fmt2(x.makine)+' makine</span></td><td class="num">'+kvTl(x.ciro)+'</td><td class="num muted">'+fmt2(x.fiyat)+' ₺/adet</td></tr>'; }).join(''); })()+
-      satir('Personel (brüt + işveren SGK)', a3.personel, a3.personelListe.length+' kişi · net maaşlar toplamı '+kvTl(a3.netMaas), '', 'personel')+
+      satir('Personel (brüt + işveren SGK)', a3.personel, (function(){ var nA = toplamla(a3.pers || [], function(b){ return b.netAylik || 0; }), kist = (a3.pers || []).some(function(b){ return b.kist; });
+        return a3.personelListe.length+' kişi · aylık net '+kvTl(nA)+(kist ? ' · bu ay giriş / çıkış günleri kadar: net '+kvTl(a3.netMaas) : ''); })(), '', 'personel')+
       (a3.persElleAy ? '<tr class="kv-alt"><td colspan="3"><span class="neg">⚠ Bu ayın kadrosu Ay ay planım\'da elle girilmiş'+(a3.persDisarida.length ? ' — planda olmayan: '+esc(a3.persDisarida.join(', ')) : '')+'.</span> <button type="button" class="btn secondary small" data-kvact="persKaldirAy" data-ay="'+a3.ay+'">Tanımlar\'daki kadroya dön</button></td></tr>' : '')+
       satir('Kira', a3.kira, P.kiraVerenSirket ? '+%20 KDV (indirilir)' : 'brüt · %20 stopaj dahil', '', 'kira')+
       (a3.makineKira ? satir(r.kiraAd, a3.makineKira, '+%20 KDV (indirilir) · '+(r.makineAlimAy ? kvAyAdi(r.makineAlimAy)+'\'da kira biter, makineler satın alınır' : 'plan boyunca kiralık'), '', 'makineKira') : '')+
