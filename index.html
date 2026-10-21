@@ -1127,16 +1127,21 @@
   .vg-tablo td:first-child { font-weight:500; white-space:nowrap; }
   .vg-tablo tr.kv-alt td { background:var(--steel-soft) !important; font-weight:600; border-top:2px solid var(--steel); border-bottom:0; }
   .vg-tablo .neg { color:var(--bad); } .vg-tablo .pos { color:var(--good); }
-  .vg-plan .vg-grafik { margin-top:4px; }
-  .vg-grafik .vg-cubuk { fill:var(--accent-soft); stroke:var(--accent); stroke-width:1; }
-  .vg-grafik .vg-cubuk.eksi { fill:var(--good-soft); stroke:var(--good); }
-  .vg-grafik .vg-tahmin { fill:none; stroke:var(--warn-strong); stroke-width:2; stroke-dasharray:5 4; }
-  .vg-grafik .vg-tahmin-nokta { fill:var(--surface); stroke:var(--warn-strong); stroke-width:1.5; }
+  .vg-plan .vg-grafik { margin-top:2px; width:100%; max-width:620px; height:auto; display:block; }
+  .vg-grafik text { font-size:9px; }
+  .vg-grafik text.vg-bu { fill:var(--ink); font-weight:600; }
+  .vg-grafik .vg-ekle { fill:var(--bad); opacity:.75; }
+  .vg-grafik .vg-dus { fill:var(--good); opacity:.75; }
+  .vg-grafik .plan { opacity:.35; }
+  .vg-grafik .vg-borc { fill:none; stroke:var(--accent); stroke-width:1.8; stroke-linejoin:round; }
+  .vg-grafik .vg-borc.plan { stroke-dasharray:4 3; opacity:.8; }
+  .vg-grafik .vg-borc-nokta { fill:var(--surface); stroke:var(--accent); stroke-width:1.4; }
+  .vg-grafik .vg-borc-nokta.plan { stroke-dasharray:2 1; }
   .vg-lejant { display:flex; gap:16px; font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
   .vg-lejant i { display:inline-block; width:14px; height:9px; margin-right:5px; vertical-align:-1px; }
-  .vg-l-cubuk { background:var(--accent-soft); border:1px solid var(--accent); }
-  .vg-l-tahmin { border-top:2px dashed var(--warn-strong); height:0 !important; vertical-align:3px !important; }
-  .vg-plan .cs-ust input[type=number] { width:110px; }
+  .vg-l-ekle { background:var(--bad); opacity:.75; } .vg-l-dus { background:var(--good); opacity:.75; }
+  .vg-l-borc { border-top:2px solid var(--accent); height:0 !important; vertical-align:3px !important; }
+  .vg-l-plan { border-top:2px dashed var(--accent); height:0 !important; vertical-align:3px !important; opacity:.6; }
   /* Çıktı şablonu */
   .cs-ust { display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; margin-bottom:8px; font-size:12.5px; }
   .cs-ust label { display:flex; align-items:center; gap:6px; margin:0; font-weight:400; }
@@ -1396,7 +1401,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-21-r199</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-21-r200</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12011,60 +12016,59 @@ Dikkat edilmesi gereken 2 nokta:
       l.map(function(v){ var n = virgoNorm(v); return '<tr><td>' + kvTarihTR(v.tarih) + '</td><td>' + esc(virgoTipAd(n)) + '</td><td>' + esc(n.kisi) + '</td><td>' + esc(n.alici || '') + '</td><td>' + esc(virgoKaynakAd(n)) + '</td><td>' + esc(n.tip === 'harcama' ? (v.kategori || '') : '') + '</td><td>' + esc(v.aciklama || '') + '</td><td>' + esc(v.belgeNo || '') + '</td><td>' + (n.odendi ? 'Ödendi' : 'Ödenecek') + '</td><td class="num">' + kurYazi(v.kur || virgoGunKuru(v.tarih)) + '</td><td class="num">' + muhTutar(n.eur) + '</td><td class="num">' + muhTutar(n.tl) + '</td><td class="num">' + (n.borcEur ? muhTutar(n.borcEur) : '') + '</td></tr>'; }).join('') +
       '</tbody></table>');
   }
-  // ---------- Borç planı: aylık ödemeye göre Kadir Bey borcunun bitişi (grafik) ----------
-  // Öneri: son (en çok) 3 ayın ortalaması — aylık ödeme = üretim karşılığı + geri ödeme; Kadir Bey'in yeni parası = alınan + doğrudan ödediği − indirilen KDV
-  // (doğrudan ödediği yatırımlar — makine, kuruluş — tek seferlik olduğu için öneriye girmez).
-  // Kullanıcının yazdığı değerler config.virgoBorcPlan { odeme, yeni } (€ / ay) olarak saklanır; boşsa öneri kullanılır.
-  function virgoPlanOneri(){
-    var bu = todayISO().slice(0, 7), l = virgoAylar(), once = l.filter(function(a){ return a.ay < bu; }).slice(-3); if (!once.length) once = l.slice(-1);
-    var n = once.length || 1, top = function(f){ return once.reduce(function(s, a){ return s + f(a); }, 0) / n; };
-    return { odeme: once.length ? top(function(a){ return a.gelir.eur + a.geri.eur; }) : 0, yeni: once.length ? Math.max(0, top(function(a){ return a.alinan.eur + a.kbDog.eur - a.kbYat.eur - a.iade.eur; })) : 0, ay: once.length };
-  }
-  function virgoPlan(){
-    var c = (state.config || {}).virgoBorcPlan || {}, on = virgoPlanOneri(), sayi = function(v){ return v === '' || v == null ? null : Math.max(0, Number(v) || 0); };
-    var odeme = sayi(c.odeme), yeni = sayi(c.yeni);
-    return { odeme: odeme == null ? on.odeme : odeme, yeni: yeni == null ? on.yeni : yeni, odemeElle: odeme != null, yeniElle: yeni != null, oneri: on };
-  }
+  // ---------- Borç planı: ay ay borca eklenen / borçtan düşen ve ay sonu borç (grafik) ----------
+  // Ortalama varsayım yok: geçmiş aylar gerçekleşen kayıtlardan (Kadir Bey'den alınan + doğrudan ödediği − indirilen KDV → borca eklenen;
+  // üretim karşılığı + geri ödeme → borçtan düşen). İleriki aylar yalnız "Ödenecek" girilen kayıtlardan (son ödeme günü, yoksa tarih ayında;
+  // geçmiş tarihli ödenecekler bu aya) ödenmiş sayılarak çizilir.
   function virgoPlanHesap(){
-    var l = virgoAylar(), t = virgoToplam(), p = virgoPlan(), net = p.odeme - p.yeni, bu = todayISO().slice(0, 7);
-    var son = l.length ? l[l.length - 1].ay : bu, bas = son > bu ? son : bu, borc = t.kalan, tahmin = [], biter = null;
-    if (borc > 0.5 && net > 0.5){ var n = Math.min(120, Math.ceil(borc / net)); for (var i = 1; i <= n; i++){ var b = Math.max(0, borc - net * i); tahmin.push({ ay: KV_MODEL.ayEkle(bas, i), borc: b }); } if (tahmin.length && tahmin[tahmin.length - 1].borc <= 0.5) biter = tahmin[tahmin.length - 1].ay; }
-    return { l: l, t: t, p: p, net: net, bas: bas, borc: borc, tahmin: tahmin, biter: biter };
+    var l = virgoAylar(), bu = todayISO().slice(0, 7), m = {}, sira = [];
+    var al = function(ay){ if (!m[ay]){ m[ay] = { ay: ay, ekle: 0, dus: 0, plan: false, planEkle: 0, planDus: 0 }; sira.push(ay); } return m[ay]; };
+    l.forEach(function(a){ var x = al(a.ay); x.ekle = a.alinan.eur + a.kbDog.eur - a.iade.eur; x.dus = a.gelir.eur + a.geri.eur; });
+    virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.odendi || n.tip === 'bilgi' || n.tip === 'mutabakat' || n.tip === 'ortak') return;
+      var e = virgoNorm(Object.assign({}, v, { durum: 'Ödendi' })).borcEur; if (!e) return;
+      var ay = String(v.vade || v.tarih || '').slice(0, 7); if (!/^\d{4}-\d{2}$/.test(ay)) return; if (ay < bu) ay = bu;
+      var x = al(ay); x.plan = true; if (e > 0) x.planEkle += e; else x.planDus -= e; });
+    if (sira.length){ var ilk = sira.slice().sort()[0], son = sira.slice().sort().pop(), g = ilk, guv = 0; while (g < son && guv++ < 240){ g = KV_MODEL.ayEkle(g, 1); al(g); } }
+    var ay = Object.keys(m).sort().map(function(k){ return m[k]; }), b = 0, sonGercek = 0;
+    ay.forEach(function(x){ b += x.ekle - x.dus; x.borc = b; x.gelecek = x.ay > bu || (x.ay === bu && x.plan); if (x.ay <= bu) sonGercek = b; b += x.planEkle - x.planDus; x.borcPlan = b; });
+    var plan = ay.some(function(x){ return x.plan; }), sonA = ay.length ? ay[ay.length - 1] : null;
+    return { ay: ay, bu: bu, kalan: virgoToplam().kalan, plan: plan, sonPlan: sonA ? sonA.borcPlan : 0, sonAy: sonA ? sonA.ay : bu };
   }
   function virgoAyKisa(ay){ return ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'][Number(ay.slice(5, 7)) - 1] + ' ' + ay.slice(2, 4); }
   function virgoBorcGrafik(h){
-    var gercek = h.l.map(function(a){ return { ay: a.ay, borc: a.kalan.eur }; }), hepsi = gercek.concat(h.tahmin);
-    if (!hepsi.length) return '<div class="empty">Hareket ya da üretim girildikçe grafik çizilir.</div>';
-    var W = 760, H = 230, L = 62, R = 14, T = 16, B = 30, n = hepsi.length, gw = (W - L - R) / Math.max(1, n), maxV = Math.max(1, Math.max.apply(null, hepsi.map(function(x){ return x.borc; }))), minV = Math.min(0, Math.min.apply(null, hepsi.map(function(x){ return x.borc; })));
+    var a = h.ay; if (!a.length) return '<div class="empty">Hareket ya da üretim girildikçe grafik çizilir.</div>';
+    var W = 560, H = 150, L = 50, R = 8, T = 10, B = 22, n = a.length, gw = (W - L - R) / n;
+    var degerler = []; a.forEach(function(x){ degerler.push(x.ekle + x.planEkle, x.dus + x.planDus, x.borc, x.borcPlan); });
+    var maxV = Math.max(1, Math.max.apply(null, degerler)), minV = Math.min(0, Math.min.apply(null, degerler));
     var y = function(v){ return T + (H - T - B) * (maxV - v) / (maxV - minV || 1); }, x = function(i){ return L + gw * i + gw / 2; };
-    var adim = Math.pow(10, Math.floor(Math.log10(maxV))), izg = []; adim = maxV / adim > 5 ? adim * 2 : maxV / adim > 2 ? adim : adim / 2;
-    for (var v = 0; v <= maxV + 1e-9; v += adim) izg.push(v);
-    var svg = '<svg class="kvg vg-grafik" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Kadir Bey borcu: gerçekleşen ve tahmin">';
-    izg.forEach(function(v){ svg += '<line class="kvg-izgara" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '"/><text x="' + (L - 6) + '" y="' + (y(v) + 3) + '" text-anchor="end">€' + fmt(v) + '</text>'; });
-    var bw = Math.max(3, Math.min(34, gw * 0.62));
-    gercek.forEach(function(g, i){ var yy = y(Math.max(0, g.borc)), y0 = y(0); svg += '<rect class="vg-cubuk' + (g.borc < 0 ? ' eksi' : '') + '" x="' + (x(i) - bw / 2) + '" y="' + Math.min(yy, y0) + '" width="' + bw + '" height="' + Math.max(1, Math.abs(y0 - y(g.borc))) + '"><title>' + esc(muhAyAdi(g.ay)) + ': ' + virgoEur(g.borc) + '</title></rect>'; });
-    if (h.tahmin.length){
-      var p0 = gercek.length ? { i: gercek.length - 1, v: gercek[gercek.length - 1].borc } : { i: -1, v: h.borc }, yol = 'M' + (p0.i < 0 ? L : x(p0.i)) + ',' + y(p0.v);
-      h.tahmin.forEach(function(tt, j){ yol += ' L' + x(gercek.length + j) + ',' + y(tt.borc); });
-      svg += '<path class="vg-tahmin" d="' + yol + '"/>';
-      h.tahmin.forEach(function(tt, j){ svg += '<circle class="vg-tahmin-nokta" cx="' + x(gercek.length + j) + '" cy="' + y(tt.borc) + '" r="' + (n > 40 ? 1.6 : 2.6) + '"><title>' + esc(muhAyAdi(tt.ay)) + ' (tahmin): ' + virgoEur(tt.borc) + '</title></circle>'; });
-      if (h.biter){ var bx = x(n - 1); svg += '<line class="kvg-donus" x1="' + bx + '" x2="' + bx + '" y1="' + T + '" y2="' + (H - B) + '"/><text class="kvg-donus-yazi" x="' + Math.min(bx, W - R - 4) + '" y="' + (T + 10) + '" text-anchor="end">borç biter: ' + esc(muhAyAdi(h.biter)) + '</text>'; }
-    }
-    svg += '<line class="kvg-sifir" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(0) + '" y2="' + y(0) + '"/>';
-    var her = Math.max(1, Math.ceil(n / 12));
-    hepsi.forEach(function(g, i){ if (i % her && i !== n - 1) return; svg += '<text x="' + x(i) + '" y="' + (H - 10) + '" text-anchor="middle">' + virgoAyKisa(g.ay) + '</text>'; });
+    var adim = Math.pow(10, Math.floor(Math.log10(Math.max(1, maxV - minV)))); if ((maxV - minV) / adim < 2.5) adim /= 2;
+    var svg = '<svg class="kvg vg-grafik" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Kadir Bey borcu ay ay">';
+    for (var v = Math.ceil(minV / adim) * adim; v <= maxV + 1e-9; v += adim) svg += '<line class="kvg-izgara" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '"/><text x="' + (L - 5) + '" y="' + (y(v) + 3) + '" text-anchor="end">€' + fmt(v) + '</text>';
+    var bw = Math.max(2, Math.min(14, gw * 0.32)), y0 = y(0);
+    a.forEach(function(m, i){
+      var cx = x(i), ek = m.ekle + m.planEkle, du = m.dus + m.planDus, pl = m.gelecek ? ' plan' : '';
+      if (ek) svg += '<rect class="vg-ekle' + pl + '" x="' + (cx - bw - 1) + '" y="' + y(ek) + '" width="' + bw + '" height="' + Math.max(1, y0 - y(ek)) + '"><title>' + esc(muhAyAdi(m.ay)) + (m.gelecek ? ' (planlanan)' : '') + ' · borca eklenen ' + virgoEur(ek) + '</title></rect>';
+      if (du) svg += '<rect class="vg-dus' + pl + '" x="' + (cx + 1) + '" y="' + y(du) + '" width="' + bw + '" height="' + Math.max(1, y0 - y(du)) + '"><title>' + esc(muhAyAdi(m.ay)) + (m.gelecek ? ' (planlanan)' : '') + ' · borçtan düşen ' + virgoEur(du) + '</title></rect>';
+    });
+    // Çizgi: bu aya kadar gerçek ay sonu borç (düz); bu ayın gerçek borcundan sonra planlanan ödenecekler (kesikli)
+    var gIdx = -1; a.forEach(function(m, i){ if (m.ay <= h.bu) gIdx = i; });
+    var gercek = function(m){ return m.borc; }, planli = function(m){ return m.borcPlan; };
+    if (gIdx >= 0){ var d = ''; for (var i = 0; i <= gIdx; i++) d += (d ? ' L' : 'M') + x(i) + ',' + y(gercek(a[i])); svg += '<path class="vg-borc" d="' + d + '"/>'; }
+    if (h.plan){ var bas = Math.max(0, gIdx), d2 = 'M' + x(bas) + ',' + y(gercek(a[bas])); if (a[bas].plan) d2 += ' L' + (x(bas) + gw * 0.35) + ',' + y(planli(a[bas])); for (var k = bas + 1; k < n; k++) d2 += ' L' + x(k) + ',' + y(planli(a[k])); svg += '<path class="vg-borc plan" d="' + d2 + '"/>'; }
+    a.forEach(function(m, i){ var gel = m.ay > h.bu, bv = gel ? planli(m) : gercek(m);
+      svg += '<circle class="vg-borc-nokta' + (gel ? ' plan' : '') + '" cx="' + x(i) + '" cy="' + y(bv) + '" r="2.4"><title>' + esc(muhAyAdi(m.ay)) + ' sonu borç' + (gel ? ' (planlanan)' : '') + ': ' + virgoEur(bv) + '</title></circle>'; });
+    svg += '<line class="kvg-sifir" x1="' + L + '" x2="' + (W - R) + '" y1="' + y0 + '" y2="' + y0 + '"/>';
+    var her = Math.max(1, Math.ceil(n / 10));
+    a.forEach(function(m, i){ if (i % her && i !== n - 1) return; svg += '<text x="' + x(i) + '" y="' + (H - 7) + '" text-anchor="middle"' + (m.ay === h.bu ? ' class="vg-bu"' : '') + '>' + virgoAyKisa(m.ay) + '</text>'; });
     return svg + '</svg>';
   }
   function virgoPlanHtml(){
-    var h = virgoPlanHesap(), p = h.p, on = p.oneri, inp = function(ad, v, elle, oneri){ return '<label>' + ad + ' <input type="number" min="0" step="any" data-vplan="' + (ad.indexOf('ödeme') > -1 ? 'odeme' : 'yeni') + '" value="' + (elle ? escAttr(String(Math.round(v * 100) / 100)) : '') + '" placeholder="' + escAttr(String(Math.round(oneri))) + '"> €/ay</label>'; };
-    var durum = h.borc <= 0.5 ? '<span class="pos">✓ Kadir Bey\'e borç yok.</span>'
-      : h.net <= 0.5 ? '<span class="neg">Bu varsayımla borç azalmıyor</span> (aylık ödeme ' + virgoEur(p.odeme) + ' ≤ Kadir Bey\'in yeni parası ' + virgoEur(p.yeni) + ').'
-      : 'Kalan borç <b>' + virgoEur(h.borc) + '</b>, aylık net azalış <b>' + virgoEur(h.net) + '</b> → ' + (h.biter ? 'yaklaşık <b>' + h.tahmin.length + ' ayda</b>, <b>' + esc(muhAyAdi(h.biter)) + '</b> sonunda biter.' : '10 yılda bitmiyor.');
-    return '<div class="block vg-plan"><div class="block-head"><h3>Borç planı ' + infoIco('Sütunlar: her ay sonundaki gerçek Kadir Bey borcu. Kesikli çizgi: aşağıdaki varsayımla tahmin. Aylık ödeme = üretim karşılığı + Kadir Bey\'e geri ödeme (ayda borçtan düşen). Kadir Bey\'in yeni parası = ayda borca eklenen (size verdiği + doğrudan ödediği − Virgo\'nun indirdiği KDV; makine / kuruluş gibi tek seferlik yatırımlar öneriye katılmaz). Boş bırakılırsa son ' + (on.ay || 0) + ' ayın ortalaması kullanılır (soluk yazı). Net azalış = ödeme − yeni para.') + '</h3>' +
-      '<div class="bh-actions"><button class="btn small" data-vplankaydet="1">Uygula</button></div></div><div class="block-body">' +
-      '<div class="cs-ust">' + inp('Aylık ödeme', p.odeme, p.odemeElle, on.odeme) + inp('Kadir Bey\'in aylık yeni parası', p.yeni, p.yeniElle, on.yeni) + '<span class="muted" style="font-size:11.5px">boş: son ' + (on.ay || 0) + ' ayın ortalaması</span></div>' +
-      '<div class="helper" style="margin:0 0 6px">' + durum + '</div>' + virgoBorcGrafik(h) +
-      '<div class="vg-lejant"><span><i class="vg-l-cubuk"></i>gerçekleşen ay sonu borç</span>' + (h.tahmin.length ? '<span><i class="vg-l-tahmin"></i>tahmin</span>' : '') + '</div></div></div>';
+    var h = virgoPlanHesap();
+    var durum = h.kalan <= 0.5 && !h.plan ? '<span class="pos">✓ Kadir Bey\'e borç yok.</span>'
+      : 'Bugün kalan borç <b>' + virgoEur(h.kalan) + '</b>' + (h.plan ? ' · ödenecek kayıtlarla <b>' + esc(muhAyAdi(h.sonAy)) + '</b> sonunda <b>' + virgoEur(h.sonPlan) + '</b>' + (h.sonPlan <= 0.5 ? ' <span class="pos">(borç biter)</span>' : '') : ' · ileriki aylar için "Ödenecek" kayıt girilirse grafikte görünür');
+    return '<div class="block vg-plan"><div class="block-head"><h3>Borç durumu ay ay ' + infoIco('Kırmızı: o ay borca eklenen (Kadir Bey\'den alınan + doğrudan ödediği − Virgo\'nun indirdiği KDV). Yeşil: o ay borçtan düşen (üretim karşılığı + Kadir Bey\'e geri ödeme). Çizgi: ay sonu kalan borç. Ortalama ya da varsayım kullanılmaz; ileriki aylar yalnız "Ödenecek" girilen kayıtlardan (son ödeme günü ayında) soluk ve kesikli çizilir. Sütunların üzerine gelince tutar görünür.') + '</h3></div><div class="block-body">' +
+      '<div class="helper" style="margin:0 0 4px">' + durum + '</div>' + virgoBorcGrafik(h) +
+      '<div class="vg-lejant"><span><i class="vg-l-ekle"></i>borca eklenen</span><span><i class="vg-l-dus"></i>borçtan düşen</span><span><i class="vg-l-borc"></i>ay sonu borç</span>' + (h.plan ? '<span><i class="vg-l-plan"></i>planlanan (ödenecek)</span>' : '') + '</div></div></div>';
   }
   // Uyarı merkezi: vadesi geçen / 7 gün içinde gelen ödenecekler
   function virgoUyarilari(ekle){
@@ -12144,10 +12148,6 @@ Dikkat edilmesi gereken 2 nokta:
       host.addEventListener('click', function(e){
         if (e.target.closest('[data-virgoyazdir]')){ virgoYazdir(); return; }
         if (e.target.closest('[data-virgoexcel]')){ virgoExcel(); return; }
-        if (e.target.closest('[data-vplankaydet]')){
-          var oku = function(k){ var i = document.querySelector('#panel-virgo [data-vplan="' + k + '"]'); var v = i ? String(i.value).trim().replace(',', '.') : ''; return v === '' ? '' : Math.max(0, Number(v) || 0); };
-          configWrite({ virgoBorcPlan: { odeme: oku('odeme'), yeni: oku('yeni') } }).then(function(){ toast('✓ Borç planı güncellendi'); var u = byId('virgoUst'); if (u) u.__sonHtml = null; EK_RENDER.virgo(); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); });
-          return; }
         var kb = e.target.closest('[data-vkopya]');
         if (kb){ var v = virgoKayitlari().find(function(x){ return x.id === kb.dataset.vkopya; }); if (!v) return;
           var ay = KV_MODEL.ayEkle((v.tarih || todayISO()).slice(0, 7), 1), sonGun = new Date(Number(ay.slice(0, 4)), Number(ay.slice(5, 7)), 0).getDate(), gun = Math.min(Number((v.tarih || '').slice(8, 10)) || 1, sonGun);
