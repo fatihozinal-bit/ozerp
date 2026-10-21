@@ -474,7 +474,7 @@
   .tanim-kaydet-bar { position:sticky; top:0; z-index:40; display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:10px 14px; margin:0 0 14px; background:var(--panel,#fff); border:1px solid var(--line,#d9dde2); border-radius:4px; box-shadow:0 2px 6px rgba(15,23,32,.06); }
   .tanim-kaydet-bar.kirli { border-color:var(--warn-strong,#c27a1a); }
   .tanim-kaydet-bar.kirli #tanimKaydetDurum { color:var(--warn-strong,#c27a1a); font-weight:600; }
-  #kapKaydet, #kodParamKaydet, #sasOnayKaydet, #donemKilitKaydet, #opTanimKaydet, #tdListeKaydet, #tdAyarKaydet, #tdFirmaKaydet { display:none !important; }
+  #kapKaydet, #kodParamKaydet, #sasOnayKaydet, #donemKilitKaydet, #opTanimKaydet, #tdListeKaydet, #tdFirmaKaydet { display:none !important; }
   /* Alan bazlı menü: eski gruplar gizli (sekme geçişi için DOM'da), yana açılan pencereler */
   #eskiMenu { display:flex; flex-direction:column; gap:4px; }
   body.yeni-menu #eskiMenu { display:none; }
@@ -1117,6 +1117,16 @@
   .ro-sonuc td, .ro-sonuc th { white-space:nowrap; }
   .ro-sonuc tr.ro-toplam td { border-top:2px solid var(--border); background:var(--surface-alt); }
   /* Çıktı şablonu */
+  .cs-ust { display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; margin-bottom:8px; font-size:12.5px; }
+  .cs-ust label { display:flex; align-items:center; gap:6px; margin:0; font-weight:400; }
+  .cs-ust input[type=color] { width:38px; height:26px; padding:1px; }
+  .cs-ust input[type=number] { width:64px; }
+  .cs-tablo { width:100%; }
+  .cs-tablo td { vertical-align:top; padding:3px 6px; }
+  .cs-tablo td:first-child { white-space:nowrap; width:1%; font-size:12.5px; padding-top:7px; }
+  .cs-tablo td:last-child:not([colspan]) { width:1%; text-align:center; padding-top:7px; }
+  .cs-tablo textarea { width:100%; min-height:28px; resize:vertical; font-size:12.5px; }
+  .cs-tablo input[type=checkbox] { width:auto; }
   .cikti-alt { margin-top:18px; font-size:11px; }
   .cikti-not { white-space:pre-line; border-top:1px solid #999; padding-top:6px; margin-bottom:10px; }
   .cikti-imza { display:flex; gap:30px; margin:26px 0 10px; }
@@ -1365,7 +1375,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-21-r191</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-21-r192</div>
   </nav>
   <main>
     <div class="topbar">
@@ -9006,12 +9016,6 @@ Dikkat edilmesi gereken 2 nokta:
           '<div class="field"><label>Fire nedenleri</label><textarea id="tdFire" rows="5" style="width:100%"></textarea></div>'+
           '<div class="field"><label>Duruş nedenleri</label><textarea id="tdDurus" rows="5" style="width:100%"></textarea></div>'+
           '</div><button class="btn secondary small" id="tdListeKaydet">Güncelle</button></div></div>'+
-        '<div class="block"><div class="block-head"><h3>Üretim, kalite & maliyet ayarları</h3></div><div class="block-body">'+
-          '<label style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><input type="checkbox" id="tdFai"> İlk parça onayı (FAI) olmadan iş emrine üretim girilmesin</label>'+
-          '<label style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><input type="checkbox" id="tdFinal"> Final kontrolü "Kabul" olmayan ürün irsaliyeye eklenmesin</label>'+
-          '<label style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input type="checkbox" id="tdBackflush"> Son operasyon girilince ürün ağacındaki malzemeyi iş emrinin lotundan otomatik düş (backflush)</label>'+
-          '<div class="grid2" style="display:none"><div class="field"><label>Elektrik birim fiyatı (€/kWh)</label><input type="number" step="any" id="tdElektrik" data-para="EUR"></div></div>'+
-          '<button class="btn secondary small" id="tdAyarKaydet">Güncelle</button></div></div>'+
         '<div class="block"><div class="block-head"><h3>Firma bilgileri & yazdırma '+infoIco('Teklif, sipariş, irsaliye, fatura ve etiket çıktılarının başlığında kullanılır. e-Fatura XML\'inde satıcı bilgisi olarak da yazılır.')+'</h3></div><div class="block-body"><div class="grid2">'+
           [['firmaAdi','Ünvan'],['firmaKisaAd','Kısa ad (menüde ve sekme başlığında; boşsa ünvan)'],['firmaAdres','Adres'],['firmaSehir','Şehir'],['firmaTelefon','Telefon'],['firmaEposta','E-posta'],['firmaVergiDairesi','Vergi dairesi'],['firmaVergiNo','VKN / TCKN'],['firmaBanka','Banka'],['firmaIban','IBAN']]
             .map(function(x){ return '<div class="field"><label>'+x[1]+'</label><input type="text" data-firma="'+x[0]+'" style="width:100%"></div>'; }).join('')+
@@ -9019,15 +9023,16 @@ Dikkat edilmesi gereken 2 nokta:
           '<div class="field"><label>Logo (küçük PNG/JPG, en fazla 120 KB)</label><input type="file" id="tdLogo" accept="image/png,image/jpeg"><div id="tdLogoOn" style="margin-top:6px"></div><button type="button" class="btn secondary small" id="tdLogoSil" style="display:none;margin-top:4px">Logoyu kaldır</button></div>'+
           '</div><button class="btn secondary small" id="tdFirmaKaydet">Güncelle</button></div></div>'+
         '<div class="block" id="ciktiSablonBlok"><div class="block-head"><h3>Çıktı şablonu '+infoIco('Teklif, sipariş, fatura / proforma, irsaliye ve satınalma siparişi çıktılarına (yazdırma, toplu yazdırma, PDF, e-posta) uygulanır. Notlar belge türüne göre belgenin altına, alt bilgi hepsinin en altına yazılır; imza alanı işaretli belgelere eklenir. İş emri, etiket ve raporlar etkilenmez.')+'</h3></div><div class="block-body">'+
-          '<div class="grid2">'+
-            '<div class="field"><label>Vurgu rengi (başlık, çizgi, tablo başlığı)</label><input type="color" id="csRenk" style="width:80px;height:32px;padding:2px"></div>'+
-            '<div class="field"><label>Yazı tipi</label><select id="csYazi"><option value="mono">Daktilo (varsayılan)</option><option value="sans">Sade</option><option value="serif">Klasik</option></select></div>'+
-            '<div class="field"><label>Logo yüksekliği (px)</label><input type="number" id="csLogo" min="20" max="140" step="5"></div>'+
-            '<div class="field"><label>İmza alanı eklenecek belgeler</label><div style="display:flex;flex-wrap:wrap;gap:4px 12px">'+CIKTI_TURLERI.map(function(t){ return '<label style="display:flex;gap:5px;align-items:center;margin:0;font-size:12.5px"><input type="checkbox" data-csimza="'+t[0]+'" style="width:auto"> '+t[1]+'</label>'; }).join('')+'</div></div>'+
+          '<div class="cs-ust">'+
+            '<label>Vurgu rengi <input type="color" id="csRenk"></label>'+
+            '<label>Yazı tipi <select id="csYazi"><option value="mono">Daktilo (varsayılan)</option><option value="sans">Sade</option><option value="serif">Klasik</option></select></label>'+
+            '<label>Logo yüksekliği <input type="number" id="csLogo" min="20" max="140" step="5"> px</label>'+
           '</div>'+
-          CIKTI_TURLERI.map(function(t){ return '<div class="field"><label>'+t[1]+' notu (belgenin altına)</label><textarea data-csnot="'+t[0]+'" rows="2" style="width:100%" placeholder="'+escAttr({teklif:'ör. Fiyatlar EXW fabrika, KDV hariçtir. Teklif 30 gün geçerlidir. Teslim siparişten 3 hafta sonra.', siparis:'ör. Sipariş onayınızı imzalı olarak iletiniz.', fatura:'ör. Ödemeyi fatura vadesinde aşağıdaki IBAN\'a yapınız.', irsaliye:'ör. Malları eksiksiz ve hasarsız teslim aldım.', sas:'ör. Malzeme sertifikası (EN 10204 3.1) ile birlikte teslim edilecektir.'}[t[0]])+'"></textarea></div>'; }).join('')+
-          '<div class="field"><label>Alt bilgi (bu belgelerin hepsinin en altına)</label><textarea id="csAlt" rows="2" style="width:100%" placeholder="ör. Firma ünvanı · Ticaret sicil no … · www…"></textarea></div>'+
-          '<button class="btn secondary small" type="button" id="csOnizle">Kayıtlı ayarla örnek teklifi önizle</button> <span class="muted" style="font-size:11.5px">Değişikliği önce üstteki "Kaydet" ile kaydedin.</span>'+
+          '<div class="tablewrap"><table class="cs-tablo"><thead><tr><th>Belge</th><th>Belgenin altına not</th><th>İmza</th></tr></thead><tbody>'+
+          CIKTI_TURLERI.map(function(t){ return '<tr><td>'+t[1]+'</td><td><textarea data-csnot="'+t[0]+'" rows="1" placeholder="'+escAttr({teklif:'ör. Fiyatlar EXW fabrika, KDV hariçtir. Teklif 30 gün geçerlidir. Teslim siparişten 3 hafta sonra.', siparis:'ör. Sipariş onayınızı imzalı olarak iletiniz.', fatura:'ör. Ödemeyi fatura vadesinde aşağıdaki IBAN\'a yapınız.', irsaliye:'ör. Malları eksiksiz ve hasarsız teslim aldım.', sas:'ör. Malzeme sertifikası (EN 10204 3.1) ile birlikte teslim edilecektir.'}[t[0]])+'"></textarea></td><td><input type="checkbox" data-csimza="'+t[0]+'"></td></tr>'; }).join('')+
+          '<tr><td>Alt bilgi <span class="muted">(hepsi)</span></td><td colspan="2"><textarea id="csAlt" rows="1" placeholder="ör. Firma ünvanı · Ticaret sicil no … · www…"></textarea></td></tr>'+
+          '</tbody></table></div>'+
+          '<div style="margin-top:6px"><button class="btn secondary small" type="button" id="csOnizle">Örnek teklifi önizle</button> <span class="muted" style="font-size:11.5px">kayıtlı ayarlarla; önce "Değişiklikleri kaydet"</span></div>'+
         '</div></div>';
       var opDraft = null;
       function opDraftAl(){ if (!opDraft){ var cc = state.config || {}; opDraft = (cc.operasyonTanimlari && cc.operasyonTanimlari.length ? cc.operasyonTanimlari : VARSAYILAN_OPERASYONLAR.map(function(o){ return {ad:o, makineGrubu:'', kalite:false}; })).map(function(x){ return Object.assign({}, x); }); } return opDraft; }
@@ -9054,10 +9059,6 @@ Dikkat edilmesi gereken 2 nokta:
         configWrite({ depolar: dep, fireNedenleri: satirlar('tdFire'), durusNedenleri: satirlar('tdDurus') })
           .then(function(){ toast('✓ Listeler güncellendi'); }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
       });
-      byId('tdAyarKaydet').addEventListener('click', function(){
-        configWrite({ faiZorunlu: byId('tdFai').checked, finalKontrolZorunlu: byId('tdFinal').checked, backflush: byId('tdBackflush').checked, elektrikFiyat: Number(byId('tdElektrik').value)||0 })
-          .then(function(){ toast('✓ Ayarlar güncellendi'); }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
-      });
       var logoDataUrl = null;
       byId('tdLogo').addEventListener('change', function(){
         var f = this.files && this.files[0]; if (!f) return;
@@ -9080,7 +9081,6 @@ Dikkat edilmesi gereken 2 nokta:
         op: function(){ var liste = opDraftAl().filter(function(o){ return (o.ad||'').trim(); }).map(function(o){ return {ad: o.ad.trim(), makineGrubu: o.makineGrubu||'', kalite: !!o.kalite}; });
           return liste.length ? { operasyonTanimlari: liste } : 'En az bir operasyon olmalı.'; },
         liste: function(){ var dep = satirlar('tdDepolar'); return dep.length ? { depolar: dep, fireNedenleri: satirlar('tdFire'), durusNedenleri: satirlar('tdDurus') } : 'En az bir depo olmalı.'; },
-        ayar: function(){ return { faiZorunlu: byId('tdFai').checked, finalKontrolZorunlu: byId('tdFinal').checked, backflush: byId('tdBackflush').checked }; },
         firma: function(){ var p = { yazdirmaDili: byId('tdDil').value }; host.querySelectorAll('[data-firma]').forEach(function(i){ p[i.dataset.firma] = i.value.trim(); }); if (logoDataUrl) p.firmaLogo = logoDataUrl; return p; },
         cikti: function(){
           var sb = { renk: byId('csRenk').value || '#000000', yazi: byId('csYazi').value || 'mono', logoBoy: Math.max(20, Math.min(140, Number(byId('csLogo').value) || 60)), imza: {}, notlar: {}, altBilgi: byId('csAlt').value.trim() };
@@ -9102,10 +9102,6 @@ Dikkat edilmesi gereken 2 nokta:
       degerYaz('tdDepolar', depoAdlari().join('\n'));
       degerYaz('tdFire', FIRE_NEDENLERI.filter(function(x){ return x !== '—'; }).join('\n'));
       degerYaz('tdDurus', DURUS_NEDENLERI.join('\n'));
-    }
-    if (!TANIM_KIRLI.ayar){
-      degerYaz('tdElektrik', c.elektrikFiyat || 0);
-      ['tdFai','tdFinal','tdBackflush'].forEach(function(id){ var el = byId(id); if (el && document.activeElement !== el) el.checked = !!c[{tdFai:'faiZorunlu', tdFinal:'finalKontrolZorunlu', tdBackflush:'backflush'}[id]]; });
     }
     if (!TANIM_KIRLI.cikti){
       var sb = ciktiSablonu();
@@ -9185,7 +9181,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (!ie){ el.innerHTML = ''; return; }
     var fai = isEmriFaiDurumu(ie);
     el.innerHTML = 'İş emri '+esc(ie.isEmriNo)+': planlanan '+fmt2(ie.planlanan)+', tamamlanan '+fmt2(isEmriUretilen(ie.id))+', kalan '+fmt2(isEmriKalan(ie))+
-      (ie.lotNo?' · lot '+esc(ie.lotNo):'')+' · İlk parça onayı: '+(fai ? '<span class="pos">✓ '+esc(fai.tarih)+'</span>' : '<span class="'+(state.config && state.config.faiZorunlu ? 'neg' : 'muted')+'">yok</span>');
+      (ie.lotNo?' · lot '+esc(ie.lotNo):'')+' · İlk parça onayı: '+(fai ? '<span class="pos">✓ '+esc(fai.tarih)+'</span>' : '<span class="muted">yok</span>');
   }
   function isEmriFaiDurumu(ie){
     return (state.kaliteKontroller||[]).find(function(k){ return k.isEmriId === ie.id && k.tur === 'İlk Parça' && (k.karar === 'Kabul' || k.karar === 'Şartlı Kabul'); }) || null;
@@ -9216,9 +9212,6 @@ Dikkat edilmesi gereken 2 nokta:
     if (!v.adet && !v.fireAdet){ cb('İyi veya fire adet girin.'); return; }
     if (v.fireAdet > 0 && (!v.fireNedeni || v.fireNedeni === '—')){ cb('Fire için neden seçin.'); return; }
     var ie = v.isEmriId ? isEmriBul(v.isEmriId) : null;
-    if (ie && state.config && state.config.faiZorunlu && !isEmriFaiDurumu(ie)){
-      cb('Bu iş emri için ilk parça onayı (FAI) yok. Kalite > Kalite Kontroller\'den "İlk parça" kaydı girin (Tanımlar\'da zorunlu olarak ayarlı).', 'fai'); return;
-    }
     // Operasyonlar takip ediliyorsa (önceki operasyona kayıt girilmişse): önceki operasyondan geçen iyi parçadan fazlası girilince sorulur
     if (ie && !v.onayli){
       var opl = ie.gerekliOperasyonlar || [], oi = opl.indexOf(v.operasyon), onceki = oi > 0 ? opl[oi - 1] : '';
@@ -9247,7 +9240,6 @@ Dikkat edilmesi gereken 2 nokta:
       var id = res && res.id;
       if (stokGiris){
         stokHareketi({ stokId: stokId, miktar: stokGiris, tur: 'Üretimden giriş', lotNo: ie ? ie.lotNo : '', kaynakTur: 'uretim', kaynakId: id, kaynakNo: ie ? ie.isEmriNo : '', tarih: v.tarih });
-        if (state.config && state.config.backflush && ie) otomatikMalzemeDus(ie, (v.adet||0) + (v.fireAdet||0), id);
       }
       if (uyari) toast(uyari.trim(), true);
       cb(null, id);
@@ -10319,9 +10311,9 @@ Dikkat edilmesi gereken 2 nokta:
   }
   EK_RENDER.kalitekontrol = function(){ crudBolumler('kalitekontrol', [KALITE_TANIM]); };
 
-  // İrsaliye öncesi final kontrol kontrolü (Tanımlar'da açıksa)
+  // İrsaliye öncesi final kontrol engeli: Tanımlar'daki ayar r192'de kalktı, engel uygulanmaz (eski ayar config'te durur, okunmaz)
   function finalKontrolEngeli(s, kalemler, lotNo){
-    if (!(state.config && state.config.finalKontrolZorunlu)) return null;
+    return null;
     var ies = state.isemirleri.filter(function(ie){ return ie.siparisId === s.id; }).map(function(ie){ return ie.id; });
     var eksik = kalemler.filter(function(k){
       return !(state.kaliteKontroller||[]).some(function(kk){ return kk.tur === 'Final' && (kk.karar === 'Kabul' || kk.karar === 'Şartlı Kabul') && urunEsit(kk.stokId, k.stokId) &&
@@ -18411,7 +18403,6 @@ Dikkat edilmesi gereken 2 nokta:
     if (ids.indexOf('modulBlok') > -1) return 'modul';
     if (yol.some(function(x){ return x && x.dataset && x.dataset.sirket; })) return 'sirket';
     if (['tdDepolar', 'tdFire', 'tdDurus'].some(function(x){ return ids.indexOf(x) > -1; })) return 'liste';
-    if (['tdFai', 'tdFinal', 'tdBackflush', 'tdElektrik'].some(function(x){ return ids.indexOf(x) > -1; })) return 'ayar';
     if (ids.indexOf('tdDil') > -1 || ids.indexOf('tdLogo') > -1 || yol.some(function(x){ return x && x.dataset && x.dataset.firma; })) return 'firma';
     return '';
   }
@@ -18455,7 +18446,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (TANIM_KIRLI.sirket) Object.assign(p, sirketKayitVerisi());
     if (TANIM_KIRLI.modul) p.kapaliModuller = Array.prototype.filter.call(document.querySelectorAll('#modulBlok [data-modul]'), function(x){ return !x.checked; }).map(function(x){ return x.dataset.modul; });
     var ek = byId('tanimEkBloklar'), hata = '';
-    ['op', 'liste', 'ayar', 'firma', 'cikti'].forEach(function(b){
+    ['op', 'liste', 'firma', 'cikti'].forEach(function(b){
       if (!TANIM_KIRLI[b] || !ek || !ek.__kayitVerisi) return;
       var v = ek.__kayitVerisi[b](); if (typeof v === 'string'){ hata = hata || v; return; } Object.assign(p, v);
     });
