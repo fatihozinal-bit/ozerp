@@ -1361,7 +1361,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-21-r189</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-21-r190</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4171,7 +4171,7 @@ Dikkat edilmesi gereken 2 nokta:
 
     renderSimpleList('makineListe', state.makineler, 'makineler', { kartBaslik: 'Makine kartı',
       emptyText: 'Makine eklenmedi',
-      rowFn: function(m){ var u = makineSaatUcreti(m); return { title: esc(m.ad)+' '+makineDurumBadge(m), sub: [m.marka, m.model, m.modelYili, m.seriNo?'SN '+m.seriNo:''].filter(Boolean).map(esc).join(' · ')+' · Aylık kapasite: '+sureStrOlustur(tekMakineAylikSaat()*60)+' · <b>€'+fmt2(u.toplam)+'/saat</b> '+infoIco('Makine saat ücreti\nAmortisman: €'+fmt2(u.amortisman)+'/sa'+'\nBakım: €'+fmt2(u.bakim)+'/sa'+(u.bakimTanim ? ' (kartta yok; şirketin bakım-onarım gideri genel gider payında)' : '')+'\nEnerji: €'+fmt2(u.enerji)+'/sa ('+fmt2(u.kw)+' kW'+(u.kwTanim ? ', Tanımlar ortalaması' : '')+')\nGenel gider payı (personel+kira+diğer / aylık makine-saat): €'+fmt2(u.genel)+'/sa') }; },
+      rowFn: function(m){ var u = makineSaatUcreti(m); return { title: esc(m.ad)+' '+makineDurumBadge(m), sub: [m.marka, m.model, m.modelYili, m.seriNo?'SN '+m.seriNo:''].filter(Boolean).map(esc).join(' · ')+' · Aylık kapasite: '+sureStrOlustur(tekMakineAylikSaat()*60)+' · <b>€'+fmt2(u.toplam)+'/saat</b> '+infoIco('Makine saat ücreti\nAmortisman: €'+fmt2(u.amortisman)+'/sa'+'\nBakım: €'+fmt2(u.bakim)+'/sa'+(u.bakimTanim ? ' (kartta yok; şirketin bakım-onarım gideri genel gider payında)' : '')+'\nGenel gider payı (Tanımlar › Standart maliyet oranları; elektrik dahil): €'+fmt2(u.genel)+'/sa') }; },
       fields: MAKINE_FIELDS,
       editTitle: 'Makineyi düzenle',
       deleteMsg: 'Bu makineyi silmek istediğinize emin misiniz?',
@@ -8953,20 +8953,16 @@ Dikkat edilmesi gereken 2 nokta:
     if (acikDurus && d === 'Çalışıyor') return badgeHtml('duruşta', 'reddedildi');
     return badgeHtml(d, d === 'Çalışıyor' ? 'tamamlandi' : (d === 'Pasif' ? 'taslak' : (d === 'Bekliyor' ? 'bekliyor' : 'reddedildi')));
   }
-  // Kartta 0 bırakılan alanlar: alış bedeli yoksa amortisman 0, güç = Tanımlar'daki ortalama güç.
-  // Kartta bakım yoksa şirketin bakım-onarım gideri zaten genel gider payında (iki kez sayılmaz).
+  // Kartta alış bedeli yoksa amortisman 0. Kartta bakım yoksa şirketin bakım-onarım gideri zaten genel gider payında (iki kez sayılmaz).
+  // Ayrı enerji payı yok (r190): elektrik faturası Giderler'den genel gider saat ücretinin önerisine girer.
   function makineSaatUcreti(m){
     var aylikSaat = tekMakineAylikSaat() || 1, kur = sirketKur();
     var bedel = Number(m.alisBedeli) || 0, bedelTanim = false;
-    var mo = maliyetOrani();
     var amort = (Number(m.amortismanAy)||0) > 0 ? bedel / Number(m.amortismanAy) / aylikSaat : 0;
     var bakim = (Number(m.bakimAylik)||0) / aylikSaat;
-    var elektrik = mo && Number(mo.elektrik) > 0 ? Number(mo.elektrik) : sirketEur('elektrik');
-    var kw = Number(m.gucKw) || Number(sirketDeger('kwMakine')) || 0;
-    var enerji = kw * elektrik;
     var genel = calcSaatMaliyeti();
-    return { amortisman: amort, bakim: bakim, enerji: enerji, genel: genel, toplam: amort + bakim + enerji + genel,
-      bedel: bedel, bedelTanim: bedelTanim, kw: kw, kwTanim: !Number(m.gucKw), bakimTanim: !Number(m.bakimAylik) };
+    return { amortisman: amort, bakim: bakim, genel: genel, toplam: amort + bakim + genel,
+      bedel: bedel, bedelTanim: bedelTanim, bakimTanim: !Number(m.bakimAylik) };
   }
   function makineById(id){ return state.makineler.find(function(m){ return m.id === id; }); }
 
@@ -18565,7 +18561,7 @@ Dikkat edilmesi gereken 2 nokta:
   // Anahtarlar vergi / bordro modelinin (KV_MODEL) alan adlarıyla aynıdır. Aylık giderler burada tutulmaz (r189).
   // [anahtar, etiket, tip ('num' | 'bool'), birim]
   var SIRKET_ALANLAR = [
-    ['Enerji', 'Makine kartında güç 0 bırakılmışsa ortalama güç kullanılır. Elektrik birim fiyatı Standart maliyet oranları\'nda.', [
+    ['Enerji', 'Bilgi amaçlı; maliyete etkisi yok (elektrik faturası genel gider saat ücretine girer).', [
       ['kwMakine', 'Çalışan makine ortalama güç', 'num', 'kW'], ['kwGenel', 'Genel yük (ışık, kompresör…)', 'num', 'kW']], 'sirketMakine'],
     ['Personel ve ödeme düzeni', 'Kadro Tanımlar › Personel listesinden gelir.', [
       ['maasOdemeGunu', 'Maaş ödeme günü', 'num', 'ayın günü'], ['kiraOdemeGunu', 'Kira ödeme günü', 'num', 'ayın günü'],
@@ -18601,14 +18597,6 @@ Dikkat edilmesi gereken 2 nokta:
     if (bos && typeof tanimDurumCiz === 'function'){ TANIM_KIRLI.sirket = true; tanimDurumCiz(); }
   }
   function sirketFormDeger(k){ var el = document.querySelector('#panel-tanimlar [data-sirket="' + k + '"]'); if (!el) return sirketDeger(k); return el.dataset.tip === 'bool' ? el.value === '1' : (Number(el.value) || 0); }
-  // Elektrik birim fiyatı (€/kWh) makine saat ücretinin enerji payı için: Standart maliyet oranları'nda kaydedilen; yoksa eski kayıtlardaki değer
-  function sirketEur(ne){
-    if (ne !== 'elektrik') return 0;
-    var c = state.config || {}, mo = maliyetOrani(), kur = sirketKur(), s = c.sirket || {};
-    if (mo && Number(mo.elektrik) > 0) return Number(mo.elektrik);
-    if (Number(s.elektrikFiyat) > 0 && kur > 0) return Number(s.elektrikFiyat) / kur;
-    return Number(c.elektrikFiyat) || 0;
-  }
   function sirketKayitVerisi(){
     var o = Object.assign({}, (state.config && state.config.sirket) || {}); SIRKET_ANAHTAR.forEach(function(k){ o[k] = sirketFormDeger(k); });
     return { sirket: o };
@@ -18633,22 +18621,20 @@ Dikkat edilmesi gereken 2 nokta:
   function moSayi(v, b){ v = Number(v) || 0; var k = Math.pow(10, b); return v > 0 ? String(Math.round(v * k) / k) : ''; }
   function maliyetOraniCiz(){
     var el = byId('maliyetOraniIcerik'); if (!el || TANIM_KIRLI.mo || el.contains(document.activeElement)) return;
-    var o = maliyetOrani(), on = maliyetOraniOneri(), elek = sirketEur('elektrik'), onS = moSayi(on.saat, 2);
+    var o = maliyetOrani(), on = maliyetOraniOneri(), onS = moSayi(on.saat, 2);
     var html = '<div class="helper" style="margin:0 0 6px">' + (o ? 'Son kayıt <b>' + esc(kvTarih(o.tarih)) + '</b>' + (o.kim ? ' (' + esc(o.kim) + ')' : '') + '.'
         : '<span class="neg">Saat ücreti henüz kaydedilmedi: teklifler kadrodan canlı hesaplanıyor.</span>') + '</div>' +
       '<table class="kv-tablo"><thead><tr><th>Oran</th><th class="num">Geçerli</th><th class="num">Öneri</th></tr></thead><tbody>' +
-      '<tr><td>Genel gider saat ücreti (€/sa) ' + infoIco('Öneri: ' + on.kaynak + '. Yılda bir ya da giderler belirgin değişince güncelleyin.') + '</td>' +
+      '<tr><td>Genel gider saat ücreti (€/sa) ' + infoIco('Öneri: ' + on.kaynak + '. Elektrik, kira ve diğer genel giderler faturalarıyla bu orana girer. Yılda bir ya da giderler belirgin değişince güncelleyin.') + '</td>' +
         '<td class="num"><input type="number" step="any" min="0" id="moSaat" value="' + escAttr(o ? moSayi(o.saatGenel, 2) : '') + '" placeholder="' + escAttr(onS) + '" style="max-width:110px;text-align:right"></td>' +
         '<td class="num">' + (onS ? '€' + fmt2(on.saat) + '/sa <button type="button" class="btn secondary small" data-moyaz="' + escAttr(onS) + '">Yaz</button>' : '<span class="muted">—</span>') + '</td></tr>' +
-      '<tr><td>Elektrik birim fiyatı (€/kWh) ' + infoIco('Elektrik faturasındaki kWh birim fiyatı (KDV hariç). Makine saat ücretinin enerji payı: makine gücü × bu fiyat.') + '</td>' +
-        '<td class="num"><input type="number" step="any" min="0" id="moElektrik" value="' + escAttr(moSayi(elek, 4)) + '" style="max-width:110px;text-align:right"></td><td class="num muted">faturadan</td></tr>' +
       '</tbody></table>';
     if (el.__son !== html){ el.innerHTML = html; el.__son = html; }
   }
   function maliyetOraniKayitVerisi(){
     var sayi = function(id){ return Number(String((byId(id) || {}).value || '').replace(',', '.')) || 0; }, saat = sayi('moSaat');
     if (!(saat > 0)) return 'Standart maliyet oranları: genel gider saat ücretini yazın (öneriyi "Yaz" ile alabilirsiniz).';
-    return { maliyetOrani: { tarih: todayISO(), kim: (typeof aktifKullaniciAdi === 'function' ? aktifKullaniciAdi() : ''), saatGenel: saat, elektrik: sayi('moElektrik') } };
+    return { maliyetOrani: { tarih: todayISO(), kim: (typeof aktifKullaniciAdi === 'function' ? aktifKullaniciAdi() : ''), saatGenel: saat } };
   }
   EK_HER_ZAMAN.push(maliyetOraniCiz);
   document.addEventListener('click', function(e){
