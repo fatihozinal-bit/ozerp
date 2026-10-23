@@ -1151,7 +1151,8 @@
   .vg-grafik .vg-sifir.ince { stroke-dasharray:2 3; }
   .vg-grafik .vg-alan { fill:var(--accent); opacity:.13; }
   .vg-grafik .vg-alan.plan { opacity:.06; }
-  .vg-grafik .vg-cizgi { fill:none; stroke:var(--accent); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .vg-grafik .vg-cizgi { fill:none; stroke:var(--accent); stroke-width:2.4; stroke-linejoin:round; stroke-linecap:round; }
+  .vg-grafik .vg-serit { fill:transparent; } .vg-grafik .vg-serit:hover { fill:var(--accent); opacity:.06; }
   .vg-grafik .vg-cizgi.plan { stroke-dasharray:4 4; opacity:.6; }
   .vg-grafik .vg-nokta { fill:var(--surface); stroke:var(--accent); stroke-width:1.6; }
   .vg-grafik .vg-nokta.bugun { fill:var(--accent); }
@@ -1387,7 +1388,7 @@
     <button class="navbtn" data-grup="FİNANS" data-tab="giderler"><svg class="navicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9M12 6v2M12 16v2"/></svg>Giderler</button>
     <button class="navbtn" data-grup="FİNANS" data-tab="bordro"><svg class="navicon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 19c.8-3 3.2-4.5 6-4.5s5.2 1.5 6 4.5M16 8h5M16 12h5M18 16h3"/></svg>Bordro Özeti</button>
     <div class="navlabel" data-grup="VİRGO DÖNEMİ"><span class="nl-ad"><svg class="navgicon" viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>VİRGO DÖNEMİ</span></div>
-    <button class="navbtn" data-grup="VİRGO DÖNEMİ" data-tab="virgo"><svg class="navicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5a4.5 4.5 0 1 0 0 7M6.5 10.5h6M6.5 13.5h6"/></svg>Kadir Bey Hesabı</button>
+    <button class="navbtn" data-grup="VİRGO DÖNEMİ" data-tab="virgo"><svg class="navicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5a4.5 4.5 0 1 0 0 7M6.5 10.5h6M6.5 13.5h6"/></svg>Virgo Hesabı</button>
     <button class="navbtn" data-grup="VİRGO DÖNEMİ" data-tab="virgouretim"><svg class="navicon" viewBox="0 0 24 24"><path d="M3 20l2-9 4 3 4-6 4 4 4-8v16z"/></svg>Üretim (Virgo)</button>
     <div class="navlabel" data-grup="MUHASEBE"><span class="nl-ad"><svg class="navgicon" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M12 4v16M4 12h16"/></svg>MUHASEBE</span></div>
     <button class="navbtn" data-grup="MUHASEBE" data-tab="muhfis"><svg class="navicon" viewBox="0 0 24 24"><path d="M6 2h12v20H6z"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>Muhasebe Fişleri</button>
@@ -1423,7 +1424,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-23-r209</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-23-r211</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1980,11 +1981,11 @@ Dikkat edilmesi gereken 2 nokta:
       <div id="bordroIcerik"></div>
     </section>
     <section class="panel" id="panel-virgo">
-      <div class="pagehead"><h1>Kadir Bey hesabı (Virgo dönemi)</h1><p>Şirket kurulana kadar makineler ve personel Virgo Hidrolik'te. Kadir Bey'in ödedikleri, ona geri ödediklerimiz ve üretimin karşılığı (Kadir Bey hesabı) ile ortakların kendi cebinden harcamaları (Ortaklar hesabı) ayrı ayrı, € ve ₺ olarak izlenir; aylık kazanç da buradan görünür, ⇩ Excel ile hepsi indirilir. Muhasebeye işlemez.</p></div>
+      <div class="pagehead"><h1>Virgo hesabı (Virgo Hidrolik)</h1><p>Şirket kurulana kadar makineler ve personel Virgo Hidrolik'te. Virgo'nun ödedikleri, ona geri ödediklerimiz ve üretimin karşılığı (Virgo hesabı) ile ortakların kendi cebinden harcamaları (Ortaklar hesabı) ayrı ayrı, € ve ₺ olarak izlenir; aylık kazanç da buradan görünür, ⇩ Excel ile hepsi indirilir. Muhasebeye işlemez.</p></div>
       <div id="virgoIcerik"></div>
     </section>
     <section class="panel" id="panel-virgouretim">
-      <div class="pagehead"><h1>Üretim (Virgo dönemi)</h1><p>Gün, vardiya ve ürün bazında elle girilen üretim. Karşılığı (adet × € fiyat) Kadir Bey hesabında borçtan düşer. Programın Üretim, iş emri ve stok sayfalarından ayrıdır.</p></div>
+      <div class="pagehead"><h1>Üretim (Virgo dönemi)</h1><p>Gün, vardiya ve ürün bazında elle girilen üretim. Karşılığı (adet × € fiyat) Virgo hesabında borçtan düşer. Programın Üretim, iş emri ve stok sayfalarından ayrıdır.</p></div>
       <div id="virgouretimIcerik"></div>
     </section>
 
@@ -7327,7 +7328,7 @@ Dikkat edilmesi gereken 2 nokta:
     } else {
       renderSimpleList(t.key+'Liste', items, t.collection, {
         emptyText: t.bos || 'Kayıt yok', rowFn: t.rowFn, fields: t.fields, editTitle: t.duzenleBaslik || 'Kaydı düzenle', kartBaslik: t.kartBaslik || String(t.listeBaslik || 'Kayıt').replace(/\s*(listesi|kayıtları)$/i, '') + ' kartı',
-        onUpdate: function(vals, item){ var hz = sonHazir && sonHazir.item === item ? sonHazir.veri : null; sonHazir = null; crudGuncelle(t, vals, item, hz); }, extraActions: t.ekAksiyon, onDelete: sil, deleteMsg: t.silMesaj, kilitliSatir: t.kilitliSatir, formAcildi: t.formAcildi,
+        onUpdate: function(vals, item){ var hz = sonHazir && sonHazir.item === item ? sonHazir.veri : null; sonHazir = null; crudGuncelle(t, vals, item, hz); }, extraActions: t.ekAksiyon, onDelete: sil, deleteMsg: t.silMesaj, kilitliSatir: t.kilitliSatir, formAcildi: t.formAcildi, degerler: t.degerler,
         kayitOncesi: t.kayitOncesi ? function(vals, item, devam){ t.kayitOncesi(Object.assign({}, item, vals), item, devam); }
           : t.hazirla ? function(vals, item, devam){ var h = crudHazirla(t, Object.assign({}, vals), item); if (h === false) return; sonHazir = { item: item, veri: h }; devam(); } : null
       });
@@ -7365,7 +7366,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function crudDuzenle(t, item){
     var hazir = null;
-    openForm({ title: t.duzenleBaslik || 'Kaydı düzenle', fields: crudAlanlar(t, item), values: item, onOpen: t.formAcildi,
+    openForm({ title: t.duzenleBaslik || 'Kaydı düzenle', fields: crudAlanlar(t, item), values: t.degerler ? t.degerler(item) : item, onOpen: t.formAcildi,
       kayitOncesi: t.kayitOncesi ? function(vals, devam){ t.kayitOncesi(Object.assign({}, item, vals), item, devam); }
         : t.hazirla ? function(vals, devam){ var h = crudHazirla(t, Object.assign({}, vals), item); if (h === false) return; hazir = h; devam(); } : null,
       onSave: function(vals){ var hz = hazir; hazir = null; crudGuncelle(t, vals, item, hz); } });
@@ -7569,7 +7570,7 @@ Dikkat edilmesi gereken 2 nokta:
   // Tanım kayıtlarında türe göre: kredi, bordro, vergi ödemesi, virman, sabit kıymet, şüpheli alacak muhasebe fişi doğurur
   var SILINEN_GUVENLI_TANIM = { fiyat:1, olcuAleti:1, hesap:1, teminat:1, bakimPlani:1, gorusme:1, muhHesap:1, virgo:1, virgoUretim:1 };
   var TANIM_TUR_ADI = { fiyat:'Fiyat', olcuAleti:'Ölçü aleti', hesap:'Kasa / banka hesabı', kredi:'Kredi', teminat:'Teminat mektubu', bordro:'Bordro',
-    vergiOdeme:'Vergi ödemesi', supheliAlacak:'Şüpheli alacak', bakimPlani:'Bakım planı', sabitKiymet:'Sabit kıymet', gorusme:'Görüşme', virman:'Virman', muhHesap:'Alt hesap', virgo:'Kadir Bey hesabı hareketi', virgoUretim:'Virgo üretim girişi' };
+    vergiOdeme:'Vergi ödemesi', supheliAlacak:'Şüpheli alacak', bakimPlani:'Bakım planı', sabitKiymet:'Sabit kıymet', gorusme:'Görüşme', virman:'Virman', muhHesap:'Alt hesap', virgo:'Virgo hesabı hareketi', virgoUretim:'Virgo üretim girişi' };
   var _geriYuklenen = {}, _sonSilinenler = {}, _silinenSilindi = {}, _silinenTemizlendi = false;
   function silinenGuvenli(col, k){
     if (col === 'tanimKayitlari'){
@@ -8156,7 +8157,7 @@ Dikkat edilmesi gereken 2 nokta:
     uretimplani: 'üretim planı plan kapasite takvim makine sırası', isemirleri: 'iş emri', operator: 'operatör tablet atölye sayaç', uretim: 'üretim girişi adet giriş vardiya',
     kayitlar: 'üretim kayıtları', duruslar: 'duruş arıza bekleme', vardiyadevir: 'vardiya devri', bakim: 'bakım arıza periyodik bakım',
     kalitekontrol: 'kalite kontrol muayene ölçüm ilk parça final giriş kontrol', ncr: 'uygunsuzluk ncr hata ret', puantaj: 'puantaj izin devam mesai', isg: 'iş güvenliği isg kaza', projeler: 'proje görev',
-    carihesap: 'cari hesap tahsilat alacak bakiye', kasabanka: 'kasa banka ödeme virman hesap kredi', ceksenet: 'çek senet', giderler: 'gider masraf harcama', bordro: 'bordro maaş sgk', virgo: 'virgo kadir bey borç euro geri ödeme', virgouretim: 'virgo üretim adet vardiya kadir bey',
+    carihesap: 'cari hesap tahsilat alacak bakiye', kasabanka: 'kasa banka ödeme virman hesap kredi', ceksenet: 'çek senet', giderler: 'gider masraf harcama', bordro: 'bordro maaş sgk', virgo: 'virgo hidrolik hesap kadir bey borç euro geri ödeme', virgouretim: 'virgo üretim adet vardiya kadir bey',
     muhfis: 'muhasebe fişi yevmiye fiş mahsup', defterler: 'defter yevmiye defteri büyük defter kebir muavin', mizan: 'mizan', malitablolar: 'bilanço gelir tablosu mali tablolar',
     kdvbeyan: 'kdv beyanı kdv-1 kdv-2 beyanname', vergiodeme: 'vergi sgk ödemesi muhtasar', donemsonu: 'dönem sonu ay sonu kapanış',
     maliyethesap: 'maliyet hesabı', raporlar: 'rapor', finansrapor: 'finans raporları nakit akışı yaşlandırma', cikti: 'çıktı önizleme yazdır şablon',
@@ -11740,40 +11741,54 @@ Dikkat edilmesi gereken 2 nokta:
   };
   EK_RENDER.bordro = function(){ crudBolumler('bordro', [BORDRO_TANIM]); };
 
-  // ---------- Virgo dönemi: Kadir Bey hesabı (€ ve ₺) ve elle üretim girişi ----------
+  // ---------- Virgo dönemi: Virgo hesabı (€ ve ₺) ve elle üretim girişi ----------
   // Şirket kurulana kadar makine ve personel Virgo Hidrolik'te; müşteri de Virgo. Her tutar iki para biriminde izlenir:
   // girildiği para birimi + o günün TCMB döviz satış kuruyla öbürü (kayıtta eur ve tl birlikte saklanır).
-  // Hareketler ve Kadir Bey'e borca etkisi (yalnız "Ödendi" olanlar; "Ödenecek" ayrı izlenir):
-  //   Kadir Bey'den alınan (nakit / havale bize)            → borç artar, elimizdeki Kadir Bey parası artar
-  //   Harcama, ödeyen Kadir Bey (doğrudan ödedi)              → borç artar
-  //   Harcama, başkası ödedi, Kadir Bey'in verdiği paradan    → borç değişmez, elimizdeki Kadir Bey parası azalır
-  //   Harcama, başkası ödedi, kendi cebimizden               → Kadir Bey hesabını etkilemez; ortaklar hesabına (r195)
-  //   Geri ödeme (Kadir Bey'e)                                → borçtan düşer; ödeyen ortağın katkısı sayılır
+  // Hareketler ve Virgo'ya borca etkisi (yalnız "Ödendi" olanlar; "Ödenecek" ayrı izlenir):
+  //   Virgo'dan alınan (nakit / havale bize)            → borç artar, elimizdeki Virgo parası artar
+  //   Harcama, ödeyen Virgo (doğrudan ödedi)              → borç artar
+  //   Harcama, başkası ödedi, Virgo'nun verdiği paradan    → borç değişmez, elimizdeki Virgo parası azalır
+  //   Harcama, başkası ödedi, kendi cebimizden               → Virgo hesabını etkilemez; ortaklar hesabına (r195)
+  //   Geri ödeme (Virgo'ya)                                → borçtan düşer; ödeyen ortağın katkısı sayılır
   //   Ortaklar arası ödeme (veren → alan)                     → yalnız ortaklar dengesi (veren katkı +, alan katkı −)
   //   Üretim (Virgo) karşılığı (adet × ürün fiyatı €)         → borçtan düşer
   // KDV (r197): harcamada KDV oranı ve tutarın KDV dahil / hariç girildiği seçilir. Fatura Virgo adınaysa Virgo KDV'yi indirir: maliyet KDV hariç;
-  // bizim adımıza / fişsizse KDV maliyettir: maliyet KDV dahil. Ödenen nakit hep KDV dahildir (ortak katkısı, elimizdeki Kadir Bey parası).
-  // Kadir Bey'in verdiği paradan Virgo adına alınan faturanın KDV'sini Virgo indirdiği için o KDV borçtan düşer.
-  // Mutabakat: Kadir Bey'le anlaşılan borç (€) kaydı; programın o tarihteki hesabıyla farkı gösterilir ve o tarih dahil önceki Virgo kayıtları kilitlenir.
+  // bizim adımıza / fişsizse KDV maliyettir: maliyet KDV dahil. Ödenen nakit hep KDV dahildir (ortak katkısı, elimizdeki Virgo parası).
+  // Virgo'nun verdiği paradan Virgo adına alınan faturanın KDV'sini Virgo indirdiği için o KDV borçtan düşer.
+  // Mutabakat: Virgo'yla anlaşılan borç (€) kaydı; programın o tarihteki hesabıyla farkı gösterilir ve o tarih dahil önceki Virgo kayıtları kilitlenir.
   // Aylık kazanç iki türlü: işin kazancı = üretim − bütün işletme giderleri (yatırım ayrı: Makine, Kuruluş & tesisat);
-  // Kadir Bey açısından = üretim − Kadir Bey'in parasıyla yapılan giderler.
-  // Ortaklar hesabı (Fatih, Ahmet… şirket sahipleri): katkı = kendi cebinden harcamalar + Kadir Bey'e yaptığı geri ödemeler ± ortaklar arası ödemeler;
+  // Virgo açısından = üretim − Virgo'nun parasıyla yapılan giderler.
+  // Ortaklar hesabı (Fatih, Ahmet… şirket sahipleri): katkı = kendi cebinden harcamalar + Virgo'ya yaptığı geri ödemeler ± ortaklar arası ödemeler;
   // payına düşen = toplam katkı × ortaklık payı (config.virgoOrtakPay {ad: %}; yoksa ortaklar arasında eşit); fark artıysa fazla ödemiş. Tutarlar KDV hariç (Virgo KDV'yi kendi beyannamesinde indirir).
   // Ayrı bir defterdir: muhasebe fişi, kasa / banka ve stok etkilenmez.
   // Kayıtlar (tanimKayitlari):
   //   tur 'virgo'        { tarih, hareket, odeyen, alici, kaynak, kategori, aciklama, belgeNo, odemeSekli, durum, vade, paraBirimi '₺' | '€', tutarTuru, tutar (girilen),
   //                        kdvOrani, fatura, kur, eur, tl (KDV hariç), kdvEur, kdvTl }
-  //                      (r193 öncesi 'Kadir Bey ödedi' = Harcama + ödeyen Kadir Bey; r193'teki borca 'Kadir Bey borcuna eklensin' = Kadir Bey'in parası
+  //                      (r193 öncesi 'Kadir Bey ödedi' = Harcama + ödeyen Virgo; r193'teki borca 'Kadir Bey borcuna eklensin' = Virgo'nun parası
   //                       doğrudan, 'Borca eklenmesin' = kendi cebimizden; tl / eur yoksa kurdan hesaplanır)
   //   tur 'virgoUretim'  { tarih, bitisTarih (aralıkta; boş = tek gün), vardiya, urunId, adet, fire, fireNedeni, makineId, operatorId, baslangic, bitis (SS:DD),
   //                        paraBirimi '€' | '₺', fiyatGirilen (o para biriminde / adet), kur, fiyat (€ / adet), tutar (€), tl (₺), aciklama }
   //   makine / operatör / saat / fire nedeni isteğe bağlıdır; şirket kurulunca Üretim Kayıtları'na aktarılabilsin diye aynı anlamda tutulur.
-  // Ürünler: config.virgoUrunler [{ id, ad, fiyat (adet başı), pb '€' | '₺' (yoksa €) }] · Kişiler: config.virgoKisiler [ad…] (Kadir Bey her zaman ilk sırada; geri kalanlar ortak)
-  var VIRGO_FINANSOR = 'Kadir Bey';
-  var VIRGO_HAREKET = ['Harcama', 'Kadir Bey\'den alınan (nakit / havale)', 'Geri ödeme (Kadir Bey\'e)', 'Ortaklar arası ödeme', 'Mutabakat (Kadir Bey ile anlaşılan borç)', 'Bilgi (hesaba işlemez)'];
+  // Ürünler: config.virgoUrunler [{ id, ad, fiyat (adet başı), pb '€' | '₺' (yoksa €) }] · Kişiler: config.virgoKisiler [ad…] (Virgo her zaman ilk sırada; geri kalanlar ortak)
+  var VIRGO_FINANSOR = 'Virgo Hidrolik';
+  // r211: harcamaları yapan Kadir Bey değil firması Virgo Hidrolik. Eski kayıtlardaki adlar veritabanında olduğu gibi kalır;
+  // okunurken (virgoYeniAd) ve düzenleme formu açılırken yenisine çevrilir, kaydedilince yeni adla yazılır.
+  var VIRGO_ESKI_AD = { 'Kadir Bey': VIRGO_FINANSOR };
+  var VIRGO_ESKI_HAREKET = { 'Kadir Bey\'den alınan (nakit / havale)': 'Virgo\'dan alınan (nakit / havale)', 'Geri ödeme (Kadir Bey\'e)': 'Geri ödeme (Virgo\'ya)', 'Mutabakat (Kadir Bey ile anlaşılan borç)': 'Mutabakat (Virgo ile anlaşılan borç)' };
+  var VIRGO_ESKI_KAYNAK = { 'Kadir Bey\'in verdiği paradan': 'Virgo\'nun verdiği paradan' };
+  function virgoYeniAd(v){
+    if (!v || !(VIRGO_ESKI_AD[v.odeyen] || VIRGO_ESKI_AD[v.alici] || VIRGO_ESKI_HAREKET[v.hareket] || VIRGO_ESKI_KAYNAK[v.kaynak])) return v;
+    var y = Object.assign({}, v);
+    if (VIRGO_ESKI_AD[y.odeyen]) y.odeyen = VIRGO_ESKI_AD[y.odeyen];
+    if (VIRGO_ESKI_AD[y.alici]) y.alici = VIRGO_ESKI_AD[y.alici];
+    if (VIRGO_ESKI_HAREKET[y.hareket]) y.hareket = VIRGO_ESKI_HAREKET[y.hareket];
+    if (VIRGO_ESKI_KAYNAK[y.kaynak]) y.kaynak = VIRGO_ESKI_KAYNAK[y.kaynak];
+    return y;
+  }
+  var VIRGO_HAREKET = ['Harcama', 'Virgo\'dan alınan (nakit / havale)', 'Geri ödeme (Virgo\'ya)', 'Ortaklar arası ödeme', 'Mutabakat (Virgo ile anlaşılan borç)', 'Bilgi (hesaba işlemez)'];
   var VIRGO_FATURA = ['Otomatik', 'Virgo adına (KDV indirilir)', 'Bizim adımıza / fişsiz (KDV maliyet)'];
   var VIRGO_KDV = ['0', '1', '10', '20'];
-  var VIRGO_KAYNAK = ['Otomatik', 'Kadir Bey\'in verdiği paradan', 'Kendi cebimizden'];
+  var VIRGO_KAYNAK = ['Otomatik', 'Virgo\'nun verdiği paradan', 'Kendi cebimizden'];
   var VIRGO_DURUM = ['Ödendi', 'Ödenecek'];
   var VIRGO_ODEME = ['Banka / EFT', 'Nakit', 'Kredi kartı', 'Çek / senet', 'Mahsup', 'Diğer'];
   // r205: liste genişledi; eski adlar aynen duruyor (eski kayıtlar bozulmasın)
@@ -11786,11 +11801,11 @@ Dikkat edilmesi gereken 2 nokta:
   var VIRGO_VARDIYA = ['1. Vardiya', '2. Vardiya', 'Cumartesi', 'Tüm vardiyalar'];
   var VIRGO_PB_KEY = 'ozerp_virgo_pb_v1';
   function virgoPbGorunum(){ try { var v = localStorage.getItem(VIRGO_PB_KEY); return v === '€' || v === '₺' ? v : 'ikisi'; } catch(e){ return 'ikisi'; } }
-  function virgoKayitlari(){ return (state.tanimKayitlari||[]).filter(function(t){ return t.tur === 'virgo'; }); }
+  function virgoKayitlari(){ return (state.tanimKayitlari||[]).filter(function(t){ return t.tur === 'virgo'; }).map(virgoYeniAd); }
   function virgoUretimKayitlari(){ return (state.tanimKayitlari||[]).filter(function(t){ return t.tur === 'virgoUretim'; }); }
   function virgoKisiler(){
     var l = (state.config || {}).virgoKisiler; l = Array.isArray(l) ? l.map(function(x){ return String(x || '').trim(); }).filter(Boolean) : ['Fatih', 'Ahmet'];
-    return [VIRGO_FINANSOR].concat(l.filter(function(x){ return x !== VIRGO_FINANSOR; }));
+    return [VIRGO_FINANSOR].concat(l.filter(function(x){ return x !== VIRGO_FINANSOR && !VIRGO_ESKI_AD[x]; }));
   }
   function virgoOrtaklar(){ return virgoKisiler().filter(function(x){ return x !== VIRGO_FINANSOR; }); }
   // Ortaklık payları (%; toplam 100'e ölçeklenir). Kayıtlı pay yoksa ortaklar arasında eşit.
@@ -11822,13 +11837,14 @@ Dikkat edilmesi gereken 2 nokta:
     return { eur: muhR2(eur), tl: muhR2(tl), kdvEur: muhR2(kE), kdvTl: muhR2(kT), oran: o };
   }
   function virgoUretimTl(u){ var k = Number(u.kur) || virgoGunKuru(u.bitisTarih || u.tarih); return Number(u.tl) || (k ? muhR2((Number(u.tutar) || 0) * k) : 0); }
-  // Kaydın anlamı: tip (harcama / alinan / geri / bilgi), kişi, paranın kaynağı (kb: Kadir Bey doğrudan, avans: verdiği paradan, cep: kendi cebimizden),
+  // Kaydın anlamı: tip (harcama / alinan / geri / bilgi), kişi, paranın kaynağı (kb: Virgo doğrudan, avans: verdiği paradan, cep: kendi cebimizden),
   // borca etkisi (€ / ₺; yalnız ödendiyse), yatırım mı, ödendi mi
   function virgoNorm(v){
-    var h = String(v.hareket || ''), tip = h === 'Kadir Bey ödedi' || h === 'Harcama' ? 'harcama' : /^Kadir Bey'den alınan/.test(h) ? 'alinan' : /^Geri ödeme/.test(h) ? 'geri' : /^Ortaklar arası/.test(h) ? 'ortak' : /^Mutabakat/.test(h) ? 'mutabakat' : 'bilgi';
+    v = virgoYeniAd(v);
+    var h = String(v.hareket || ''), tip = h === 'Kadir Bey ödedi' || h === 'Harcama' ? 'harcama' : /^Virgo'dan alınan/.test(h) ? 'alinan' : /^Geri ödeme/.test(h) ? 'geri' : /^Ortaklar arası/.test(h) ? 'ortak' : /^Mutabakat/.test(h) ? 'mutabakat' : 'bilgi';
     var kisi = v.odeyen || (h === 'Kadir Bey ödedi' ? VIRGO_FINANSOR : '—'), kaynak = '', fatura = '';
     if (tip === 'harcama'){
-      if (v.kaynak === VIRGO_KAYNAK[2]) kaynak = 'cep'; // r207: açıkça "Kendi cebimizden" seçildiyse Kişi Kadir Bey kalsa da borca eklenmez
+      if (v.kaynak === VIRGO_KAYNAK[2]) kaynak = 'cep'; // r207: açıkça "Kendi cebimizden" seçildiyse Kişi Virgo kalsa da borca eklenmez
       else if (kisi === VIRGO_FINANSOR || v.borca === 'Kadir Bey borcuna eklensin') kaynak = 'kb';
       else if (v.kaynak === VIRGO_KAYNAK[1]) kaynak = 'avans';
       else kaynak = 'cep';
@@ -11842,7 +11858,7 @@ Dikkat edilmesi gereken 2 nokta:
       haric: { eur: t.eur, tl: t.tl }, borcEur: b.eur, borcTl: b.tl, yatirim: tip === 'harcama' && VIRGO_YATIRIM.indexOf(v.kategori) > -1 };
   }
   function virgoEtki(v){ return virgoNorm(v).borcEur; }
-  function virgoTipAd(n){ return { harcama: 'Harcama', alinan: 'Kadir Bey\'den alınan', geri: 'Geri ödeme', ortak: 'Ortaklar arası ödeme', mutabakat: 'Mutabakat', bilgi: 'Bilgi' }[n.tip]; }
+  function virgoTipAd(n){ return { harcama: 'Harcama', alinan: 'Virgo\'dan alınan', geri: 'Geri ödeme', ortak: 'Ortaklar arası ödeme', mutabakat: 'Mutabakat', bilgi: 'Bilgi' }[n.tip]; }
   function virgoFaturaAd(n){ return n.fatura === 'virgo' ? 'Virgo adına (KDV indirilir)' : n.fatura === 'biz' ? 'bizim adımıza / fişsiz' : ''; }
   // Mutabakatlar (tarih sırasıyla) ve kilit: son mutabakat günü dahil önceki Virgo kayıtları değiştirilemez
   function virgoMutabakatlar(){ return virgoKayitlari().filter(function(v){ return virgoNorm(v).tip === 'mutabakat'; }).sort(function(a, b){ return (a.tarih||'').localeCompare(b.tarih||'') || String(a.olusturma||'').localeCompare(String(b.olusturma||'')); }); }
@@ -11856,7 +11872,7 @@ Dikkat edilmesi gereken 2 nokta:
       var o = a.bit <= gun ? 1 : (gunFarki(a.bas, gun) + 1) / a.gun; b.eur -= (Number(u.tutar) || 0) * o; b.tl -= virgoUretimTl(u) * o; });
     return { eur: muhR2(b.eur), tl: muhR2(b.tl) };
   }
-  function virgoKaynakAd(n){ return { kb: 'Kadir Bey ödedi (borca eklendi)', avans: 'Kadir Bey\'in verdiği paradan', cep: 'kendi cebimizden (ortaklar hesabı)' }[n.kaynak] || ''; }
+  function virgoKaynakAd(n){ return { kb: 'Virgo ödedi (borca eklendi)', avans: 'Virgo\'nun verdiği paradan', cep: 'kendi cebimizden (ortaklar hesabı)' }[n.kaynak] || ''; }
   function virgoEur(n){ n = Number(n) || 0; return (n < -0.004 ? '−' : '') + '€' + muhTutar(Math.abs(n)); }
   function virgoTl(n){ n = Number(n) || 0; return (n < -0.004 ? '−' : '') + '₺' + muhTutar(Math.abs(n)); }
   // { eur, tl } → "€… / ₺…" (r206: düz yazıdaki tutarlar da iki para biriminde)
@@ -11931,12 +11947,12 @@ Dikkat edilmesi gereken 2 nokta:
     var ort = virgoOrtaklar(), l = [];
     virgoKayitlari().forEach(function(v){
       var n = virgoNorm(v), yer = '', oneri = '';
-      if (n.kisi === VIRGO_FINANSOR && n.tip === 'harcama' && n.kaynak === 'cep'){ l.push({ v: v, n: n, yer: 'Kendi cebimizden ama Kişi = Kadir Bey: borca eklenmedi, hiçbir ortağa yazılmadı', oneri: 'Kişi\'de ödeyen ortağı seçin' }); return; }
+      if (n.kisi === VIRGO_FINANSOR && n.tip === 'harcama' && n.kaynak === 'cep'){ l.push({ v: v, n: n, yer: 'Kendi cebimizden ama Kişi = Virgo: borca eklenmedi, hiçbir ortağa yazılmadı', oneri: 'Kişi\'de ödeyen ortağı seçin' }); return; }
       if (ort.indexOf(n.kisi) < 0 || n.tip === 'mutabakat') return;
       if (!n.odendi){ if ((n.tip === 'harcama' && n.kaynak === 'cep') || n.tip === 'geri') return; yer = 'Ödenecek: henüz hiçbir toplama girmedi'; oneri = 'ödendiyse Durum = Ödendi yapın'; }
-      else if (n.tip === 'harcama' && n.kaynak === 'avans'){ yer = 'Kadir Bey\'in verdiği paradan harcama: Kadir Bey hesabında (elimizdeki KB parasından düştü)'; oneri = 'kendi parasıysa Paranın kaynağı = Kendi cebimizden'; }
-      else if (n.tip === 'harcama' && n.kaynak === 'kb'){ yer = 'Kadir Bey borcuna eklendi'; oneri = 'kendi parasıysa Paranın kaynağı = Kendi cebimizden'; }
-      else if (n.tip === 'alinan'){ yer = 'Kadir Bey\'den alınan: Kadir Bey borcuna eklendi'; oneri = 'Kadir Bey\'e ödeme yaptıysa Hareket = Geri ödeme (Kadir Bey\'e)'; }
+      else if (n.tip === 'harcama' && n.kaynak === 'avans'){ yer = 'Virgo\'nun verdiği paradan harcama: Virgo hesabında (elimizdeki Virgo parasından düştü)'; oneri = 'kendi parasıysa Paranın kaynağı = Kendi cebimizden'; }
+      else if (n.tip === 'harcama' && n.kaynak === 'kb'){ yer = 'Virgo borcuna eklendi'; oneri = 'kendi parasıysa Paranın kaynağı = Kendi cebimizden'; }
+      else if (n.tip === 'alinan'){ yer = 'Virgo\'dan alınan: Virgo borcuna eklendi'; oneri = 'Virgo\'ya ödeme yaptıysa Hareket = Geri ödeme (Virgo\'ya)'; }
       else if (n.tip === 'bilgi'){ yer = 'Bilgi: hiçbir hesaba işlemez'; oneri = 'harcama / geri ödemeyse hareketi değiştirin'; }
       else return;
       l.push({ v: v, n: n, yer: yer, oneri: oneri });
@@ -11970,14 +11986,14 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoKartlar(){
     var t = virgoToplam(), kur = virgoGunKuru(todayISO()), oh = virgoOrtakHesap();
     return '<div class="cards">' +
-      virgoKart('Kadir Bey\'den gelen', t.kbVerdi, 'bize verdiği ' + virgoET(t.alinan) + ' + doğrudan ödediği ' + virgoET(t.kbDog), '', 'kbVerdi') +
-      virgoKart('Kadir Bey\'e geri ödenen', t.geri, 'borçtan düştü', '', 'geri') +
+      virgoKart('Virgo\'dan gelen', t.kbVerdi, 'bize verdiği ' + virgoET(t.alinan) + ' + doğrudan ödediği ' + virgoET(t.kbDog), '', 'kbVerdi') +
+      virgoKart('Virgo\'ya geri ödenen', t.geri, 'borçtan düştü', '', 'geri') +
       virgoKart('Üretim karşılığı', t.gelir, fmt(t.adet) + ' adet · fire ' + fmt(t.fire), '', 'gelir') +
       virgoKart('İşin kazancı', t.kazanc, 'üretim − işletme gideri (yatırım hariç)', t.kazanc.eur < -0.004 ? '' : 'good', 'kazanc') +
-      virgoKart('Kadir Bey\'e kalan borç', t.kalanO, (t.kalan < -0.004 ? 'eksi: Kadir Bey size borçlu · ' : '') + 'gelen − üretim − geri ödeme; işlem günlerinin kuruyla' + (kur ? ', bugünkü kurla ' + virgoTl(t.kalan * kur) : ''), 'accent', 'kalan') +
-      virgoKart('Ortakların harcaması', t.cep, virgoOrtaklar().map(function(ad){ var x = oh.m[ad]; return esc(ad) + ' ' + virgoET(x ? x.cep : vgS()); }).join(' · ') + ' · Kadir Bey hesabına girmez', '', 'cep') +
+      virgoKart('Virgo\'ya kalan borç', t.kalanO, (t.kalan < -0.004 ? 'eksi: Virgo size borçlu · ' : '') + 'gelen − üretim − geri ödeme; işlem günlerinin kuruyla' + (kur ? ', bugünkü kurla ' + virgoTl(t.kalan * kur) : ''), 'accent', 'kalan') +
+      virgoKart('Ortakların harcaması', t.cep, virgoOrtaklar().map(function(ad){ var x = oh.m[ad]; return esc(ad) + ' ' + virgoET(x ? x.cep : vgS()); }).join(' · ') + ' · Virgo hesabına girmez', '', 'cep') +
       virgoKart('Toplam harcama', t.harcama, 'işletme ' + virgoET(t.isletme) + ' + yatırım ' + virgoET(t.yatirim), '', 'harcama') +
-      (Math.abs(t.elde.eur) > 0.004 ? virgoKart('Elimizdeki Kadir Bey parası', t.elde, t.elde.eur < 0 ? 'eksi: verdiğinden fazla harcanmış, "Kadir Bey\'den alınan" kaydı eksik olabilir' : 'verdiği paradan harcanmayan', '', 'elde') : '') +
+      (Math.abs(t.elde.eur) > 0.004 ? virgoKart('Elimizdeki Virgo parası', t.elde, t.elde.eur < 0 ? 'eksi: verdiğinden fazla harcanmış, "Virgo\'dan alınan" kaydı eksik olabilir' : 'verdiği paradan harcanmayan', '', 'elde') : '') +
       (t.bekleyen.eur > 0.004 ? virgoKart('Ödenecek (bekleyen)', t.bekleyen, 'toplamlara girmedi', '', 'bekleyen') : '') +
       (function(){ var l = virgoMutabakatlar(); if (!l.length) return ''; var son = l[l.length - 1], an = virgoNorm(son), p = virgoBorcTarihte(son.tarih), f = an.eur - p.eur;
         return '<div class="card"><div class="label">Son mutabakat · ' + esc(kvTarihTR(son.tarih)) + '</div><div class="value">' + virgoEur(an.eur) + '</div><div class="sub">' + virgoTl(an.tl) + ' · program ' + virgoET(p) + ' · ' + (Math.abs(f) < 0.5 ? '<span class="pos">✓ tutuyor</span>' : '<span class="neg">fark ' + virgoET({ eur: f, tl: f * (Number(son.kur) || virgoGunKuru(son.tarih)) }) + '</span>') + ' · bu tarih dahil önceki kayıtlar kilitli</div></div>'; })() +
@@ -11998,20 +12014,20 @@ Dikkat edilmesi gereken 2 nokta:
         '<td class="num">' + (kalin ? '<b>' + virgoTl(e.tl) + '</b>' : virgoTl(e.tl)) + '</td><td class="num">' + kurH(ort(e)) + '</td><td class="num">' + (kalin ? '<b>' + virgoTl(bk) + '</b>' : virgoTl(bk)) + '</td><td class="num">' + fk(f) + '</td></tr>'; };
     var kayit = function(alan){ var n = sayi(alan); return n ? n + ' kayıt' : ''; };
     var k = t.kalanO, kBug = k.eur * kur, kFark = kBug - k.tl, kOrt = ort(k);
-    var html = '<div class="block"><div class="block-head"><h3>Kadir Bey\'e kalan borç · ayrıntı ' + infoIco('Borç € olarak tutulur (esas). ₺ karşılığı iki türlü gösterilir: işlem günlerinin kuruyla = her kayıt kendi günündeki TCMB kuruyla çevrilip toplanır; bugünkü kurla = € tutar × bugünkü kur. Ortalama kur = ₺ (işlem günleri) ÷ €. Kur farkı = bugünkü kurla ₺ − işlem günlerinin kuruyla ₺: artıysa kur yükseldiği için aynı € borcun ₺ karşılığı büyümüş (kırmızı), eksiyse küçülmüş (yeşil). Tutara tıklayınca o rakamı oluşturan kayıtlar açılır.') + '</h3></div><div class="block-body">' +
+    var html = '<div class="block"><div class="block-head"><h3>Virgo\'ya kalan borç · ayrıntı ' + infoIco('Borç € olarak tutulur (esas). ₺ karşılığı iki türlü gösterilir: işlem günlerinin kuruyla = her kayıt kendi günündeki TCMB kuruyla çevrilip toplanır; bugünkü kurla = € tutar × bugünkü kur. Ortalama kur = ₺ (işlem günleri) ÷ €. Kur farkı = bugünkü kurla ₺ − işlem günlerinin kuruyla ₺: artıysa kur yükseldiği için aynı € borcun ₺ karşılığı büyümüş (kırmızı), eksiyse küçülmüş (yeşil). Tutara tıklayınca o rakamı oluşturan kayıtlar açılır.') + '</h3></div><div class="block-body">' +
       '<div class="helper" style="margin:0 0 8px">Bugünkü kur: <b>1 € = ' + kurH(kur) + '</b>' + (kb ? ' <span class="muted">(' + esc(kb.etiket) + ')</span>' : ' <span class="muted">(Tanımlar\'daki kur)</span>') +
         ' · Kalan borç <b>' + virgoEur(k.eur) + '</b>; bugün ödense <b>' + virgoTl(kBug) + '</b>. İşlem günlerinin kuruyla ' + virgoTl(k.tl) + (kOrt ? ' (ortalama 1 € = ' + kurH(kOrt) + ')' : '') +
         (Math.abs(kFark) > 0.5 ? '; kur farkı <b class="' + (kFark > 0 ? 'neg' : 'pos') + '">' + (kFark > 0 ? '+' : '') + virgoTl(kFark) + '</b> (' + (kFark > 0 ? 'kur yükseldiği için ₺ karşılığı arttı' : 'kur düştüğü için ₺ karşılığı azaldı') + ')' : '') + '.' +
-        (k.eur < -0.004 ? ' <span class="neg">Eksi: Kadir Bey size borçlu.</span>' : '') + '</div>' +
+        (k.eur < -0.004 ? ' <span class="neg">Eksi: Virgo size borçlu.</span>' : '') + '</div>' +
       '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kalem</th><th class="num">€</th><th class="num">₺ (işlem günlerinin kuruyla)</th><th class="num">Ortalama kur</th><th class="num">₺ (bugünkü kurla)</th><th class="num">Kur farkı</th></tr></thead><tbody>' +
-      satir(1, 'Kadir Bey\'den alınan (nakit / havale)', t.alinan, 'alinan', kayit('alinan')) +
-      satir(1, 'Kadir Bey\'in doğrudan ödedikleri', t.kbDog, 'kbDog', kayit('kbDog') + (t.kbYat.eur ? ' · yatırım ' + virgoET(t.kbYat) : '')) +
+      satir(1, 'Virgo\'dan alınan (nakit / havale)', t.alinan, 'alinan', kayit('alinan')) +
+      satir(1, 'Virgo\'nun doğrudan ödedikleri', t.kbDog, 'kbDog', kayit('kbDog') + (t.kbYat.eur ? ' · yatırım ' + virgoET(t.kbYat) : '')) +
       (t.iade.eur ? satir(-1, 'Virgo\'nun indirdiği KDV', t.iade, 'iade', kayit('iade')) : '') +
       satir(-1, 'Üretim karşılığı', t.gelir, 'gelir', fmt(t.adet) + ' adet' + (t.adet ? ' · adet başı ort. ' + virgoET({ eur: t.gelir.eur / t.adet, tl: t.gelir.tl / t.adet }) : '')) +
-      satir(-1, 'Kadir Bey\'e geri ödeme', t.geri, 'geri', kayit('geri')) +
+      satir(-1, 'Virgo\'ya geri ödeme', t.geri, 'geri', kayit('geri')) +
       satir(1, 'Kalan borç', k, 'kalan', '', true) +
       '</tbody></table></div>';
-    // Ödenecekler ödenince borç ne olur (yalnız Kadir Bey hesabını etkileyenler)
+    // Ödenecekler ödenince borç ne olur (yalnız Virgo hesabını etkileyenler)
     var bek = { art: vgS(), dus: vgS(), adet: 0 };
     virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.odendi) return; var nak = { eur: n.eur, tl: n.tl };
       if (n.tip === 'alinan') vgEkle(bek.art, nak); else if (n.tip === 'geri') vgEkle(bek.dus, nak);
@@ -12020,7 +12036,7 @@ Dikkat edilmesi gereken 2 nokta:
     var alt = [];
     if (bek.adet){ var son = k.eur + bek.art.eur - bek.dus.eur;
       alt.push('Ödenecek ' + bek.adet + ' kayıt ödenince: ' + (bek.art.eur ? '+' + virgoET(bek.art) + ' ' : '') + (bek.dus.eur ? '−' + virgoET(bek.dus) + ' ' : '') + '→ borç <b>' + virgoEur(son) + '</b> (bugünkü kurla ' + virgoTl(son * kur) + ')'); }
-    if (Math.abs(t.elde.eur) > 0.004) alt.push('Elimizdeki Kadir Bey parası ' + virgoEur(t.elde.eur) + ' / ' + virgoTl(t.elde.tl) + ' (borca dahil; harcandıkça borç değişmez)');
+    if (Math.abs(t.elde.eur) > 0.004) alt.push('Elimizdeki Virgo parası ' + virgoEur(t.elde.eur) + ' / ' + virgoTl(t.elde.tl) + ' (borca dahil; harcandıkça borç değişmez)');
     var mut = virgoMutabakatlar();
     if (mut.length){ var ms = mut[mut.length - 1], mn = virgoNorm(ms), mp = virgoBorcTarihte(ms.tarih), deg = k.eur - mp.eur;
       alt.push('Son mutabakat ' + esc(kvTarihTR(ms.tarih)) + ': anlaşılan ' + virgoET(mn) + ', program ' + virgoET(mp) + (Math.abs(mn.eur - mp.eur) < 0.5 ? ' (tutuyor)' : ' <span class="neg">(fark ' + virgoET({ eur: mn.eur - mp.eur, tl: (mn.eur - mp.eur) * (Number(ms.kur) || virgoGunKuru(ms.tarih)) }) + ')</span>') + '; o günden bu yana ' + (deg > 0.004 ? '+' : '') + virgoET({ eur: deg, tl: k.tl - mp.tl })); }
@@ -12038,18 +12054,18 @@ Dikkat edilmesi gereken 2 nokta:
     var pbSec = '<select data-virgopb="1" title="Tablolarda para birimi">' + [['ikisi', '€ + ₺'], ['€', 'Yalnız €'], ['₺', 'Yalnız ₺']].map(function(x){ return '<option value="' + x[0] + '"' + (g === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>';
     var td = function(o, kalin, isaret, dk){ var bos = !o || (Math.abs(o.eur) < 0.005 && Math.abs(o.tl) < 0.005); return '<td class="num' + (dk && !bos ? ' vg-tik" data-vd="' + escAttr(dk) + '" title="Ayrıntı için tıklayın' : '') + '">' + virgoIki(o, kalin, isaret) + '</td>'; };
     var A = function(ay, alan){ return 'ay|' + ay + '|' + alan; }, TP = function(alan){ return 'top||' + alan; };
-    var html = '<div class="block"><div class="block-head"><h3>Aylık kazanç ' + infoIco('Üretim karşılığı: o ay girilen üretim (adet × fiyat €; ₺ üretim gününün kuruyla). İşletme gideri: o ayın bütün harcamaları (kim ödediyse), yatırım hariç. Yatırım: Makine, Kuruluş & tesisat kategorileri. İşin kazancı = üretim − işletme gideri. Ortakların cebinden: Fatih / Ahmet\'in kendi parasıyla yaptığı harcamalar (Kadir Bey hesabına girmez). Kadir Bey açısından = üretim − Kadir Bey\'in parasıyla yapılan giderler (doğrudan ödedikleri + verdiği paradan harcananlar). Ödenecek kayıtlar girmez.') + '</h3>' +
+    var html = '<div class="block"><div class="block-head"><h3>Aylık kazanç ' + infoIco('Üretim karşılığı: o ay girilen üretim (adet × fiyat €; ₺ üretim gününün kuruyla). İşletme gideri: o ayın bütün harcamaları (kim ödediyse), yatırım hariç. Yatırım: Makine, Kuruluş & tesisat kategorileri. İşin kazancı = üretim − işletme gideri. Ortakların cebinden: Fatih / Ahmet\'in kendi parasıyla yaptığı harcamalar (Virgo hesabına girmez). Virgo açısından = üretim − Virgo\'nun parasıyla yapılan giderler (doğrudan ödedikleri + verdiği paradan harcananlar). Ödenecek kayıtlar girmez.') + '</h3>' +
       '<div class="bh-actions">' + pbSec + ' <button class="btn secondary small" data-virgoexcel="1">⇩ Excel</button> <button class="btn secondary small" data-virgoyazdir="1">Yazdır</button></div></div><div class="block-body">' +
-      (l.length ? '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Adet</th><th class="num">Fire</th><th class="num">Üretim karşılığı</th><th class="num">İşletme gideri</th><th class="num">İşin kazancı</th><th class="num">Yatırım</th><th class="num">Yatırım dahil</th><th class="num">Kadir Bey parasıyla gider</th><th class="num">Ortakların cebinden</th><th class="num">Kadir Bey açısından</th></tr></thead><tbody>' +
+      (l.length ? '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Adet</th><th class="num">Fire</th><th class="num">Üretim karşılığı</th><th class="num">İşletme gideri</th><th class="num">İşin kazancı</th><th class="num">Yatırım</th><th class="num">Yatırım dahil</th><th class="num">Virgo parasıyla gider</th><th class="num">Ortakların cebinden</th><th class="num">Virgo açısından</th></tr></thead><tbody>' +
         l.map(function(a){ return '<tr class="vg-satir" data-vd="' + escAttr('ay|' + a.ay + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(muhAyAdi(a.ay)) + '</td><td class="num">' + fmt(a.adet) + '</td><td class="num">' + fmt(a.fire) + '</td>' + td(a.gelir, false, false, A(a.ay, 'gelir')) + td(a.isletme, false, false, A(a.ay, 'isletme')) + td(a.kazanc, true, true, A(a.ay, 'kazanc')) + td(a.yatirim, false, false, A(a.ay, 'yatirim')) + td(a.kazancYatirim, false, true, A(a.ay, 'kazancYatirim')) + td(a.kbGider, false, false, A(a.ay, 'kbGider')) + td(a.cep, false, false, A(a.ay, 'cep')) + td(a.kbAcisi, false, true, A(a.ay, 'kbAcisi')) + '</tr>'; }).join('') +
         '<tr class="kv-alt vg-satir" data-vd="top||hepsi"><td><b>Toplam</b></td><td class="num"><b>' + fmt(t.adet) + '</b></td><td class="num">' + fmt(t.fire) + '</td>' + td(t.gelir, true, false, TP('gelir')) + td(t.isletme, true, false, TP('isletme')) + td(t.kazanc, true, true, TP('kazanc')) + td(t.yatirim, true, false, TP('yatirim')) + td(t.kazancYatirim, true, true, TP('kazancYatirim')) + td(t.kbGider, true, false, TP('kbGider')) + td(t.cep, true, false, TP('cep')) + td(t.kbAcisi, true, true, TP('kbAcisi')) + '</tr>' +
         '</tbody></table></div>' : '<div class="empty">Henüz hareket ya da üretim yok.</div>') + '</div></div>';
-    if (l.length) html += '<div class="block"><div class="block-head"><h3>Kadir Bey hesabı ay ay ' + infoIco('Borcu artıranlar: Kadir Bey\'den alınan para ve Kadir Bey\'in doğrudan ödedikleri. Borçtan düşenler: üretim karşılığı ve Kadir Bey\'e geri ödemeler. Ortakların kendi cebinden harcamaları bu hesaba girmez (Ortaklar hesabı). Kadir Bey\'in verdiği paradan yapılan harcamalar borcu değiştirmez, elimizdeki Kadir Bey parasından düşer (KDV dahil ödenen); fatura Virgo adınaysa Virgo o KDV\'yi indirdiği için KDV borçtan düşer. Ay sonu borç € esastır; ₺ her işlemin kendi günündeki kurla toplanır.') + '</h3><div class="bh-actions"><select data-vdokumay="1" title="Döküm ayı">' + l.slice().reverse().map(function(a, i){ return '<option value="' + a.ay + '"' + (a.ay === todayISO().slice(0, 7) || (i === 0 && !l.some(function(x){ return x.ay === todayISO().slice(0, 7); })) ? ' selected' : '') + '>' + esc(muhAyAdi(a.ay)) + '</option>'; }).join('') + '</select> <button class="btn secondary small" data-vdokum="1" title="Seçilen ayın Kadir Bey dökümü: ay başı / sonu borç, hareketler, üretim, imza yerleri (mutabakat için)">🖨 Aylık döküm</button></div></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Kadir Bey\'den alınan</th><th class="num">Doğrudan ödediği</th><th class="num">Verdiği paradan harcanan</th>' + (t.iade.eur ? '<th class="num">Virgo\'nun indirdiği KDV</th>' : '') + '<th class="num">Üretim karşılığı</th><th class="num">Geri ödeme</th><th class="num">Ay sonu borç</th><th class="num">Elimizdeki KB parası</th></tr></thead><tbody>' +
+    if (l.length) html += '<div class="block"><div class="block-head"><h3>Virgo hesabı ay ay ' + infoIco('Borcu artıranlar: Virgo\'dan alınan para ve Virgo\'nun doğrudan ödedikleri. Borçtan düşenler: üretim karşılığı ve Virgo\'ya geri ödemeler. Ortakların kendi cebinden harcamaları bu hesaba girmez (Ortaklar hesabı). Virgo\'nun verdiği paradan yapılan harcamalar borcu değiştirmez, elimizdeki Virgo parasından düşer (KDV dahil ödenen); fatura Virgo adınaysa Virgo o KDV\'yi indirdiği için KDV borçtan düşer. Ay sonu borç € esastır; ₺ her işlemin kendi günündeki kurla toplanır.') + '</h3><div class="bh-actions"><select data-vdokumay="1" title="Döküm ayı">' + l.slice().reverse().map(function(a, i){ return '<option value="' + a.ay + '"' + (a.ay === todayISO().slice(0, 7) || (i === 0 && !l.some(function(x){ return x.ay === todayISO().slice(0, 7); })) ? ' selected' : '') + '>' + esc(muhAyAdi(a.ay)) + '</option>'; }).join('') + '</select> <button class="btn secondary small" data-vdokum="1" title="Seçilen ayın Virgo dökümü: ay başı / sonu borç, hareketler, üretim, imza yerleri (mutabakat için)">🖨 Aylık döküm</button></div></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Virgo\'dan alınan</th><th class="num">Doğrudan ödediği</th><th class="num">Verdiği paradan harcanan</th>' + (t.iade.eur ? '<th class="num">Virgo\'nun indirdiği KDV</th>' : '') + '<th class="num">Üretim karşılığı</th><th class="num">Geri ödeme</th><th class="num">Ay sonu borç</th><th class="num">Elimizdeki Virgo parası</th></tr></thead><tbody>' +
       l.map(function(a){ return '<tr class="vg-satir" data-vd="' + escAttr('ay|' + a.ay + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(muhAyAdi(a.ay)) + '</td>' + td(a.alinan, false, false, A(a.ay, 'alinan')) + td(a.kbDog, false, false, A(a.ay, 'kbDog')) + td(a.avans, false, false, A(a.ay, 'avans')) + (t.iade.eur ? td(a.iade, false, false, A(a.ay, 'iade')) : '') + td(a.gelir, false, false, A(a.ay, 'gelir')) + td(a.geri, false, false, A(a.ay, 'geri')) + td(a.kalan, true, false, A(a.ay, 'kalan')) + td(a.elde, false, false, A(a.ay, 'elde')) + '</tr>'; }).join('') +
       '<tr class="kv-alt vg-satir" data-vd="top||hepsi"><td><b>Toplam</b></td>' + td(t.alinan, true, false, TP('alinan')) + td(t.kbDog, true, false, TP('kbDog')) + td(t.avans, true, false, TP('avans')) + (t.iade.eur ? td(t.iade, true, false, TP('iade')) : '') + td(t.gelir, true, false, TP('gelir')) + td(t.geri, true, false, TP('geri')) + td(t.kalanO, true, false, TP('kalan')) + td(t.elde, true, false, TP('elde')) + '</tr>' +
       '</tbody></table></div></div></div>';
     var oh = virgoOrtakHesap();
-    html += '<div class="block"><div class="block-head"><h3>Ortaklar hesabı ' + infoIco('Şirket sahiplerinin (Fatih, Ahmet…) bu süreçte kendi parasıyla yaptıkları; Kadir Bey hesabına girmez. Katkı = kendi cebinden harcamalar + Kadir Bey\'e yaptığı geri ödemeler. Payına düşen = toplam katkı × ortaklık payı. Fark artıysa fazla ödemiş, eksiyse eksik. Aranızda ödeşince "Ortaklar arası ödeme" hareketiyle girin (veren → alan), fark kapanır. Paylar sayfanın altındaki Kişiler kutusunda.') + '</h3></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ortak</th><th class="num">Pay</th><th class="num">Kendi cebinden harcama</th><th class="num">Kadir Bey\'e geri ödediği</th><th class="num">Toplam katkı</th><th class="num">Payına düşen</th><th class="num">Ortaklar arası verdi / aldı</th><th class="num">Fark</th><th class="num">Ödenecek</th></tr></thead><tbody>' +
+    html += '<div class="block"><div class="block-head"><h3>Ortaklar hesabı ' + infoIco('Şirket sahiplerinin (Fatih, Ahmet…) bu süreçte kendi parasıyla yaptıkları; Virgo hesabına girmez. Katkı = kendi cebinden harcamalar + Virgo\'ya yaptığı geri ödemeler. Payına düşen = toplam katkı × ortaklık payı. Fark artıysa fazla ödemiş, eksiyse eksik. Aranızda ödeşince "Ortaklar arası ödeme" hareketiyle girin (veren → alan), fark kapanır. Paylar sayfanın altındaki Kişiler kutusunda.') + '</h3></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ortak</th><th class="num">Pay</th><th class="num">Kendi cebinden harcama</th><th class="num">Virgo\'ya geri ödediği</th><th class="num">Toplam katkı</th><th class="num">Payına düşen</th><th class="num">Ortaklar arası verdi / aldı</th><th class="num">Fark</th><th class="num">Ödenecek</th></tr></thead><tbody>' +
       oh.adlar.map(function(ad){ var x = oh.m[ad]; return '<tr class="vg-satir" data-vd="' + escAttr('ortak|' + ad + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(ad) + '</td><td class="num">%' + fmt2(x.pay) + '</td>' + td(x.cep, false, false, 'ortak|' + ad + '|cepN') + td(x.geri, false, false, 'ortak|' + ad + '|geri') + td(x.katki, true, false, 'ortak|' + ad + '|katki') + td(x.payina) + td(vgFark(x.verdi, x.aldi), false, false, 'ortak|' + ad + '|ortakArasi') + td(x.fark, true, true, 'ortak|' + ad + '|fark') + td(x.bekleyen, false, false, 'ortak|' + ad + '|bekleyenCep') + '</tr>'; }).join('') +
       '<tr class="kv-alt"><td><b>Toplam</b></td><td></td>' + td(oh.adlar.reduce(function(o, a){ vgEkle(o, oh.m[a].cep); return o; }, vgS()), true) + td(oh.adlar.reduce(function(o, a){ vgEkle(o, oh.m[a].geri); return o; }, vgS()), true) + td(oh.top, true) + td(oh.top, true) + '<td></td><td></td><td></td></tr>' +
       '</tbody></table></div>' +
@@ -12060,39 +12076,39 @@ Dikkat edilmesi gereken 2 nokta:
           d.map(function(x){ return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + esc(x.n.kisi) + '</td><td>' + esc(virgoTipAd(x.n)) + (x.n.tip === 'harcama' && x.v.kategori ? ' · ' + esc(x.v.kategori) : '') + '</td><td>' + esc(x.v.aciklama || '') + '</td><td class="num">' + virgoIki({ eur: x.n.eur, tl: x.n.tl }) + '</td><td>' + esc(x.yer) + '</td><td class="muted">' + esc(x.oneri) + '</td></tr>'; }).join('') +
           '</tbody></table></div>'; })() + '</div></div>';
     var kisiSatir = Object.keys(k.kisi).filter(function(ad){ var p = k.kisi[ad]; return kisiler.indexOf(ad) > -1 || p.adet || p.bekleyen.eur; });
-    html += '<div class="block"><div class="block-head"><h3>Kim ne harcadı ' + infoIco('Ödenmiş kayıtlar kişi kişi, ödenen tutarlar (KDV dahil). Kadir Bey\'in parasıyla: Kadir Bey\'in doğrudan ödedikleri ya da verdiği paradan harcananlar. Kendi cebinden: ortaklar hesabına giden harcamalar (Kadir Bey hesabına girmez). Kadir Bey\'den aldığı: o kişiye verilen nakit / havale. Elindeki KB parası: aldığı − onun parasından harcadığı (kasa sayımı için). Ödenecek: henüz ödenmemiş, toplamlara girmeyen kayıtlar.') + '</h3></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kişi</th><th class="num">Kayıt</th><th class="num">Harcama</th><th class="num">Kadir Bey\'in parasıyla</th><th class="num">Kendi cebinden</th><th class="num">Kadir Bey\'den aldığı</th><th class="num">Elindeki KB parası</th><th class="num">Geri ödediği</th><th class="num">Ödenecek</th></tr></thead><tbody>' +
+    html += '<div class="block"><div class="block-head"><h3>Kim ne harcadı ' + infoIco('Ödenmiş kayıtlar kişi kişi, ödenen tutarlar (KDV dahil). Virgo\'nun parasıyla: Virgo\'nun doğrudan ödedikleri ya da verdiği paradan harcananlar. Kendi cebinden: ortaklar hesabına giden harcamalar (Virgo hesabına girmez). Virgo\'dan aldığı: o kişiye verilen nakit / havale. Elindeki Virgo parası: aldığı − onun parasından harcadığı (kasa sayımı için). Ödenecek: henüz ödenmemiş, toplamlara girmeyen kayıtlar.') + '</h3></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kişi</th><th class="num">Kayıt</th><th class="num">Harcama</th><th class="num">Virgo\'nun parasıyla</th><th class="num">Kendi cebinden</th><th class="num">Virgo\'dan aldığı</th><th class="num">Elindeki Virgo parası</th><th class="num">Geri ödediği</th><th class="num">Ödenecek</th></tr></thead><tbody>' +
       kisiSatir.map(function(ad){ var p = k.kisi[ad]; return '<tr class="vg-satir" data-vd="' + escAttr('kisi|' + ad + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(ad) + '</td><td class="num">' + fmt(p.adet) + '</td>' + td(p.harcama, true, false, 'kisi|' + ad + '|harcamaN') + td(p.kbPara, false, false, 'kisi|' + ad + '|kbParaN') + td(p.cep, false, false, 'kisi|' + ad + '|cepN') + td(p.alinan, false, false, 'kisi|' + ad + '|alinan') + td(ad === VIRGO_FINANSOR ? null : p.elde, false, ad !== VIRGO_FINANSOR && p.elde.eur < -0.004, 'kisi|' + ad + '|elde') + td(p.geri, false, false, 'kisi|' + ad + '|geri') + td(p.bekleyen, false, false, 'kisi|' + ad + '|bekleyen') + '</tr>'; }).join('') +
       '</tbody></table></div>';
     var katAd = Object.keys(k.kat).sort(function(a, b){ return k.kat[b].harcama.eur - k.kat[a].harcama.eur; });
-    if (katAd.length) html += '<h4 style="margin:12px 0 6px">Nelere harcandı (kategoriye göre, maliyet) ' + infoIco('Maliyet: Virgo adına faturada KDV hariç, bizim adımıza / fişsizde KDV dahil.') + '</h4><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kategori</th><th class="num">Kayıt</th><th class="num">Harcama</th><th class="num">Kadir Bey\'in parasıyla</th><th class="num">Kendi cebimizden</th><th class="num">Ödenecek</th></tr></thead><tbody>' +
+    if (katAd.length) html += '<h4 style="margin:12px 0 6px">Nelere harcandı (kategoriye göre, maliyet) ' + infoIco('Maliyet: Virgo adına faturada KDV hariç, bizim adımıza / fişsizde KDV dahil.') + '</h4><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kategori</th><th class="num">Kayıt</th><th class="num">Harcama</th><th class="num">Virgo\'nun parasıyla</th><th class="num">Kendi cebimizden</th><th class="num">Ödenecek</th></tr></thead><tbody>' +
       katAd.map(function(ad){ var c = k.kat[ad]; return '<tr class="vg-satir" data-vd="' + escAttr('kat|' + ad + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(ad) + (VIRGO_YATIRIM.indexOf(ad) > -1 ? ' <span class="muted">(yatırım)</span>' : '') + '</td><td class="num">' + fmt(c.adet) + '</td>' + td(c.harcama, true, false, 'kat|' + ad + '|harcama') + td(c.kbPara, false, false, 'kat|' + ad + '|kbGider') + td(c.cep, false, false, 'kat|' + ad + '|cep') + td(c.bekleyen, false, false, 'kat|' + ad + '|bekleyen') + '</tr>'; }).join('') + '</tbody></table></div>';
     html += '</div></div>';
-    html += '<div class="block"><div class="block-head"><h3>Kişiler ' + infoIco('Hareket formundaki "Kişi" listesi (harcamayı yapan, parayı alan, geri ödeyen). Kadir Bey her zaman ilk sıradadır; diğerleri ortaktır. Ortaklık payı ortaklar hesabındaki dengeyi belirler (toplam 100\'e ölçeklenir). Bir kişiyi listeden çıkarmak eski kayıtlarını silmez.') + '</h3>' +
+    html += '<div class="block"><div class="block-head"><h3>Kişiler ' + infoIco('Hareket formundaki "Kişi" listesi (harcamayı yapan, parayı alan, geri ödeyen). Virgo her zaman ilk sıradadır; diğerleri ortaktır. Ortaklık payı ortaklar hesabındaki dengeyi belirler (toplam 100\'e ölçeklenir). Bir kişiyi listeden çıkarmak eski kayıtlarını silmez.') + '</h3>' +
       '<div class="bh-actions"><button class="btn small" data-vkisikaydet="1">Kaydet</button></div></div><div class="block-body">' +
-      '<div class="field" style="margin:0 0 8px"><label>Ortaklar (virgülle ayırın; Kadir Bey sabit, ortak sayılmaz)</label><input type="text" id="vKisiler" value="' + escAttr(virgoOrtaklar().join(', ')) + '" placeholder="ör. Fatih, Ahmet" style="width:100%"></div>' +
+      '<div class="field" style="margin:0 0 8px"><label>Ortaklar (virgülle ayırın; Virgo sabit, ortak sayılmaz)</label><input type="text" id="vKisiler" value="' + escAttr(virgoOrtaklar().join(', ')) + '" placeholder="ör. Fatih, Ahmet" style="width:100%"></div>' +
       '<div class="cs-ust">Ortaklık payı: ' + (function(){ var p = virgoOrtakPay(); return virgoOrtaklar().map(function(ad){ return '<label>' + esc(ad) + ' <input type="number" min="0" max="100" step="any" data-vpay="' + escAttr(ad) + '" value="' + escAttr(String(Math.round(p[ad] * 100) / 100)) + '"> %</label>'; }).join(''); })() + '</div></div></div>';
     return html;
   }
-  // Excel: Özet · Aylık kazanç · Kadir Bey ay ay · Ortaklar · Hareketler · Kişiler · Kategoriler · Üretim (her tutar € ve ₺ sütunu)
+  // Excel: Özet · Aylık kazanç · Virgo ay ay · Ortaklar · Hareketler · Kişiler · Kategoriler · Üretim (her tutar € ve ₺ sütunu)
   function virgoExcel(){
     var t = virgoToplam(), l = virgoAylar(), k = virgoKirilim(), r2 = function(n){ return muhR2(n); }, iki = function(o){ return [r2(o.eur), r2(o.tl)]; };
     var ozet = [['Kalem', '€', '₺'],
-      ['Kadir Bey\'den alınan (nakit / havale)'].concat(iki(t.alinan)), ['Kadir Bey\'in doğrudan ödedikleri'].concat(iki(t.kbDog)), ['Kadir Bey\'den gelen toplam'].concat(iki(t.kbVerdi)), [],
+      ['Virgo\'dan alınan (nakit / havale)'].concat(iki(t.alinan)), ['Virgo\'nun doğrudan ödedikleri'].concat(iki(t.kbDog)), ['Virgo\'dan gelen toplam'].concat(iki(t.kbVerdi)), [],
       ['Toplam harcama (herkes)'].concat(iki(t.harcama)), ['  İşletme gideri'].concat(iki(t.isletme)), ['  Yatırım (makine, kuruluş)'].concat(iki(t.yatirim)),
-      ['  Kadir Bey\'in parasıyla'].concat(iki(t.kbGider)), ['  Ortakların cebinden (Kadir Bey hesabına girmez)'].concat(iki(t.cep)), [],
+      ['  Virgo\'nun parasıyla'].concat(iki(t.kbGider)), ['  Ortakların cebinden (Virgo hesabına girmez)'].concat(iki(t.cep)), [],
       ['Üretim karşılığı (' + t.adet + ' adet, fire ' + t.fire + ')'].concat(iki(t.gelir)), ['İşin kazancı (üretim − işletme gideri)'].concat(iki(t.kazanc)), ['Yatırım dahil kazanç'].concat(iki(t.kazancYatirim)),
-      ['Kadir Bey açısından (üretim − onun parasıyla gider)'].concat(iki(t.kbAcisi)), [],
-      ['Kadir Bey\'e geri ödenen'].concat(iki(t.geri)), ['Kadir Bey\'e kalan borç (₺: işlem günlerinin kuruyla)'].concat(iki(t.kalanO)), ['Elimizdeki Kadir Bey parası'].concat(iki(t.elde)),
-      ['Ödenecek (toplamlara girmedi)'].concat(iki(t.bekleyen)), ['Harcamalardaki KDV (toplam)'].concat(iki(t.kdv)), ['Virgo\'nun indirdiği KDV (Kadir Bey parasıyla, borçtan düştü)'].concat(iki(t.iade)), []]
+      ['Virgo açısından (üretim − onun parasıyla gider)'].concat(iki(t.kbAcisi)), [],
+      ['Virgo\'ya geri ödenen'].concat(iki(t.geri)), ['Virgo\'ya kalan borç (₺: işlem günlerinin kuruyla)'].concat(iki(t.kalanO)), ['Elimizdeki Virgo parası'].concat(iki(t.elde)),
+      ['Ödenecek (toplamlara girmedi)'].concat(iki(t.bekleyen)), ['Harcamalardaki KDV (toplam)'].concat(iki(t.kdv)), ['Virgo\'nun indirdiği KDV (Virgo parasıyla, borçtan düştü)'].concat(iki(t.iade)), []]
       .concat(virgoMutabakatlar().map(function(m){ var p = virgoBorcTarihte(m.tarih), an = virgoNorm(m); return ['Mutabakat ' + kvTarihTR(m.tarih) + ': anlaşılan / program / fark €', r2(an.eur), r2(p.eur), r2(an.eur - p.eur)]; }))
       .concat([[], ['Döküm tarihi ' + kvTarihTR(todayISO()) + ' · maliyetler: Virgo adına faturada KDV hariç, bizim adımıza / fişsizde KDV dahil · ödenen nakit KDV dahil · her tutar kendi gününün TCMB döviz satış kuruyla']]);
-    var ay = [['Ay', 'Üretilen adet', 'Fire', 'Üretim karşılığı €', 'Üretim karşılığı ₺', 'İşletme gideri €', 'İşletme gideri ₺', 'İşin kazancı €', 'İşin kazancı ₺', 'Yatırım €', 'Yatırım ₺', 'Yatırım dahil €', 'Yatırım dahil ₺', 'Kadir Bey parasıyla gider €', 'Kadir Bey parasıyla gider ₺', 'Ortakların cebinden €', 'Ortakların cebinden ₺', 'Kadir Bey açısından €', 'Kadir Bey açısından ₺']]
+    var ay = [['Ay', 'Üretilen adet', 'Fire', 'Üretim karşılığı €', 'Üretim karşılığı ₺', 'İşletme gideri €', 'İşletme gideri ₺', 'İşin kazancı €', 'İşin kazancı ₺', 'Yatırım €', 'Yatırım ₺', 'Yatırım dahil €', 'Yatırım dahil ₺', 'Virgo parasıyla gider €', 'Virgo parasıyla gider ₺', 'Ortakların cebinden €', 'Ortakların cebinden ₺', 'Virgo açısından €', 'Virgo açısından ₺']]
       .concat(l.map(function(a){ return [muhAyAdi(a.ay), a.adet, a.fire].concat(iki(a.gelir), iki(a.isletme), iki(a.kazanc), iki(a.yatirim), iki(a.kazancYatirim), iki(a.kbGider), iki(a.cep), iki(a.kbAcisi)); }))
       .concat([['Toplam', t.adet, t.fire].concat(iki(t.gelir), iki(t.isletme), iki(t.kazanc), iki(t.yatirim), iki(t.kazancYatirim), iki(t.kbGider), iki(t.cep), iki(t.kbAcisi))]);
-    var kb = [['Ay', 'Alınan €', 'Alınan ₺', 'Doğrudan ödediği €', 'Doğrudan ödediği ₺', 'Verdiği paradan harcanan €', 'Verdiği paradan harcanan ₺', 'Virgo\'nun indirdiği KDV €', 'Virgo\'nun indirdiği KDV ₺', 'Üretim karşılığı €', 'Üretim karşılığı ₺', 'Geri ödeme €', 'Geri ödeme ₺', 'Ay sonu borç €', 'Ay sonu borç ₺', 'Elimizdeki KB parası €', 'Elimizdeki KB parası ₺']]
+    var kb = [['Ay', 'Alınan €', 'Alınan ₺', 'Doğrudan ödediği €', 'Doğrudan ödediği ₺', 'Verdiği paradan harcanan €', 'Verdiği paradan harcanan ₺', 'Virgo\'nun indirdiği KDV €', 'Virgo\'nun indirdiği KDV ₺', 'Üretim karşılığı €', 'Üretim karşılığı ₺', 'Geri ödeme €', 'Geri ödeme ₺', 'Ay sonu borç €', 'Ay sonu borç ₺', 'Elimizdeki Virgo parası €', 'Elimizdeki Virgo parası ₺']]
       .concat(l.map(function(a){ return [muhAyAdi(a.ay)].concat(iki(a.alinan), iki(a.kbDog), iki(a.avans), iki(a.iade), iki(a.gelir), iki(a.geri), iki(a.kalan), iki(a.elde)); }));
     var oh = virgoOrtakHesap();
-    var ortak = [['Ortak', 'Pay %', 'Kendi cebinden harcama €', 'Kendi cebinden harcama ₺', 'Kadir Bey\'e geri ödediği €', 'Kadir Bey\'e geri ödediği ₺', 'Toplam katkı €', 'Toplam katkı ₺', 'Payına düşen €', 'Payına düşen ₺', 'Ortaklar arası verdi €', 'Ortaklar arası aldı €', 'Fark €', 'Fark ₺', 'Ödenecek €']]
+    var ortak = [['Ortak', 'Pay %', 'Kendi cebinden harcama €', 'Kendi cebinden harcama ₺', 'Virgo\'ya geri ödediği €', 'Virgo\'ya geri ödediği ₺', 'Toplam katkı €', 'Toplam katkı ₺', 'Payına düşen €', 'Payına düşen ₺', 'Ortaklar arası verdi €', 'Ortaklar arası aldı €', 'Fark €', 'Fark ₺', 'Ödenecek €']]
       .concat(oh.adlar.map(function(ad){ var x = oh.m[ad]; return [ad, r2(x.pay)].concat(iki(x.cep), iki(x.geri), iki(x.katki), iki(x.payina), [r2(x.verdi.eur), r2(x.aldi.eur)], iki(x.fark), [r2(x.bekleyen.eur)]); }))
       .concat([[], ['Denge için'].concat(oh.oneri.length ? oh.oneri.map(function(o){ return o.veren + ' → ' + o.alan + ' €' + muhTutar(o.eur); }) : ['Ortaklar dengede'])]);
     var har = [['Tarih', 'Hareket', 'Kişi', 'Alan ortak', 'Paranın kaynağı', 'Kategori', 'Yatırım', 'Açıklama', 'Belge no', 'Ödeme şekli', 'Durum', 'Vade', 'Girilen para birimi', 'Girilen tutar', 'Tutar türü', 'KDV %', 'Fatura', 'Kur (1 € = ₺)', 'KDV hariç €', 'KDV hariç ₺', 'KDV €', 'KDV ₺', 'Ödenen (KDV dahil) €', 'Ödenen (KDV dahil) ₺', 'Maliyet €', 'Maliyet ₺', 'Borca etkisi €', 'Borca etkisi ₺', 'Bugünkü kur (1 € = ₺)', 'Ödenen ₺ bugünkü kurla', 'Kur farkı ₺ (ödenen)']]
@@ -12100,17 +12116,17 @@ Dikkat edilmesi gereken 2 nokta:
         return [kvTarihTR(v.tarih), virgoTipAd(n), n.kisi, n.alici || '', virgoKaynakAd(n), n.tip === 'harcama' ? (v.kategori || '') : '', n.yatirim ? 'evet' : '', v.aciklama || '', v.belgeNo || '', v.odemeSekli || '', n.tip === 'mutabakat' ? '' : n.odendi ? 'Ödendi' : 'Ödenecek', v.vade ? kvTarihTR(v.vade) : '',
           v.paraBirimi || '₺', r2(v.tutar), n.tip === 'harcama' ? (v.tutarTuru || 'KDV hariç') : '', n.tip === 'harcama' ? n.oran : '', virgoFaturaAd(n), Number(v.kur) || virgoGunKuru(v.tarih),
           r2(n.haric.eur), r2(n.haric.tl), r2(n.kdv.eur), r2(n.kdv.tl), r2(n.eur), r2(n.tl), r2(n.m.eur), r2(n.m.tl), r2(n.borcEur), r2(n.borcTl), kurXls, r2(n.eur * kurXls), r2(n.eur * kurXls - n.tl)]; }));
-    var kis = [['Kişi', 'Kayıt', 'Harcama €', 'Harcama ₺', 'Kadir Bey parasıyla €', 'Kadir Bey parasıyla ₺', 'Kendi cebinden €', 'Kendi cebinden ₺', 'Kadir Bey\'den aldığı €', 'Kadir Bey\'den aldığı ₺', 'Elindeki KB parası €', 'Elindeki KB parası ₺', 'Geri ödediği €', 'Geri ödediği ₺', 'Ödenecek €', 'Ödenecek ₺']]
+    var kis = [['Kişi', 'Kayıt', 'Harcama €', 'Harcama ₺', 'Virgo parasıyla €', 'Virgo parasıyla ₺', 'Kendi cebinden €', 'Kendi cebinden ₺', 'Virgo\'dan aldığı €', 'Virgo\'dan aldığı ₺', 'Elindeki Virgo parası €', 'Elindeki Virgo parası ₺', 'Geri ödediği €', 'Geri ödediği ₺', 'Ödenecek €', 'Ödenecek ₺']]
       .concat(Object.keys(k.kisi).map(function(ad){ var p = k.kisi[ad]; return [ad, p.adet].concat(iki(p.harcama), iki(p.kbPara), iki(p.cep), iki(p.alinan), ad === VIRGO_FINANSOR ? ['', ''] : iki(p.elde), iki(p.geri), iki(p.bekleyen)); }));
-    var kat = [['Kategori', 'Yatırım', 'Kayıt', 'Harcama €', 'Harcama ₺', 'Kadir Bey parasıyla €', 'Kadir Bey parasıyla ₺', 'Kendi cebimizden €', 'Kendi cebimizden ₺', 'Ödenecek €', 'Ödenecek ₺']]
+    var kat = [['Kategori', 'Yatırım', 'Kayıt', 'Harcama €', 'Harcama ₺', 'Virgo parasıyla €', 'Virgo parasıyla ₺', 'Kendi cebimizden €', 'Kendi cebimizden ₺', 'Ödenecek €', 'Ödenecek ₺']]
       .concat(Object.keys(k.kat).map(function(ad){ var c = k.kat[ad]; return [ad, VIRGO_YATIRIM.indexOf(ad) > -1 ? 'evet' : '', c.adet].concat(iki(c.harcama), iki(c.kbPara), iki(c.cep), iki(c.bekleyen)); }));
     var ur = [['Başlangıç günü', 'Bitiş günü', 'Gün sayısı', 'İş günü', 'Vardiya', 'Ürün', 'Sağlam adet', 'Fire', 'Fire nedeni', 'Makine', 'Operatör', 'Başlangıç saati', 'Bitiş saati', 'Süre (dk)', 'Fiyat para birimi', 'Fiyat / adet', 'Fiyat € / adet', 'Tutar €', 'Kur (1 € = ₺)', 'Tutar ₺', 'Not']]
       .concat(virgoUretimKayitlari().slice().sort(function(a, b){ return (a.tarih||'').localeCompare(b.tarih||''); }).map(function(u){ var a = virgoUretimAralik(u), pb = u.paraBirimi === '₺' ? '₺' : '€';
         return [kvTarihTR(a.bas), kvTarihTR(a.bit), a.gun, virgoIsGunu(a.bas, a.bit), u.vardiya || '', virgoUrunAd(u.urunId), Number(u.adet) || 0, Number(u.fire) || 0, u.fireNedeni && u.fireNedeni !== '—' ? u.fireNedeni : '', u.makineId ? makineAdiById(u.makineId) : '', u.operatorId ? personelAdi(u.operatorId) : '',
           u.baslangic || '', u.bitis || '', virgoSureDk(u) || '', pb, r2(u.fiyatGirilen || u.fiyat), Number(u.fiyat) || 0, r2(u.tutar), Number(u.kur) || virgoGunKuru(a.bit), r2(virgoUretimTl(u)), u.aciklama || '']; }));
     var gen = function(n, w){ var a = [w || 34]; for (var i = 1; i < n; i++) a.push(15); return a; };
-    muhExcel('Kadir-Bey-hesabi-' + todayISO(), [
-      { ad: 'Özet', satirlar: ozet, genislik: [52, 16, 18] }, { ad: 'Aylık kazanç', satirlar: ay, genislik: gen(17, 14) }, { ad: 'Kadir Bey ay ay', satirlar: kb, genislik: gen(17, 14) },
+    muhExcel('Virgo-hesabi-' + todayISO(), [
+      { ad: 'Özet', satirlar: ozet, genislik: [52, 16, 18] }, { ad: 'Aylık kazanç', satirlar: ay, genislik: gen(17, 14) }, { ad: 'Virgo ay ay', satirlar: kb, genislik: gen(17, 14) },
       { ad: 'Ortaklar', satirlar: ortak, genislik: gen(15, 14) },
       { ad: 'Hareketler', satirlar: har, genislik: [11, 20, 12, 12, 30, 18, 8, 32, 14, 13, 10, 11, 8, 12, 10, 7, 22, 11, 12, 13, 10, 11, 13, 14, 12, 13, 12, 13, 12, 14, 13] }, { ad: 'Kişiler', satirlar: kis, genislik: gen(14, 14) },
       { ad: 'Kategoriler', satirlar: kat, genislik: gen(11, 20) }, { ad: 'Üretim', satirlar: ur, genislik: [12, 12, 8, 8, 12, 22, 10, 7, 16, 12, 16, 9, 9, 9, 8, 11, 11, 12, 11, 13, 24] }
@@ -12119,18 +12135,18 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoYazdir(){
     var t = virgoToplam(), l = virgoKayitlari().slice().sort(function(a, b){ return (a.tarih||'').localeCompare(b.tarih||''); }), oz = byId('virgoAlt');
     var sat = function(ad, o, kalin){ return '<tr><td>' + (kalin ? '<b>' + ad + '</b>' : ad) + '</td><td class="num">' + virgoEur(o.eur) + '</td><td class="num">' + virgoTl(o.tl) + '</td></tr>'; };
-    yazdirHtml('<h2>KADİR BEY HESABI (VİRGO DÖNEMİ)</h2><div style="font-size:11px">Döküm tarihi ' + kvTarihTR(todayISO()) + ' · tutarlar KDV hariç · her tutar kendi gününün TCMB döviz satış kuruyla € ve ₺</div>' +
+    yazdirHtml('<h2>VİRGO HESABI (VİRGO HİDROLİK)</h2><div style="font-size:11px">Döküm tarihi ' + kvTarihTR(todayISO()) + ' · tutarlar KDV hariç · her tutar kendi gününün TCMB döviz satış kuruyla € ve ₺</div>' +
       '<table class="print-bilgi"><thead><tr><th></th><th class="num">€</th><th class="num">₺</th></tr></thead><tbody>' +
-        sat('Kadir Bey\'den alınan', t.alinan) + sat('Kadir Bey\'in doğrudan ödedikleri', t.kbDog) + sat('Toplam harcama (herkes)', t.harcama) + sat('Üretim karşılığı (' + fmt(t.adet) + ' adet)', t.gelir) +
-        sat('İşin kazancı (yatırım hariç)', t.kazanc) + sat('Kadir Bey açısından', t.kbAcisi) + sat('Ortakların cebinden (Kadir Bey hesabına girmez)', t.cep) + sat('Kadir Bey\'e geri ödenen', t.geri) +
-        sat('Kadir Bey\'e kalan borç', t.kalanO, true) + (Math.abs(t.elde.eur) > 0.004 ? sat('Elimizdeki Kadir Bey parası', t.elde) : '') + (t.bekleyen.eur ? sat('Ödenecek (toplamlara girmedi)', t.bekleyen) : '') + '</tbody></table>' +
+        sat('Virgo\'dan alınan', t.alinan) + sat('Virgo\'nun doğrudan ödedikleri', t.kbDog) + sat('Toplam harcama (herkes)', t.harcama) + sat('Üretim karşılığı (' + fmt(t.adet) + ' adet)', t.gelir) +
+        sat('İşin kazancı (yatırım hariç)', t.kazanc) + sat('Virgo açısından', t.kbAcisi) + sat('Ortakların cebinden (Virgo hesabına girmez)', t.cep) + sat('Virgo\'ya geri ödenen', t.geri) +
+        sat('Virgo\'ya kalan borç', t.kalanO, true) + (Math.abs(t.elde.eur) > 0.004 ? sat('Elimizdeki Virgo parası', t.elde) : '') + (t.bekleyen.eur ? sat('Ödenecek (toplamlara girmedi)', t.bekleyen) : '') + '</tbody></table>' +
       (oz ? oz.innerHTML.replace(/<span class="info-ico[\s\S]*?<\/span><\/span>/g, '').replace(/<div class="bh-actions">[\s\S]*?<\/div>/g, '').replace(/<div class="block"><div class="block-head"><h3>Kişiler[\s\S]*$/, '') : '') +
       '<h3>Hareketler</h3><table><thead><tr><th>Tarih</th><th>Hareket</th><th>Kişi</th><th>Alan</th><th>Kaynak</th><th>Kategori</th><th>Açıklama</th><th>Belge</th><th>Durum</th><th class="num">Kur</th><th class="num">€</th><th class="num">₺</th><th class="num">Borca €</th></tr></thead><tbody>' +
       l.map(function(v){ var n = virgoNorm(v); return '<tr><td>' + kvTarihTR(v.tarih) + '</td><td>' + esc(virgoTipAd(n)) + '</td><td>' + esc(n.kisi) + '</td><td>' + esc(n.alici || '') + '</td><td>' + esc(virgoKaynakAd(n)) + '</td><td>' + esc(n.tip === 'harcama' ? (v.kategori || '') : '') + '</td><td>' + esc(v.aciklama || '') + '</td><td>' + esc(v.belgeNo || '') + '</td><td>' + (n.odendi ? 'Ödendi' : 'Ödenecek') + '</td><td class="num">' + kurYazi(v.kur || virgoGunKuru(v.tarih)) + '</td><td class="num">' + muhTutar(n.eur) + '</td><td class="num">' + muhTutar(n.tl) + '</td><td class="num">' + (n.borcEur ? muhTutar(n.borcEur) : '') + '</td></tr>'; }).join('') +
       '</tbody></table>');
   }
   // ---------- Borç planı: ay ay borca eklenen / borçtan düşen ve ay sonu borç (grafik) ----------
-  // Ortalama varsayım yok: geçmiş aylar gerçekleşen kayıtlardan (Kadir Bey'den alınan + doğrudan ödediği − indirilen KDV → borca eklenen;
+  // Ortalama varsayım yok: geçmiş aylar gerçekleşen kayıtlardan (Virgo'dan alınan + doğrudan ödediği − indirilen KDV → borca eklenen;
   // üretim karşılığı + geri ödeme → borçtan düşen). İleriki aylar yalnız "Ödenecek" girilen kayıtlardan (son ödeme günü, yoksa tarih ayında;
   // geçmiş tarihli ödenecekler bu aya) ödenmiş sayılarak çizilir.
   function virgoPlanHesap(){
@@ -12162,23 +12178,23 @@ Dikkat edilmesi gereken 2 nokta:
     var vals = a.map(deger), vMax = Math.max(0, Math.max.apply(null, vals)), vMin = Math.min(0, Math.min.apply(null, vals)), pay = (vMax - vMin) * 0.12 || 1;
     vMax += vMax > 0 ? pay : 0; vMin -= vMin < 0 ? pay : 0; if (vMax === vMin) vMax = 1;
     var y = function(v){ return T1 + (B1 - T1) * (vMax - v) / (vMax - vMin); }, y0 = y(0);
-    var svg = '<svg class="vg-grafik" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Kadir Bey borcu ay ay">';
+    var svg = '<svg class="vg-grafik" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Virgo borcu ay ay">';
     svg += '<text class="vg-baslik" x="' + L + '" y="11">Kalan borç</text><text class="vg-baslik" x="' + L + '" y="' + (T2 - 4) + '">Aylık değişim</text>';
     svg += '<line class="vg-sifir" x1="' + L + '" x2="' + (W - R) + '" y1="' + y0 + '" y2="' + y0 + '"/>';
     var gIdx = -1; a.forEach(function(m, i){ if (!gel(m)) gIdx = i; });
     var yol = function(bas, bit){ var d = ''; for (var i = bas; i <= bit; i++) d += (d ? ' L' : 'M') + x(i).toFixed(1) + ',' + y(deger(a[i])).toFixed(1); return d; };
     if (gIdx >= 0){
       var c = yol(0, gIdx);
-      svg += '<path class="vg-alan" d="' + c + ' L' + x(gIdx).toFixed(1) + ',' + y0.toFixed(1) + ' L' + x(0).toFixed(1) + ',' + y0.toFixed(1) + ' Z"/><path class="vg-cizgi" d="' + c + '"/>';
+      svg += '<path class="vg-cizgi" d="' + c + '"/>';
     }
     if (gIdx < n - 1){
       var bas = Math.max(0, gIdx), c2 = yol(bas, n - 1);
-      svg += '<path class="vg-alan plan" d="' + c2 + ' L' + x(n - 1).toFixed(1) + ',' + y0.toFixed(1) + ' L' + x(bas).toFixed(1) + ',' + y0.toFixed(1) + ' Z"/><path class="vg-cizgi plan" d="' + c2 + '"/>';
+      svg += '<path class="vg-cizgi plan" d="' + c2 + '"/>';
     }
     var etiketHer = n <= 9 ? 1 : Math.ceil(n / 6);
     a.forEach(function(m, i){
       var v = deger(m), cy = y(v), son = i === gIdx || i === n - 1, goster = son || i % etiketHer === 0;
-      svg += '<circle class="vg-nokta' + (gel(m) ? ' plan' : '') + (i === gIdx ? ' bugun' : '') + '" cx="' + x(i).toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (i === gIdx ? 3.6 : 2.6) + '"><title>' + esc(muhAyAdi(m.ay)) + ' sonu borç' + (gel(m) ? ' (ödenecek kayıtlarla)' : '') + ': ' + virgoET({ eur: v, tl: gel(m) ? m.borcPlanTl : m.borcTl }) + '</title></circle>';
+      svg += '<rect class="vg-serit" x="' + (x(i) - gw / 2).toFixed(1) + '" y="' + T1 + '" width="' + gw.toFixed(1) + '" height="' + (B1 - T1) + '"><title>' + esc(muhAyAdi(m.ay)) + ' sonu borç' + (gel(m) ? ' (ödenecek kayıtlarla)' : '') + ': ' + virgoET({ eur: v, tl: gel(m) ? m.borcPlanTl : m.borcTl }) + '</title></rect>';
       if (goster) svg += '<text class="vg-deger' + (gel(m) ? ' plan' : '') + (i === gIdx ? ' bugun' : '') + '" x="' + Math.min(W - R - 2, Math.max(L + 2, x(i))).toFixed(1) + '" y="' + (v >= 0 ? cy - 7 : cy + 13).toFixed(1) + '" text-anchor="' + (i === 0 && n > 1 ? 'start' : i === n - 1 && n > 1 ? 'end' : 'middle') + '">' + virgoEurK(v) + '</text>';
     });
     // Alt bölüm: aylık net değişim
@@ -12193,9 +12209,9 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function virgoPlanHtml(){
     var h = virgoPlanHesap();
-    var durum = h.kalan <= 0.5 && !h.plan ? '<span class="pos">✓ Kadir Bey\'e borç yok.</span>'
+    var durum = h.kalan <= 0.5 && !h.plan ? '<span class="pos">✓ Virgo\'ya borç yok.</span>'
       : 'Bugün kalan borç <b>' + virgoET({ eur: h.kalan, tl: h.kalanTl }) + '</b>' + (h.plan ? ' · ödenecek kayıtlarla <b>' + esc(muhAyAdi(h.sonAy)) + '</b> sonunda <b>' + virgoET({ eur: h.sonPlan, tl: h.sonPlanTl }) + '</b>' + (h.sonPlan <= 0.5 ? ' <span class="pos">(borç biter)</span>' : '') : ' · ileriki aylar için "Ödenecek" kayıt girilirse grafikte görünür');
-    return '<div class="block vg-plan"><div class="block-head"><h3>Borç durumu ay ay ' + infoIco('Üstte: her ay sonundaki kalan borç. Altta: o ayın değişimi = borca eklenen (Kadir Bey\'den alınan + doğrudan ödediği − Virgo\'nun indirdiği KDV) − borçtan düşen (üretim karşılığı + Kadir Bey\'e geri ödeme); kırmızı yukarı borç arttı, yeşil aşağı azaldı. Ortalama ya da varsayım kullanılmaz; ileriki aylar yalnız "Ödenecek" girilen kayıtlardan (son ödeme günü ayında) soluk ve kesikli çizilir. Sütunların üzerine gelince tutar görünür.') + '</h3></div><div class="block-body">' +
+    return '<div class="block vg-plan"><div class="block-head"><h3>Borç durumu ay ay ' + infoIco('Üstte: her ay sonundaki kalan borç. Altta: o ayın değişimi = borca eklenen (Virgo\'dan alınan + doğrudan ödediği − Virgo\'nun indirdiği KDV) − borçtan düşen (üretim karşılığı + Virgo\'ya geri ödeme); kırmızı yukarı borç arttı, yeşil aşağı azaldı. Ortalama ya da varsayım kullanılmaz; ileriki aylar yalnız "Ödenecek" girilen kayıtlardan (son ödeme günü ayında) soluk ve kesikli çizilir. Sütunların üzerine gelince tutar görünür.') + '</h3></div><div class="block-body">' +
       '<div class="helper" style="margin:0 0 4px">' + durum + '</div>' + virgoBorcGrafik(h) +
       '<div class="vg-lejant"><span><i class="vg-l-borc"></i>ay sonu borç</span><span><i class="vg-l-ekle"></i>borç arttı</span><span><i class="vg-l-dus"></i>borç azaldı</span>' + (h.plan ? '<span><i class="vg-l-plan"></i>ödenecek kayıtlarla</span>' : '') + '</div></div></div>';
   }
@@ -12203,10 +12219,10 @@ Dikkat edilmesi gereken 2 nokta:
   // Anahtar "kapsam|değer|alan": kapsam ay (YYYY-MM), top (hepsi), kisi, kat (kategori), ortak. Alan tek kalem ya da bileşik (kazanc = gelir − işletme…).
   // Tek kalemlerin tutarı tablodakiyle aynı hesaptan gelir: m maliyet, n nakit (KDV dahil ödenen), iade Virgo'nun indirdiği KDV, gelir üretim karşılığı.
   var VIRGO_DETAY_AD = { gelir: 'Üretim karşılığı', isletme: 'İşletme gideri', kazanc: 'İşin kazancı (üretim − işletme gideri)', yatirim: 'Yatırım', kazancYatirim: 'Yatırım dahil kazanç',
-    kbGider: 'Kadir Bey parasıyla gider', cep: 'Ortakların cebinden', kbAcisi: 'Kadir Bey açısından (üretim − onun parasıyla gider)', alinan: 'Kadir Bey\'den alınan', kbDog: 'Kadir Bey\'in doğrudan ödedikleri',
-    avans: 'Kadir Bey\'in verdiği paradan harcanan', iade: 'Virgo\'nun indirdiği KDV', geri: 'Kadir Bey\'e geri ödeme', kalan: 'Ay sonu borç (o aya kadar bütün kayıtlar)', elde: 'Elimizdeki Kadir Bey parası (o aya kadar)',
-    cepN: 'Kendi cebinden harcama', hepsi: 'Bütün kayıtlar', kbVerdi: 'Kadir Bey\'den gelen (alınan + doğrudan ödediği)', katki: 'Toplam katkı', ortakArasi: 'Ortaklar arası ödemeler', fark: 'Katkı ve ortaklar arası ödemeler', bekleyenCep: 'Ödenecek (kendi cebinden / geri ödeme)', harcamaN: 'Harcama (ödenen, KDV dahil)',
-    kbParaN: 'Kadir Bey\'in parasıyla', bekleyen: 'Ödenecek', harcama: 'Harcama (maliyet)' };
+    kbGider: 'Virgo parasıyla gider', cep: 'Ortakların cebinden', kbAcisi: 'Virgo açısından (üretim − onun parasıyla gider)', alinan: 'Virgo\'dan alınan', kbDog: 'Virgo\'nun doğrudan ödedikleri',
+    avans: 'Virgo\'nun verdiği paradan harcanan', iade: 'Virgo\'nun indirdiği KDV', geri: 'Virgo\'ya geri ödeme', kalan: 'Ay sonu borç (o aya kadar bütün kayıtlar)', elde: 'Elimizdeki Virgo parası (o aya kadar)',
+    cepN: 'Kendi cebinden harcama', hepsi: 'Bütün kayıtlar', kbVerdi: 'Virgo\'dan gelen (alınan + doğrudan ödediği)', katki: 'Toplam katkı', ortakArasi: 'Ortaklar arası ödemeler', fark: 'Katkı ve ortaklar arası ödemeler', bekleyenCep: 'Ödenecek (kendi cebinden / geri ödeme)', harcamaN: 'Harcama (ödenen, KDV dahil)',
+    kbParaN: 'Virgo\'nun parasıyla', bekleyen: 'Ödenecek', harcama: 'Harcama (maliyet)' };
   var VIRGO_DETAY_BILESIK = { kazanc: [['gelir', 1], ['isletme', -1]], kazancYatirim: [['gelir', 1], ['isletme', -1], ['yatirim', -1]], kbAcisi: [['gelir', 1], ['kbGider', -1]],
     kalan: [['alinan', 1], ['kbDog', 1], ['iade', -1], ['gelir', -1], ['geri', -1]], kbVerdi: [['alinan', 1], ['kbDog', 1]], elde: [['alinan', 1], ['avans', -1]], katki: [['cepN', 1], ['geri', 1]], fark: [['cepN', 1], ['geri', 1], ['ortakVerdi', 1], ['ortakAldi', -1]],
     ortakArasi: [['ortakVerdi', 1], ['ortakAldi', -1]] };
@@ -12259,7 +12275,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // Kaydın hesaba etkisi (ayrıntı penceresinde "Nereye işlendi")
   function virgoYerAd(n){
-    var y = n.tip === 'harcama' ? virgoKaynakAd(n) : n.tip === 'alinan' ? 'Kadir Bey borcuna eklendi (elimizdeki KB parası)' : n.tip === 'geri' ? 'Kadir Bey borcundan düştü · ortağın katkısı' : n.tip === 'ortak' ? 'yalnız ortaklar dengesi' : n.tip === 'bilgi' ? 'hesaba işlemez' : '';
+    var y = n.tip === 'harcama' ? virgoKaynakAd(n) : n.tip === 'alinan' ? 'Virgo borcuna eklendi (elimizdeki Virgo parası)' : n.tip === 'geri' ? 'Virgo borcundan düştü · ortağın katkısı' : n.tip === 'ortak' ? 'yalnız ortaklar dengesi' : n.tip === 'bilgi' ? 'hesaba işlemez' : '';
     return n.odendi ? y : 'ödenecek (henüz işlenmedi)' + (y ? ' · ödenince: ' + y : '');
   }
   function virgoKayitAc(id){ var kz = virgoKayitlari().find(function(x){ return x.id === id; }); if (kz) crudDuzenle(VIRGO_TANIM, kz); }
@@ -12283,7 +12299,7 @@ Dikkat edilmesi gereken 2 nokta:
       onOpen: function(f, kapat){ el = f; dinle = function(e){ var r = e.target.closest('[data-vduzelt]'); if (!r) return; var id = r.dataset.vduzelt; kapat(); virgoKayitAc(id); }; f.addEventListener('click', dinle); },
       onClose: function(){ if (el && dinle) el.removeEventListener('click', dinle); } });
   }
-  // ---------- Aylık Kadir Bey dökümü (ekstre): mutabakat için tek ay, yürüyen bakiye, imza yerleri ----------
+  // ---------- Aylık Virgo dökümü (ekstre): mutabakat için tek ay, yürüyen bakiye, imza yerleri ----------
   // Ay başı borç = önceki ayın son günündeki borç (virgoBorcTarihte); satırlar o ay borcu değiştiren ödenmiş kayıtlar ve üretim
   // (aralıklı üretimde ayın gün payı). Ortakların kendi cebinden harcamaları bu döküme girmez (Ortaklar hesabı).
   function virgoAyDokum(ay){
@@ -12304,32 +12320,32 @@ Dikkat edilmesi gereken 2 nokta:
     satir.forEach(function(x){ b.eur += x.eur; b.tl += x.tl; x.bak = { eur: b.eur, tl: b.tl }; if (x.eur > 0) { art.eur += x.eur; art.tl += x.tl; } else { dus.eur -= x.eur; dus.tl -= x.tl; } });
     var kalem = function(f){ return satir.filter(f).reduce(function(o, x){ o.eur += x.eur; o.tl += x.tl; return o; }, vgS()); };
     var oz = [['Ay başı borç (' + kvTarihTR(tarihEkle(ay + '-01', -1)) + ')', once, true],
-      ['+ Kadir Bey\'den alınan (nakit / havale)', kalem(function(x){ return /^Kadir Bey'den/.test(x.kayit); })],
-      ['+ Kadir Bey\'in doğrudan ödedikleri', kalem(function(x){ return /^Harcama/.test(x.kayit) && x.eur > 0; })],
+      ['+ Virgo\'dan alınan (nakit / havale)', kalem(function(x){ return /^Virgo'dan/.test(x.kayit); })],
+      ['+ Virgo\'nun doğrudan ödedikleri', kalem(function(x){ return /^Harcama/.test(x.kayit) && x.eur > 0; })],
       ['− Virgo\'nun indirdiği KDV (verdiği paradan alınanlar)', kalem(function(x){ return /^Harcama/.test(x.kayit) && x.eur < 0; })],
       ['− Üretim karşılığı', kalem(function(x){ return x.kayit === 'Üretim'; })],
-      ['− Kadir Bey\'e geri ödeme', kalem(function(x){ return /^Geri ödeme/.test(x.kayit); })],
+      ['− Virgo\'ya geri ödeme', kalem(function(x){ return /^Geri ödeme/.test(x.kayit); })],
       ['Ay sonu borç (' + kvTarihTR(tarihEkle(KV_MODEL.ayEkle(ay, 1) + '-01', -1)) + ')', b, true]];
     var iki = function(o, kal){ var e = Math.abs(o.eur) < 0.005 ? 0 : o.eur, t = Math.abs(o.tl) < 0.005 ? 0 : o.tl; return '<td class="num">' + (kal ? '<b>' : '') + virgoEur(e) + (kal ? '</b>' : '') + '</td><td class="num">' + (kal ? '<b>' : '') + virgoTl(t) + (kal ? '</b>' : '') + '</td>'; };
     var ozHtml = '<table class="vg-dokum-oz"><thead><tr><th></th><th class="num">€</th><th class="num">₺</th></tr></thead><tbody>' +
       oz.map(function(r, i){ var o = r[1]; if (i > 0 && i < oz.length - 1) o = { eur: Math.abs(o.eur), tl: Math.abs(o.tl) }; return '<tr' + (r[2] ? ' class="kal"' : '') + '><td>' + (r[2] ? '<b>' + r[0] + '</b>' : r[0]) + '</td>' + iki(o, r[2]) + '</tr>'; }).join('') + '</tbody></table>';
     var hHtml = '<h3>Hareketler</h3><table class="vg-dokum"><thead><tr><th>Tarih</th><th>Kayıt</th><th>Kişi</th><th>Açıklama</th><th>Belge</th><th class="num">İşlem günü kuru</th><th class="num">Borca etkisi €</th><th class="num">₺ (işlem günü kuruyla)</th><th class="num">Bakiye €</th><th class="num">Bakiye ₺</th></tr></thead><tbody>' +
       '<tr class="kal"><td>' + kvTarihTR(ay + '-01') + '</td><td colspan="5">Devreden (ay başı borç)</td><td></td><td></td><td class="num"><b>' + virgoEur(once.eur) + '</b></td><td class="num"><b>' + virgoTl(once.tl) + '</b></td></tr>' +
-      (satir.length ? satir.map(function(x){ return '<tr><td>' + kvTarihTR(x.tarih) + '</td><td>' + esc(x.kayit) + '</td><td>' + esc(x.kisi) + '</td><td>' + esc(x.aciklama) + '</td><td>' + esc(x.belge) + '</td><td class="num">' + (x.kur ? '₺' + kurYazi(Math.round(x.kur * 10000) / 10000) : '') + '</td><td class="num">' + (x.eur > 0 ? '+' : '') + virgoEur(x.eur) + '</td><td class="num">' + virgoTl(x.tl) + '</td><td class="num">' + virgoEur(x.bak.eur) + '</td><td class="num">' + virgoTl(x.bak.tl) + '</td></tr>'; }).join('') : '<tr><td colspan="10">Bu ay Kadir Bey hesabını değiştiren kayıt yok.</td></tr>') +
+      (satir.length ? satir.map(function(x){ return '<tr><td>' + kvTarihTR(x.tarih) + '</td><td>' + esc(x.kayit) + '</td><td>' + esc(x.kisi) + '</td><td>' + esc(x.aciklama) + '</td><td>' + esc(x.belge) + '</td><td class="num">' + (x.kur ? '₺' + kurYazi(Math.round(x.kur * 10000) / 10000) : '') + '</td><td class="num">' + (x.eur > 0 ? '+' : '') + virgoEur(x.eur) + '</td><td class="num">' + virgoTl(x.tl) + '</td><td class="num">' + virgoEur(x.bak.eur) + '</td><td class="num">' + virgoTl(x.bak.tl) + '</td></tr>'; }).join('') : '<tr><td colspan="10">Bu ay Virgo hesabını değiştiren kayıt yok.</td></tr>') +
       '<tr class="kal"><td colspan="6"><b>Ay sonu borç</b> · borca eklenen ' + virgoET(art) + ' · borçtan düşen ' + virgoET(dus) + '</td><td></td><td></td><td class="num"><b>' + virgoEur(b.eur) + '</b></td><td class="num"><b>' + virgoTl(b.tl) + '</b></td></tr></tbody></table>';
     var uAd = Object.keys(urun);
     var uHtml = uAd.length ? '<h3>Üretim</h3><table class="vg-dokum"><thead><tr><th>Ürün</th><th class="num">Sağlam adet</th><th class="num">Fire</th><th class="num">Ortalama € / adet</th><th class="num">Tutar €</th><th class="num">Tutar ₺</th></tr></thead><tbody>' +
       uAd.map(function(id){ var k = urun[id]; return '<tr><td>' + esc(virgoUrunAd(id)) + '</td><td class="num">' + fmt(Math.round(k.adet)) + '</td><td class="num">' + fmt(Math.round(k.fire)) + '</td><td class="num">' + virgoET(k.adet ? { eur: k.eur / k.adet, tl: k.tl / k.adet } : vgS()) + '</td><td class="num">' + virgoEur(k.eur) + '</td><td class="num">' + virgoTl(k.tl) + '</td></tr>'; }).join('') +
       (function(){ var t = uAd.reduce(function(o, id){ var k = urun[id]; o.adet += k.adet; o.fire += k.fire; o.eur += k.eur; o.tl += k.tl; return o; }, { adet: 0, fire: 0, eur: 0, tl: 0 }); return '<tr class="kal"><td><b>Toplam</b></td><td class="num"><b>' + fmt(Math.round(t.adet)) + '</b></td><td class="num">' + fmt(Math.round(t.fire)) + '</td><td></td><td class="num"><b>' + virgoEur(t.eur) + '</b></td><td class="num"><b>' + virgoTl(t.tl) + '</b></td></tr>'; })() + '</tbody></table>' : '';
-    var bHtml = bilgi.length ? '<h3>Bilgi: Kadir Bey\'in verdiği paradan yapılan harcamalar</h3><div style="font-size:10.5px;margin-bottom:4px">Borcu değiştirmez (para "Kadir Bey\'den alınan" olarak borca eklenmişti).</div><table class="vg-dokum"><thead><tr><th>Tarih</th><th>Kayıt</th><th>Kişi</th><th>Açıklama</th><th class="num">€</th><th class="num">₺</th></tr></thead><tbody>' +
+    var bHtml = bilgi.length ? '<h3>Bilgi: Virgo\'nun verdiği paradan yapılan harcamalar</h3><div style="font-size:10.5px;margin-bottom:4px">Borcu değiştirmez (para "Virgo\'dan alınan" olarak borca eklenmişti).</div><table class="vg-dokum"><thead><tr><th>Tarih</th><th>Kayıt</th><th>Kişi</th><th>Açıklama</th><th class="num">€</th><th class="num">₺</th></tr></thead><tbody>' +
       bilgi.map(function(x){ return '<tr><td>' + kvTarihTR(x.tarih) + '</td><td>' + esc(x.kayit) + '</td><td>' + esc(x.kisi) + '</td><td>' + esc(x.aciklama) + '</td><td class="num">' + virgoEur(x.eur) + '</td><td class="num">' + virgoTl(x.tl) + '</td></tr>'; }).join('') + '</tbody></table>' : '';
     var odenecek = virgoKayitlari().filter(function(v){ var n = virgoNorm(v); return !n.odendi && /^(harcama|alinan|geri)$/.test(n.tip) && String(v.vade || v.tarih || '').slice(0, 7) <= KV_MODEL.ayEkle(ay, 1); });
     var oHtml = odenecek.length ? '<h3>Ödenecekler (bu ay ve sonraki ay)</h3><table class="vg-dokum"><thead><tr><th>Son ödeme</th><th>Kayıt</th><th>Kişi</th><th>Açıklama</th><th class="num">€</th><th class="num">₺</th></tr></thead><tbody>' +
       odenecek.map(function(v){ var n = virgoNorm(v); return '<tr><td>' + kvTarihTR(v.vade || v.tarih) + '</td><td>' + esc(virgoTipAd(n) + (v.kategori && n.tip === 'harcama' ? ' · ' + v.kategori : '')) + '</td><td>' + esc(n.kisi) + '</td><td>' + esc(v.aciklama || '') + '</td><td class="num">' + virgoEur(n.eur) + '</td><td class="num">' + virgoTl(n.tl) + '</td></tr>'; }).join('') + '</tbody></table>' : '';
     var imzaci = [VIRGO_FINANSOR].concat(virgoOrtaklar());
-    var imza = '<div style="margin-top:18px;font-size:11.5px">' + esc(muhAyAdi(ay)) + ' sonu itibarıyla Kadir Bey\'e kalan borcun <b>' + virgoEur(b.eur) + '</b> (≈ ' + virgoTl(b.eur * kurBugun) + ', ' + kvTarihTR(todayISO()) + ' kuruyla) olduğunu karşılıklı kabul ediyoruz.</div>' +
+    var imza = '<div style="margin-top:18px;font-size:11.5px">' + esc(muhAyAdi(ay)) + ' sonu itibarıyla Virgo\'ya kalan borcun <b>' + virgoEur(b.eur) + '</b> (≈ ' + virgoTl(b.eur * kurBugun) + ', ' + kvTarihTR(todayISO()) + ' kuruyla) olduğunu karşılıklı kabul ediyoruz.</div>' +
       '<div class="cikti-imza">' + imzaci.map(function(ad){ return '<div><div class="cikti-imza-cizgi"></div>' + esc(ad) + '<br><span style="color:#666">ad soyad · tarih · imza</span></div>'; }).join('') + '</div>';
-    yazdirHtml('<div class="vg-dokum-kagit"><h2>KADİR BEY HESABI — AYLIK DÖKÜM · ' + esc(muhAyAdi(ay)).toLocaleUpperCase('tr') + '</h2>' +
+    yazdirHtml('<div class="vg-dokum-kagit"><h2>VİRGO HESABI — AYLIK DÖKÜM · ' + esc(muhAyAdi(ay)).toLocaleUpperCase('tr') + '</h2>' +
       '<div style="font-size:10.5px;margin-bottom:8px">Virgo dönemi · döküm tarihi ' + kvTarihTR(todayISO()) + ' · borç € esastır; ₺ her işlemin kendi gününün TCMB döviz satış kuruyla · tutarlar KDV hariç (Virgo adına faturalar) · ortakların kendi cebinden harcamaları bu döküme girmez</div>' +
       ozHtml + hHtml + uHtml + bHtml + oHtml + imza + '</div>');
   }
@@ -12344,10 +12360,10 @@ Dikkat edilmesi gereken 2 nokta:
     var hata = [], tutar = Number(String(v.tutar == null ? '' : v.tutar).replace(',', '.')) || 0, h = v.hareket || '', mut = /^Mutabakat/.test(h), harcama = h === 'Harcama';
     if (!v.tarih) hata.push('Tarihi girin.');
     if (!v.odeyen && !mut) hata.push('Kişi seçilmedi: parayı ödeyen / alan / geri ödeyen kim?');
-    if (/^Kadir Bey'den alınan/.test(h) && v.odeyen === VIRGO_FINANSOR) hata.push('"Kadir Bey\'den alınan"da Kişi parayı alan ortak olmalı.');
-    if (/^Geri ödeme/.test(h) && v.odeyen === VIRGO_FINANSOR) hata.push('Geri ödemede Kişi Kadir Bey\'e ödeyen ortak olmalı.');
+    if (/^Virgo'dan alınan/.test(h) && v.odeyen === VIRGO_FINANSOR) hata.push('"Virgo\'dan alınan"da Kişi parayı alan ortak olmalı.');
+    if (/^Geri ödeme/.test(h) && v.odeyen === VIRGO_FINANSOR) hata.push('Geri ödemede Kişi Virgo\'ya ödeyen ortak olmalı.');
     if (/^Ortaklar arası/.test(h) && (v.odeyen === VIRGO_FINANSOR || !v.alici || v.alici === v.odeyen)) hata.push('Ortaklar arası ödemede veren (Kişi) ve Alan ortak farklı ortaklar olmalı.');
-    if (harcama && v.odeyen === VIRGO_FINANSOR && (v.kaynak === VIRGO_KAYNAK[1] || v.kaynak === VIRGO_KAYNAK[2])) hata.push('"' + v.kaynak + '" seçili ama Kişi Kadir Bey: ödeyen ortağı seçin (Kadir Bey ödediyse kaynak Otomatik).');
+    if (harcama && v.odeyen === VIRGO_FINANSOR && (v.kaynak === VIRGO_KAYNAK[1] || v.kaynak === VIRGO_KAYNAK[2])) hata.push('"' + v.kaynak + '" seçili ama Kişi Virgo: ödeyen ortağı seçin (Virgo ödediyse kaynak Otomatik).');
     if (!(tutar > 0)) hata.push('Tutarı yazın.');
     var kurEl = Number(String(v.kur == null ? '' : v.kur).replace(',', '.')) || 0, kk = kurEl > 0 ? null : virgoKurKesin(v.tarih), kur = kurEl > 0 ? kurEl : kk ? kk.kur : 0;
     var kurYaz = kur ? '1 € = ₺' + kurYazi(kur) + ' <span class="muted">(' + (kurEl > 0 ? 'elle yazılan' : esc(kk.etiket)) + ')</span>' : '';
@@ -12360,13 +12376,13 @@ Dikkat edilmesi gereken 2 nokta:
       if (x.paraBirimi === '€'){ x.eur = muhR2(haric); x.tl = muhR2(haric * kur); } else { x.tl = muhR2(haric); x.eur = muhR2(kur ? haric / kur : 0); }
       x.kdvEur = muhR2(x.eur * o / 100); x.kdvTl = muhR2(x.tl * o / 100);
       var n = virgoNorm(x), kisi = esc(n.kisi === '—' ? '(kişi yok)' : n.kisi), ET = function(e, t){ return '<b>' + virgoET({ eur: e, tl: t }) + '</b>'; }, ne = '';
-      if (n.tip === 'alinan') ne = 'Kadir Bey borcuna ' + ET(n.eur, n.tl) + ' <b class="neg">eklenir</b>; ' + kisi + '\'in elindeki Kadir Bey parası artar.';
-      else if (n.tip === 'geri') ne = 'Kadir Bey borcundan ' + ET(n.eur, n.tl) + ' <b class="pos">düşer</b>; Ortaklar hesabında ' + kisi + '\'in katkısına yazılır.';
-      else if (n.tip === 'harcama' && n.kaynak === 'kb') ne = 'Kadir Bey ödedi: borca ' + ET(n.m.eur, n.m.tl) + ' <b class="neg">eklenir</b>' + (n.fatura === 'virgo' && n.kdv.eur ? ' (maliyet KDV hariç; Virgo adına fatura)' : '') + '.';
-      else if (n.tip === 'harcama' && n.kaynak === 'avans') ne = 'Kadir Bey\'in verdiği paradan: borç değişmez' + (n.iade.eur ? ', Virgo\'nun indirdiği KDV ' + ET(n.iade.eur, n.iade.tl) + ' borçtan <b class="pos">düşer</b>' : '') + '; ' + kisi + '\'in elindeki Kadir Bey parası ' + ET(n.eur, n.tl) + ' azalır.';
-      else if (n.tip === 'harcama') ne = kisi + '\'in kendi cebinden: <b>Kadir Bey hesabına girmez</b>; Ortaklar hesabında ' + kisi + '\'in katkısına ' + ET(n.eur, n.tl) + ' yazılır.';
-      else if (n.tip === 'ortak') ne = kisi + ' → ' + esc(n.alici || '?') + ' ' + ET(n.eur, n.tl) + ': yalnız ortaklar dengesi, Kadir Bey hesabına girmez.';
-      else if (n.tip === 'mutabakat'){ var pg = v.tarih ? virgoBorcTarihte(v.tarih) : vgS(), f = n.eur - pg.eur; ne = 'Kadir Bey\'le anlaşılan borç ' + ET(n.eur, n.tl) + '; program ' + (v.tarih ? kvTarihTR(v.tarih) : '') + ' günü ' + virgoEur(pg.eur) + (Math.abs(f) < 0.5 ? ' (<span class="pos">tutuyor</span>)' : ' (<span class="neg">fark ' + virgoEur(f) + '</span>)') + '. Bu tarih dahil önceki kayıtlar kilitlenir.'; }
+      if (n.tip === 'alinan') ne = 'Virgo borcuna ' + ET(n.eur, n.tl) + ' <b class="neg">eklenir</b>; ' + kisi + '\'in elindeki Virgo parası artar.';
+      else if (n.tip === 'geri') ne = 'Virgo borcundan ' + ET(n.eur, n.tl) + ' <b class="pos">düşer</b>; Ortaklar hesabında ' + kisi + '\'in katkısına yazılır.';
+      else if (n.tip === 'harcama' && n.kaynak === 'kb') ne = 'Virgo ödedi: borca ' + ET(n.m.eur, n.m.tl) + ' <b class="neg">eklenir</b>' + (n.fatura === 'virgo' && n.kdv.eur ? ' (maliyet KDV hariç; Virgo adına fatura)' : '') + '.';
+      else if (n.tip === 'harcama' && n.kaynak === 'avans') ne = 'Virgo\'nun verdiği paradan: borç değişmez' + (n.iade.eur ? ', Virgo\'nun indirdiği KDV ' + ET(n.iade.eur, n.iade.tl) + ' borçtan <b class="pos">düşer</b>' : '') + '; ' + kisi + '\'in elindeki Virgo parası ' + ET(n.eur, n.tl) + ' azalır.';
+      else if (n.tip === 'harcama') ne = kisi + '\'in kendi cebinden: <b>Virgo hesabına girmez</b>; Ortaklar hesabında ' + kisi + '\'in katkısına ' + ET(n.eur, n.tl) + ' yazılır.';
+      else if (n.tip === 'ortak') ne = kisi + ' → ' + esc(n.alici || '?') + ' ' + ET(n.eur, n.tl) + ': yalnız ortaklar dengesi, Virgo hesabına girmez.';
+      else if (n.tip === 'mutabakat'){ var pg = v.tarih ? virgoBorcTarihte(v.tarih) : vgS(), f = n.eur - pg.eur; ne = 'Virgo\'yla anlaşılan borç ' + ET(n.eur, n.tl) + '; program ' + (v.tarih ? kvTarihTR(v.tarih) : '') + ' günü ' + virgoEur(pg.eur) + (Math.abs(f) < 0.5 ? ' (<span class="pos">tutuyor</span>)' : ' (<span class="neg">fark ' + virgoEur(f) + '</span>)') + '. Bu tarih dahil önceki kayıtlar kilitlenir.'; }
       else ne = 'Bilgi: hiçbir hesaba işlemez.';
       if (!n.odendi && n.tip !== 'mutabakat') ne = '<b>Ödenecek</b>: şimdi hiçbir toplama girmez' + (v.vade ? ' (son ödeme ' + kvTarihTR(v.vade) + ')' : '') + '. Ödenince: ' + ne;
       if (n.tip === 'harcama' && n.yatirim) ne += ' <span class="muted">· yatırım (' + esc(v.kategori) + ')</span>';
@@ -12378,14 +12394,14 @@ Dikkat edilmesi gereken 2 nokta:
   }
   var VIRGO_TANIM = {
     key: 'virgo', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'virgo'; }, listeBaslik: 'Hareketler', yeniEtiket: '+ Hareket',
-    bilgi: 'Bu süreçteki her parayı girin. Kadir Bey hesabı yalnız Kadir Bey\'in ödedikleri / verdikleri, ona geri ödediklerimiz ve üretim karşılığıdır. "Kadir Bey\'den alınan": size verdiği nakit / havale (kişi: parayı alan). "Harcama": kim ödediyse onun adıyla; Kadir Bey ödediyse borca eklenir. Ortak (siz, Ahmet) ödediyse paranın kaynağını seçin: Kadir Bey\'in verdiği paradan ya da kendi cebimizden — kendi cebimizden yapılanlar Kadir Bey hesabına girmez, Ortaklar hesabında tutulur. "Geri ödeme": Kadir Bey\'e yapılan ödeme, borçtan düşer. "Ortaklar arası ödeme": ortaklar ödeşince (veren → alan). Henüz ödenmemiş kalemi "Ödenecek" durumuyla ve son ödeme günüyle girin; ödenince "Ödendi" yapın. Harcamada KDV oranını ve faturanın kimin adına olduğunu seçin: Virgo adına faturada maliyet KDV hariç, bizim adımıza / fişsizde KDV dahil; ödenen nakit hep KDV dahil izlenir. Belli aralıklarla Kadir Bey\'le borcu karşılaştırıp "Mutabakat" girin: programın hesabıyla farkı görünür ve o tarih dahil önceki kayıtlar kilitlenir. ⧉ Sonraki aya: maaş, kira gibi aylık kalemi bir ay sonrası için hazır form olarak açar. Tutarı ₺ ya da € yazın: o günün TCMB kuruyla öbürü de saklanır, her yerde ikisi birlikte görünür. Üretim (Virgo) sayfasına girilen üretimin karşılığı borçtan düşer. ⇩ Excel ile her şey (özet, aylık kazanç, hareketler, kişiler, kategoriler, üretim) indirilir. Muhasebeye işlemez; şirket kurulunca kalan borç Kadir Bey carisine açılış bakiyesi olarak aktarılır.',
+    bilgi: 'Bu süreçteki her parayı girin. Virgo hesabı yalnız Virgo\'nun ödedikleri / verdikleri, ona geri ödediklerimiz ve üretim karşılığıdır. "Virgo\'dan alınan": size verdiği nakit / havale (kişi: parayı alan). "Harcama": kim ödediyse onun adıyla; Virgo ödediyse borca eklenir. Ortak (siz, Ahmet) ödediyse paranın kaynağını seçin: Virgo\'nun verdiği paradan ya da kendi cebimizden — kendi cebimizden yapılanlar Virgo hesabına girmez, Ortaklar hesabında tutulur. "Geri ödeme": Virgo\'ya yapılan ödeme, borçtan düşer. "Ortaklar arası ödeme": ortaklar ödeşince (veren → alan). Henüz ödenmemiş kalemi "Ödenecek" durumuyla ve son ödeme günüyle girin; ödenince "Ödendi" yapın. Harcamada KDV oranını ve faturanın kimin adına olduğunu seçin: Virgo adına faturada maliyet KDV hariç, bizim adımıza / fişsizde KDV dahil; ödenen nakit hep KDV dahil izlenir. Belli aralıklarla Virgo\'yla borcu karşılaştırıp "Mutabakat" girin: programın hesabıyla farkı görünür ve o tarih dahil önceki kayıtlar kilitlenir. ⧉ Sonraki aya: maaş, kira gibi aylık kalemi bir ay sonrası için hazır form olarak açar. Tutarı ₺ ya da € yazın: o günün TCMB kuruyla öbürü de saklanır, her yerde ikisi birlikte görünür. Üretim (Virgo) sayfasına girilen üretimin karşılığı borçtan düşer. ⇩ Excel ile her şey (özet, aylık kazanç, hareketler, kişiler, kategoriler, üretim) indirilir. Muhasebeye işlemez; şirket kurulunca kalan borç Virgo carisine açılış bakiyesi olarak aktarılır.',
     ustHtml: function(){ return virgoKartlar() + virgoKalanHtml() + virgoPlanHtml(); }, altHtml: virgoAltHtml,
     fields: function(){ return [
       {key:'tarih', label:'Tarih', type:'date', required:true},
       {key:'hareket', label:'Hareket', type:'select', options: VIRGO_HAREKET, required:true},
       {key:'odeyen', label:'Kişi (harcayan / parayı alan / geri ödeyen / ortaklar arasında veren)', type:'select', required:true, options: [{ value: '', label: '— seçin —' }].concat(virgoKisiler())},
       {key:'alici', label:'Alan ortak (yalnız ortaklar arası ödemede)', type:'select', options: [''].concat(virgoOrtaklar())},
-      {key:'kaynak', label:'Paranın kaynağı (harcamada)', type:'select', options: VIRGO_KAYNAK, hint:'Otomatik: Kadir Bey ödediyse onun parası (borca eklenir); ortak ödediyse kendi cebimizden (ortaklar hesabına; Kadir Bey hesabına girmez). Kadir Bey\'in size verdiği paradan harcadıysanız onu seçin.'},
+      {key:'kaynak', label:'Paranın kaynağı (harcamada)', type:'select', options: VIRGO_KAYNAK, hint:'Otomatik: Virgo ödediyse onun parası (borca eklenir); ortak ödediyse kendi cebimizden (ortaklar hesabına; Virgo hesabına girmez). Virgo\'nun size verdiği paradan harcadıysanız onu seçin.'},
       {key:'kategori', label:'Kategori (harcamada)', type:'select', options: VIRGO_KATEGORI, hint:'Yatırım sayılanlar (aylık kazançta ayrı görünür): ' + VIRGO_YATIRIM.join(', ') + '.'},
       {key:'aciklama', label:'Açıklama', type:'text', placeholder:'ör. Ekim maaşları, CNC-101 bedeli, kesici uç'},
       {key:'belgeNo', label:'Belge / fatura / dekont no', type:'text'},
@@ -12394,9 +12410,9 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'vade', label:'Son ödeme günü (ödenecekse)', type:'date', hint:'Yaklaşınca ve geçince Özet\'teki uyarılarda görünür.'},
       {key:'paraBirimi', label:'Tutarın para birimi', type:'select', options: ['₺', '€']},
       {key:'tutarTuru', label:'Girilen tutar', type:'select', options: ['KDV hariç', 'KDV dahil'], hint:'Fatura toplamını yazacaksanız "KDV dahil" seçin.'},
-      {key:'tutar', label:'Tutar', type:'number', para:false, required:true, hint:'Mutabakatta: Kadir Bey\'le anlaşılan borç (genelde €).'},
+      {key:'tutar', label:'Tutar', type:'number', para:false, required:true, hint:'Mutabakatta: Virgo\'yla anlaşılan borç (genelde €).'},
       {key:'kdvOrani', label:'KDV oranı (%, harcamada)', type:'select', options: VIRGO_KDV, hint:'Maaş, SGK, şahıstan kira, fişsiz alım: 0.'},
-      {key:'fatura', label:'Fatura kimin adına (harcamada)', type:'select', options: VIRGO_FATURA, hint:'Otomatik: Kadir Bey\'in parasıyla yapılan harcamada Virgo adına (maliyet KDV hariç), kendi cebimizden yapılanda bizim adımıza / fişsiz (KDV maliyet).'},
+      {key:'fatura', label:'Fatura kimin adına (harcamada)', type:'select', options: VIRGO_FATURA, hint:'Otomatik: Virgo\'nun parasıyla yapılan harcamada Virgo adına (maliyet KDV hariç), kendi cebimizden yapılanda bizim adımıza / fişsiz (KDV maliyet).'},
       {key:'kur', label:'Kur (1 € = ₺)', type:'number', para:false, hint:'Boş: o tarihin TCMB döviz satış kuru. € ve ₺ karşılığı bu kurla saklanır.'}
     ]; },
     defaults: function(){ return { tur:'virgo', tarih: todayISO(), hareket: 'Harcama', odeyen: '', kaynak: 'Otomatik', kategori: 'Makine', aciklama: '', belgeNo: '', odemeSekli: VIRGO_ODEME[0], durum: 'Ödendi', vade: '', paraBirimi: '₺', tutarTuru: 'KDV hariç', tutar: 0, kdvOrani: '20', fatura: 'Otomatik', kur: '' }; },
@@ -12414,12 +12430,12 @@ Dikkat edilmesi gereken 2 nokta:
       if (v.hareket === 'Kadir Bey ödedi'){ v.hareket = 'Harcama'; if (!v.odeyen) v.odeyen = VIRGO_FINANSOR; }
       else if (v.hareket === 'Geri ödeme') v.hareket = VIRGO_HAREKET[2];
       if (!v.odeyen && !mut){ toast('Kişi\'yi seçin: parayı ödeyen / alan / geri ödeyen kim?', true); return false; }
-      if (/^Kadir Bey'den alınan/.test(v.hareket) && v.odeyen === VIRGO_FINANSOR){ toast('"Kadir Bey\'den alınan" için parayı alan kişiyi seçin (Fatih, Ahmet…).', true); return false; }
+      if (/^Virgo'dan alınan/.test(v.hareket) && v.odeyen === VIRGO_FINANSOR){ toast('"Virgo\'dan alınan" için parayı alan kişiyi seçin (Fatih, Ahmet…).', true); return false; }
       if (/^Ortaklar arası/.test(v.hareket)){
         if (v.odeyen === VIRGO_FINANSOR || !v.alici || v.alici === v.odeyen){ toast('Ortaklar arası ödemede veren (Kişi) ve alan ortak farklı ortaklar olmalı.', true); return false; }
       } else v.alici = '';
-      if (v.hareket === 'Harcama' && v.odeyen === VIRGO_FINANSOR && (v.kaynak === VIRGO_KAYNAK[1] || v.kaynak === VIRGO_KAYNAK[2])){ toast('"' + v.kaynak + '" seçtiniz: Kişi\'de parayı ödeyen ortağı seçin (Fatih, Ahmet…). Kadir Bey ödediyse Paranın kaynağı = Otomatik.', true); return false; }
-      if (/^Geri ödeme/.test(v.hareket) && v.odeyen === VIRGO_FINANSOR){ toast('Geri ödemede Kadir Bey\'e ödeyen kişiyi seçin (Fatih, Ahmet…).', true); return false; }
+      if (v.hareket === 'Harcama' && v.odeyen === VIRGO_FINANSOR && (v.kaynak === VIRGO_KAYNAK[1] || v.kaynak === VIRGO_KAYNAK[2])){ toast('"' + v.kaynak + '" seçtiniz: Kişi\'de parayı ödeyen ortağı seçin (Fatih, Ahmet…). Virgo ödediyse Paranın kaynağı = Otomatik.', true); return false; }
+      if (/^Geri ödeme/.test(v.hareket) && v.odeyen === VIRGO_FINANSOR){ toast('Geri ödemede Virgo\'ya ödeyen kişiyi seçin (Fatih, Ahmet…).', true); return false; }
       if (v.borca){ if (!v.kaynak || v.kaynak === 'Otomatik') v.kaynak = v.borca === 'Borca eklenmesin' ? VIRGO_KAYNAK[2] : v.kaynak; if (v.borca !== 'Kadir Bey borcuna eklensin') delete v.borca; }
       v.tur = 'virgo'; v.tutar = tutar; v.paraBirimi = v.paraBirimi === '€' ? '€' : '₺';
       var harcama = v.hareket === 'Harcama';
@@ -12437,6 +12453,7 @@ Dikkat edilmesi gereken 2 nokta:
     },
     sirala: function(a, b){ return (b.tarih||'').localeCompare(a.tarih||'') || String(b.olusturma||'').localeCompare(String(a.olusturma||'')); },
     kilitliSatir: virgoKilitli,
+    degerler: virgoYeniAd,
     // Kontrol form açıkken yapılır: hata çıkarsa form kapanmaz, yazılanlar kaybolmaz (hazirla kayıtta yeniden çalışır)
     kayitOncesi: function(v, eski, devam){ if (VIRGO_TANIM.hazirla(Object.assign({}, v), eski) !== false) devam(); },
     ekAksiyon: function(v){ var n = virgoNorm(v); return n.tip === 'mutabakat' ? '' : '<button class="btn secondary small" data-vkopya="' + v.id + '" title="Aynı kaydı bir ay sonrası için form olarak açar (maaş, kira gibi aylık kalemler); kaydetmeden önce kontrol edin">⧉ Sonraki aya</button>'; },
@@ -12482,7 +12499,7 @@ Dikkat edilmesi gereken 2 nokta:
   EK_RENDER.virgo = function(){ crudBolumler('virgo', [VIRGO_TANIM]); };
 
   // Üretim (Virgo): gün ya da gün aralığı (haftalık vb.) / vardiya / ürün / adet elle girilir; karşılığı (adet × fiyat; € ya da ₺ girilir,
-  // o kurla öbürü de saklanır: tutar €, tl ₺, fiyat €/adet, fiyatGirilen girilen para biriminde) Kadir Bey borcundan düşer.
+  // o kurla öbürü de saklanır: tutar €, tl ₺, fiyat €/adet, fiyatGirilen girilen para biriminde) Virgo borcundan düşer.
   // Aralık birden çok aya düşerse adet, fire ve tutar aylara gün sayısıyla bölünür (virgoUretimParcalar).
   // Başlangıç–bitiş arası dakika (gece yarısını geçen vardiyada bitiş ertesi gün sayılır); saat eksikse 0
   function virgoSureDk(u){
@@ -12507,8 +12524,8 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoUrunHtml(){
     var l = virgoUrunler(), kul = {}, kur = virgoGunKuru(todayISO());
     virgoUretimKayitlari().forEach(function(u){ var k = kul[u.urunId] || (kul[u.urunId] = { adet: 0, tutar: 0, tl: 0 }); k.adet += Number(u.adet) || 0; k.tutar += Number(u.tutar) || 0; k.tl += virgoUretimTl(u); });
-    return '<div class="block"><div class="block-head"><h3>Ürünler ve fiyatlar (adet başı, KDV hariç) ' + infoIco('Kadir Bey\'le anlaştığınız parça başı fiyat, € ya da ₺. Yeni üretim girişine bu fiyat gelir (girişte başka para birimi seçilirse o günün kuruyla çevrilir); fiyatı değiştirirseniz önceki girişler eski fiyatıyla kalır. Öbür para birimindeki karşılığı bugünkü kurla bilgi içindir. Üretim girilmiş ürün silinemez.') + '</h3>' +
-      '<div class="bh-actions"><button class="btn secondary small" data-virgoexcel="1" title="Kadir Bey hesabı ve üretimin hepsi tek Excel dosyasında">⇩ Excel</button><button class="btn secondary small" data-vurunekle="1">+ Ürün</button><button class="btn small" data-vurunkaydet="1">Kaydet</button></div></div><div class="block-body">' +
+    return '<div class="block"><div class="block-head"><h3>Ürünler ve fiyatlar (adet başı, KDV hariç) ' + infoIco('Virgo\'yla anlaştığınız parça başı fiyat, € ya da ₺. Yeni üretim girişine bu fiyat gelir (girişte başka para birimi seçilirse o günün kuruyla çevrilir); fiyatı değiştirirseniz önceki girişler eski fiyatıyla kalır. Öbür para birimindeki karşılığı bugünkü kurla bilgi içindir. Üretim girilmiş ürün silinemez.') + '</h3>' +
+      '<div class="bh-actions"><button class="btn secondary small" data-virgoexcel="1" title="Virgo hesabı ve üretimin hepsi tek Excel dosyasında">⇩ Excel</button><button class="btn secondary small" data-vurunekle="1">+ Ürün</button><button class="btn small" data-vurunkaydet="1">Kaydet</button></div></div><div class="block-body">' +
       '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ürün</th><th class="num">Fiyat / adet</th><th>Para birimi</th><th class="num">Karşılığı (bugünkü kur)</th><th class="num">Toplam üretilen</th><th class="num">Toplam karşılığı</th><th></th></tr></thead><tbody id="vUrunGovde">' +
         l.map(function(u){ return virgoUrunSatir(u, kul[u.id] || { adet: 0, tutar: 0, tl: 0 }, kur); }).join('') +
         (l.length ? '' : virgoUrunSatir({ id: '', ad: '', fiyat: '', pb: '€' }, { adet: 0, tutar: 0, tl: 0 }, kur)) +
@@ -12525,14 +12542,14 @@ Dikkat edilmesi gereken 2 nokta:
   }
   var VIRGO_URETIM_TANIM = {
     key: 'virgouretim', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'virgoUretim'; }, listeBaslik: 'Üretim girişleri', yeniEtiket: '+ Üretim',
-    bilgi: 'Üretilen sağlam adedi ürün ürün girin: tek gün için yalnız başlangıç gününü, haftalık ya da belli günler arası toplam için bitiş gününü de seçin (aralık iki aya düşerse adet ve tutar gün sayısıyla aylara bölünür). Fiyat ürünün tanımlı fiyatıyla gelir; € ya da ₺ seçip başka fiyat da yazabilirsiniz, o günün TCMB kuruyla öbürü de saklanır, her yerde ikisi birlikte görünür. Karşılığı Kadir Bey hesabında borçtan düşer ve aylık kazanca girer. Fire bilgi içindir, borca etki etmez. Makine, operatör, saat ve fire nedeni isteğe bağlıdır ama girilirse parça başı süre ve fire oranı için değerli veri olur (şirket kurulunca Üretim Kayıtları\'na aktarılabilir). Programın Üretim Girişi, iş emri ve stok sayfalarından ayrıdır.',
+    bilgi: 'Üretilen sağlam adedi ürün ürün girin: tek gün için yalnız başlangıç gününü, haftalık ya da belli günler arası toplam için bitiş gününü de seçin (aralık iki aya düşerse adet ve tutar gün sayısıyla aylara bölünür). Fiyat ürünün tanımlı fiyatıyla gelir; € ya da ₺ seçip başka fiyat da yazabilirsiniz, o günün TCMB kuruyla öbürü de saklanır, her yerde ikisi birlikte görünür. Karşılığı Virgo hesabında borçtan düşer ve aylık kazanca girer. Fire bilgi içindir, borca etki etmez. Makine, operatör, saat ve fire nedeni isteğe bağlıdır ama girilirse parça başı süre ve fire oranı için değerli veri olur (şirket kurulunca Üretim Kayıtları\'na aktarılabilir). Programın Üretim Girişi, iş emri ve stok sayfalarından ayrıdır.',
     ustHtml: function(){
       var aylar = virgoAylar(), ay = todayISO().slice(0, 7), b = aylar.find(function(a){ return a.ay === ay; }) || { adet: 0, fire: 0, gelir: vgS() }, t = virgoToplam();
       return '<div class="cards">' +
         '<div class="card"><div class="label">Bu ay üretilen</div><div class="value">' + fmt(b.adet) + ' adet</div><div class="sub">fire ' + fmt(b.fire) + '</div></div>' +
         '<div class="card"><div class="label">Bu ay karşılığı</div><div class="value">' + virgoEur(b.gelir.eur) + '</div><div class="sub">' + virgoTl(b.gelir.tl) + ' · borçtan düşer</div></div>' +
         '<div class="card"><div class="label">Toplam üretilen</div><div class="value">' + fmt(t.adet) + ' adet</div><div class="sub">karşılığı ' + virgoEur(t.gelir.eur) + ' / ' + virgoTl(t.gelir.tl) + '</div></div>' +
-        '<div class="card accent"><div class="label">Kadir Bey\'e kalan borç</div><div class="value">' + virgoEur(t.kalan) + '</div><div class="sub">' + virgoTl(t.kalanTl) + ' · <a href="#" data-vgitborc="1">Kadir Bey hesabı ›</a></div></div>' +
+        '<div class="card accent"><div class="label">Virgo\'ya kalan borç</div><div class="value">' + virgoEur(t.kalan) + '</div><div class="sub">' + virgoTl(t.kalanTl) + ' · <a href="#" data-vgitborc="1">Virgo hesabı ›</a></div></div>' +
         '</div>';
     },
     fields: function(){ return [
@@ -12574,7 +12591,7 @@ Dikkat edilmesi gereken 2 nokta:
     },
     hazirla: function(v, eski){
       if (!v.tarih){ toast('Günü girin.', true); return false; }
-      var kilit = virgoKilitTarihi(); if (kilit && (v.tarih <= kilit || (eski && virgoKilitli(eski)))){ toast(kvTarihTR(kilit) + ' mutabakatıyla bu tarih dahil önceki kayıtlar kilitli (Kadir Bey hesabı). Değiştirmek için son mutabakatı silin.', true); return false; }
+      var kilit = virgoKilitTarihi(); if (kilit && (v.tarih <= kilit || (eski && virgoKilitli(eski)))){ toast(kvTarihTR(kilit) + ' mutabakatıyla bu tarih dahil önceki kayıtlar kilitli (Virgo hesabı). Değiştirmek için son mutabakatı silin.', true); return false; }
       if (v.bitisTarih && v.bitisTarih < v.tarih){ toast('Bitiş günü başlangıç gününden önce olamaz.', true); return false; }
       if (v.bitisTarih === v.tarih) v.bitisTarih = '';
       var u = virgoUrun(v.urunId); if (!u){ toast('Önce sayfanın altından ürün ve fiyatını ekleyin.', true); return false; }
@@ -18915,7 +18932,7 @@ Dikkat edilmesi gereken 2 nokta:
       { ad: 'Finans', kolonlar: [[{ baslik: 'Finans' }, { ad: 'Cari Hesap', tab: 'carihesap' }, { ad: 'Cari Ekstre', tab: 'cariekstre' }, { ad: 'Kasa & Banka', tab: 'kasabanka' }, { ad: 'Çek / Senet', tab: 'ceksenet' }, { ad: 'Giderler', tab: 'giderler' }, { ad: 'Bordro Özeti', tab: 'bordro' }]] },
       { ad: 'Muhasebe', kolonlar: [[{ baslik: 'Muhasebe' }, { ad: 'Muhasebe Fişleri', tab: 'muhfis' }, { ad: 'Hesap Planı', tab: 'hesapplani' }, { ad: 'Defterler', tab: 'defterler' }, { ad: 'Mizan', tab: 'mizan' }, { ad: 'Bilanço & Gelir Tablosu', tab: 'malitablolar' }]] },
       { ad: 'Beyan & Dönem', kolonlar: [[{ baslik: 'Beyan & dönem işlemleri' }, { ad: 'KDV Beyanı', tab: 'kdvbeyan' }, { ad: 'Vergi & SGK Ödemeleri', tab: 'vergiodeme' }, { ad: 'e-Defter', tab: 'edefter' }, { ad: 'Kur Farkı Faturaları', tab: 'kurfarki' }, { ad: 'Sabit Kıymet & Amortisman', tab: 'amortisman' }, { ad: 'Dönem Sonu İşlemleri', tab: 'donemsonu' }]] } ] },
-    { alan: 'VİRGO DÖNEMİ', ikon: 'virgo', ogeler: [{ ad: 'Kadir Bey Hesabı', tab: 'virgo' }, { ad: 'Üretim Girişi (Virgo)', tab: 'virgouretim' }] },
+    { alan: 'VİRGO DÖNEMİ', ikon: 'virgo', ogeler: [{ ad: 'Virgo Hesabı', tab: 'virgo' }, { ad: 'Üretim Girişi (Virgo)', tab: 'virgouretim' }] },
     { alan: 'MALİYET', ikon: 'maliyet', ogeler: [{ ad: 'Ürün Maliyet Hesabı', tab: 'maliyethesap' }] },
     { alan: 'RAPORLAR', ikon: 'rapor', ogeler: [{ ad: 'Raporlar', tab: 'raporlar' }, { ad: 'Finans Raporları', tab: 'finansrapor' }, { ad: 'Çıktı Önizleme', tab: 'cikti' }] },
     { alan: 'PARAMETRELER', ikon: 'param', ogeler: [{ ad: 'Tanımlar', tab: 'tanimlar' }, { ad: 'Kullanıcılar', tab: 'kullanicilar' }, { ad: 'Dokümanlar', tab: 'dokumanlar' }, { ad: 'İşlem Geçmişi', tab: 'islemgecmisi' }, { ad: 'Veri & Yedek', tab: 'veri' }] }
@@ -19501,7 +19518,7 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('kisi', 'Kişi', function(v){ var n = virgoNorm(v); return n.kisi + (n.alici ? ' → ' + n.alici : ''); }),
       tgK('kategori', 'Kategori', function(v){ return virgoNorm(v).tip === 'harcama' ? (v.kategori || '') : ''; }),
       tgK('aciklama', 'Açıklama', function(v){ return v.aciklama || ''; }),
-      tgK('kaynak', 'Kaynak', function(v){ var n = virgoNorm(v); return { kb: 'Kadir Bey', avans: 'KB parasından', cep: 'Kendi cebimiz' }[n.kaynak] || (n.tip === 'alinan' ? 'borca eklenir' : n.tip === 'geri' ? 'borçtan düşer' : ''); }),
+      tgK('kaynak', 'Kaynak', function(v){ var n = virgoNorm(v); return { kb: 'Virgo', avans: 'Virgo parasından', cep: 'Kendi cebimiz' }[n.kaynak] || (n.tip === 'alinan' ? 'borca eklenir' : n.tip === 'geri' ? 'borçtan düşer' : ''); }),
       tgK('durum', 'Durum', function(v){ var n = virgoNorm(v); return n.tip === 'mutabakat' ? 'Mutabakat' : n.odendi ? 'Ödendi' : (v.vade && v.vade < todayISO() ? 'Vadesi geçti' : 'Ödenecek'); }, 'durum'),
       tgK('eur', 'Tutar €', function(v){ return virgoNorm(v).eur; }, 'eur', { toplam: true }),
       tgK('tl', 'Tutar ₺', function(v){ return virgoNorm(v).tl; }, 'para', { pb: function(){ return 'TRY'; }, toplam: true }),
