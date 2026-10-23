@@ -1430,7 +1430,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-23-r218</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-23-r219</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12748,8 +12748,13 @@ Dikkat edilmesi gereken 2 nokta:
     var gerGid = vgS(); virgoKayitlari().forEach(function(v){ if (String(v.tarih || '').slice(0, 7) !== ay) return; var n = virgoNorm(v); if (n.odendi && n.tip === 'harcama' && !n.yatirim) vgEkle(gerGid, n.m); });
     var aktifMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length;
     var katki = top.ciroTl - top.degTl, giderTop = persTl + elekTl + gidTl;
+    // r219: amortisman (makine kartı alış bedeli € ÷ süre ay, bugünkü kurla) ve kurumlar vergisi (Muhasebe ayarındaki oran, kârsa)
+    var amortMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif' && Number(m.alisBedeli) > 0 && Number(m.amortismanAy) > 0; });
+    var amortTl = amortMk.reduce(function(a, m){ return a + Number(m.alisBedeli) / Number(m.amortismanAy) * kur; }, 0);
+    var faal = katki - giderTop, vOnce = faal - amortTl, kvOran = Number(muhAyar().kvOrani) || 25, vergi = Math.max(0, vOnce) * kvOran / 100, net = vOnce - vergi;
+    var kurulus = (kvParam() || {}).kurulusTarihi || '';
     return { ay: ay, ks: ks, kur: kur, satir: satir, top: top, pers: pers, persTl: persTl, kwh: kwh, kwM: kwM, kwG: kwG, elekTl: elekTl, gid: gid, gidTl: gidTl, giderTop: giderTop,
-      katki: katki, kalan: katki - giderTop, ger: ger, gerGid: gerGid, aktifMk: aktifMk };
+      katki: katki, kalan: faal, amortTl: amortTl, amortMk: amortMk.length, vOnce: vOnce, kvOran: kvOran, vergi: vergi, net: net, nakit: net + amortTl, kurulus: kurulus, ger: ger, gerGid: gerGid, aktifMk: aktifMk };
   }
   function kpPara(tl, kur){ return virgoTl(tl) + (kur ? '<div class="vg-tl">' + virgoEur(tl / kur) + '</div>' : ''); }
   function kpSonucHtml(h){
@@ -12769,10 +12774,16 @@ Dikkat edilmesi gereken 2 nokta:
           satir('&nbsp;&nbsp;Net (ev sahibine)', x.net, { alt: 1 }) + satir('&nbsp;&nbsp;Stopaj %20 (vergi dairesine, muhtasar)', x.stopaj, { alt: 1 });
         return satir('− ' + esc(x.g.ad || 'Kalem'), x.tl, { not: x.g.tur === 'kisi' ? fmt(x.carpan) + ' kişi × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'makine' ? fmt2(x.carpan) + ' makine × ₺' + muhTutar(Number(x.g.tutar) || 0) : '', adetBasi: 1 }); }).join('') +
       satir('Toplam gider', h.giderTop, { kalin: 1, adetBasi: 1 }) +
-      satir('= Kalan (vergi öncesi)', h.kalan, { kalin: 1, cls: h.kalan < 0 ? 'neg' : 'pos', adetBasi: 1 }) +
+      satir('= Faaliyet kârı (amortisman ve vergi öncesi)', h.kalan, { kalin: 1, cls: h.kalan < 0 ? 'neg' : '', adetBasi: 1 }) +
+      satir('− Amortisman', h.amortTl, { not: h.amortMk ? h.amortMk + ' makine · kart alış bedeli ÷ amortisman süresi (nakit çıkmaz, vergiden düşer)' : 'makine kartlarında alış bedeli / süre yok', adetBasi: 1 }) +
+      satir('= Vergi öncesi kâr', h.vOnce, { kalin: 1, cls: h.vOnce < 0 ? 'neg' : '', adetBasi: 1 }) +
+      satir('− Kurumlar vergisi %' + fmt2(h.kvOran), h.vergi, { not: h.vOnce > 0 ? 'kârın %' + fmt2(h.kvOran) + '\'i · geçici vergiyle 3 ayda bir ödenir' : 'zarar: vergi yok', adetBasi: 1 }) +
+      satir('= Vergi sonrası kâr (net)', h.net, { kalin: 1, cls: h.net < 0 ? 'neg' : 'pos', adetBasi: 1, not: h.top.ciroTl ? 'cironun %' + fmt2(Math.round(h.net / h.top.ciroTl * 1000) / 10) + '\'i' : '' }) +
+      satir('Kasaya kalan nakit (net kâr + amortisman)', h.nakit, { cls: h.nakit < 0 ? 'neg' : '' }) +
       (gecmis && (h.ger.eur || h.ger.tl || h.gerGid.tl) ? '<tr><td class="muted" colspan="4" style="font-size:11.5px">Gerçekleşen (Virgo): üretim karşılığı ₺' + muhTutar(h.ger.tl) + ' / €' + muhTutar(h.ger.eur) + ' · işletme harcamaları ₺' + muhTutar(h.gerGid.tl) + ' / €' + muhTutar(h.gerGid.eur) + '</td></tr>' : '') +
       '</tbody></table>' +
-      '<div class="muted" style="font-size:11.5px;margin-top:6px">' + (bos ? bos + ' gider kalemine tutar yazılmadı (aşağıdaki Aylık giderler). ' : '') + '€ fiyatlı ürünler ₺\'ye bugünkü kurla (1 € = ₺' + kurYazi(kur) + ') çevrilir. Yatırım (makine alımı) ve amortisman bu tabloya girmez.</div>';
+      '<div class="muted" style="font-size:11.5px;margin-top:6px">' + (bos ? bos + ' gider kalemine tutar yazılmadı (aşağıdaki Aylık giderler). ' : '') + '€ fiyatlı ürünler ve € makine bedelleri ₺\'ye bugünkü kurla (1 € = ₺' + kurYazi(kur) + ') çevrilir. Makine alımı (yatırım) gider değil, amortismanla girer. Kurumlar vergisi oranı Muhasebe ayarlarından.' +
+      (h.kurulus && h.ay < h.kurulus.slice(0, 7) ? ' <b>Şirket kuruluşundan (' + esc(kvTarihTR(h.kurulus)) + ') önceki ay:</b> bu dönemde iş Virgo\'da, vergi Virgo\'nun beyannamesinde; burada şirket kurulmuş gibi gösterilir.' : '') + '</div>';
   }
   function kpHucreGuncelle(host, h){
     h.satir.forEach(function(x){ var tr = host.querySelector('tr[data-kpid="' + x.u.id + '"]'); if (!tr) return;
