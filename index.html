@@ -1424,7 +1424,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-23-r211</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-23-r213</div>
   </nav>
   <main>
     <div class="topbar">
@@ -11777,12 +11777,13 @@ Dikkat edilmesi gereken 2 nokta:
   var VIRGO_ESKI_HAREKET = { 'Kadir Bey\'den alınan (nakit / havale)': 'Virgo\'dan alınan (nakit / havale)', 'Geri ödeme (Kadir Bey\'e)': 'Geri ödeme (Virgo\'ya)', 'Mutabakat (Kadir Bey ile anlaşılan borç)': 'Mutabakat (Virgo ile anlaşılan borç)' };
   var VIRGO_ESKI_KAYNAK = { 'Kadir Bey\'in verdiği paradan': 'Virgo\'nun verdiği paradan' };
   function virgoYeniAd(v){
-    if (!v || !(VIRGO_ESKI_AD[v.odeyen] || VIRGO_ESKI_AD[v.alici] || VIRGO_ESKI_HAREKET[v.hareket] || VIRGO_ESKI_KAYNAK[v.kaynak])) return v;
+    if (!v || !(VIRGO_ESKI_AD[v.odeyen] || VIRGO_ESKI_AD[v.alici] || VIRGO_ESKI_HAREKET[v.hareket] || VIRGO_ESKI_KAYNAK[v.kaynak] || VIRGO_ESKI_KATEGORI[v.kategori])) return v;
     var y = Object.assign({}, v);
     if (VIRGO_ESKI_AD[y.odeyen]) y.odeyen = VIRGO_ESKI_AD[y.odeyen];
     if (VIRGO_ESKI_AD[y.alici]) y.alici = VIRGO_ESKI_AD[y.alici];
     if (VIRGO_ESKI_HAREKET[y.hareket]) y.hareket = VIRGO_ESKI_HAREKET[y.hareket];
     if (VIRGO_ESKI_KAYNAK[y.kaynak]) y.kaynak = VIRGO_ESKI_KAYNAK[y.kaynak];
+    if (VIRGO_ESKI_KATEGORI[y.kategori]) y.kategori = VIRGO_ESKI_KATEGORI[y.kategori];
     return y;
   }
   var VIRGO_HAREKET = ['Harcama', 'Virgo\'dan alınan (nakit / havale)', 'Geri ödeme (Virgo\'ya)', 'Ortaklar arası ödeme', 'Mutabakat (Virgo ile anlaşılan borç)', 'Bilgi (hesaba işlemez)'];
@@ -11791,13 +11792,16 @@ Dikkat edilmesi gereken 2 nokta:
   var VIRGO_KAYNAK = ['Otomatik', 'Virgo\'nun verdiği paradan', 'Kendi cebimizden'];
   var VIRGO_DURUM = ['Ödendi', 'Ödenecek'];
   var VIRGO_ODEME = ['Banka / EFT', 'Nakit', 'Kredi kartı', 'Çek / senet', 'Mahsup', 'Diğer'];
-  // r205: liste genişledi; eski adlar aynen duruyor (eski kayıtlar bozulmasın)
-  var VIRGO_KATEGORI = ['Makine', 'Makine nakliye & montaj', 'Kuruluş & tesisat', 'Demirbaş & ölçü aleti', 'Bilgisayar & yazılım',
-    'Maaş & SGK', 'Avans & prim', 'Kira', 'Elektrik & enerji', 'Doğalgaz & ısınma', 'Su',
-    'Hammadde', 'Malzeme & takım', 'Kesici takım & uç', 'Sarf (yağ, bor yağı, eldiven…)', 'Bakım & onarım', 'Yedek parça', 'Kalibrasyon & kalite', 'İş güvenliği & KKD',
-    'Nakliye & taşıma', 'Akaryakıt & araç', 'Yemek & servis', 'Temizlik', 'Kırtasiye & ofis', 'Telefon & internet',
-    'Muhasebe & danışmanlık', 'Harç, vergi & resmî', 'Sigorta', 'Banka & komisyon', 'Temsil & ağırlama', 'Diğer'];
-  var VIRGO_YATIRIM = ['Makine', 'Makine nakliye & montaj', 'Kuruluş & tesisat', 'Demirbaş & ölçü aleti', 'Bilgisayar & yazılım'];
+  // r213: sade liste (13 kalem). r205'te genişletilen ayrıntılı kategoriler aşağıdaki karşılıklarına çevrilir (virgoYeniAd);
+  // eski kayıtlar veritabanında olduğu gibi kalır, düzenlenip kaydedilince yeni adla yazılır.
+  var VIRGO_KATEGORI = ['Makine', 'Kuruluş & tesisat', 'Demirbaş & ekipman', 'Maaş & SGK', 'Kira', 'Elektrik & enerji', 'Malzeme & takım', 'Sarf malzeme',
+    'Bakım & onarım', 'Nakliye & taşıma', 'Yemek & servis', 'Resmî & finans', 'Diğer'];
+  var VIRGO_YATIRIM = ['Makine', 'Kuruluş & tesisat', 'Demirbaş & ekipman'];
+  var VIRGO_ESKI_KATEGORI = { 'Makine nakliye & montaj': 'Makine', 'Demirbaş & ölçü aleti': 'Demirbaş & ekipman', 'Bilgisayar & yazılım': 'Demirbaş & ekipman',
+    'Avans & prim': 'Maaş & SGK', 'Doğalgaz & ısınma': 'Elektrik & enerji', 'Su': 'Elektrik & enerji', 'Hammadde': 'Malzeme & takım', 'Kesici takım & uç': 'Malzeme & takım',
+    'Sarf (yağ, bor yağı, eldiven…)': 'Sarf malzeme', 'İş güvenliği & KKD': 'Sarf malzeme', 'Temizlik': 'Sarf malzeme', 'Kırtasiye & ofis': 'Sarf malzeme', 'Mutfak & ikram (çay, şeker, su)': 'Sarf malzeme',
+    'Yedek parça': 'Bakım & onarım', 'Kalibrasyon & kalite': 'Bakım & onarım', 'Akaryakıt & araç': 'Nakliye & taşıma', 'Telefon & internet': 'Diğer',
+    'Muhasebe & danışmanlık': 'Resmî & finans', 'Harç, vergi & resmî': 'Resmî & finans', 'Sigorta': 'Resmî & finans', 'Banka & komisyon': 'Resmî & finans', 'Temsil & ağırlama': 'Yemek & servis' };
   var VIRGO_VARDIYA = ['1. Vardiya', '2. Vardiya', 'Cumartesi', 'Tüm vardiyalar'];
   var VIRGO_PB_KEY = 'ozerp_virgo_pb_v1';
   function virgoPbGorunum(){ try { var v = localStorage.getItem(VIRGO_PB_KEY); return v === '€' || v === '₺' ? v : 'ikisi'; } catch(e){ return 'ikisi'; } }
@@ -12402,7 +12406,7 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'odeyen', label:'Kişi (harcayan / parayı alan / geri ödeyen / ortaklar arasında veren)', type:'select', required:true, options: [{ value: '', label: '— seçin —' }].concat(virgoKisiler())},
       {key:'alici', label:'Alan ortak (yalnız ortaklar arası ödemede)', type:'select', options: [''].concat(virgoOrtaklar())},
       {key:'kaynak', label:'Paranın kaynağı (harcamada)', type:'select', options: VIRGO_KAYNAK, hint:'Otomatik: Virgo ödediyse onun parası (borca eklenir); ortak ödediyse kendi cebimizden (ortaklar hesabına; Virgo hesabına girmez). Virgo\'nun size verdiği paradan harcadıysanız onu seçin.'},
-      {key:'kategori', label:'Kategori (harcamada)', type:'select', options: VIRGO_KATEGORI, hint:'Yatırım sayılanlar (aylık kazançta ayrı görünür): ' + VIRGO_YATIRIM.join(', ') + '.'},
+      {key:'kategori', label:'Kategori (harcamada)', type:'select', options: VIRGO_KATEGORI, hint:'Yatırım: Makine (nakliye, montaj dahil), Kuruluş & tesisat, Demirbaş & ekipman (ölçü aleti, bilgisayar). Sarf malzeme: yağ, eldiven, temizlik, kırtasiye, çay-şeker gibi tüketilen küçük alımlar. Malzeme & takım: hammadde, kesici uç. Resmî & finans: vergi, harç, sigorta, banka, muhasebe.'},
       {key:'aciklama', label:'Açıklama', type:'text', placeholder:'ör. Ekim maaşları, CNC-101 bedeli, kesici uç'},
       {key:'belgeNo', label:'Belge / fatura / dekont no', type:'text'},
       {key:'odemeSekli', label:'Ödeme şekli', type:'select', options: VIRGO_ODEME},
@@ -12458,6 +12462,7 @@ Dikkat edilmesi gereken 2 nokta:
     kayitOncesi: function(v, eski, devam){ if (VIRGO_TANIM.hazirla(Object.assign({}, v), eski) !== false) devam(); },
     ekAksiyon: function(v){ var n = virgoNorm(v); return n.tip === 'mutabakat' ? '' : '<button class="btn secondary small" data-vkopya="' + v.id + '" title="Aynı kaydı bir ay sonrası için form olarak açar (maaş, kira gibi aylık kalemler); kaydetmeden önce kontrol edin">⧉ Sonraki aya</button>'; },
     rowFn: function(v){
+      v = virgoYeniAd(v);
       var n = virgoNorm(v), sinif = n.borcEur > 0 ? 'neg' : n.borcEur < 0 ? 'pos' : 'muted';
       if (n.tip === 'mutabakat'){ var p = virgoBorcTarihte(v.tarih), f = n.eur - p.eur;
         return { title: kvTarihTR(v.tarih) + ' · <b>Mutabakat</b> · anlaşılan borç <b>' + virgoEur(n.eur) + '</b> <span class="muted">/ ' + virgoTl(n.tl) + '</span> ' + (virgoKilitli(v) ? badgeHtml('eski', 'taslak') : badgeHtml('kilit', 'tamamlandi')),
@@ -19516,7 +19521,7 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('tarih', 'Tarih', function(v){ return v.tarih; }, 'tarih'),
       tgK('hareket', 'Hareket', function(v){ return virgoTipAd(virgoNorm(v)); }),
       tgK('kisi', 'Kişi', function(v){ var n = virgoNorm(v); return n.kisi + (n.alici ? ' → ' + n.alici : ''); }),
-      tgK('kategori', 'Kategori', function(v){ return virgoNorm(v).tip === 'harcama' ? (v.kategori || '') : ''; }),
+      tgK('kategori', 'Kategori', function(v){ return virgoNorm(v).tip === 'harcama' ? (virgoYeniAd(v).kategori || '') : ''; }),
       tgK('aciklama', 'Açıklama', function(v){ return v.aciklama || ''; }),
       tgK('kaynak', 'Kaynak', function(v){ var n = virgoNorm(v); return { kb: 'Virgo', avans: 'Virgo parasından', cep: 'Kendi cebimiz' }[n.kaynak] || (n.tip === 'alinan' ? 'borca eklenir' : n.tip === 'geri' ? 'borçtan düşer' : ''); }),
       tgK('durum', 'Durum', function(v){ var n = virgoNorm(v); return n.tip === 'mutabakat' ? 'Mutabakat' : n.odendi ? 'Ödendi' : (v.vade && v.vade < todayISO() ? 'Vadesi geçti' : 'Ödenecek'); }, 'durum'),
