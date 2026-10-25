@@ -1149,7 +1149,7 @@
   .vg-ayr { grid-column:1 / -1; margin:4px 0 8px; border-top:1px solid var(--line, #d8dde6); padding-top:8px; }
   .vg-ayr > summary { cursor:pointer; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:8px; }
   .vg-ayr > summary .muted { font-weight:400; }
-  .vg-ayr-ic { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:0 16px; align-items:end; }
+  .vg-ayr-ic { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:0 16px; align-items:start; }
   .vg-oniz-t { border-collapse:collapse; margin:2px 0; font-size:12.5px; width:auto !important; min-width:0 !important; }
   .vg-oniz-t th, .vg-oniz-t td { padding:1px 10px 1px 0; text-align:left; } .vg-oniz-t .num { text-align:right; }
   .vg-oniz-t th { font-weight:500; color:var(--ink-soft); font-size:11.5px; }
@@ -1439,7 +1439,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-25-r226</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-25-r227</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12673,6 +12673,23 @@ Dikkat edilmesi gereken 2 nokta:
       '<td class="num">' + fmt(k.adet) + '</td><td class="num">' + (k.adet ? virgoEur(k.tutar) + '<div class="vg-tl">' + virgoTl(k.tl) + '</div>' : '') + '</td>' +
       '<td>' + (k.adet ? '' : '<button class="btn danger small" data-vurunsil="1" title="Satırı kaldır (Kaydet ile kesinleşir)">×</button>') + '</td></tr>';
   }
+  // r227: üretim formunda ana alanlar gün, bitiş günü, ürün, adet, fire (varsa nedeni), not; vardiya, makine, operatör, saatler,
+  // günlük ortalama adet, fiyat ve kur kapalı "Ayrıntılar" altında (doluysa açık gelir). Gizli alanlar formda kalır, yalnız görünüm.
+  var VIRGO_URETIM_ANA = ['tarih', 'bitisTarih', 'urunId', 'adet', 'fire', 'fireNedeni', 'aciklama'];
+  function virgoUretimFormDuzen(fe, alan){
+    var sar = {}, el = function(k){ var i = alan.findIndex(function(f){ return f.key === k; }); return i < 0 ? null : fe.querySelector('[data-ffkey="' + i + '"]'); };
+    alan.forEach(function(f){ var e = el(f.key); if (e && e.closest('.field')) sar[f.key] = e.closest('.field'); });
+    var ayr = document.createElement('details'); ayr.className = 'vg-ayr';
+    ayr.innerHTML = '<summary>Ayrıntılar <span class="muted"></span></summary><div class="vg-ayr-ic"></div>'; fe.appendChild(ayr);
+    var ic = ayr.querySelector('.vg-ayr-ic'), ayrAd = [];
+    alan.forEach(function(f){ var w = sar[f.key]; if (!w) return; if (VIRGO_URETIM_ANA.indexOf(f.key) > -1) fe.insertBefore(w, ayr); else { ic.appendChild(w); ayrAd.push(f.label.toLocaleLowerCase('tr')); } });
+    ayr.querySelector('summary .muted').textContent = '(' + ayrAd.join(', ') + ')';
+    var bos = function(k, varsayilan){ var e = el(k); return !e || !String(e.value).trim() || e.value === varsayilan; };
+    if (!bos('vardiya', VIRGO_VARDIYA[0]) || !bos('makineId') || !bos('operatorId') || !bos('baslangic') || !bos('bitis') || !bos('gunlukAdet') || !bos('paraBirimi', 'Üründeki gibi') || !bos('fiyatGirilen') || !bos('kur')) ayr.open = true;
+    // Fire nedeni yalnız fire girilince
+    var fire = el('fire'), fn = sar.fireNedeni, fireGoster = function(){ if (fn) fn.style.display = Number(String(fire && fire.value || '').replace(',', '.')) > 0 ? '' : 'none'; };
+    if (fire){ fire.addEventListener('input', fireGoster); fire.addEventListener('change', fireGoster); } fireGoster();
+  }
   var VIRGO_URETIM_TANIM = {
     key: 'virgouretim', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'virgoUretim'; }, listeBaslik: 'Üretim girişleri', yeniEtiket: '+ Üretim',
     bilgi: 'Üretilen sağlam adedi ürün ürün girin: tek gün için yalnız başlangıç gününü, haftalık ya da belli günler arası toplam için bitiş gününü de seçin (aralık iki aya düşerse adet ve tutar gün sayısıyla aylara bölünür). Fiyat ürünün tanımlı fiyatıyla gelir; € ya da ₺ seçip başka fiyat da yazabilirsiniz, o günün TCMB kuruyla öbürü de saklanır, her yerde ikisi birlikte görünür. Karşılığı Virgo hesabında borçtan düşer ve aylık kazanca girer. Fire bilgi içindir, borca etki etmez. Makine, operatör, saat ve fire nedeni isteğe bağlıdır ama girilirse parça başı süre ve fire oranı için değerli veri olur (şirket kurulunca Üretim Kayıtları\'na aktarılabilir). Programın Üretim Girişi, iş emri ve stok sayfalarından ayrıdır.',
@@ -12686,13 +12703,13 @@ Dikkat edilmesi gereken 2 nokta:
         '</div>';
     },
     fields: function(){ return [
-      {key:'tarih', label:'Gün (aralıkta başlangıç günü)', type:'date', required:true},
-      {key:'bitisTarih', label:'Bitiş günü (haftalık / aralık için)', type:'date', hint:'Boş: tek gün. Doluysa adet bu aralığın toplamıdır.'},
+      {key:'tarih', label:'Gün', type:'date', required:true},
+      {key:'bitisTarih', label:'Bitiş günü (birden çok gün için)', type:'date', hint:'Boş: tek gün. Doluysa adet bu günlerin toplamıdır.'},
       {key:'vardiya', label:'Vardiya', type:'select', options: VIRGO_VARDIYA},
       {key:'urunId', label:'Ürün', type:'select', options: virgoUrunSecenek, required:true},
-      {key:'gunlukAdet', label:'Günlük ortalama adet (isteğe bağlı)', type:'number', para:false, hint:'Yazarsanız iş günü × günlük adet, toplam önerisi olarak Adet kutusunda soluk görünür.'},
-      {key:'adet', label:'Üretilen sağlam adet (aralığın toplamı)', type:'number', para:false, hint:'Asıl sayıyı siz yazın; boş bırakırsanız soluk görünen öneri kaydedilir.'},
-      {key:'fire', label:'Fire (adet)', type:'number', para:false},
+      {key:'gunlukAdet', label:'Günlük ortalama adet', type:'number', para:false, hint:'Yazarsanız iş günü × günlük adet, toplam önerisi olarak Adet kutusunda soluk görünür.'},
+      {key:'adet', label:'Sağlam adet', type:'number', para:false},
+      {key:'fire', label:'Fire adet', type:'number', para:false},
       {key:'fireNedeni', label:'Fire nedeni', type:'select', options: function(){ return FIRE_NEDENLERI; }},
       {key:'makineId', label:'Makine', type:'select', options: makineSecenek},
       {key:'operatorId', label:'Operatör', type:'select', options: personelSecenek},
@@ -12722,9 +12739,11 @@ Dikkat edilmesi gereken 2 nokta:
       // r214: geçmiş tarihli üretimde kur: o güne kayıtlı kur var mı (yoksa elle yazılmalı)
       var kurEl = el('kur'), kurBilgi = document.createElement('div'); kurBilgi.className = 'vg-form-bilgi'; if (kurEl) kurEl.parentNode.appendChild(kurBilgi);
       var kurGuncelle = function(){ if (!kurEl) return; var g = (bit && bit.value && bit.value >= bas.value ? bit.value : bas.value), elle = Number(String(kurEl.value).replace(',', '.')) || 0, k = g ? virgoKurKesin(g) : null;
-        kurBilgi.innerHTML = elle > 0 ? 'elle yazılan kur kullanılır' : !g ? '' : k ? 'boş bırakılırsa: 1 € = ₺' + kurYazi(k.kur) + ' (' + esc(k.etiket) + ')' : '<span class="neg">⚠ ' + kvTarihTR(g) + ' için kayıtlı kur yok: o günün TCMB kurunu yazın</span>'; };
+        kurBilgi.innerHTML = elle > 0 ? 'elle yazılan kur kullanılır' : !g ? '' : k ? 'boş bırakılırsa: 1 € = ₺' + kurYazi(k.kur) + ' (' + esc(k.etiket) + ')' : '<span class="neg">⚠ ' + kvTarihTR(g) + ' için kayıtlı kur yok: o günün TCMB kurunu yazın</span>';
+        var d = kurEl.closest('details'); if (d && kurBilgi.querySelector('.neg')) d.open = true; };
       [bas, bit, gun, adet, kurEl].forEach(function(x){ if (x){ x.addEventListener('input', guncelle); x.addEventListener('change', guncelle); x.addEventListener('input', kurGuncelle); x.addEventListener('change', kurGuncelle); } });
       guncelle(); kurGuncelle();
+      virgoUretimFormDuzen(fe, alan);
     },
     hazirla: function(v, eski){
       if (!v.tarih){ toast('Günü girin.', true); return false; }
