@@ -1439,7 +1439,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-25-r227</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-25-r228</div>
   </nav>
   <main>
     <div class="topbar">
@@ -19820,15 +19820,13 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('aciklama', 'Açıklama', function(v){ return v.aciklama || ''; }),
       tgK('kaynak', 'Kaynak', function(v){ var n = virgoNorm(v); return { kb: 'Virgo', avans: 'Virgo parasından', cep: 'Kendi cebimiz' }[n.kaynak] || (n.tip === 'alinan' ? 'borca eklenir' : n.tip === 'geri' ? 'borçtan düşer' : ''); }),
       tgK('durum', 'Durum', function(v){ var n = virgoNorm(v); return n.tip === 'mutabakat' ? 'Mutabakat' : n.odendi ? 'Ödendi' : (v.vade && v.vade < todayISO() ? 'Vadesi geçti' : 'Ödenecek'); }, 'durum'),
-      // r225: Virgo'nun parasıyla yapılan harcamada KDV hariç / KDV / KDV dahil (€ ve ₺); şahsi ödemede (kendi cebimiz) KDV boş
-      tgK('haricEur', 'KDV hariç €', function(v){ var n = virgoNorm(v); return n.tip === 'harcama' && n.kaynak !== 'cep' ? n.haric.eur : ''; }, 'eur', { toplam: true }),
-      tgK('kdv', 'KDV €', function(v){ var n = virgoNorm(v); return n.tip === 'harcama' && n.kaynak !== 'cep' ? n.kdv.eur : ''; }, 'eur', { toplam: true }),
-      tgK('eur', 'Tutar € (KDV dahil)', function(v){ return virgoNorm(v).eur; }, 'eur', { toplam: true }),
+      // r228: önce ₺ (KDV hariç / KDV / KDV dahil; şahsi ödemede KDV boş), sonra yalnız ödenen € tutarı
       tgK('haricTl', 'KDV hariç ₺', function(v){ var n = virgoNorm(v); return n.tip === 'harcama' && n.kaynak !== 'cep' ? n.haric.tl : ''; }, 'para', { pb: function(){ return 'TRY'; }, toplam: true }),
       tgK('kdvTl', 'KDV ₺', function(v){ var n = virgoNorm(v); return n.tip === 'harcama' && n.kaynak !== 'cep' ? n.kdv.tl : ''; }, 'para', { pb: function(){ return 'TRY'; }, toplam: true }),
       tgK('tl', 'Tutar ₺ (KDV dahil)', function(v){ return virgoNorm(v).tl; }, 'para', { pb: function(){ return 'TRY'; }, toplam: true }),
+      tgK('eur', 'Tutar €', function(v){ return virgoNorm(v).eur; }, 'eur', { toplam: true }),
       tgK('maliyet', 'Maliyet €', function(v){ var n = virgoNorm(v); return n.tip === 'harcama' ? n.m.eur : ''; }, 'eur', { toplam: true, gizli: true }),
-      tgK('borc', 'Borca etkisi €', function(v){ return virgoNorm(v).borcEur || ''; }, 'eur', { toplam: true }),
+      tgK('borc', 'Borca etkisi €', function(v){ return virgoNorm(v).borcEur || ''; }, 'eur', { toplam: true, gizli: true }),
       tgK('odeme', 'Ödeme şekli', function(v){ return v.odemeSekli || ''; }, 'metin', { gizli: true }),
       tgK('belge', 'Belge no', function(v){ return v.belgeNo || ''; }, 'metin', { gizli: true }),
       tgK('vade', 'Son ödeme', function(v){ return v.vade || ''; }, 'tarih', { gizli: true }),
