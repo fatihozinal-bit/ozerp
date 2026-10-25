@@ -1119,7 +1119,9 @@
   /* Virgo dönemi: € ve ₺ birlikte; tablolar ve borç planı grafiği */
   .vg-satir { cursor:pointer; } tr.vg-satir:hover > td { background:var(--hover, rgba(0,0,0,.035)); } .card.vg-satir:hover { outline:1px solid var(--line, #ccd); }
   .vg-tl { font-size:11px; color:var(--ink-soft); font-weight:400; }
-  .vg-tablo { width:100%; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+  /* r233: Virgo tabloları içerik kadar geniş (ekranı boydan boya kaplamaz) */
+  .vg-tablo { width:auto; min-width:0; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+  .vg-tablo td.num, .vg-tablo th.num { padding-left:16px; }
   .vg-tablo thead th { background:var(--surface-alt); color:var(--ink); font-weight:600; font-size:11.5px; padding:6px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
   .vg-tablo td { padding:5px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
   .vg-tablo td.num { white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -1157,7 +1159,7 @@
   .vg-oniz-t th { font-weight:500; color:var(--ink-soft); font-size:11.5px; }
   .vg-onizleme-bas { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:2px; }
   .vg-tablo td.vg-tik { cursor:pointer; } .vg-tablo td.vg-tik:hover { text-decoration:underline; text-decoration-style:dotted; color:var(--accent); }
-  .vg-plan .vg-grafik { margin-top:2px; width:100%; max-width:640px; height:auto; display:block; font-family:'IBM Plex Sans',system-ui,sans-serif; }
+  .vg-plan .vg-grafik { margin-top:2px; width:100%; max-width:440px; height:auto; display:block; font-family:'IBM Plex Sans',system-ui,sans-serif; }
   .vg-grafik text { font-size:9.5px; fill:var(--ink-soft); }
   .vg-grafik .vg-izgara { stroke:var(--border); stroke-width:1; opacity:.6; } .vg-grafik .vg-izgara.sifir { opacity:1; }
   .vg-grafik .vg-eksen { font-size:9px; font-variant-numeric:tabular-nums; }
@@ -1186,7 +1188,7 @@
   .vg-lejant i { display:inline-block; width:14px; height:9px; margin-right:5px; vertical-align:-1px; }
   .vg-l-ekle { background:var(--bad); opacity:.8; } .vg-l-dus { background:var(--good); opacity:.8; }
   .vg-l-borc { background:var(--accent); }
-  .vg-l-plan { border:1.5px dashed var(--accent); opacity:.7; box-sizing:border-box; }
+  .vg-l-plan { border-top:2px dashed var(--accent); height:0 !important; vertical-align:3px !important; opacity:.7; }
   /* Çıktı şablonu */
   .cs-ust { display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; margin-bottom:8px; font-size:12.5px; }
   .cs-ust label { display:flex; align-items:center; gap:6px; margin:0; font-weight:400; }
@@ -1447,7 +1449,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-25-r232</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-25-r233</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12255,33 +12257,29 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoEurK(v){ v = Number(v) || 0; var a = Math.abs(v), s = v < -0.5 ? '−' : ''; return a >= 1000 ? s + '€' + (Math.round(a / 100) / 10).toLocaleString('tr-TR') + ' bin' : s + '€' + fmt(a); }
   // İki bölümlü grafik: üstte kalan borç (alan + çizgi, noktalarda tutar), altta aylık değişim (borç arttıysa kırmızı yukarı, azaldıysa yeşil aşağı).
   // Ayrı ölçekler: akış tutarları ile bakiye aynı eksende karışmaz. İleriki aylar (ödenecek kayıtlar) soluk / kesikli.
-  // r230: sade sütun grafik — her ay sonundaki kalan borç (€), tek renk; bu ay koyu, ödenecek kayıtlarla ileriki aylar soluk.
-  // Yalnız bu ayın, en yüksek ayın ve son ayın değeri yazılır; her sütunun üzerine gelince € / ₺ ve o ayın değişimi görünür.
+  // r233: küçük çizgi grafik — borç eksi gösterilir (borçluyuz): ilk aylar sıfırın altında başlar, üretim ve ödemeyle 0'a doğru çıkar.
+  // Bu ay dolu nokta; ödenecek kayıtlarla ileriki aylar kesikli. Yalnız bu ayın, en derin ayın ve son ayın değeri yazılır; üzerine gelince € / ₺.
   function virgoBorcGrafik(h){
     var a = h.ay; if (!a.length) return '<div class="empty">Hareket ya da üretim girildikçe grafik çizilir.</div>';
-    var W = 600, L = 48, R = 8, T = 18, B = 168, H = 186, n = a.length, gw = (W - L - R) / n, bw = Math.max(6, Math.min(40, gw - 6));
-    var gel = function(m){ return m.ay > h.bu; }, deger = function(m){ return gel(m) ? m.borcPlan : m.borc; }, tl = function(m){ return gel(m) ? m.borcPlanTl : m.borcTl; };
+    var W = 440, L = 46, R = 34, T = 14, B = 104, H = 122, n = a.length;
+    var gel = function(m){ return m.ay > h.bu; }, deger = function(m){ return -(gel(m) ? m.borcPlan : m.borc); }, tl = function(m){ return -(gel(m) ? m.borcPlanTl : m.borcTl); };
     var vals = a.map(deger), vMax = Math.max(0, Math.max.apply(null, vals)), vMin = Math.min(0, Math.min.apply(null, vals));
-    // Eksen için yuvarlak adım (1, 2, 5 × 10ⁿ)
-    var aralik = (vMax - vMin) || 1, kaba = aralik / 4, us = Math.pow(10, Math.floor(Math.log(kaba) / Math.LN10)), adim = [1, 2, 5, 10].map(function(c){ return c * us; }).find(function(c){ return c >= kaba; });
-    vMax = Math.ceil(vMax / adim) * adim; vMin = Math.floor(vMin / adim) * adim; if (vMax === vMin) vMax = adim;
-    var y = function(v){ return T + (B - T) * (vMax - v) / (vMax - vMin); }, y0 = y(0), x = function(i){ return L + gw * i + gw / 2; };
-    var svg = '<svg class="vg-grafik" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Ay sonu kalan borç, €">';
+    var aralik = (vMax - vMin) || 1, kaba = aralik / 3, us = Math.pow(10, Math.floor(Math.log(kaba) / Math.LN10)), adim = [1, 2, 5, 10].map(function(c){ return c * us; }).find(function(c){ return c >= kaba; });
+    vMax = Math.ceil(vMax / adim) * adim; vMin = Math.floor(vMin / adim) * adim; if (vMax === vMin) vMin = -adim;
+    var gw = n > 1 ? (W - L - R) / (n - 1) : 0, x = function(i){ return n > 1 ? L + gw * i : (L + W - R) / 2; }, y = function(v){ return T + (B - T) * (vMax - v) / (vMax - vMin); };
+    var svg = '<svg class="vg-grafik" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Virgo\'ya borç ay ay (eksi: borçluyuz), €">';
     for (var g = vMin; g <= vMax + adim / 2; g += adim){ var gy = y(g).toFixed(1);
       svg += '<line class="vg-izgara' + (Math.abs(g) < adim / 2 ? ' sifir' : '') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + gy + '" y2="' + gy + '"/><text class="vg-eksen" x="' + (L - 6) + '" y="' + (Number(gy) + 3).toFixed(1) + '" text-anchor="end">' + virgoEurK(g) + '</text>'; }
-    var maxI = vals.indexOf(Math.max.apply(null, vals)), buI = -1; a.forEach(function(m, i){ if (!gel(m)) buI = i; });
-    var her = Math.max(1, Math.ceil(n / 12));
+    var buI = -1; a.forEach(function(m, i){ if (!gel(m)) buI = i; });
+    var yol = function(bas, bit){ var d = ''; for (var i = bas; i <= bit; i++) d += (d ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(vals[i]).toFixed(1); return d; };
+    if (buI >= 0) svg += '<path class="vg-cizgi" d="' + yol(0, buI) + '"/>';
+    if (buI < n - 1) svg += '<path class="vg-cizgi plan" d="' + yol(Math.max(0, buI), n - 1) + '"/>';
+    var minI = vals.indexOf(Math.min.apply(null, vals)), her = Math.max(1, Math.ceil(n / 8));
     a.forEach(function(m, i){
-      var v = vals[i], x0 = x(i) - bw / 2, yv = y(v), r = Math.min(4, bw / 2, Math.abs(yv - y0)), d;
-      // Uç yuvarlak, taban düz (sıfır çizgisine oturur)
-      if (v >= 0) d = 'M' + x0 + ',' + y0 + 'V' + (yv + r) + 'Q' + x0 + ',' + yv + ' ' + (x0 + r) + ',' + yv + 'H' + (x0 + bw - r) + 'Q' + (x0 + bw) + ',' + yv + ' ' + (x0 + bw) + ',' + (yv + r) + 'V' + y0 + 'Z';
-      else d = 'M' + x0 + ',' + y0 + 'V' + (yv - r) + 'Q' + x0 + ',' + yv + ' ' + (x0 + r) + ',' + yv + 'H' + (x0 + bw - r) + 'Q' + (x0 + bw) + ',' + yv + ' ' + (x0 + bw) + ',' + (yv - r) + 'V' + y0 + 'Z';
-      var deg = (m.ekle + m.planEkle) - (m.dus + m.planDus);
-      var ipucu = muhAyAdi(m.ay) + ' sonu borç' + (gel(m) ? ' (ödenecek kayıtlarla)' : '') + ': ' + virgoET({ eur: v, tl: tl(m) }) + (Math.abs(deg) >= 0.5 ? ' · o ay ' + (deg > 0 ? 'arttı ' : 'azaldı ') + virgoEur(Math.abs(deg)) : '');
-      svg += '<g class="vg-sutun"><rect class="vg-hedef" x="' + (x(i) - gw / 2).toFixed(1) + '" y="' + T + '" width="' + gw.toFixed(1) + '" height="' + (B - T) + '"/>' +
-        (Math.abs(v) >= 0.5 ? '<path class="vg-bar' + (gel(m) ? ' plan' : i === buI ? ' bugun' : '') + '" d="' + d + '"/>' : '') + '<title>' + esc(ipucu) + '</title></g>';
-      if (Math.abs(v) >= 0.5 && (i === buI || i === maxI || i === n - 1)) svg += '<text class="vg-deger" x="' + x(i).toFixed(1) + '" y="' + (v >= 0 ? yv - 5 : yv + 12).toFixed(1) + '" text-anchor="middle">' + virgoEurK(v) + '</text>';
-      if (i % her === 0 || i === n - 1) svg += '<text class="vg-ay' + (m.ay === h.bu ? ' bugun' : '') + '" x="' + x(i).toFixed(1) + '" y="' + (H - 3) + '" text-anchor="middle">' + virgoAyKisa(m.ay) + '</text>';
+      var v = vals[i], cx = x(i), cy = y(v), ipucu = muhAyAdi(m.ay) + ' sonu' + (gel(m) ? ' (ödenecek kayıtlarla)' : '') + ': ' + (v < -0.004 ? 'borç ' + virgoET({ eur: -v, tl: -tl(m) }) : v > 0.004 ? 'Virgo bize borçlu ' + virgoET({ eur: v, tl: tl(m) }) : 'borç yok');
+      svg += '<g class="vg-sutun"><rect class="vg-hedef" x="' + (cx - Math.max(gw, 24) / 2).toFixed(1) + '" y="' + T + '" width="' + Math.max(gw, 24).toFixed(1) + '" height="' + (B - T) + '"/><circle class="vg-nokta' + (gel(m) ? ' plan' : i === buI ? ' bugun' : '') + '" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (i === buI ? 4 : 3) + '"/><title>' + esc(ipucu) + '</title></g>';
+      if (i === buI || i === minI || i === n - 1) svg += '<text class="vg-deger" x="' + cx.toFixed(1) + '" y="' + (cy - 7).toFixed(1) + '" text-anchor="' + (n > 1 && i === 0 ? 'start' : n > 1 && i === n - 1 ? 'end' : 'middle') + '">' + virgoEurK(v) + '</text>';
+      if (i % her === 0 || i === n - 1) svg += '<text class="vg-ay' + (m.ay === h.bu ? ' bugun' : '') + '" x="' + cx.toFixed(1) + '" y="' + (H - 3) + '" text-anchor="middle">' + virgoAyKisa(m.ay) + '</text>';
     });
     return svg + '</svg>';
   }
@@ -12290,7 +12288,7 @@ Dikkat edilmesi gereken 2 nokta:
     var h = virgoPlanHesap();
     var durum = h.plan ? 'Ödenecek kayıtlarla <b>' + esc(muhAyAdi(h.sonAy)) + '</b> sonunda borç <b>' + virgoET({ eur: h.sonPlan, tl: h.sonPlanTl }) + '</b>' + (h.sonPlan <= 0.5 ? ' <span class="pos">(borç biter)</span>' : '') : '';
     return '<div class="vg-plan" style="margin-top:10px">' + (durum ? '<div class="helper" style="margin:0 0 4px">' + durum + '</div>' : '') + virgoBorcGrafik(h) +
-      (h.plan ? '<div class="vg-lejant"><span><i class="vg-l-borc"></i>ay sonu borç</span><span><i class="vg-l-plan"></i>ödenecek kayıtlarla (ileriki aylar)</span></div>' : '') + '</div>';
+      '<div class="vg-lejant"><span class="muted">Ay sonu borç, € (eksi: Virgo\'ya borçluyuz; üretim ve ödemeyle 0\'a çıkar)</span>' + (h.plan ? '<span><i class="vg-l-plan"></i>ödenecek kayıtlarla</span>' : '') + '</div>' + '</div>';
   }
   // ---------- Tablo hücresine tıklayınca ayrıntı: o rakamı oluşturan kayıtlar ----------
   // Anahtar "kapsam|değer|alan": kapsam ay (YYYY-MM), top (hepsi), kisi, kat (kategori), ortak. Alan tek kalem ya da bileşik (kazanc = gelir − işletme…).
