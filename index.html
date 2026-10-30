@@ -1457,7 +1457,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-30-r236</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-30-r237</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12704,6 +12704,46 @@ Dikkat edilmesi gereken 2 nokta:
       '<td class="num">' + fmt(k.adet) + '</td><td class="num">' + (k.adet ? virgoTl(k.tl) + '<div class="vg-tl">' + virgoEur(k.tutar) + '</div>' : '') + '</td>' +
       '<td>' + (k.adet ? '' : '<button class="btn danger small" data-vurunsil="1" title="Satırı kaldır (Kaydet ile kesinleşir)">×</button>') + '</td></tr>';
   }
+  function virgoMakineSecenek(){ return secenek(state.makineler || [], function(m){ return m.id; }, function(m){ return m.ad + (m.durum === 'Pasif' ? ' (pasif)' : ''); }, '— seçin —'); }
+  // ---------- r237: makine / operatör / ürün bazında üretim analizi (ay ya da tümü) ----------
+  // Aralıklı girişler aylara gün oranıyla bölünür. Süre yalnız başlangıç–bitiş saati girilenlerden; dk / parça = o girişlerin süresi ÷ (sağlam + fire).
+  var virgoAnalizAy = '', virgoAnalizGrup = 'makine';
+  var VIRGO_ANALIZ_GRUP = [['makine', 'Makine'], ['operator', 'Operatör'], ['urun', 'Ürün']];
+  function virgoAnaliz(ay, grup){
+    var m = {};
+    virgoUretimKayitlari().forEach(function(u){
+      var o = ay ? (virgoUretimParcalar(u).find(function(p){ return p.ay === ay; }) || {}).oran || 0 : 1; if (!o) return;
+      var k = grup === 'operator' ? u.operatorId || '' : grup === 'urun' ? u.urunId || '' : u.makineId || '';
+      var r = m[k] || (m[k] = { k: k, giris: 0, gun: 0, adet: 0, fire: 0, tl: 0, dk: 0, dkParca: 0, makine: {}, urun: {} });
+      var adet = (Number(u.adet) || 0) * o, fire = (Number(u.fire) || 0) * o, dk = virgoSureDk(u) * o;
+      r.giris++; r.gun += virgoUretimIsGunu(u) * o; r.adet += adet; r.fire += fire; r.tl += virgoUretimTl(u) * o;
+      if (dk){ r.dk += dk; r.dkParca += adet + fire; }
+      if (u.makineId) r.makine[u.makineId] = 1; if (u.urunId) r.urun[u.urunId] = 1;
+    });
+    return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a, b){ return b.adet - a.adet; });
+  }
+  function virgoAnalizAd(grup, k){ if (!k) return '<span class="muted">' + (grup === 'operator' ? 'Operatör girilmemiş' : grup === 'urun' ? '—' : 'Makine girilmemiş') + '</span>';
+    return esc(grup === 'operator' ? personelAdi(k) || '(silinmiş personel)' : grup === 'urun' ? virgoUrunAd(k) : makineAdiById(k)); }
+  function virgoAnalizHtml(){
+    var aylar = {}; virgoUretimKayitlari().forEach(function(u){ virgoUretimParcalar(u).forEach(function(p){ aylar[p.ay] = 1; }); });
+    var al = Object.keys(aylar).sort().reverse(); if (!al.length) return '';
+    if (virgoAnalizAy && !aylar[virgoAnalizAy]) virgoAnalizAy = '';
+    var g = virgoAnalizGrup, l = virgoAnaliz(virgoAnalizAy, g), t = { giris: 0, gun: 0, adet: 0, fire: 0, tl: 0, dk: 0, dkParca: 0 };
+    l.forEach(function(r){ Object.keys(t).forEach(function(k){ t[k] += r[k]; }); });
+    var yz = function(r){ var top = r.adet + r.fire; return top ? '%' + fmt2(Math.round(r.fire / top * 1000) / 10) : '—'; };
+    var ek = function(r){ return g === 'makine' ? Object.keys(r.urun).map(virgoUrunAd).join(', ') : Object.keys(r.makine).map(makineAdiById).join(', '); };
+    var satir = function(r, ad, kalin){ var b = kalin ? ['<b>', '</b>'] : ['', ''];
+      return '<tr' + (kalin ? ' class="kv-alt"' : '') + '><td>' + b[0] + ad + b[1] + (!kalin && ek(r) ? '<div class="vg-tl">' + esc(ek(r)) + '</div>' : '') + '</td><td class="num">' + fmt(r.giris) + '</td><td class="num">' + fmt2(Math.round(r.gun * 10) / 10) + '</td>' +
+        '<td class="num">' + b[0] + fmt(Math.round(r.adet)) + b[1] + '</td><td class="num">' + fmt(Math.round(r.fire)) + '</td><td class="num' + (r.fire / Math.max(1, r.adet + r.fire) > 0.03 ? ' neg' : '') + '">' + yz(r) + '</td>' +
+        '<td class="num">' + (r.gun ? fmt(Math.round(r.adet / r.gun)) : '—') + '</td><td class="num">' + (r.dk ? fmt2(Math.round(r.dk / 6) / 10) : '—') + '</td><td class="num">' + (r.dkParca ? fmt2(Math.round(r.dk / r.dkParca * 100) / 100) : '—') + '</td>' +
+        '<td class="num">' + b[0] + virgoTl(r.tl) + b[1] + '</td><td class="num">' + (t.tl ? '%' + fmt(Math.round(r.tl / t.tl * 100)) : '') + '</td></tr>'; };
+    return '<div class="block"><div class="block-head"><h3>Üretim analizi ' + infoIco('Girişlerden hesaplanır. Makine: hangi CNC\'de ne kadar üretildi; operatör ve ürün kırılımı da seçilebilir. İş günü: girişlerin iş günü toplamı (aynı gün iki giriş varsa iki kez sayılır); günlük ortalama = sağlam adet ÷ iş günü. Süre ve dk / parça yalnız başlangıç–bitiş saati girilen girişlerden (Ayrıntılar). Fire oranı %3\'ün üstündeyse kırmızı. Birden çok aya düşen girişler gün sayısıyla bölünür.') + '</h3>' +
+      '<div class="bh-actions"><select data-vanalizgrup="1" title="Kırılım">' + VIRGO_ANALIZ_GRUP.map(function(x){ return '<option value="' + x[0] + '"' + (g === x[0] ? ' selected' : '') + '>' + x[1] + ' bazında</option>'; }).join('') + '</select>' +
+      '<select data-vanalizay="1" title="Dönem"><option value="">Tüm dönem</option>' + al.map(function(a){ return '<option value="' + a + '"' + (virgoAnalizAy === a ? ' selected' : '') + '>' + esc(muhAyAdi(a)) + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>' + VIRGO_ANALIZ_GRUP.find(function(x){ return x[0] === g; })[1] + '</th><th class="num">Giriş</th><th class="num">İş günü</th><th class="num">Sağlam adet</th><th class="num">Fire</th><th class="num">Fire oranı</th><th class="num">Günlük ort.</th><th class="num">Süre (sa)</th><th class="num">dk / parça</th><th class="num">Karşılığı</th><th class="num">Pay</th></tr></thead><tbody>' +
+      l.map(function(r){ return satir(r, virgoAnalizAd(g, r.k)); }).join('') + (l.length > 1 ? satir(t, 'Toplam', true) : '') + '</tbody></table></div>' +
+      (l.some(function(r){ return !r.k; }) && g !== 'urun' ? '<div class="helper" style="margin-top:6px">' + (g === 'makine' ? 'Makinesi girilmemiş girişler var; açıp makine seçerseniz analize girer.' : 'Operatörü girilmemiş girişler var.') + '</div>' : '') + '</div></div>';
+  }
   // ---------- r236: Virgo üretimi programın stoğuna da girer ----------
   // Her Virgo ürünü bir stok kartına bağlanır (config.virgoUrunler[].stokId): yoksa aynı adlı kart bulunur, o da yoksa Mamul kartı açılır.
   // Her üretim girişi sağlam adet kadar "Üretimden giriş (Virgo)" stok hareketi yazar (kaynakTur 'virgoUretim', kaynakId = giriş id);
@@ -12750,7 +12790,8 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // r227: üretim formunda ana alanlar gün, bitiş günü, ürün, adet, fire (varsa nedeni), not; vardiya, makine, operatör, saatler,
   // günlük ortalama adet, fiyat ve kur kapalı "Ayrıntılar" altında (doluysa açık gelir). Gizli alanlar formda kalır, yalnız görünüm.
-  var VIRGO_URETIM_ANA = ['tarih', 'bitisTarih', 'urunId', 'adet', 'fire', 'fireNedeni', 'aciklama'];
+  // r237: makine (hangi CNC) ve operatör de ana alan; makine tanımlıysa makine zorunlu (analiz için)
+  var VIRGO_URETIM_ANA = ['tarih', 'bitisTarih', 'urunId', 'makineId', 'operatorId', 'adet', 'fire', 'fireNedeni', 'aciklama'];
   function virgoUretimFormDuzen(fe, alan){
     var sar = {}, el = function(k){ var i = alan.findIndex(function(f){ return f.key === k; }); return i < 0 ? null : fe.querySelector('[data-ffkey="' + i + '"]'); };
     alan.forEach(function(f){ var e = el(f.key); if (e && e.closest('.field')) sar[f.key] = e.closest('.field'); });
@@ -12782,12 +12823,12 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'bitisTarih', label:'Bitiş günü', type:'date', hint:'Adet bu günlerin toplamıdır.'},
       {key:'vardiya', label:'Vardiya', type:'select', options: VIRGO_VARDIYA},
       {key:'urunId', label:'Ürün', type:'select', options: virgoUrunSecenek, required:true},
+      {key:'makineId', label:'Makine (CNC)', type:'select', options: virgoMakineSecenek, required: virgoMakineSecenek().length > 1},
+      {key:'operatorId', label:'Operatör', type:'select', options: personelSecenek},
       {key:'gunlukAdet', label:'Günlük ortalama adet', type:'number', para:false, hint:'Yazarsanız iş günü × günlük adet, toplam önerisi olarak Adet kutusunda soluk görünür.'},
       {key:'adet', label:'Sağlam adet', type:'number', para:false},
       {key:'fire', label:'Fire adet', type:'number', para:false},
       {key:'fireNedeni', label:'Fire nedeni', type:'select', options: function(){ return FIRE_NEDENLERI; }},
-      {key:'makineId', label:'Makine', type:'select', options: makineSecenek},
-      {key:'operatorId', label:'Operatör', type:'select', options: personelSecenek},
       {key:'baslangic', label:'Başlangıç saati', type:'time'},
       {key:'bitis', label:'Bitiş saati', type:'time', hint:'Saatler girilirse parça başı süre hesaplanır (tek gün girişinde).'},
       {key:'paraBirimi', label:'Fiyatın para birimi', type:'select', options: ['Üründeki gibi', '€', '₺']},
@@ -12846,6 +12887,7 @@ Dikkat edilmesi gereken 2 nokta:
       if (v.bitisTarih && v.bitisTarih < v.tarih){ toast('Bitiş günü başlangıç gününden önce olamaz.', true); return false; }
       if (v.bitisTarih === v.tarih) v.bitisTarih = '';
       var u = virgoUrun(v.urunId); if (!u){ toast('Önce sayfanın altından ürün ve fiyatını ekleyin.', true); return false; }
+      if (!v.makineId && virgoMakineSecenek().length > 1){ toast('Hangi makinede (CNC) üretildiğini seçin.', true); return false; }
       var ig = virgoUretimIsGunu(v), ga = Number(v.gunlukAdet) || 0, top = gunFarki(v.tarih, v.bitisTarih || v.tarih) + 1;
       var adet = Number(v.adet) || 0; if (!(adet > 0) && ga > 0) adet = Math.round(ga * (ig || top));
       if (!(adet > 0)){ toast('Adet 0\'dan büyük olmalı (ya da günlük ortalama adet yazın).', true); return false; }
@@ -12868,16 +12910,22 @@ Dikkat edilmesi gereken 2 nokta:
     rowFn: function(u){
       var sure = virgoSureDk(u), pb = u.paraBirimi === '₺' ? '₺' : '€', kur = Number(u.kur) || virgoGunKuru(u.tarih), fe = Number(u.fiyat) || 0;
       var fiyat = pb === '₺' ? '₺' + muhTutar(u.fiyatGirilen) + ' / adet (≈ €' + muhTutar(fe) + ')' : '€' + muhTutar(u.fiyatGirilen || fe) + ' / adet (≈ ₺' + muhTutar(fe * kur) + ')';
-      return { title: esc(virgoUretimTarihYazi(u)) + ' · ' + esc(u.vardiya || '') + ' · ' + esc(virgoUrunAd(u.urunId)) + ' · <b>' + fmt(u.adet) + ' adet</b> · <b class="pos">' + virgoTl(virgoUretimTl(u)) + '</b> <span class="muted">/ ' + virgoEur(u.tutar) + '</span>',
+      return { title: esc(virgoUretimTarihYazi(u)) + ' · ' + esc(u.vardiya || '') + ' · ' + esc(virgoUrunAd(u.urunId)) + (u.makineId ? ' · ' + esc(makineAdiById(u.makineId)) : '') + ' · <b>' + fmt(u.adet) + ' adet</b> · <b class="pos">' + virgoTl(virgoUretimTl(u)) + '</b> <span class="muted">/ ' + virgoEur(u.tutar) + '</span>',
         sub: fiyat + ' · kur ₺' + kurYazi(kur) + (Number(u.fire) ? ' · fire ' + fmt(u.fire) + (u.fireNedeni && u.fireNedeni !== '—' ? ' (' + esc(u.fireNedeni) + ')' : '') : '') +
-          (u.makineId ? ' · ' + esc(makineAdiById(u.makineId)) : '') + (u.operatorId ? ' · ' + esc(personelAdi(u.operatorId) || '(silinmiş personel)') : '') +
+          (u.operatorId ? ' · ' + esc(personelAdi(u.operatorId) || '(silinmiş personel)') : '') +
           (sure ? ' · ' + esc(u.baslangic) + '–' + esc(u.bitis) + ' (' + fmt2(sure / 60) + ' sa, ' + fmt2(sure / ((Number(u.adet) || 0) + (Number(u.fire) || 0))) + ' dk / parça)' : '') +
           (u.aciklama ? ' · ' + esc(u.aciklama) : '') };
     },
     sonra: function(host){
+      var ak = byId('virgoAnalizKutu'); if (!ak){ ak = document.createElement('div'); ak.id = 'virgoAnalizKutu'; host.appendChild(ak); }
+      setHtmlIdle(ak, virgoAnalizHtml());
       var uk = byId('virgoUrunKutu'); if (!uk){ uk = document.createElement('div'); uk.id = 'virgoUrunKutu'; host.appendChild(uk); }
       setHtmlIdle(uk, virgoUrunHtml());
       if (host.dataset.virgoBagli) return; host.dataset.virgoBagli = 1;
+      host.addEventListener('change', function(e){
+        var a = e.target.closest('[data-vanalizay],[data-vanalizgrup]'); if (!a) return;
+        if (a.dataset.vanalizay) virgoAnalizAy = a.value; else virgoAnalizGrup = a.value;
+        byId('virgoAnalizKutu').innerHTML = virgoAnalizHtml(); });
       host.addEventListener('click', function(e){
         if (e.target.closest('[data-vgitborc]')){ e.preventDefault(); gitSekme('virgo'); return; }
         if (e.target.closest('[data-virgoexcel]')){ virgoExcel(); return; }
@@ -19964,14 +20012,14 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('isgunu', 'İş günü', function(u){ return virgoUretimIsGunu(u); }, 'sayi'),
       tgK('vardiya', 'Vardiya', function(u){ return u.vardiya || ''; }),
       tgK('urun', 'Ürün', function(u){ return virgoUrunAd(u.urunId); }),
+      tgK('makine', 'Makine', function(u){ return u.makineId ? makineAdiById(u.makineId) : ''; }),
+      tgK('operator', 'Operatör', function(u){ return u.operatorId ? personelAdi(u.operatorId) : ''; }),
       tgK('adet', 'Adet', function(u){ return Number(u.adet) || 0; }, 'sayi', { toplam: true }),
       tgK('fire', 'Fire', function(u){ return Number(u.fire) || 0; }, 'sayi', { toplam: true }),
       tgK('fiyatTl', 'Fiyat ₺ / adet', function(u){ var a = Number(u.adet) || 0; return a ? muhR2(virgoUretimTl(u) / a) : 0; }, 'para', { pb: function(){ return 'TRY'; } }),
       tgK('tl', 'Tutar ₺', function(u){ return virgoUretimTl(u); }, 'para', { pb: function(){ return 'TRY'; }, toplam: true }),
       tgK('fiyat', 'Fiyat € / adet', function(u){ return Number(u.fiyat) || 0; }, 'eur', { gizli: true }),
       tgK('eur', 'Tutar €', function(u){ return Number(u.tutar) || 0; }, 'eur', { toplam: true }),
-      tgK('makine', 'Makine', function(u){ return u.makineId ? makineAdiById(u.makineId) : ''; }, 'metin', { gizli: true }),
-      tgK('operator', 'Operatör', function(u){ return u.operatorId ? personelAdi(u.operatorId) : ''; }, 'metin', { gizli: true }),
       tgK('fireNedeni', 'Fire nedeni', function(u){ return u.fireNedeni && u.fireNedeni !== '—' ? u.fireNedeni : ''; }, 'metin', { gizli: true }),
       tgK('not', 'Not', function(u){ return u.aciklama || ''; }, 'metin', { gizli: true })
     ] },
