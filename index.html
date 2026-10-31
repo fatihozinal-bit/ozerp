@@ -155,7 +155,10 @@
     font-size: 11px; line-height: 1.5; padding: 9px 11px; border-radius: 3px; text-align: left;
     white-space: pre-line; box-shadow: 0 6px 18px rgba(0,0,0,.28); font-family: 'IBM Plex Sans', system-ui, sans-serif;
   }
-  .info-bubble::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color: var(--ink); }
+  .info-bubble::after { content:''; position:absolute; top:100%; left:var(--ok-x, 50%); transform:translateX(-50%); border:5px solid transparent; border-top-color: var(--ink); }
+  /* r242: balon ekrana göre yerleşir (balonYerlestir): kenarda taşmaz, kutu içinde kesilmez; üstte yer yoksa altta açılır */
+  .info-bubble.yerlesik { position:fixed; transform:none; bottom:auto; z-index:700; }
+  .info-bubble.yerlesik.alta::after { top:auto; bottom:100%; border-top-color:transparent; border-bottom-color:var(--ink); }
   .makine-bar-row { display:flex; align-items:center; gap:10px; padding:5px 0; }
   .makine-bar-label { width:130px; flex-shrink:0; font-size:11.5px; font-family:'IBM Plex Sans',system-ui,sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .makine-bar-track { flex:1; height:14px; background:var(--steel-soft); border-radius:2px; overflow:hidden; }
@@ -1462,7 +1465,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r241</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r242</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1501,7 +1504,7 @@
         <div class="block-head"><h3>Ürün bazlı katkı</h3></div>
         <div class="block-body tablewrap">
           <table id="ozetUrunTablo"><thead><tr>
-            <th>Ürün</th><th class="num">Bu ay adet</th><th class="num">Birim maliyet</th><th class="num">Fason ücreti</th><th class="num">Birim kâr</th><th class="num">Toplam katkı</th>
+            <th>Ürün</th><th class="num">Bu ay adet</th><th class="num">Birim maliyet ₺</th><th class="num">Birim fiyat ₺</th><th class="num">Birim kâr ₺</th><th class="num">Toplam katkı</th>
           </tr></thead><tbody></tbody></table>
         </div>
       </div>
@@ -4018,7 +4021,7 @@ Dikkat edilmesi gereken 2 nokta:
     var maxV = Math.max.apply(null, ayToplam.concat([1]));
     var barW = (W - padL - 10) / ayToplam.length - barGap;
     var bars = ayToplam.map(function(v, i){
-      var h = (H-padB-10) * (v/maxV);
+      var h = (H-padB-22) * (v/maxV); // r242: üstte sayı için yer (en yüksek çubuğun etiketi kesilmesin)
       var x = padL + i*((W-padL-10)/ayToplam.length) + barGap/2;
       var y = H - padB - h;
       return '<rect x="'+x+'" y="'+y+'" width="'+Math.max(1,barW)+'" height="'+h+'" fill="var(--steel)"></rect>'+
@@ -4037,23 +4040,30 @@ Dikkat edilmesi gereken 2 nokta:
       if (gKurBilgiEl){ var kt = state.config.kuruTarihi; gKurBilgiEl.textContent = kt ? kt.slice(8,10)+'.'+kt.slice(5,7) : 'tahmini'; gKurBilgiEl.title = kt ? 'Son güncelleme: '+kt.split('-').reverse().join('.') : 'Henüz elle girilmedi, varsayılan tahmini kur kullanılıyor'; }
     }
   }
+  // r242: Özet katkısı ₺ esaslı. Parça fiyatı ₺ sabit anlaşıldığı için: şirket kuruluşuna kadar Virgo fiyat listesindeki fiyat (₺; € yazılmışsa
+  // bugünkü kurla), yoksa stok kartındaki fason ücret (€ × bugünkü kur). Birim maliyet (makine saat ücreti, €) ve personel ₺'ye çevrilir;
+  // € karşılığı yalnız bilgi (bugünkü kurla), kur değişince ₺ katkı değişmez.
+  function ozetKur(){ return state.config ? Number(state.config.eurTryKuru)||0 : 0; }
+  function ozetUrunKatki(u){
+    var kur = ozetKur(), adet = urunAdedBuAy(u.id), vu = todayISO() < virgoKurulusTarihi() ? virgoUrunStokla({ urunId: u.id }) : null;
+    var fiyat = vu ? (virgoUrunPb(vu) === '₺' ? Number(vu.fiyat)||0 : (Number(vu.fiyat)||0) * kur) : (Number(u.fasonUcret)||0) * kur;
+    var mal = calcUrunMaliyet(u) * kur, bk = fiyat - mal;
+    return { u: u, adet: adet, fiyat: fiyat, kaynak: vu ? 'Virgo fiyatı, sabit ₺' : 'fason ücret €' + fmt2(u.fasonUcret) + ' × kur', mal: mal, bk: bk, top: adet * bk };
+  }
+  function ozetSabitTl(){ var ay = thisMonthKey(); return toplamla(state.personel.filter(function(p){ return !personelAyrildi(p, ay); }), function(p){ return personelMaliyet(p).tl; }); }
+  function tlEur(v){ var kur = ozetKur(); return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)) + (kur ? ' <span class="muted">(≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) + ')</span>' : ''); }
   function renderOzet(){
-    var sabit = calcSabitGider();
+    var kur = ozetKur(), sabitTl = ozetSabitTl();
     var toplamUretim = buAyKayitlari().filter(sonOperasyonKaydiMi).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
-    var toplamKatki = 0;
-    urunListesi().forEach(function(u){
-      var adet = urunAdedBuAy(u.id);
-      var birimKar = (Number(u.fasonUcret)||0) - calcUrunMaliyet(u);
-      toplamKatki += adet * birimKar;
-    });
-    var net = toplamKatki - sabit.toplam;
+    var katkilar = urunListesi().map(ozetUrunKatki), toplamKatki = toplamla(katkilar, function(x){ return x.top; });
+    var net = toplamKatki - sabitTl, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) + ' (bugünkü kurla)' : ''; };
 
     document.getElementById('ozetAyEtiket').textContent = new Date().toLocaleDateString('tr-TR',{month:'long', year:'numeric'});
     var cards = [
       {label:'Bu ay üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim'},
-      {label:'Aylık sabit gider', value: '€'+fmt(sabit.toplam), cls:'yetki-maliyet', detay:'sabit', sub: 'personel €'+fmt(sabit.personelToplam)+(tlStr(sabit.toplam)?' · '+tlStr(sabit.toplam):'')},
-      {label:'Tahmini toplam katkı', value: '€'+fmt(toplamKatki), cls:'accent yetki-maliyet', detay:'katki', sub: tlStr(toplamKatki)},
-      {label: net>=0 ? 'Tahmini net (kâr)' : 'Tahmini net (açık)', value: (net>=0?'€':'−€')+fmt(Math.abs(net)), cls: (net>=0?'good':'')+' yetki-maliyet', detay:'net', sub: tlStr(net)}
+      {label:'Aylık sabit gider', value: '₺'+fmt(sabitTl), cls:'yetki-maliyet', detay:'sabit', sub: 'personel · '+eurYazi(sabitTl)},
+      {label:'Tahmini toplam katkı', value: '₺'+fmt(toplamKatki), cls:'accent yetki-maliyet', detay:'katki', sub: eurYazi(toplamKatki)},
+      {label: net>=0 ? 'Tahmini net (kâr)' : 'Tahmini net (açık)', value: (net>=0?'₺':'−₺')+fmt(Math.abs(net)), cls: (net>=0?'good':'')+' yetki-maliyet', detay:'net', sub: eurYazi(net)}
     ];
     document.getElementById('ozetCards').innerHTML = cards.map(function(c){
       return '<div class="card '+c.cls+(c.detay?' tiklanir" data-ozetdetay="'+c.detay+'" title="Hesabı görmek için tıklayın':'')+'"><div class="label">'+c.label+(c.detay?' <span class="kart-ok">›</span>':'')+'</div><div class="value">'+c.value+'</div>'+(c.sub?'<div class="sub">'+c.sub+'</div>':'')+'</div>';
@@ -4063,12 +4073,9 @@ Dikkat edilmesi gereken 2 nokta:
     if (urunListesi().length === 0){
       tbody.innerHTML = '<tr><td colspan="6" class="empty">Henüz ürün tanımlanmadı — Stok Kartları\'ndan mamul kartı açın.</td></tr>';
     } else {
-      tbody.innerHTML = urunListesi().map(function(u){
-        var adet = urunAdedBuAy(u.id);
-        var maliyet = calcUrunMaliyet(u);
-        var kar = (Number(u.fasonUcret)||0) - maliyet;
-        return '<tr><td>'+esc(u.ad)+'</td><td class="num">'+fmt(adet)+'</td><td class="num">€'+fmt2(maliyet)+'</td><td class="num">€'+fmt2(u.fasonUcret)+'</td>'+
-          '<td class="num '+(kar>=0?'pos':'neg')+'">€'+fmt2(kar)+'</td><td class="num">€'+fmt(adet*kar)+'</td></tr>';
+      tbody.innerHTML = katkilar.map(function(x){
+        return '<tr><td>'+esc(x.u.ad)+'</td><td class="num">'+fmt(x.adet)+'</td><td class="num">₺'+fmt2(x.mal)+'</td><td class="num" title="'+escAttr(x.kaynak)+'">₺'+fmt2(x.fiyat)+'</td>'+
+          '<td class="num '+(x.bk>=0?'pos':'neg')+'">₺'+fmt2(x.bk)+'</td><td class="num">'+tlEur(x.top)+'</td></tr>';
       }).join('');
     }
 
@@ -4400,6 +4407,20 @@ Dikkat edilmesi gereken 2 nokta:
   function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
   // Uzun açıklama metinleri yerine küçük bir "!" ikonu — üzerine gelince/odaklanınca baloncukta metni gösterir.
   function infoIco(text){ return '<span class="info-ico" tabindex="0">!<span class="info-bubble">'+esc(text)+'</span></span>'; }
+  // r242: "!" balonu simgenin üstünde ortalanıyordu; sağ / sol kenarda ekran dışına taşıyor, tablo ve kutu içinde kesiliyordu.
+  // Üzerine gelince (ya da odaklanınca) ekran koordinatıyla yerleştirilir: yatayda ekrana sığdırılır, üstte yer yoksa altta açılır.
+  function balonYerlestir(e){
+    var ico = e.target && e.target.closest && e.target.closest('.info-ico'); if (!ico) return;
+    var b = ico.querySelector('.info-bubble'); if (!b) return;
+    b.classList.add('yerlesik'); b.classList.remove('alta');
+    var r = ico.getBoundingClientRect(), w = b.offsetWidth, h = b.offsetHeight, orta = r.left + r.width / 2;
+    var left = Math.max(8, Math.min(orta - w / 2, window.innerWidth - w - 8)), top = r.top - h - 8;
+    if (top < 8){ top = r.bottom + 8; b.classList.add('alta'); }
+    b.style.left = left + 'px'; b.style.top = Math.min(top, window.innerHeight - h - 8) + 'px';
+    b.style.setProperty('--ok-x', Math.max(10, Math.min(w - 10, orta - left)) + 'px');
+  }
+  document.addEventListener('mouseover', balonYerlestir);
+  document.addEventListener('focusin', balonYerlestir);
 
   // ---------- Cari / Müşteri ----------
   // Cari açılışında muhasebe/fatura süreci için gerekli olabilecek detaylar da isteniyor
@@ -15665,16 +15686,16 @@ Dikkat edilmesi gereken 2 nokta:
         git: 'kayitlar', gitAd: 'Üretim Kayıtları' };
     } else if (k === 'sabit'){
       d = { t: 'Aylık sabit gider', f: 'Personel (işveren maliyeti girilmişse o; girilmemişse ₺ net maaştan brüt + işveren SGK payı bordro kurallarıyla hesaplanır — cebinizden çıkan tutar; gelir vergisi dilimi yıl içinde arttığı için tam yılın 12 ay ortalaması) Kira ve diğer genel giderler elle yazılmaz; gerçekleşeni Finans Raporları\'nda. İşten ayrılanlar katılmaz; henüz işe başlamayanlar saat maliyeti tam kadroyla hesaplansın diye katılır. Hepsi <b>Sistem › Tanımlar</b> sayfasından gelir; değiştirmek için oraya gidin. Kârlılık planı ve Finans Raporları ay ay hesaplar (işe giriş ayında gün kadar).',
-        h: ozetDetayTablo(['Kalem','Kaynak','Aylık'], state.personel.filter(function(p){ return !personelAyrildi(p, ay); }).map(function(p){ var m = personelMaliyet(p); return [esc(p.ad), esc(m.kaynak), eurTl(m.tutar)]; })
-          , ['Toplam', '', eurTl(sabit.toplam)]),
+        h: ozetDetayTablo(['Kalem','Kaynak','Aylık'], state.personel.filter(function(p){ return !personelAyrildi(p, ay); }).map(function(p){ var m = personelMaliyet(p); return [esc(p.ad), esc(m.kaynak), tlEur(m.tl)]; })
+          , ['Toplam', '', tlEur(ozetSabitTl())]),
         git: 'tanimlar', gitAd: 'Tanımlar' };
     } else if (k === 'katki' || k === 'net'){
-      var l = urunListesi().map(function(u){ var adet = urunAdedBuAy(u.id), mal = calcUrunMaliyet(u), bk = (Number(u.fasonUcret)||0) - mal; return { u: u, adet: adet, mal: mal, bk: bk, top: adet * bk }; }).filter(function(x){ return x.adet; });
-      var top = toplamla(l, function(x){ return x.top; });
+      var l = urunListesi().map(ozetUrunKatki).filter(function(x){ return x.adet; });
+      var top = toplamla(l, function(x){ return x.top; }), sabitTl = ozetSabitTl();
       d = { t: k === 'katki' ? 'Tahmini toplam katkı' : 'Tahmini net',
-        f: 'Her ürün için: <b>bu ay üretilen adet × (fason ücret − birim maliyet)</b>.<br>Birim maliyet = makine saat maliyeti × birim süre (dk) ÷ 60.<br>Makine saat maliyeti = aylık sabit gider €'+fmt(sabit.toplam)+' ÷ aylık makine saati '+fmt(kapasite)+' sa = <b>€'+fmt2(saatM)+'/sa</b>.'+(k === 'net' ? '<br><b>Tahmini net = toplam katkı − aylık sabit gider.</b>' : '')+'<br><span class="muted">Fason ücret ve birim süre Stok Kartları\'ndaki mamul kartından; sabit gider ve makine saati Tanımlar\'dan gelir.</span>',
-        h: ozetDetayTablo(['Ürün','Adet','Fason ücret','Birim maliyet','Birim katkı','Katkı'], l.map(function(x){ return [esc(x.u.ad), fmt(x.adet), '€'+fmt2(x.u.fasonUcret), '€'+fmt2(x.mal)+' <span class="muted">('+fmt2(x.u.birimSureDk)+' dk)</span>', '<span class="'+(x.bk<0?'neg':'pos')+'">€'+fmt2(x.bk)+'</span>', '€'+fmt(x.top)]; }), ['Toplam katkı','','','','',eurTl(top)])+
-          (k === 'net' ? '<div style="height:10px"></div>'+ozetDetayTablo(['Hesap','Tutar'], [['Toplam katkı', eurTl(top)], ['− Aylık sabit gider', eurTl(-sabit.toplam)]], ['Tahmini net', eurTl(top - sabit.toplam)]) : ''),
+        f: 'Hesap ₺ esaslıdır (parça fiyatı ₺ sabit). Her ürün için: <b>bu ay üretilen adet × (birim fiyat − birim maliyet)</b>.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br>Birim maliyet = makine saat ücreti × birim süre (dk) ÷ 60, bugünkü kurla ₺ (saat ücreti €'+fmt2(saatM)+'/sa).'+(k === 'net' ? '<br><b>Tahmini net = toplam katkı − aylık sabit gider (personel, ₺).</b>' : '')+'<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla; kur değişince ₺ tutarlar değişmez.</span>',
+        h: ozetDetayTablo(['Ürün','Adet','Birim fiyat','Birim maliyet','Birim katkı','Katkı'], l.map(function(x){ return [esc(x.u.ad), fmt(x.adet), '₺'+fmt2(x.fiyat)+' <span class="muted">('+esc(x.kaynak)+')</span>', '₺'+fmt2(x.mal)+' <span class="muted">('+fmt2(x.u.birimSureDk)+' dk)</span>', '<span class="'+(x.bk<0?'neg':'pos')+'">₺'+fmt2(x.bk)+'</span>', tlEur(x.top)]; }), ['Toplam katkı','','','','',tlEur(top)])+
+          (k === 'net' ? '<div style="height:10px"></div>'+ozetDetayTablo(['Hesap','Tutar'], [['Toplam katkı', tlEur(top)], ['− Aylık sabit gider', tlEur(-sabitTl)]], ['Tahmini net', tlEur(top - sabitTl)]) : ''),
         git: 'stok', gitAd: 'Stok Kartları', git2: 'tanimlar', git2Ad: 'Tanımlar' };
     } else if (k === 'isemri'){
       var acik = state.isemirleri.filter(function(ie){ return ie.durum !== 'İptal' && isEmriKalan(ie) > 0; }).sort(function(a,b){ return (a.termin||'9').localeCompare(b.termin||'9'); });
