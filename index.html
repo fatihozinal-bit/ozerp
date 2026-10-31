@@ -363,6 +363,7 @@
   .canli-kutu .ck { font-size: 11px; color: var(--steel); }
   .canli-kutu .ck b { display: block; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; color: var(--ink); font-weight: 600; }
   .canli-kutu .ck.ana b { font-size: 20px; }
+  .canli-kutu.mh-fiyat { justify-content: flex-start; text-align: left; margin-top: 6px; }
   @media (max-width: 640px) { .canli-kutu { justify-content: flex-start; text-align: left; } }
   .recordlist { border: 1px solid var(--border); }
   .recordrow {
@@ -1490,7 +1491,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r248</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-01-r249</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4746,7 +4747,11 @@ Dikkat edilmesi gereken 2 nokta:
     var satisFiyati = birimMaliyet * (1 + kar/100);
     var toplamSatis = adet * satisFiyati;
     var toplamSureDk = adet * (Number(r.sure)||0) + (Number(r.kurulum)||0);
-    return { ham: ham, cubukAdet: ham.cubukAdet(adet), birimAgirlik:birimAgirlik, toplamAgirlik:toplamAgirlik, birimHammaddeBedeli:birimHammaddeBedeli, toplamHammaddeBedeli:toplamHammaddeBedeli,
+    // Fason (hammadde müşteriden): işçilik + takım/uç + bunların fire payı + dış işlem; hammadde ve talaş hariç, kâr eklenir
+    var fasonFireOncesi = birimIscilikBedeli + takimBirim;
+    var fasonMaliyet = (fireOran > 0 ? fasonFireOncesi / (1 - fireOran) : fasonFireOncesi) + disIslemBirim;
+    var fasonFiyat = fasonMaliyet * (1 + kar/100);
+    return { ham: ham, fasonMaliyet:fasonMaliyet, fasonFiyat:fasonFiyat, cubukAdet: ham.cubukAdet(adet), birimAgirlik:birimAgirlik, toplamAgirlik:toplamAgirlik, birimHammaddeBedeli:birimHammaddeBedeli, toplamHammaddeBedeli:toplamHammaddeBedeli,
       birimIscilikBedeli:birimIscilikBedeli, takimBirim:takimBirim, fireBirim:fireBirim, disIslemBirim:disIslemBirim, talasAgirlikBirim:talasAgirlikBirim, talasGeliriBirim:talasGeliriBirim,
       birimMaliyet:birimMaliyet, toplamMaliyet:toplamMaliyet, satisFiyati:satisFiyati, toplamSatis:toplamSatis, toplamSureDk:toplamSureDk };
   }
@@ -4796,9 +4801,20 @@ Dikkat edilmesi gereken 2 nokta:
       ((h.fireBirim + h.disIslemBirim) > 0 ? k('Fire+dış işlem/adet', e2(h.fireBirim + h.disIslemBirim)) : '') +
       k('Birim maliyet', e2(h.birimMaliyet)) +
       k('Satış fiyatı/adet', e2(h.satisFiyati), true) +
+      k('Fason fiyatı/adet', e2(h.fasonFiyat)) +
       k('Toplam satış', '€'+fmt(Math.round(h.toplamSatis)));
   }
 
+  function mhE2(n){ return '€'+(Number(n)||0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  // Hesaplama satırının ölçü özeti: adet · hammadde ölçüsü · bitmiş boy · hamboy (alın + testere payı dahil) · süre
+  function mhOlcuSatiri(r, h){
+    var p = [fmt(r.adet)+' adet', (r.malzeme && r.malzeme !== 'Diğer (elle gir)' ? esc(r.malzeme)+' ' : '')+esc(hamOlcuMetni(r.sekil, r.cap, r.olcuB))];
+    if (Number(r.parcaBoy)) p.push('bitmiş boy <b>'+fmt2(r.parcaBoy)+' mm</b>');
+    var paylar = [Number(r.alinPayi) ? 'alın '+fmt2(r.alinPayi) : '', Number(r.kesmePayi) ? 'testere '+fmt2(r.kesmePayi) : ''].filter(Boolean);
+    p.push('hamboy <b>'+fmt2(h.ham.hamBoy)+' mm</b>'+(Number(r.parcaBoy) && paylar.length ? ' ('+paylar.join(' + ')+' mm payı dahil)' : ''));
+    p.push('süre <b>'+fmt2(r.sure)+' dk/adet</b>'+(Number(r.kurulum) ? ' + kurulum '+fmt2(r.kurulum)+' dk' : ''));
+    return p.join(' · ');
+  }
   function renderMaliyetHesap(){
     var wrap = document.getElementById('mhListe');
     var list = state.maliyetHesaplari||[];
@@ -4808,7 +4824,14 @@ Dikkat edilmesi gereken 2 nokta:
       var h = mhHesapla(r);
       var acik = !!OZET_ACIK_DETAYLAR[r.id];
       return '<div class="recordrow" data-rid="'+r.id+'"><div class="rmain"><div class="rtitle">'+esc(r.ad||'(adsız)')+' <span class="pill">'+esc(hamOlcuMetni(r.sekil, r.cap, r.olcuB))+'</span></div>'+
-        '<div class="rsub">'+fmt(r.adet)+' adet · Birim maliyet: €'+fmt2(h.birimMaliyet)+' · Satış: €'+fmt2(h.satisFiyati)+'</div>'+
+        '<div class="rsub">'+mhOlcuSatiri(r, h)+'</div>'+
+        '<div class="canli-kutu mh-fiyat">'+
+          '<div class="ck">Birim maliyet<b>'+mhE2(h.birimMaliyet)+'</b></div>'+
+          '<div class="ck ana">Satış fiyatı<b>'+mhE2(h.satisFiyati)+'</b></div>'+
+          '<div class="ck">Fason fiyatı '+infoIco('Hammadde müşteriden gelirse: işçilik (kurulum dahil) €'+fmt2(h.birimIscilikBedeli)+' + takım/uç €'+fmt2(h.takimBirim)+' + fire payı + dış işlem €'+fmt2(h.disIslemBirim)+' = maliyet €'+fmt2(h.fasonMaliyet)+'; üstüne kâr %'+fmt2(r.kar)+'. Hammadde ve talaş hariç.')+'<b>'+mhE2(h.fasonFiyat)+'</b></div>'+
+          '<div class="ck">Hammadde/adet<b>'+mhE2(h.birimHammaddeBedeli - h.talasGeliriBirim)+'</b></div>'+
+          '<div class="ck">Birim ağırlık<b>'+(Number(h.birimAgirlik)||0).toLocaleString('tr-TR', {minimumFractionDigits:3, maximumFractionDigits:3})+' kg</b></div>'+
+        '</div>'+
         '<div class="rdetail" id="rdetail-'+r.id+'" style="display:'+(acik?'block':'none')+'">'+
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'+
         '<button class="btn secondary small" data-mhstoka="'+r.id+'">Stok kartına aktar</button>'+
@@ -4838,6 +4861,8 @@ Dikkat edilmesi gereken 2 nokta:
         '<tr><td><strong>Birim maliyet</strong> (hammadde + işçilik + takım + fire + dış işlem − talaş)</td><td class="num"><strong>€'+fmt2(h.birimMaliyet)+'</strong></td></tr>'+
         '<tr><td class="muted">Kâr oranı</td><td class="num">%'+fmt2(r.kar)+'</td></tr>'+
         '<tr><td><strong>Birim satış fiyatı</strong></td><td class="num"><strong>€'+fmt2(h.satisFiyati)+'</strong></td></tr>'+
+        '<tr><td class="muted">Fason maliyet (hammadde ve talaş hariç: işçilik + takım + fire + dış işlem)</td><td class="num">'+mhE2(h.fasonMaliyet)+'</td></tr>'+
+        '<tr><td><strong>Fason fiyatı</strong> (kâr %'+fmt2(r.kar)+' dahil)</td><td class="num"><strong>'+mhE2(h.fasonFiyat)+'</strong></td></tr>'+
         '<tr><td class="muted">Toplam maliyet ('+fmt(r.adet)+' adet)</td><td class="num">€'+fmt2(h.toplamMaliyet)+'</td></tr>'+
         '<tr><td><strong>Toplam satış tutarı</strong></td><td class="num"><strong>€'+fmt2(h.toplamSatis)+'</strong></td></tr>'+
         '</tbody></table></div></div></div>'+
