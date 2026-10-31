@@ -1490,7 +1490,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r246</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r248</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2437,6 +2437,13 @@ Dikkat edilmesi gereken 2 nokta:
         eksik.forEach(function(f){ var el = fieldsEl.querySelector('[data-ffkey="'+opts.fields.indexOf(f)+'"]'); if (el) el.classList.add('alan-hata'); });
         var ilkEksik = fieldsEl.querySelector('.alan-hata'); if (ilkEksik){ ilkEksik.focus(); ilkEksik.scrollIntoView({ block: 'nearest' }); }
         toast('Zorunlu alan: '+eksik.map(function(f){ return f.label; }).join(', '), true); return;
+      }
+      // Sayı alanları eksi olamaz (adet, süre, tutar…); eksi anlamlı olan alanlar tanımda eksi:true ile işaretlenir
+      var eksiler = opts.fields.filter(function(f){ return f.type === 'number' && !f.eksi && out[f.key] < 0; });
+      if (eksiler.length){
+        eksiler.forEach(function(f){ var el = fieldsEl.querySelector('[data-ffkey="'+opts.fields.indexOf(f)+'"]'); if (el) el.classList.add('alan-hata'); });
+        var ilkEksi = fieldsEl.querySelector('.alan-hata'); if (ilkEksi) ilkEksi.focus();
+        toast('Eksi değer girilemez: '+eksiler.map(function(f){ return f.label; }).join(', '), true); return;
       }
       // Kayıt öncesi kontrol (tekrar kaydı, VKN / IBAN): form açıkken yapılır; engel ya da "Vazgeç" formu açık bırakır
       if (opts.kayitOncesi){ opts.kayitOncesi(out, function(){ cleanup(); opts.onSave(out); }); return; }
@@ -3923,7 +3930,8 @@ Dikkat edilmesi gereken 2 nokta:
   function bosListeDugmeleri(){
     document.querySelectorAll('main .panel.active .empty').forEach(function(bos){
       if (bos.querySelector('[data-bosyeni]') || !/^(Henüz|Kayıt yok|Bu listede kayıt yok)/i.test((bos.textContent||'').trim())) return;
-      if (!bosListeHedefi(bos)) return;
+      var h = bosListeHedefi(bos); if (!h) return;
+      var blok = bos.closest('.block'); if (h.dugme && blok && blok.contains(h.dugme)) return;
       bos.insertAdjacentHTML('beforeend', '<div style="margin-top:8px"><button class="btn small" data-bosyeni="1">+ Yeni</button></div>');
     });
   }
@@ -4751,7 +4759,7 @@ Dikkat edilmesi gereken 2 nokta:
     {type:'section', label:'Ürün'},
     {key:'ad', label:'Ürün adı', type:'text', placeholder:'ör. P1-DN12'},
     {key:'adet', label:'Adet', type:'number'},
-    {key:'kar', label:'Kâr oranı (%)', type:'number'},
+    {key:'kar', label:'Kâr oranı (%)', type:'number', eksi:true},
     {type:'section', label:'Hammadde'},
     {key:'malzeme', label:'Malzeme', type:'select', options:MH_MALZEMELER.map(function(m){ return m.ad; })},
     {key:'sekil', label:'Hammadde profili', type:'select', options: HAM_PROFILLER.map(function(p){ return { value: p[0], label: p[1] }; })},
@@ -6852,7 +6860,7 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'maliyet', label:'Malzeme maliyeti (€) — ağırlıklı ortalama', type:'number', hint:'Fiyatlı her mal kabulde (satınalma siparişi fiyatı ya da mal kabulde girilen fiyat) kendiliğinden güncellenir: (eldeki × eski maliyet + gelen × alış fiyatı) ÷ toplam. Elle de değiştirebilirsiniz.'},
     {key:'uretimSuresiDk', label:'Üretim süresi (dk/adet)', type:'number'},
     {key:'fasonUcret', label:'Fason ücreti (€/adet, müşteri malında)', type:'number'},
-    {key:'karMarji', label:'Kâr marjı (%)', type:'number'},
+    {key:'karMarji', label:'Kâr marjı (%)', type:'number', eksi:true},
     {key:'birimFiyat', label:'Satış fiyatı (€)', type:'number'}
   ];
   document.getElementById('stokEkleBtn').addEventListener('click', function(){
@@ -7935,8 +7943,8 @@ Dikkat edilmesi gereken 2 nokta:
       tabs: ['musteriler','carihesap','cariekstre','teklifler','siparisler','sevkiyat','faturalar','satisiade','fiyatlar','satinalmatalep','satinalmasiparis','alisfatura','irsaliyeler','kasabanka','ceksenet','giderler','bordro','finansrapor'] },
     { id: 'muhasebe', ad: 'Muhasebe', not: 'yasal defterler müşavirde',
       tabs: ['muhfis','hesapplani','defterler','mizan','malitablolar','kdvbeyan','vergiodeme','kurfarki','amortisman','donemsonu','edefter'] },
-    { id: 'ekuretim', ad: 'Ek üretim ve kalite', not: 'temel üretim (iş emri, operatör ekranı, üretim girişi / kayıtları, duruş, bakım, kalite kontrol) her zaman açık',
-      tabs: ['uretimplani','lotlar','musterimali','gidenfason','vardiyadevir','ncr','olcualetleri'] },
+    { id: 'ekuretim', ad: 'Ek üretim ve kalite', not: 'operatör ekranı (tablet) dahil; temel üretim (iş emri, üretim girişi / kayıtları, duruş, bakım, kalite kontrol) her zaman açık',
+      tabs: ['uretimplani','operator','lotlar','musterimali','gidenfason','vardiyadevir','ncr','olcualetleri'] },
     { id: 'diger', ad: 'Diğer', not: '',
       tabs: ['gorusmeler','projeler','isg','dokumanlar','maliyethesap','cikti'] }
   ];
@@ -9275,7 +9283,12 @@ Dikkat edilmesi gereken 2 nokta:
     var ub = document.getElementById('urBirlestirBtn');
     if (ub) ub.style.display = state.urunler.some(function(u){ return !state.stok.some(function(s){ return s.eskiUrunId === u.id; }); }) ? '' : 'none';
   }
-  EK_RENDER.tanimlar = renderTanimEk;
+  // Satış / fatura / muhasebe kapalıyken onlara ait ayarlar gizli (modül açılınca geri gelir; ayarlar silinmez)
+  function tanimKapaliGizle(){
+    var ticariYok = modulKapali('ticari'), muhYok = modulKapali('muhasebe');
+    [['donemKilitBlok', ticariYok && muhYok], ['onayKuralBlok', ticariYok], ['ciktiSablonBlok', ticariYok]].forEach(function(x){ var el = byId(x[0]); if (el) el.style.display = x[1] ? 'none' : ''; });
+  }
+  EK_RENDER.tanimlar = function(){ renderTanimEk(); tanimKapaliGizle(); };
 
 // ===== m2_saha.js =====
   // =====================================================================
@@ -9366,6 +9379,7 @@ Dikkat edilmesi gereken 2 nokta:
   function uretimKaydetVeri(v, cb){
     if (!db){ cb('Ortak veri bağlantısı yok.'); return; }
     if (!v.makineId || !v.urunId){ cb(!state.makineler.length ? 'Önce bir makine tanımlayın (Tanımlar > Makineler).' : 'Makine ve ürün zorunlu.'); return; }
+    if (v.adet < 0 || v.fireAdet < 0){ cb('Adet eksi olamaz.'); return; }
     if (!v.adet && !v.fireAdet){ cb('İyi veya fire adet girin.'); return; }
     if (v.bitisTarih && v.bitisTarih < v.tarih){ cb('Bitiş günü, tarihten önce olamaz.'); return; }
     if (v.bitisTarih === v.tarih) v.bitisTarih = '';
@@ -11415,7 +11429,7 @@ Dikkat edilmesi gereken 2 nokta:
       openForm({ title:'Hesaplar arası virman', values:{tur:'virman', tarih: todayISO(), kaynakHesapId:'', hedefHesapId:'', tutar:0}, fields:[{key:'tarih', label:'Tarih', type:'date'},{key:'kaynakHesapId', label:'Kaynak', type:'select', options: hesapSecenekleri},{key:'hedefHesapId', label:'Hedef', type:'select', options: hesapSecenekleri},{key:'tutar', label:'Tutar (kaynak hesabın para biriminde)', para:false, type:'number', required:true}],
         onSave: function(v){ if (!v.kaynakHesapId || !v.hedefHesapId || v.kaynakHesapId === v.hedefHesapId){ toast('Farklı iki hesap seçin.', true); return; } kayitEkle('tanimKayitlari', Object.assign({tur:'virman'}, v)).then(function(){ toast('✓ Virman yapıldı'); }); } });
     }); },
-    fields: [ {key:'ad', label:'Hesap adı', type:'text', required:true}, {key:'hesapTuru', label:'Tür', type:'select', options:['Kasa','Banka','Kredi kartı','POS']}, {key:'banka', label:'Banka', type:'text'}, {key:'iban', label:'IBAN', type:'text'}, {key:'paraBirimi', label:'Hesabın para birimi', type:'select', options: function(){ return PB_LISTE; }}, {key:'acilis', label:'Açılış bakiyesi (hesabın para biriminde)', type:'number', para:false} ],
+    fields: [ {key:'ad', label:'Hesap adı', type:'text', required:true}, {key:'hesapTuru', label:'Tür', type:'select', options:['Kasa','Banka','Kredi kartı','POS']}, {key:'banka', label:'Banka', type:'text'}, {key:'iban', label:'IBAN', type:'text'}, {key:'paraBirimi', label:'Hesabın para birimi', type:'select', options: function(){ return PB_LISTE; }}, {key:'acilis', label:'Açılış bakiyesi (hesabın para biriminde)', type:'number', para:false, eksi:true} ],
     defaults: { tur:'hesap', ad:'', hesapTuru:'Banka', banka:'', iban:'', paraBirimi:'TRY', acilis:0 },
     sirala: function(a,b){ return (a.ad||'').localeCompare(b.ad||'', 'tr'); },
     rowFn: function(h){ var b = hesapBakiye(h), pb = h.paraBirimi || 'EUR'; return { title: esc(h.ad)+' <span class="pill">'+esc(h.hesapTuru||'')+' · '+pb+'</span> · <b class="'+(b<0?'neg':'')+'">'+pbFmt(b, pb)+'</b>'+(pb !== 'EUR' ? ' <span class="muted">≈ '+euro(hesapBakiyeEur(h))+'</span>' : ''), sub: [h.banka, h.iban].filter(Boolean).map(esc).join(' · ')+' · '+hesapHareketleri(h.id).length+' hareket'+kasaEksiHtml(h) }; },
@@ -14631,6 +14645,7 @@ Dikkat edilmesi gereken 2 nokta:
     ]; },
     defaults: function(){ return { personelId:'', tur:'Yıllık', baslangic: todayISO(), bitis: todayISO(), aciklama:'', durum:'Bekliyor' }; },
     hazirla: function(v){
+      if (v.bitis && v.baslangic && v.bitis < v.baslangic){ toast('Bitiş, başlangıçtan önce olamaz.', true); return false; }
       v.gun = v.baslangic ? Math.max(1, gunFarki(v.baslangic, v.bitis || v.baslangic) + 1) : 0;
       v.isGunu = izinIsGunu(v.baslangic, v.bitis);
       if (v.tur === 'Yıllık' && v.durum !== 'Reddedildi'){
@@ -14900,7 +14915,7 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Raporlar ----------
   var _raporSekme = 'satis', _raporAy = null;
   var RAPORLAR = [
-    ['satis','Satış'], ['stok','Stok & kritik'], ['izlenebilirlik','Lot izlenebilirlik'], ['oee','Üretim & OEE'], ['fire','Fire & duruş'], ['karlilik','Ürün kârlılığı'], ['tedarikci','Tedarikçi'], ['fason','Fason'], ['teklif','Teklif başarı'], ['olustur','Rapor oluşturucu ✎']
+    ['satis','Satış','ticari'], ['stok','Stok & kritik'], ['izlenebilirlik','Lot izlenebilirlik','ekuretim'], ['oee','Üretim & OEE'], ['fire','Fire & duruş'], ['karlilik','Ürün kârlılığı'], ['tedarikci','Tedarikçi','ticari'], ['fason','Fason','ekuretim'], ['teklif','Teklif başarı','ticari'], ['olustur','Rapor oluşturucu ✎']
   ];
   function raporHtml(tur, ay){
     var basAy = ay+'-01', sonAy = tarihEkle(tarihEkle(basAy, 32).slice(0,7)+'-01', -1);
@@ -15012,7 +15027,9 @@ Dikkat edilmesi gereken 2 nokta:
       byId('rpAy').addEventListener('change', function(){ _raporAy = this.value || thisMonthKey(); byId('rpIcerik').__sonHtml = null; EK_RENDER.raporlar(); });
       byId('rpYazdir').addEventListener('click', function(){ yazdirHtml('<h2>'+esc(RAPORLAR.find(function(r){ return r[0]===_raporSekme; })[1])+' raporu · '+esc(_raporAy)+'</h2>'+byId('rpIcerik').innerHTML); });
     }
-    byId('rpSekmeler').innerHTML = RAPORLAR.map(function(r){ return '<button type="button" data-rpsekme="'+r[0]+'" class="'+(r[0]===_raporSekme?'aktif':'')+'">'+r[1]+'</button>'; }).join('');
+    var rpAcik = RAPORLAR.filter(function(r){ return !r[2] || !modulKapali(r[2]); });
+    if (!rpAcik.some(function(r){ return r[0] === _raporSekme; })) _raporSekme = rpAcik[0][0];
+    byId('rpSekmeler').innerHTML = rpAcik.map(function(r){ return '<button type="button" data-rpsekme="'+r[0]+'" class="'+(r[0]===_raporSekme?'aktif':'')+'">'+r[1]+'</button>'; }).join('');
     byId('rpSekmeler').querySelectorAll('[data-rpsekme]').forEach(function(b){ b.addEventListener('click', function(){ _raporSekme = b.dataset.rpsekme; byId('rpIcerik').__sonHtml = null; EK_RENDER.raporlar(); }); });
     var icerik = byId('rpIcerik');
     // Rapor oluşturucuda ay seçici ve genel yazdır gizli (kendi dönemi ve yazdır düğmesi var)
@@ -15128,11 +15145,11 @@ Dikkat edilmesi gereken 2 nokta:
         '<div class="block"><div class="block-head"><h3>Yedek</h3></div><div class="block-body"><div id="yedekBilgi" class="helper" style="margin:0 0 10px"></div>'+
           '<button class="btn small" id="yedekIndirBtn">⇩ Tüm veriyi indir (JSON)</button> <button class="btn secondary small" id="yedekCsvBtn">⇩ Stok + cari listesi (CSV)</button>'+
           '<div class="helper">Yedek, bu uygulamadaki tüm kayıtları tek dosyada içerir. Haftada bir indirip güvenli bir yerde saklayın.</div></div></div>'+
-        '<div class="block"><div class="block-head"><h3>Sunucuya taşıma</h3></div><div class="block-body">'+
+        '<div class="block"'+(supabaseModu ? ' style="display:none"' : '')+'><div class="block-head"><h3>Sunucuya taşıma</h3></div><div class="block-body">'+
           '<button class="btn small" id="tasimaIndirBtn">⇩ Taşıma dosyası indir</button> <label class="btn secondary small" style="cursor:pointer">⇧ Taşıma dosyası yükle<input type="file" id="tasimaDosya" accept=".json" style="display:none"></label>'+
           '<div class="helper">Tüm kayıtları olduğu gibi taşır (ör. claude.ai\'deki veriyi kendi sunucunuza). Önce eski yerde indirin, sonra yeni yerde yükleyin.</div><div class="helper" id="tasimaMsg"></div></div></div>'+
         '<div id="klasoreAktarBlok"></div>'+
-        '<div class="block"><div class="block-head"><h3>'+(sinirliDepo() ? 'Veritabanı kapasitesi '+infoIco('Paylaşımlı veritabanı bu uygulama için en fazla 5.000 belge tutar. Stok hareketleri, işlem geçmişi, puantaj ve günlük makine kontrolleri aylık toplu belgelerde saklanır; üretim kayıtları, duruşlar ve kalite kontroller ise tek tek belgedir. Doluluk %70\'i geçince eski kayıtları arşivleyin: önce yedek indirilir, sonra kayıtlar aylık arşiv belgelerine taşınıp tek tek silinir.') : 'Arşiv '+infoIco('Önce yedek indirilir, sonra seçilen eski kayıtlar aylık arşiv belgelerine taşınıp tek tek silinir. Klasör ve Supabase modunda zorunlu değildir.'))+'</h3></div><div class="block-body"><div id="kapasiteOzet"></div>'+
+        '<div class="block"'+(supabaseModu ? ' style="display:none"' : '')+'><div class="block-head"><h3>'+(sinirliDepo() ? 'Veritabanı kapasitesi '+infoIco('Paylaşımlı veritabanı bu uygulama için en fazla 5.000 belge tutar. Stok hareketleri, işlem geçmişi, puantaj ve günlük makine kontrolleri aylık toplu belgelerde saklanır; üretim kayıtları, duruşlar ve kalite kontroller ise tek tek belgedir. Doluluk %70\'i geçince eski kayıtları arşivleyin: önce yedek indirilir, sonra kayıtlar aylık arşiv belgelerine taşınıp tek tek silinir.') : 'Arşiv '+infoIco('Önce yedek indirilir, sonra seçilen eski kayıtlar aylık arşiv belgelerine taşınıp tek tek silinir. Klasör ve Supabase modunda zorunlu değildir.'))+'</h3></div><div class="block-body"><div id="kapasiteOzet"></div>'+
           '<div class="grid2" style="margin-top:12px"><div class="field"><label>Arşivlenecek kayıtlar</label><select id="arsivKol">'+Object.keys(ARSIV_KOLEKSIYONLARI).map(function(k){ return '<option value="'+k+'">'+ARSIV_KOLEKSIYONLARI[k]+'</option>'; }).join('')+'</select></div>'+
           '<div class="field"><label>Şundan eski</label><select id="arsivAy"><option value="6">6 ay</option><option value="12" selected>12 ay</option><option value="24">24 ay</option></select></div></div>'+
           '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn secondary small" id="arsivOnizle">Kaç kayıt?</button><button class="btn small" id="arsivYap">Arşivle</button><button class="btn secondary small" id="arsivIndir">⇩ Arşivi indir (JSON)</button></div><div class="helper" id="arsivMsg"></div></div></div>'+
