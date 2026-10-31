@@ -160,6 +160,19 @@
   .info-bubble.yerlesik { position:fixed; transform:none; bottom:auto; z-index:700; }
   .info-bubble.yerlesik.alta::after { top:auto; bottom:100%; border-top-color:transparent; border-bottom-color:var(--ink); }
   .makine-bar-row { display:flex; align-items:center; gap:10px; padding:5px 0; }
+  /* r244: Özet tek ekran — kartlar tek şerit, altta iki sütun */
+  .cards.ozet-kpi { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+  .cards.ozet-kpi .card .value { font-size: 16px; }
+  .ozet-kpi .card .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ozet-izgara { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+  .ozet-kol > .block, .ozet-kol > div > .block { margin-bottom: 12px; }
+  .ozet-dol { display: flex; align-items: center; gap: 6px; min-width: 110px; }
+  .ozet-dol .makine-bar-track { height: 10px; }
+  .ozet-dol span { font-size: 11px; color: var(--ink-soft); min-width: 34px; text-align: right; }
+  #ozetTrendGrafik svg { max-width: 100% !important; max-height: 130px; }
+  .ozet-izgara td.num, .ozet-izgara th.num { white-space: nowrap; }
+  @media (min-width: 981px) { .cards.ozet-kpi { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); } }
+  @media (max-width: 980px) { .ozet-izgara { grid-template-columns: minmax(0, 1fr); } }
   .makine-bar-label { width:130px; flex-shrink:0; font-size:11.5px; font-family:'IBM Plex Sans',system-ui,sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .makine-bar-track { flex:1; height:14px; background:var(--steel-soft); border-radius:2px; overflow:hidden; }
   .makine-bar-fill { height:100%; }
@@ -1465,7 +1478,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r243</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r244</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1483,31 +1496,34 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center"><span class="muted" id="ozetDuzenNot" style="font-size:12px"></span><button type="button" class="btn secondary small" id="ozetDuzenBtn" title="Bölümleri sırala, istemediğin kutuları gizle">⚙ Özeti düzenle</button></div>
       </div>
-      <div class="cards" id="ozetCards"></div>
-      <div id="ozetEkUst"></div>
+      <div class="cards ozet-kpi" id="ozetCards"></div>
+      <!-- r244: tek ekran — solda makineler + ürün katkısı, sağda uyarılar + trend + darboğaz -->
+      <div class="ozet-izgara" id="ozetIzgara">
+        <div class="ozet-kol">
+          <div class="block">
+            <div class="block-head"><h3>Makineler — bu ay <span class="info-ico" tabindex="0">!<span class="info-bubble">Durum: makinenin son üretim kaydı (bugün kayıt varsa "bugün"). Satırın üzerine gelince son iş görünür.
+Doluluk: bu ay üretilen her ürünün birim süresine (dk/adet) göre harcanan süre ÷ ayın 1'inden bugüne kapasite (Tanımlar &gt; Kapasite). Yeşil %70 altı · turuncu %70–100 · kırmızı kapasite aşıldı.
+OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayrıntı. Dünya standardı ≈ %85, %60 altı iyileştirme alanı.</span></span></h3></div>
+            <div class="block-body tablewrap" id="ozetMakineTablo"></div>
+          </div>
+          <div class="block yetki-maliyet">
+            <div class="block-head"><h3>Ürün bazlı katkı</h3></div>
+            <div class="block-body tablewrap">
+              <table id="ozetUrunTablo"><thead><tr>
+                <th>Ürün</th><th class="num">Adet</th><th class="num">Maliyet ₺</th><th class="num">Fiyat ₺</th><th class="num">Birim kâr ₺</th><th class="num">Toplam katkı</th>
+              </tr></thead><tbody></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div class="ozet-kol">
+          <div id="ozetEkUst"></div>
+          <div class="block">
+            <div class="block-head"><h3>Aylık üretim (son 6 ay)</h3></div>
+            <div class="block-body" id="ozetTrendGrafik"></div>
+          </div>
+        </div>
+      </div>
       <div id="ozetPano"></div>
-      <div class="block">
-        <div class="block-head"><h3>Makine kullanım oranı (bu ay, bugüne kadar) <span class="info-ico" tabindex="0">!<span class="info-bubble">Kapasite, ayın 1'inden bugüne kadar Tanımlar &gt; Kapasite ayarı bloğundaki çalışma günü/saatine göre hesaplanır (OEE tablosuyla aynı temel). Doluluk, o makinede bu ay üretilen her ürünün kendi birim süresine (dk/adet) göre harcanan toplam süre üzerinden hesaplanır — adet değil, süre bazlıdır. Yeşil: %70 altı · Turuncu: %70–100 · Kırmızı: kapasite aşıldı. Her satırın sonundaki ! işaretine gelerek o makinede bu ay hangi ürünün üretildiğini görebilirsiniz.</span></span></h3></div>
-        <div class="block-body" id="ozetMakineGrafik"></div>
-      </div>
-      <div class="block">
-        <div class="block-head"><h3>Fabrika durumu</h3></div>
-        <div class="block-body">
-          <div class="cards" id="ozetFabrikaGrid"></div>
-        </div>
-      </div>
-      <div class="block">
-        <div class="block-head"><h3>Aylık üretim trendi</h3></div>
-        <div class="block-body" id="ozetTrendGrafik"></div>
-      </div>
-      <div class="block yetki-maliyet">
-        <div class="block-head"><h3>Ürün bazlı katkı</h3></div>
-        <div class="block-body tablewrap">
-          <table id="ozetUrunTablo"><thead><tr>
-            <th>Ürün</th><th class="num">Bu ay adet</th><th class="num">Birim maliyet ₺</th><th class="num">Birim fiyat ₺</th><th class="num">Birim kâr ₺</th><th class="num">Toplam katkı</th>
-          </tr></thead><tbody></tbody></table>
-        </div>
-      </div>
     </section>
 
     <section class="panel" id="panel-uretim">
@@ -3958,53 +3974,35 @@ Dikkat edilmesi gereken 2 nokta:
     });
     return { adet: toplamAdet, dk: toplamDk, urunKirilim: urunKirilim };
   }
-  function renderOzetMakineGrafik(){
-    var wrap = document.getElementById('ozetMakineGrafik');
+  // r244: makine kullanımı + fabrika durumu + OEE tek tabloda (bir satır = bir makine)
+  function renderOzetMakineTablo(){
+    var wrap = document.getElementById('ozetMakineTablo');
     if (!wrap) return;
     if (state.makineler.length === 0){ wrap.innerHTML = '<div class="empty">Henüz makine tanımlanmadı.</div>'; return; }
     // Kapasite: ayın 1'inden bugüne kapasite takvimindeki çalışma süresi (OEE ile aynı temel; ay ortasında oran düşük görünmesin)
-    var kapDk = 0, bugunK = todayISO();
-    for (var gK = thisMonthKey() + '-01'; gK <= bugunK; gK = tarihEkle(gK, 1)) kapDk += gunlukKapasiteDk(gK);
-    var rows = state.makineler.map(function(m){
-      var u = makineUretilenBuAy(m.id);
-      var yuzde = kapDk > 0 ? (u.dk/kapDk*100) : 0;
-      var renk = kapDk <= 0 ? '#9AA3AC' : (yuzde > 100 ? 'var(--bad)' : (yuzde >= 70 ? 'var(--accent)' : 'var(--good)'));
-      var etiket = kapDk > 0 ? (sureStrOlustur(u.dk)+' / '+sureStrOlustur(kapDk)+' (%'+fmt(yuzde)+')') : (fmt(u.adet)+' adet');
-      var urunOzetSatirlari = Object.keys(u.urunKirilim).map(function(ad){
-        var k = u.urunKirilim[ad];
-        return ad+': '+fmt(k.adet)+' adet ('+sureStrOlustur(k.dk)+')';
-      });
-      var bilgi = m.ad+' — '+(urunOzetSatirlari.length ? urunOzetSatirlari.join('\n') : 'bu ay üretim kaydı yok');
-      return '<div class="makine-bar-row">'+
-        '<div class="makine-bar-label">'+esc(m.ad)+'</div>'+
-        '<div class="makine-bar-track"><div class="makine-bar-fill" style="width:'+Math.min(100,yuzde)+'%;background:'+renk+'"></div></div>'+
-        '<div class="makine-bar-etiket">'+esc(etiket)+'</div>'+
-        infoIco(bilgi)+
-      '</div>';
-    }).join('');
-    wrap.innerHTML = rows;
-  }
-  function renderOzetFabrikaGrid(){
-    var wrap = document.getElementById('ozetFabrikaGrid');
-    if (!wrap) return;
-    if (state.makineler.length === 0){ wrap.innerHTML = '<div class="empty">Henüz makine tanımlanmadı.</div>'; return; }
-    var bugun = todayISO();
-    wrap.innerHTML = state.makineler.map(function(m){
-      var kayitlar = tumUretimKayitlari().filter(function(u){ return u.makineId===m.id; });
-      var son = kayitlar.length ? kayitlar.reduce(function(a,b){ return (b.tarih||'') > (a.tarih||'') ? b : a; }) : null;
-      var aktifBugun = son && son.tarih === bugun;
-      var durumHtml, cls;
-      if (!son){
-        durumHtml = '<span class="muted">henüz kayıt yok</span>'; cls = '';
-      } else if (aktifBugun){
-        durumHtml = '<span class="pos">● bugün aktif</span>'; cls = 'good';
-      } else {
-        var gun = Math.max(0, Math.round((new Date(bugun) - new Date(son.tarih))/86400000));
-        durumHtml = '<span class="muted">● boşta / son kayıt: '+gun+' gün önce</span>'; cls = '';
-      }
-      var detay = son ? (esc(uretimUrunAdi(son))+' · '+esc(son.virgo ? 'Virgo' : operasyonAdi(son.operasyon))) : '';
-      return '<div class="card '+cls+'"><div class="label">'+esc(m.ad)+'</div><div class="value" style="font-size:13px">'+durumHtml+'</div>'+(detay?'<div class="sub">'+detay+'</div>':'')+'</div>';
-    }).join('');
+    var kapDk = 0, bugun = todayISO(), ayBas = thisMonthKey() + '-01';
+    for (var gK = ayBas; gK <= bugun; gK = tarihEkle(gK, 1)) kapDk += gunlukKapasiteDk(gK);
+    var tum = tumUretimKayitlari();
+    wrap.innerHTML = '<table class="ozet-makine"><thead><tr><th>Makine</th><th>Durum</th><th>Doluluk</th><th class="num">OEE</th><th class="num">İyi / fire</th></tr></thead><tbody>' +
+      state.makineler.map(function(m){
+        var u = makineUretilenBuAy(m.id), o = oeeHesapla(m.id, ayBas, bugun);
+        var kay = tum.filter(function(k){ return k.makineId === m.id; });
+        var son = kay.length ? kay.reduce(function(a, b){ return (b.tarih||'') > (a.tarih||'') ? b : a; }) : null;
+        var durum = !son ? '<span class="muted">kayıt yok</span>' : (son.tarih === bugun ? '<span class="pos">● bugün</span>'
+          : '<span class="muted">● ' + Math.max(0, Math.round((new Date(bugun) - new Date(son.tarih))/86400000)) + ' gün önce</span>');
+        var sonIs = son ? 'Son iş: ' + uretimUrunAdi(son) + ' · ' + (son.virgo ? 'Virgo' : operasyonAdi(son.operasyon)) + ' (' + son.tarih + ')' : '';
+        var kirilim = Object.keys(u.urunKirilim).map(function(ad){ var k = u.urunKirilim[ad]; return ad + ': ' + fmt(k.adet) + ' adet (' + sureStrOlustur(k.dk) + ')'; });
+        var yuzdeD = kapDk > 0 ? u.dk / kapDk * 100 : 0;
+        var renk = kapDk <= 0 ? '#9AA3AC' : (yuzdeD > 100 ? 'var(--bad)' : (yuzdeD >= 70 ? 'var(--accent)' : 'var(--good)'));
+        var dolTitle = kapDk > 0 ? sureStrOlustur(u.dk) + ' / ' + sureStrOlustur(kapDk) : fmt(u.adet) + ' adet';
+        if (kirilim.length) dolTitle += '\n' + kirilim.join('\n');
+        var oeeHucre = o.kayitVar || o.durusDk
+          ? '<td class="num ' + oeeRenk(o.oee) + '" title="' + escAttr('Kullanılabilirlik ' + yuzde(o.A) + ' · Performans ' + yuzde(o.P) + ' · Kalite ' + yuzde(o.Q) + '\nPlanlı ' + sureStrOlustur(o.planliDk) + ' · plansız duruş ' + sureStrOlustur(o.durusDk)) + '">' + yuzde(o.oee) + '</td><td class="num">' + fmt(o.iyi) + ' / ' + fmt(o.fire) + '</td>'
+          : '<td class="num muted">—</td><td class="num muted">—</td>';
+        return '<tr' + (sonIs ? ' title="' + escAttr(sonIs) + '"' : '') + '><td>' + esc(m.ad) + '</td><td>' + durum + '</td>' +
+          '<td title="' + escAttr(dolTitle) + '"><div class="ozet-dol"><div class="makine-bar-track"><div class="makine-bar-fill" style="width:' + Math.min(100, yuzdeD) + '%;background:' + renk + '"></div></div><span>' + (kapDk > 0 ? '%' + fmt(yuzdeD) : fmt(u.adet)) + '</span></div></td>' +
+          oeeHucre + '</tr>';
+      }).join('') + '</tbody></table>';
   }
   function renderOzetTrendGrafik(){
     var wrap = document.getElementById('ozetTrendGrafik');
@@ -4057,16 +4055,27 @@ Dikkat edilmesi gereken 2 nokta:
     var toplamUretim = buAyKayitlari().filter(sonOperasyonKaydiMi).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
     var katkilar = urunListesi().map(ozetUrunKatki), toplamKatki = toplamla(katkilar, function(x){ return x.top; });
     var toplamCiro = toplamla(katkilar, function(x){ return x.adet * x.fiyat; });
-    var net = toplamKatki - sabitTl, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) + ' (bugünkü kurla)' : ''; };
+    var net = toplamKatki - sabitTl, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
+    // r244: üretim / kalite kartları da aynı şeritte (eskiden ayrı satırdı)
+    var bugun = todayISO(), ay = thisMonthKey();
+    var acikIe = state.isemirleri.filter(function(ie){ return ie.durum !== 'İptal' && isEmriKalan(ie) > 0; });
+    var gecIe = acikIe.filter(function(ie){ return ie.termin && ie.termin < bugun; });
+    var fire = toplamla(buAyKayitlari(), function(k){ return k.fireAdet; }), iyi = toplamla(buAyKayitlari(), function(k){ return k.adet; });
+    var durusDk = toplamla((state.duruslar||[]).filter(function(d){ return ayAnahtari(d.tarih) === ay && PLANLI_DURUSLAR.indexOf(d.neden) < 0; }), durusSuresi);
+    var fk = faturaKalanlari(), acikAlacak = toplamla(Object.keys(fk), function(k){ return Math.max(0, fk[k]); });
 
     document.getElementById('ozetAyEtiket').textContent = new Date().toLocaleDateString('tr-TR',{month:'long', year:'numeric'});
     var cards = [
-      {label:'Bu ay üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim'},
-      {label:'Bu ay üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: 'adet × birim fiyat · '+eurYazi(toplamCiro)},
-      {label:'Aylık sabit gider', value: '₺'+fmt(sabitTl), cls:'yetki-maliyet', detay:'sabit', sub: 'personel · '+eurYazi(sabitTl)},
-      {label:'Tahmini toplam katkı', value: '₺'+fmt(toplamKatki), cls:'accent yetki-maliyet', detay:'katki', sub: eurYazi(toplamKatki)},
-      {label: net>=0 ? 'Tahmini net (kâr)' : 'Tahmini net (açık)', value: (net>=0?'₺':'−₺')+fmt(Math.abs(net)), cls: (net>=0?'good':'')+' yetki-maliyet', detay:'net', sub: eurYazi(net)}
+      {label:'Üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim'},
+      {label:'Üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: eurYazi(toplamCiro)},
+      {label:'Sabit gider (personel)', value: '₺'+fmt(sabitTl), cls:'yetki-maliyet', detay:'sabit', sub: eurYazi(sabitTl)},
+      {label:'Tahmini katkı', value: '₺'+fmt(toplamKatki), cls:'accent yetki-maliyet', detay:'katki', sub: eurYazi(toplamKatki)},
+      {label: net>=0 ? 'Tahmini net (kâr)' : 'Tahmini net (açık)', value: (net>=0?'₺':'−₺')+fmt(Math.abs(net)), cls: (net>=0?'good':'')+' yetki-maliyet', detay:'net', sub: eurYazi(net)},
+      {label:'Açık iş emri', value: acikIe.length, cls: gecIe.length?'accent':'', detay:'isemri', sub: gecIe.length ? '<span class="neg">'+gecIe.length+' gecikmiş</span>' : 'gecikme yok'},
+      {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'},
+      {label:'Plansız duruş', value: sureStrOlustur(durusDk), cls:'', detay:'durus'}
     ];
+    if (sekmeIzinli('carihesap') || sekmeIzinli('faturalar')) cards.push({label:'Açık alacak', value: euro(acikAlacak), cls:'', detay:'alacak'});
     document.getElementById('ozetCards').innerHTML = cards.map(function(c){
       return '<div class="card '+c.cls+(c.detay?' tiklanir" data-ozetdetay="'+c.detay+'" title="Hesabı görmek için tıklayın':'')+'"><div class="label">'+c.label+(c.detay?' <span class="kart-ok">›</span>':'')+'</div><div class="value">'+c.value+'</div>'+(c.sub?'<div class="sub">'+c.sub+'</div>':'')+'</div>';
     }).join('');
@@ -4077,12 +4086,11 @@ Dikkat edilmesi gereken 2 nokta:
     } else {
       tbody.innerHTML = katkilar.map(function(x){
         return '<tr><td>'+esc(x.u.ad)+'</td><td class="num">'+fmt(x.adet)+'</td><td class="num">₺'+fmt2(x.mal)+'</td><td class="num" title="'+escAttr(x.kaynak)+'">₺'+fmt2(x.fiyat)+'</td>'+
-          '<td class="num '+(x.bk>=0?'pos':'neg')+'">₺'+fmt2(x.bk)+'</td><td class="num">'+tlEur(x.top)+'</td></tr>';
+          '<td class="num '+(x.bk>=0?'pos':'neg')+'">₺'+fmt2(x.bk)+'</td><td class="num"'+(kur?' title="≈ €'+fmt(x.top / kur)+' (bugünkü kurla)"':'')+'>'+(x.top < -0.004 ? '−₺' : '₺')+fmt(Math.abs(x.top))+'</td></tr>';
       }).join('');
     }
 
-    renderOzetMakineGrafik();
-    renderOzetFabrikaGrid();
+    renderOzetMakineTablo();
     renderOzetTrendGrafik();
     try { renderOzetPano(); } catch(e){ renderHatasi('pano', e); }
   }
@@ -15791,24 +15799,12 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Özet ekleri: uyarılar, OEE, üretim & kalite kartları ----------
   EK_RENDER.ozet = function(){
     var host = byId('ozetEkUst'); if (!host) return;
-    var u = uyarilariHesapla();
-    var bugun = todayISO(), ay = thisMonthKey();
-    var acikIe = state.isemirleri.filter(function(ie){ return ie.durum !== 'İptal' && isEmriKalan(ie) > 0; });
-    var gecIe = acikIe.filter(function(ie){ return ie.termin && ie.termin < bugun; });
-    var fire = toplamla(buAyKayitlari(), function(k){ return k.fireAdet; }), iyi = toplamla(buAyKayitlari(), function(k){ return k.adet; });
-    var durusDk = toplamla((state.duruslar||[]).filter(function(d){ return ayAnahtari(d.tarih) === ay && PLANLI_DURUSLAR.indexOf(d.neden) < 0; }), durusSuresi);
-    var acikAlacak = toplamla(Object.keys(faturaKalanlari()), function(k){ return Math.max(0, faturaKalanlari()[k]); });
+    var u = uyarilariHesapla(), dar = darbogazHesapla().some(function(r){ return r.adet > 0; });
+    // r244: kartlar Özet şeridinde, OEE makine tablosunda; burada yalnız uyarılar ve (iş varsa) operasyon darboğazı
     setHtmlIdle(host,
-      '<div class="cards">'+
-        '<div class="card tiklanir '+(gecIe.length?'accent':'')+'" data-ozetdetay="isemri" title="Hesabı görmek için tıklayın"><div class="label">Açık iş emri <span class="kart-ok">›</span></div><div class="value">'+acikIe.length+'</div><div class="sub">'+(gecIe.length?'<span class="neg">'+gecIe.length+' gecikmiş</span>':'gecikme yok')+'</div></div>'+
-        '<div class="card tiklanir" data-ozetdetay="fire" title="Hesabı görmek için tıklayın"><div class="label">Bu ay fire oranı <span class="kart-ok">›</span></div><div class="value">'+((iyi+fire)?'%'+fmt2(fire/(iyi+fire)*100):'-')+'</div><div class="sub">'+fmt(fire)+' adet</div></div>'+
-        '<div class="card tiklanir" data-ozetdetay="durus" title="Hesabı görmek için tıklayın"><div class="label">Bu ay plansız duruş <span class="kart-ok">›</span></div><div class="value" style="font-size:16px">'+sureStrOlustur(durusDk)+'</div></div>'+
-        (sekmeIzinli('carihesap') || sekmeIzinli('faturalar') ? '<div class="card tiklanir" data-ozetdetay="alacak" title="Hesabı görmek için tıklayın"><div class="label">Açık alacak <span class="kart-ok">›</span></div><div class="value">'+euro(acikAlacak)+'</div></div>' : '')+
-      '</div>'+
       '<div class="block"><div class="block-head"><h3>Uyarılar ('+u.length+')</h3></div>'+
-        '<div class="block-body">'+(u.length ? ozetIlkN('uyari', u, 3, uyariSatirHtml, 'uyarı') : '<div class="empty">Uyarı yok.</div>')+'</div></div>'+
-      '<div class="block"><div class="block-head"><h3>OEE — bu ay '+infoIco('OEE = Kullanılabilirlik × Performans × Kalite. Kullanılabilirlik: (planlı süre − plansız duruş) / planlı süre. Performans: ideal süre (adet × rota çevrim süresi) / çalışma süresi. Kalite: iyi / (iyi + fire). Planlı süre kapasite takviminden, planlı bakım ve "iş yok" duruşları hariç tutulur. Dünya standardı ≈ %85; %60 altı iyileştirme alanıdır.')+'</h3></div><div class="block-body">'+oeeTabloHtml(ay+'-01', bugun)+'</div></div>'+
-      darbogazHtml());
+        '<div class="block-body">'+(u.length ? ozetIlkN('uyari', u, 4, uyariSatirHtml, 'uyarı') : '<div class="empty">Uyarı yok.</div>')+'</div></div>'+
+      (dar ? darbogazHtml() : ''));
     host.querySelectorAll('[data-uyari]').forEach(function(r){ if (r.dataset.bagli) return; r.dataset.bagli = 1; r.addEventListener('click', function(){ var p = r.dataset.uyari.split('|'); if (p[1]) gitKayit(p[0], p[1]); else gitSekme(p[0]); }); });
   };
 
@@ -21841,7 +21837,7 @@ Dikkat edilmesi gereken 2 nokta:
   // yukarı / aşağı taşınır; her blok tek tek gizlenebilir. Ayar kullanıcıya özel, bu tarayıcıda saklanır.
   // Bölümler kendi kaplarında yeniden çizildiği için düzen her çizimden sonra (MutationObserver) yeniden uygulanır.
   var OZET_DUZEN_KEY = 'ozerp_ozet_duzen_v1';
-  var OZET_BOLUM_AD = { ozetCards: 'Ana kartlar (üretim, sabit gider, katkı, net)', ozetEkUst: 'Üretim kartları, uyarılar, OEE, darboğaz', ozetPano: 'Yönetim panosu (grafikler)' };
+  var OZET_BOLUM_AD = { ozetCards: 'Kartlar (üretim, katkı, iş emri, fire, duruş…)', ozetIzgara: 'Makineler, ürün katkısı, uyarılar, trend', ozetPano: 'Yönetim panosu (grafikler)' };
   function ozetDuzen(){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); return t[aktifKullaniciId() || '-'] || { sira: [], gizli: [] }; } catch(e){ return { sira: [], gizli: [] }; } }
   function ozetDuzenYaz(d){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); t[aktifKullaniciId() || '-'] = d; localStorage.setItem(OZET_DUZEN_KEY, JSON.stringify(t)); } catch(e){} }
   function ozetBlokAdi(b){ var h = b.querySelector('.block-head h3'); if (!h) return ''; var k = h.cloneNode(true); k.querySelectorAll('.info-ico, button, select').forEach(function(x){ x.remove(); }); return k.textContent.replace(/\s*\(\d[\d.]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -21856,9 +21852,10 @@ Dikkat edilmesi gereken 2 nokta:
   function ozetParcalari(b){
     if (b.el.classList.contains('block')) return [{ el: b.el, k: b.k, ad: b.ad }];
     var l = [];
-    Array.prototype.forEach.call(b.el.children, function(c){
-      if (c.classList.contains('cards')) l.push({ el: c, k: b.k + ':kartlar', ad: b.el.id === 'ozetCards' ? b.ad : 'Kartlar (açık iş emri, fire, duruş, alacak)' });
-      else if (c.classList.contains('block')) l.push({ el: c, k: 'blok:' + ozetBlokAdi(c), ad: ozetBlokAdi(c) });
+    // r244: ızgaradaki bloklar sütun kaplarının içinde; iç içe olmayan tüm bloklar ayrı ayrı gizlenebilir
+    Array.prototype.forEach.call(b.el.querySelectorAll('.block'), function(c){
+      if (c.parentElement.closest('.block')) return;
+      l.push({ el: c, k: 'blok:' + ozetBlokAdi(c), ad: ozetBlokAdi(c) });
     });
     if (b.el.classList.contains('cards')) l = [{ el: b.el, k: b.k, ad: b.ad }];
     if (!l.length) l = [{ el: b.el, k: b.k, ad: b.ad }];
