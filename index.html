@@ -496,6 +496,9 @@
   .ym-fsatir:hover { background:var(--accent-soft, rgba(59,111,163,.10)); }
   .ym-fsatir.active { background:var(--accent); color:#fff; }
   .ym-fsatir .ym-yildiz { margin-left:auto; padding-left:10px; }
+  .ym-fsatir:hover .favyildiz, .ym-fsatir:focus-visible .favyildiz { visibility:visible; } /* r241: yana açılan penceredeki yıldız üzerine gelince görünür (önceden hep gizliydi) */
+  .ym-fsatir .favyildiz:hover { color:var(--warn-strong); }
+  .ym-fsatir.active .favyildiz { color:#fff; }
   .ym-fsatir .ym-arti { color:var(--accent); font-weight:700; width:10px; }
   .ym-fsatir.active .ym-arti { color:#fff; }
   .nav-badge { margin-left:auto; background:var(--accent); color:#fff; border-radius:8px; font-size:10px; padding:0 6px; line-height:16px; }
@@ -1459,7 +1462,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r240</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r241</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2149,6 +2152,9 @@ Dikkat edilmesi gereken 2 nokta:
   // Operasyon (üretim aşaması) sabit listesi: Testere Kesim (çubuk hammaddeden başlayan işler için) →
   // Operasyon 1 (CNC tek yüz kaba işleme/delik) → Operasyon 2 (finiş + 2. taraf işleme) → Yıkama → Paketleme.
   var OPERASYONLAR = ['Testere Kesim','Operasyon 1','Operasyon 2','Yıkama','Paketleme'];
+  // r241: operasyon seçilmeden doğrudan nihai ürün girişi (operasyon ''): mamul sayılır, stoğa giriş işaretli gelir
+  var NIHAI_URUN = 'Nihai ürün (operasyonsuz)';
+  function operasyonAdi(op){ return op || 'Nihai ürün'; }
   var VARSAYILAN_OPERASYONLAR = OPERASYONLAR.slice();
 
   function fmt(n){ n = Number(n)||0; return n.toLocaleString('tr-TR', {maximumFractionDigits:0}); }
@@ -3993,7 +3999,7 @@ Dikkat edilmesi gereken 2 nokta:
         var gun = Math.max(0, Math.round((new Date(bugun) - new Date(son.tarih))/86400000));
         durumHtml = '<span class="muted">● boşta / son kayıt: '+gun+' gün önce</span>'; cls = '';
       }
-      var detay = son ? (esc(uretimUrunAdi(son))+' · '+esc(son.virgo ? 'Virgo' : son.operasyon||'-')) : '';
+      var detay = son ? (esc(uretimUrunAdi(son))+' · '+esc(son.virgo ? 'Virgo' : operasyonAdi(son.operasyon))) : '';
       return '<div class="card '+cls+'"><div class="label">'+esc(m.ad)+'</div><div class="value" style="font-size:13px">'+durumHtml+'</div>'+(detay?'<div class="sub">'+detay+'</div>':'')+'</div>';
     }).join('');
   }
@@ -4123,7 +4129,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<td colspan="2"><button class="btn secondary small" data-virgoac="1" title="Henüz aktarılmamış eski Virgo üretim girişi; Virgo Hesabı sayfasındaki Aktar düğmesiyle normal kayda dönüşür">Virgo Hesabı\'nda aktar</button></td></tr>';
       var ie = k.isEmriId ? state.isemirleri.find(function(x){ return x.id===k.isEmriId; }) : null;
       return '<tr><td>'+esc(k.tarih||'')+(k.bitisTarih?' <span class="muted">– '+esc(k.bitisTarih)+'</span>':'')+'</td><td>'+esc(makineAdiById(k.makineId))+'</td><td>'+esc(urunAdiById(k.urunId))+'</td>'+
-        '<td>'+esc(k.operasyon||'')+'</td><td>'+esc(k.vardiya||'')+'</td><td class="num">'+fmt(k.adet)+'</td><td class="num'+(Number(k.fireAdet)>0?' neg':'')+'">'+fmt(k.fireAdet||0)+(k.fireNedeni&&Number(k.fireAdet)>0?' <span class="muted">('+esc(k.fireNedeni)+')</span>':'')+'</td><td>'+esc(k.operatorAd||'')+'</td><td>'+esc(k.giren||'')+'</td><td>'+(ie?esc(ie.isEmriNo):'')+'</td><td>'+esc(k.not_||'')+(k.stokGiris?' <span class="pill">stoğa +'+fmt(k.stokGiris)+'</span>':'')+'</td>'+
+        '<td>'+esc(operasyonAdi(k.operasyon))+'</td><td>'+esc(k.vardiya||'')+'</td><td class="num">'+fmt(k.adet)+'</td><td class="num'+(Number(k.fireAdet)>0?' neg':'')+'">'+fmt(k.fireAdet||0)+(k.fireNedeni&&Number(k.fireAdet)>0?' <span class="muted">('+esc(k.fireNedeni)+')</span>':'')+'</td><td>'+esc(k.operatorAd||'')+'</td><td>'+esc(k.giren||'')+'</td><td>'+(ie?esc(ie.isEmriNo):'')+'</td><td>'+esc(k.not_||'')+(k.stokGiris?' <span class="pill">stoğa +'+fmt(k.stokGiris)+'</span>':'')+'</td>'+
         '<td><button class="btn secondary small" data-kayitedit="'+k.id+'">Düzenle</button></td>'+
         '<td><button class="btn danger" data-del="'+k.id+'">Sil</button></td></tr>';
     }).join('');
@@ -4168,7 +4174,7 @@ Dikkat edilmesi gereken 2 nokta:
       '<div class="field"><label>Makine</label><select id="keFMakine">'+state.makineler.map(function(m){ return '<option value="'+m.id+'"'+(k.makineId===m.id?' selected':'')+'>'+esc(m.ad)+'</option>'; }).join('')+'</select></div>'+
       '<div class="field"><label>Ürün</label><select id="keFUrun">'+urunListesi(k.urunId).map(function(u){ return '<option value="'+u.id+'"'+(urunEsit(k.urunId,u.id)?' selected':'')+'>'+esc(u.ad)+'</option>'; }).join('')+'</select></div>'+
       '<div class="field"><label>Vardiya</label><select id="keFVardiya">'+['1. Vardiya','2. Vardiya','Cumartesi'].map(function(v){ return '<option'+(k.vardiya===v?' selected':'')+'>'+v+'</option>'; }).join('')+'</select></div>'+
-      '<div class="field"><label>Operasyon</label><select id="keFOperasyon">'+OPERASYONLAR.map(function(o){ return '<option'+(k.operasyon===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select></div>'+
+      '<div class="field"><label>Operasyon</label><select id="keFOperasyon"><option value=""'+(k.operasyon?'':' selected')+'>'+esc(NIHAI_URUN)+'</option>'+OPERASYONLAR.map(function(o){ return '<option'+(k.operasyon===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select></div>'+
       '<div class="field"><label>İyi adet</label><input type="number" id="keFAdet" min="0" step="1" value="'+(k.adet||0)+'" style="width:100%"></div>'+
       '<div class="field"><label>Fire adet</label><input type="number" id="keFFire" min="0" step="1" value="'+(k.fireAdet||0)+'" style="width:100%"></div>'+
       '<div class="field"><label>Fire nedeni</label><select id="keFFireNeden">'+FIRE_NEDENLERI.map(function(n){ return '<option'+(k.fireNedeni===n?' selected':'')+'>'+esc(n)+'</option>'; }).join('')+'</select></div>'+
@@ -4197,7 +4203,7 @@ Dikkat edilmesi gereken 2 nokta:
         tarih: tarih, bitisTarih: bitisTarih > tarih ? bitisTarih : '',
         makineId: makineId, urunId: urunId,
         vardiya: document.getElementById('keFVardiya').value,
-        operasyon: document.getElementById('keFOperasyon').value || OPERASYONLAR[0],
+        operasyon: document.getElementById('keFOperasyon').value || '',
         adet: adet,
         giren: document.getElementById('keFGiren').value || '',
         isEmriId: document.getElementById('keFIsEmri').value || null,
@@ -9247,7 +9253,7 @@ Dikkat edilmesi gereken 2 nokta:
     var ie = ieSel && ieSel.value ? isEmriBul(ieSel.value) : null;
     var opSel = byId('uOperasyon');
     var ops = (ie && ie.gerekliOperasyonlar && ie.gerekliOperasyonlar.length) ? ie.gerekliOperasyonlar : OPERASYONLAR;
-    secenekDoldur(opSel, ops.map(function(o){ return '<option>'+esc(o)+'</option>'; }).join(''), opSel.value);
+    secenekDoldur(opSel, '<option value="">'+esc(NIHAI_URUN)+'</option>'+ops.map(function(o){ return '<option>'+esc(o)+'</option>'; }).join(''), opSel.value);
     secenekDoldur(byId('uFireNeden'), FIRE_NEDENLERI.map(function(n){ return '<option>'+esc(n)+'</option>'; }).join(''), byId('uFireNeden').value);
     var opr = byId('uOperator');
     var oncekiOp = opr.value || (function(){ try { return localStorage.getItem('ozerp_son_operator')||''; } catch(e){ return ''; } })();
@@ -9271,6 +9277,7 @@ Dikkat edilmesi gereken 2 nokta:
     uretimBilgiYaz();
   }
   function sonOperasyonMu(ie, urunId, op){
+    if (!op) return true;
     if (ie && ie.gerekliOperasyonlar && ie.gerekliOperasyonlar.length) return op === ie.gerekliOperasyonlar[ie.gerekliOperasyonlar.length-1];
     var rota = urunRota(urunId);
     if (rota.length) return op === rota[rota.length-1].operasyon;
@@ -9298,7 +9305,7 @@ Dikkat edilmesi gereken 2 nokta:
     var msg = byId('uMsg');
     var veri = {
       tarih: byId('uTarih').value || todayISO(), bitisTarih: byId('uBitisTarih').value || '', makineId: byId('uMakine').value, urunId: byId('uUrun').value,
-      vardiya: byId('uVardiya').value, operasyon: byId('uOperasyon').value || OPERASYONLAR[0],
+      vardiya: byId('uVardiya').value, operasyon: byId('uOperasyon').value || '',
       adet: Number(byId('uAdet').value)||0, fireAdet: Number(byId('uFire').value)||0, fireNedeni: byId('uFireNeden').value || '',
       baslangicSaat: byId('uBaslangic').value || '', bitisSaat: byId('uBitis').value || '',
       operatorId: byId('uOperator').value || '', giren: byId('uGiren').value || '',
@@ -14854,7 +14861,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (tur === 'oee'){
       var uretim = tumUretimKayitlari().filter(function(k){ return ayAnahtari(k.tarih) === ay; });
       var urunler = {}; uretim.filter(sonOperasyonKaydiMi).forEach(function(k){ var a = uretimUrunAdi(k); urunler[a] = (urunler[a]||0) + (Number(k.adet)||0); });
-      var ops = {}; uretim.forEach(function(k){ var o = k.virgo ? 'Virgo üretimi' : k.operasyon||'-'; ops[o] = ops[o] || {iyi:0, fire:0}; ops[o].iyi += Number(k.adet)||0; ops[o].fire += Number(k.fireAdet)||0; });
+      var ops = {}; uretim.forEach(function(k){ var o = k.virgo ? 'Virgo üretimi' : operasyonAdi(k.operasyon); ops[o] = ops[o] || {iyi:0, fire:0}; ops[o].iyi += Number(k.adet)||0; ops[o].fire += Number(k.fireAdet)||0; });
       return '<h3 style="font-size:14px;margin:0 0 8px">OEE — '+ay+'</h3>'+oeeTabloHtml(basAy, sonAy)+
         '<div class="grid2" style="margin-top:14px"><div><h3 style="font-size:14px;margin:0 0 8px">Ürün bazında mamul</h3><table><tbody>'+Object.keys(urunler).map(function(u){ return '<tr><td>'+esc(u)+'</td><td class="num">'+fmt(Math.round(urunler[u]))+'</td></tr>'; }).join('')+'</tbody></table></div>'+
         '<div><h3 style="font-size:14px;margin:0 0 8px">Operasyon bazında</h3><table><thead><tr><th>Operasyon</th><th class="num">İyi</th><th class="num">Fire</th></tr></thead><tbody>'+Object.keys(ops).map(function(o){ return '<tr><td>'+esc(o)+'</td><td class="num">'+fmt(Math.round(ops[o].iyi))+'</td><td class="num">'+fmt(Math.round(ops[o].fire))+'</td></tr>'; }).join('')+'</tbody></table></div></div>';
