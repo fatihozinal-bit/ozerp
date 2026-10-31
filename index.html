@@ -1465,7 +1465,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r242</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-10-31-r243</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4056,11 +4056,13 @@ Dikkat edilmesi gereken 2 nokta:
     var kur = ozetKur(), sabitTl = ozetSabitTl();
     var toplamUretim = buAyKayitlari().filter(sonOperasyonKaydiMi).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
     var katkilar = urunListesi().map(ozetUrunKatki), toplamKatki = toplamla(katkilar, function(x){ return x.top; });
+    var toplamCiro = toplamla(katkilar, function(x){ return x.adet * x.fiyat; });
     var net = toplamKatki - sabitTl, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) + ' (bugünkü kurla)' : ''; };
 
     document.getElementById('ozetAyEtiket').textContent = new Date().toLocaleDateString('tr-TR',{month:'long', year:'numeric'});
     var cards = [
       {label:'Bu ay üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim'},
+      {label:'Bu ay üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: 'adet × birim fiyat · '+eurYazi(toplamCiro)},
       {label:'Aylık sabit gider', value: '₺'+fmt(sabitTl), cls:'yetki-maliyet', detay:'sabit', sub: 'personel · '+eurYazi(sabitTl)},
       {label:'Tahmini toplam katkı', value: '₺'+fmt(toplamKatki), cls:'accent yetki-maliyet', detay:'katki', sub: eurYazi(toplamKatki)},
       {label: net>=0 ? 'Tahmini net (kâr)' : 'Tahmini net (açık)', value: (net>=0?'₺':'−₺')+fmt(Math.abs(net)), cls: (net>=0?'good':'')+' yetki-maliyet', detay:'net', sub: eurYazi(net)}
@@ -15689,6 +15691,11 @@ Dikkat edilmesi gereken 2 nokta:
         h: ozetDetayTablo(['Kalem','Kaynak','Aylık'], state.personel.filter(function(p){ return !personelAyrildi(p, ay); }).map(function(p){ var m = personelMaliyet(p); return [esc(p.ad), esc(m.kaynak), tlEur(m.tl)]; })
           , ['Toplam', '', tlEur(ozetSabitTl())]),
         git: 'tanimlar', gitAd: 'Tanımlar' };
+    } else if (k === 'ciro'){
+      var lc = urunListesi().map(ozetUrunKatki).filter(function(x){ return x.adet; });
+      d = { t: 'Bu ay üretim karşılığı', f: 'Her ürün için <b>bu ay üretilen adet × birim fiyat</b>; maliyet düşülmez.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla.</span>',
+        h: ozetDetayTablo(['Ürün','Adet','Birim fiyat','Karşılığı'], lc.map(function(x){ return [esc(x.u.ad), fmt(x.adet), '₺'+fmt2(x.fiyat)+' <span class="muted">('+esc(x.kaynak)+')</span>', tlEur(x.adet * x.fiyat)]; }), ['Toplam', fmt(toplamla(lc, function(x){ return x.adet; })), '', tlEur(toplamla(lc, function(x){ return x.adet * x.fiyat; }))]),
+        git: 'virgo', gitAd: 'Virgo Hesabı' };
     } else if (k === 'katki' || k === 'net'){
       var l = urunListesi().map(ozetUrunKatki).filter(function(x){ return x.adet; });
       var top = toplamla(l, function(x){ return x.top; }), sabitTl = ozetSabitTl();
