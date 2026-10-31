@@ -1500,7 +1500,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-01-r250</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-01-r251</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12193,17 +12193,18 @@ Dikkat edilmesi gereken 2 nokta:
     var sayi = function(alan){ return virgoDetaySatirlar('top', '', alan).length; };
     var td = function(o, alan, kalin){ var bos = Math.abs(o.eur) < 0.005 && Math.abs(o.tl) < 0.005, ic = (kalin ? '<b>' : '') + virgoEur(o.eur) + (kalin ? '</b>' : '');
       return '<td class="num' + (alan && !bos ? ' vg-tik" data-vd="top||' + alan + '" title="Ayrıntı için tıklayın' : '') + '">' + ic + '</td>'; };
-    var fk = function(x){ return '<span class="' + (x > 0.5 ? 'neg' : x < -0.5 ? 'pos' : 'muted') + '">' + (x > 0.004 ? '+' : '') + virgoTl(x) + '</span>'; };
+    // r251: borç ₺ sabit olduğu için kur farkı artıysa lehimize (yeşil), eksiyse aleyhimize (kırmızı)
+    var fk = function(x){ return '<span class="' + (x > 0.5 ? 'pos' : x < -0.5 ? 'neg' : 'muted') + '" title="' + (x > 0.5 ? 'Lehimize' : x < -0.5 ? 'Aleyhimize' : '') + '">' + (x > 0.004 ? '+' : '') + virgoTl(x) + '</span>'; };
     var satir = function(isaret, ad, o, alan, ek, kalin){ var s = isaret < 0 ? -1 : 1, e = { eur: s * o.eur, tl: s * o.tl }, bk = e.eur * kur, f = bk - e.tl;
       return '<tr class="vg-satir' + (kalin ? ' kv-alt' : '') + '" data-vd="top||' + alan + '" title="Bu kalemin kayıtları için tıklayın"><td>' + (kalin ? '<b>' + ad + '</b>' : (s < 0 ? '− ' : '+ ') + ad) + (ek ? ' <span class="muted">· ' + ek + '</span>' : '') + '</td>' + td(e, alan, kalin) +
         '<td class="num">' + (kalin ? '<b>' + virgoTl(e.tl) + '</b>' : virgoTl(e.tl)) + '</td><td class="num">' + kurH(ort(e)) + '</td><td class="num">' + (kalin ? '<b>' + virgoTl(bk) + '</b>' : virgoTl(bk)) + '</td><td class="num">' + fk(f) + '</td></tr>'; };
     var kayit = function(alan){ var n = sayi(alan); return n ? n + ' kayıt' : ''; };
     var k = t.kalanO, kBug = k.eur * kur, kFark = kBug - k.tl, kOrt = ort(k);
     var acik = ''; try { acik = localStorage.getItem(VIRGO_KUR_KEY) ? ' open' : ''; } catch(e){}
-    var html = '<details class="vg-kur"' + acik + ' ontoggle="try{localStorage.setItem(\'' + VIRGO_KUR_KEY + '\',this.open?\'1\':\'\')}catch(e){}"><summary>Kur farkı ve kalem kalem ayrıntı ' + infoIco('Borç ₺ izlenir: her kayıt kendi günündeki ₺ tutarıyla borca girer / düşer, kur değişince borç değişmez (r235). Bu bölüm bilgi içindir: aynı borç € tutulsaydı bugün ne ederdi. ₺ karşılığı iki türlü gösterilir: işlem günlerinin kuruyla = her kayıt kendi günündeki TCMB kuruyla çevrilip toplanır; bugünkü kurla = € tutar × bugünkü kur. Ortalama kur = ₺ (işlem günleri) ÷ €. Kur farkı = bugünkü kurla ₺ − işlem günlerinin kuruyla ₺: artıysa kur yükseldiği için aynı € borcun ₺ karşılığı büyümüş (kırmızı), eksiyse küçülmüş (yeşil). Tutara tıklayınca o rakamı oluşturan kayıtlar açılır.') + '</summary>' +
+    var html = '<details class="vg-kur"' + acik + ' ontoggle="try{localStorage.setItem(\'' + VIRGO_KUR_KEY + '\',this.open?\'1\':\'\')}catch(e){}"><summary>Kur farkı ve kalem kalem ayrıntı ' + infoIco('Borç ₺ izlenir: her kayıt kendi günündeki ₺ tutarıyla borca girer / düşer, kur değişince borç değişmez (r235). Bu bölüm bilgi içindir: aynı borç € tutulsaydı bugün ne ederdi. ₺ karşılığı iki türlü gösterilir: işlem günlerinin kuruyla = her kayıt kendi günündeki TCMB kuruyla çevrilip toplanır; bugünkü kurla = € tutar × bugünkü kur. Ortalama kur = ₺ (işlem günleri) ÷ €. Kur farkı = bugünkü kurla ₺ − işlem günlerinin kuruyla ₺. Borç ₺ sabit olduğu için artı lehimize (yeşil: € tutulsaydı daha çok ödeyecektik), eksi aleyhimize (kırmızı). Tutara tıklayınca o rakamı oluşturan kayıtlar açılır.') + '</summary>' +
       '<div class="helper" style="margin:0 0 8px">Bugünkü kur: <b>1 € = ' + kurH(kur) + '</b>' + (kb ? ' <span class="muted">(' + esc(kb.etiket) + ')</span>' : ' <span class="muted">(Tanımlar\'daki kur)</span>') +
         ' · Kalan borç <b>' + virgoEur(k.eur) + '</b>; bugün ödense <b>' + virgoTl(kBug) + '</b>. İşlem günlerinin kuruyla ' + virgoTl(k.tl) + (kOrt ? ' (ortalama 1 € = ' + kurH(kOrt) + ')' : '') +
-        (Math.abs(kFark) > 0.5 ? '; kur farkı <b class="' + (kFark > 0 ? 'neg' : 'pos') + '">' + (kFark > 0 ? '+' : '') + virgoTl(kFark) + '</b> (' + (kFark > 0 ? 'kur yükseldiği için ₺ karşılığı arttı' : 'kur düştüğü için ₺ karşılığı azaldı') + ')' : '') + '.' +
+        (Math.abs(kFark) > 0.5 ? '; kur farkı <b class="' + (kFark > 0 ? 'pos' : 'neg') + '">' + (kFark > 0 ? '+' : '') + virgoTl(kFark) + '</b> (' + (kFark > 0 ? 'kur yükseldi; borç ₺ sabit olduğu için lehimize' : 'kur düştü; borç ₺ sabit olduğu için aleyhimize') + ')' : '') + '.' +
         (k.eur < -0.004 ? ' <span class="neg">Eksi: Virgo size borçlu.</span>' : '') + '</div>' +
       '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kalem</th><th class="num">€</th><th class="num">₺ (işlem günlerinin kuruyla)</th><th class="num">Ortalama kur</th><th class="num">₺ (bugünkü kurla)</th><th class="num">Kur farkı</th></tr></thead><tbody>' +
       satir(1, 'Virgo\'dan alınan (nakit / havale)', t.alinan, 'alinan', kayit('alinan')) +
