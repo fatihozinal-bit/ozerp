@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-02-r266</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-02-r267</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1673,7 +1673,7 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
         <p>Hammadde, yarı mamul ve mamul kartlarınız. Teklif ve siparişlerde buradan seçilir.</p>
       </div>
       <div class="block">
-        <div class="block-head"><h3>Stok listesi <span class="info-ico" tabindex="0">!<span class="info-bubble">İşçilik maliyeti, Kapasite ayarındaki makine-saat maliyetinden otomatik hesaplanır (üretim süresi × saatlik maliyet); Toplam maliyet = malzeme + işçilik.</span></span></h3><span class="bh-actions"><button class="btn secondary small" id="stokEurGeriBtn" style="display:none" title="r263'te ₺'ye çevrilen kartları bugünkü kurla €'ya geri çevirir"></button> <button class="btn small" id="stokEkleBtn">+ Yeni kayıt</button></span></div>
+        <div class="block-head"><h3>Stok listesi <span class="info-ico" tabindex="0">!<span class="info-bubble">Maliyet, Ürün Maliyet Hesabı'yla aynı formülle hesaplanır: malzeme − talaş + işçilik (süre + kurulum ÷ parti adedi, × dakika ücreti) + takım / uç + fire payı + dış işlem. Dakika ücreti kartta boşsa makine kartlarındaki saat ücretinden gelir.</span></span></h3><span class="bh-actions"><button class="btn secondary small" id="stokEurGeriBtn" style="display:none" title="r263'te ₺'ye çevrilen kartları bugünkü kurla €'ya geri çevirir"></button> <button class="btn small" id="stokEkleBtn">+ Yeni kayıt</button></span></div>
         <div class="block-body">
           <div class="recordlist" id="stokListe"></div>
         </div>
@@ -4587,23 +4587,34 @@ Dikkat edilmesi gereken 2 nokta:
   function stokFormOzet(v){
     var mh = stokMalzemeHesap(v), h = stokHesapla(v);
     function k(ad, deger, ana){ return '<div class="ck'+(ana?' ana':'')+'">'+ad+'<b>'+deger+'</b></div>'; }
-    if (!mh) return k('Malzeme / adet', '€'+fmt2(h.malzeme)) + k('Toplam maliyet', '€'+fmt2(h.toplamMaliyet), true);
-    return k('Kesit', fmt2(mh.ham.kesit)+' mm²') + k('Hamboy', fmt2(mh.ham.hamBoy)+' mm') + k('Hammadde / adet', (mh.kg||0).toLocaleString('tr-TR', {minimumFractionDigits:3, maximumFractionDigits:3})+' kg') +
-      (mh.ham.parcaCubuk ? k('Çubuktan', mh.ham.parcaCubuk+' parça · artık '+fmt(mh.ham.artik)+' mm') : '') +
-      (mh.eksik ? k('Eksik', mh.eksik) : k('Malzeme / adet', '€'+fmt2(mh.malzeme)+(h.malzemeOlcuden ? '' : ' (kullanılmıyor)'))) + k('Toplam maliyet', '€'+fmt2(h.toplamMaliyet), true);
+    var e = function(n){ return '€'+fmt2(n); };
+    var olcu = !mh ? '' : k('Hammadde / adet', (mh.kg||0).toLocaleString('tr-TR', {minimumFractionDigits:3, maximumFractionDigits:3})+' kg') +
+      (mh.ham.parcaCubuk ? k('Çubuktan', mh.ham.parcaCubuk+' parça') : '') + (mh.eksik ? k('Eksik', mh.eksik) : '');
+    // r267: Ürün Maliyet Hesabı'ndaki kalemler (sıfır olanlar yazılmaz)
+    return olcu + k('Malzeme', e(h.malzeme)+(mh && !h.malzemeOlcuden ? ' (elle)' : '')) + (h.talas ? k('− Talaş', e(h.talas)) : '') +
+      k('İşçilik', e(h.iscilik)+' <span class="muted">('+fmt2(h.dakikaUcreti)+' €/dk)</span>') + (h.takim ? k('Takım / uç', e(h.takim)) : '') +
+      (h.fire ? k('Fire payı', e(h.fire)) : '') + (h.disIslem ? k('Dış işlem', e(h.disIslem)) : '') + k('Toplam maliyet', e(h.toplamMaliyet), true);
   }
+  // r267: stok kartının dakika ücreti: kartta yazılıysa o; yoksa makine kartlarındaki saat ücreti ÷ 60; o da yoksa Ürün Maliyet Hesabı varsayılanı
+  function stokDakikaUcreti(s){
+    if (Number(s.dakikaUcreti) > 0) return { deger: Number(s.dakikaUcreti), kaynak: 'kartta' };
+    var sa = calcSaatMaliyeti(); if (sa > 0) return { deger: sa / 60, kaynak: 'makine saat ücreti €' + fmt2(sa) + '/sa' };
+    return { deger: MH_VARSAYILAN.iscilikKat, kaynak: 'varsayılan' };
+  }
+  // r267: stok kartı maliyeti Ürün Maliyet Hesabı'yla aynı formülden (mhHesapla): hammadde − talaş + işçilik (kurulum parti adedine bölünür) +
+  // takım / uç + fire payı + dış işlem. Aynı girdilerle iki ekran aynı birim maliyeti verir.
   function stokHesapla(s){
     var kritik = Number(s.miktar) <= Number(s.kritikSeviye||0);
     var mh = stokMalzemeHesap(s), olcudenMi = mh && !mh.eksik && s.maliyetKaynagi !== 'Elle / alış ortalaması';
-    var malzeme = olcudenMi ? mh.malzeme : Number(s.maliyet)||0;
-    var sureDk = Number(s.uretimSuresiDk)||0;
-    // r259: işçilik her zaman süre × makine saat ücreti; Ürün Maliyet Hesabı'ndan aktarılan kartlardaki eski sabit değer (iscilikSabit) okunmaz,
-    // yoksa formdaki girdiler değişse de listedeki maliyet aynı kalıyordu
-    var iscilik = calcSaatMaliyeti() * (sureDk/60);
-    var toplamMaliyet = malzeme + iscilik;
+    var sureDk = Number(s.uretimSuresiDk)||0, du = stokDakikaUcreti(s);
     var marj = s.karMarji!=null ? Number(s.karMarji) : 30;
-    var onerilen = toplamMaliyet * (1 + marj/100);
-    return { kritik:kritik, malzeme:malzeme, malzemeOlcuden: !!olcudenMi, malzemeHesap: mh, sureDk:sureDk, iscilik:iscilik, toplamMaliyet:toplamMaliyet, marj:marj, onerilen:onerilen };
+    var h = mhHesapla({ sekil: s.hamProfil, cap: olcudenMi ? s.hamA : 0, olcuB: s.hamB, parcaBoy: s.parcaBoy, alinPayi: s.alinPayi, kesmePayi: s.kesmePayi, boy: s.hamBoy, cubukBoy: s.cubukBoy, ucFire: s.ucFire,
+      yogunluk: mh ? mh.yogunluk : 0, hammaddeFiyat: mh ? mh.fiyat : 0, hamBirimSabit: olcudenMi ? null : Number(s.maliyet)||0,
+      adet: Number(s.partiAdet)||0, kurulum: Number(s.kurulumDk)||0, sure: sureDk, iscilikKat: du.deger, bitmisAgirlik: olcudenMi ? s.bitmisAgirlik : 0, talasFiyat: s.talasFiyat,
+      takimYuzde: s.takimYuzde, firePct: s.firePct, disIslem: s.disIslem, kar: marj });
+    return { kritik:kritik, malzeme:h.birimHammaddeBedeli, malzemeOlcuden: !!olcudenMi, malzemeHesap: mh, sureDk:sureDk, dakikaUcreti: du.deger, dakikaKaynak: du.kaynak,
+      iscilik:h.birimIscilikBedeli, takim:h.takimBirim, fire:h.fireBirim, disIslem:h.disIslemBirim, talas:h.talasGeliriBirim,
+      toplamMaliyet:h.birimMaliyet, marj:marj, onerilen:h.satisFiyati };
   }
   // Kart başına eldeki / ayrılan / serbest / yolda / üretimde — liste başına bir kez hesaplanır (veri değişmediyse önceki sonuç).
   // Malzeme İhtiyacı (MRP) hesabıyla aynı: eldeki = karantina hariç depo miktarı; ayrılan = açık iş emirlerinin henüz çıkılmamış
@@ -4768,7 +4779,8 @@ Dikkat edilmesi gereken 2 nokta:
     var birimAgirlik = ham.kgParca;
     var adet = Number(r.adet)||0;
     var toplamAgirlik = adet * birimAgirlik;
-    var birimHammaddeBedeli = birimAgirlik * (Number(r.hammaddeFiyat)||0);
+    // r267: stok kartında malzeme maliyeti elle / alış ortalamasıysa hammadde bedeli doğrudan verilir (hamBirimSabit, €/adet)
+    var birimHammaddeBedeli = r.hamBirimSabit != null ? Number(r.hamBirimSabit)||0 : birimAgirlik * (Number(r.hammaddeFiyat)||0);
     var toplamHammaddeBedeli = adet * birimHammaddeBedeli;
     // Kurulum dakikası adete bölünür, operasyon süresine eklenir; ikisi birlikte dakika ücretiyle çarpılır.
     var birimIscilikBedeli = ((adet > 0 ? (Number(r.kurulum)||0)/adet : 0) + (Number(r.sure)||0)) * (Number(r.iscilikKat)||0);
@@ -4961,8 +4973,11 @@ Dikkat edilmesi gereken 2 nokta:
           kod: kb.kod, ad: r.ad, tip:'Mamul', birim:'adet', miktar:0, kritikSeviye:0,
           hamProfil: r.sekil || 'yuvarlak', hamA: Number(r.cap)||0, hamB: Number(r.olcuB)||0, parcaBoy: Number(r.parcaBoy)||0, alinPayi: Number(r.alinPayi)||0, kesmePayi: Number(r.kesmePayi)||0,
           hamBoy: Number(r.boy)||0, cubukBoy: Number(r.cubukBoy)||0, ucFire: Number(r.ucFire)||0, hamMalzeme: r.malzeme || '', hamFiyat: Number(r.hammaddeFiyat)||0, malzemeCinsi: r.malzeme || '', agirlikKg: Math.round(h.birimAgirlik*10000)/10000,
-          maliyet: Math.round((h.birimMaliyet - h.birimIscilikBedeli)*100)/100,
+          yogunluk: Number(r.yogunluk)||0, maliyet: Math.round(h.birimHammaddeBedeli*100)/100,
           uretimSuresiDk: Number(r.sure)||0,
+          // r267: maliyetin bütün girdileri karta taşınır; kart aynı formülle aynı birim maliyeti verir
+          kurulumDk: Number(r.kurulum)||0, partiAdet: Number(r.adet)||0, dakikaUcreti: Number(r.iscilikKat)||0, takimYuzde: Number(r.takimYuzde)||0, firePct: Number(r.firePct)||0,
+          disIslem: Number(r.disIslem)||0, bitmisAgirlik: Number(r.bitmisAgirlik)||0, talasFiyat: Number(r.talasFiyat)||0,
           karMarji: Number(r.kar)||30,
           birimFiyat: Math.round(h.satisFiyati*100)/100
         }).then(function(){
@@ -6925,6 +6940,14 @@ Dikkat edilmesi gereken 2 nokta:
     {type:'section', label:'Maliyet & fiyat'},
     {key:'maliyet', label:'Malzeme maliyeti (€) — ağırlıklı ortalama', type:'number', hint:'Fiyatlı her mal kabulde (satınalma siparişi fiyatı ya da mal kabulde girilen fiyat) kendiliğinden güncellenir: (eldeki × eski maliyet + gelen × alış fiyatı) ÷ toplam. Elle de değiştirebilirsiniz.'},
     {key:'uretimSuresiDk', label:'Üretim süresi (dk/adet)', type:'number'},
+    {key:'kurulumDk', label:'Kurulum süresi (dk)', type:'number', hint:'Tek seferlik; parti adedine bölünür'},
+    {key:'partiAdet', label:'Parti adedi', type:'number', hint:'Bir kurulumla yapılan adet; boşsa kurulum maliyete girmez'},
+    {key:'dakikaUcreti', label:'Dakika ücreti (€/dk)', type:'number', hint:'Boşsa makine kartlarındaki saat ücreti ÷ 60; o da yoksa ' + String(MH_VARSAYILAN.iscilikKat).replace('.', ',') + ' €/dk'},
+    {key:'takimYuzde', label:'Takım / uç payı (% işçilik)', type:'number', hint:'Dakika ücretine dahilse 0'},
+    {key:'firePct', label:'Fire oranı (%)', type:'number'},
+    {key:'disIslem', label:'Dış işlem (€/adet)', type:'number', hint:'Pasivasyon, ısıl işlem, kaplama…'},
+    {key:'bitmisAgirlik', label:'Bitmiş parça ağırlığı (kg)', type:'number', hint:'Talaş hesabı için; ölçüden hesapta'},
+    {key:'talasFiyat', label:'Talaş satış fiyatı (€/kg)', type:'number'},
     {key:'fasonUcret', label:'Fason ücreti (€/adet, müşteri malında)', type:'number'},
     {key:'karMarji', label:'Kâr marjı (%)', type:'number', eksi:true},
     {key:'birimFiyat', label:'Satış fiyatı (€)', type:'number'}
