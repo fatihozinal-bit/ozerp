@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-02-r265</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-02-r266</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4212,8 +4212,8 @@ Dikkat edilmesi gereken 2 nokta:
       btn.addEventListener('click', function(){
         if (!db) return;
         if (silmeEngeli(btn.dataset.del, 'uretim')) return;
-        var uk = state.uretim.find(function(x){ return x.id === btn.dataset.del; }), ukStok = uretimStokGirisi(uk) > 0 ? stokKart(uk.stokId || urunStokId(uk.urunId)) : null;
-        var eksiye = ukStok && Number(ukStok.miktar) - uretimStokGirisi(uk) < -1e-9 ? '\n\nDİKKAT: ' + stokEtiket(ukStok.id) + ' stoğu ' + fmt2(ukStok.miktar) + '; bu kayıt silinince ' + fmt2(Number(ukStok.miktar) - uretimStokGirisi(uk)) + ' olur (bu üretimden sevk edilmiş olabilir).' : '';
+        var uk = state.uretim.find(function(x){ return x.id === btn.dataset.del; }), ukStok = uk && Number(uk.stokGiris) > 0 ? stokKart(uk.stokId || urunStokId(uk.urunId)) : null;
+        var eksiye = ukStok && Number(ukStok.miktar) - Number(uk.stokGiris) < -1e-9 ? '\n\nDİKKAT: ' + stokEtiket(ukStok.id) + ' stoğu ' + fmt2(ukStok.miktar) + '; bu kayıt silinince ' + fmt2(Number(ukStok.miktar) - Number(uk.stokGiris)) + ' olur (bu üretimden sevk edilmiş olabilir).' : '';
         confirmSil(silOnayMesaji('uretim', uk, 'Stoğa giriş yapıldıysa geri alınır.' + eksiye), function(){
           uretimKaydiSil(btn.dataset.del);
         });
@@ -9169,7 +9169,7 @@ Dikkat edilmesi gereken 2 nokta:
   function hareketFisiFormu(on){
     var def = Object.assign({ tur:'Giriş', stokId:'', miktar:0, depo:'', lotNo:'', tarih: todayISO(), aciklama:'' }, on||{});
     openForm({ title:'Stok giriş / çıkış fişi', values: def, fields: [
-      {key:'tur', label:'Fiş türü', type:'select', options:['Giriş','Çıkış','Fire / hurda','Düzeltme (+)','Düzeltme (−)','Üretime sarf']},
+      {key:'tur', label:'Fiş türü', type:'select', options:['Giriş','Çıkış','Satış / sevk','Fire / hurda','Düzeltme (+)','Düzeltme (−)','Üretime sarf']},
       {key:'stokId', label:'Stok kartı', type:'select', options: stokSecenek(), required:true},
       {key:'miktar', label:'Miktar (kart birimiyle)', type:'number', required:true},
       {key:'depo', label:'Depo (boş: kartın varsayılanı)', type:'select', options: function(){ return [{value:'',label:'-'}].concat(depoAdlari().map(function(d){ return {value:d,label:d}; })); }},
@@ -9177,7 +9177,8 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'tarih', label:'Tarih', type:'date'},
       {key:'aciklama', label:'Açıklama', type:'text'}
     ], onSave: function(v){
-      var isaret = ['Çıkış','Fire / hurda','Düzeltme (−)','Üretime sarf'].indexOf(v.tur) > -1 ? -1 : 1;
+      // r266: 'Satış / sevk' — satış modülü kapalıyken (Virgo dönemi) satılan / teslim edilen mamul stoktan bu fişle düşer
+      var isaret = ['Çıkış','Satış / sevk','Fire / hurda','Düzeltme (−)','Üretime sarf'].indexOf(v.tur) > -1 ? -1 : 1;
       stokHareketi({ stokId: v.stokId, miktar: isaret*Math.abs(v.miktar), tur: v.tur, depo: v.depo || null, lotNo: v.lotNo, tarih: v.tarih, aciklama: v.aciklama, kaynakTur:'fis' })
         .then(function(){ toast('✓ Stok hareketi işlendi'); });
     } });
@@ -9223,11 +9224,12 @@ Dikkat edilmesi gereken 2 nokta:
     if (!host.dataset.kuruldu){
       host.dataset.kuruldu = '1';
       host.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'+
-        '<button class="btn small" id="shFis">+ Giriş / çıkış fişi</button><button class="btn secondary small" id="shTransfer">Depo transferi</button>'+
+        '<button class="btn small" id="shFis">+ Giriş / çıkış fişi</button><button class="btn secondary small" id="shSatis">− Satış / sevk</button><button class="btn secondary small" id="shTransfer">Depo transferi</button>'+
         '<button class="btn secondary small" id="shSayim">Stok sayımı</button><button class="btn secondary small" id="shSarf">Üretime malzeme çıkışı</button></div>'+
         '<div class="block"><div class="block-head"><h3>Depo bazında stok durumu</h3></div><div class="block-body tablewrap" id="shDepoTablo"></div></div>'+
         '<div class="block"><div class="block-head"><h3>Hareket dökümü '+infoIco('Son 1500 hareket gösterilir. Liste üstündeki kutudan kart, depo, tür veya belge no ile filtreleyebilirsiniz.')+'</h3></div><div class="block-body tablewrap"><table id="shHareketTablo"><thead><tr><th>Tarih</th><th>Tür</th><th>Kart</th><th>Depo</th><th class="num">Miktar</th><th class="num">Bakiye</th><th>Lot</th><th>Kaynak</th><th>Kullanıcı</th></tr></thead><tbody></tbody></table></div></div>';
       byId('shFis').addEventListener('click', function(){ hareketFisiFormu(); });
+      byId('shSatis').addEventListener('click', function(){ hareketFisiFormu({ tur: 'Satış / sevk' }); });
       byId('shTransfer').addEventListener('click', transferFormu);
       byId('shSayim').addEventListener('click', sayimFormu);
       byId('shSarf').addEventListener('click', function(){ malzemeCikisFormu(null); });
@@ -9406,7 +9408,6 @@ Dikkat edilmesi gereken 2 nokta:
       });
       opSel.addEventListener('change', stokGirisKutusuGuncelle);
       byId('uUrun').addEventListener('change', stokGirisKutusuGuncelle);
-      byId('uTarih').addEventListener('change', stokGirisKutusuGuncelle);
       opr.addEventListener('change', function(){ try { localStorage.setItem('ozerp_son_operator', opr.value); } catch(e){} });
       stokGirisKutusuGuncelle();
     }
@@ -9419,13 +9420,10 @@ Dikkat edilmesi gereken 2 nokta:
     if (rota.length) return op === rota[rota.length-1].operasyon;
     return op === OPERASYONLAR[OPERASYONLAR.length-1];
   }
-  function uretimStokaGirer(tarih){ return (tarih || todayISO()) >= virgoKurulusTarihi(); }
-  function uretimStokGirisi(k){ return k && !k.stokGeriAlindi ? Number(k.stokGiris) || 0 : 0; }
   function stokGirisKutusuGuncelle(){
     var ie = isEmriBul(byId('uIsEmri').value);
-    var cb = byId('uStokGiris'), virgo = !uretimStokaGirer(byId('uTarih').value);
-    if (cb){ cb.checked = !virgo && sonOperasyonMu(ie, byId('uUrun').value, byId('uOperasyon').value); cb.disabled = virgo;
-      var yazi = cb.parentNode.querySelector('span'); if (yazi) yazi.textContent = virgo ? 'Virgo dönemi (şirket kuruluşu ' + kvTarihTR(virgoKurulusTarihi()) + ' öncesi): parça Virgo\'nun, stoğa girmez' : 'Mamul depoya giriş yap (son operasyonsa otomatik işaretlenir)'; }
+    var cb = byId('uStokGiris');
+    if (cb) cb.checked = sonOperasyonMu(ie, byId('uUrun').value, byId('uOperasyon').value);
     uretimBilgiYaz();
   }
   function uretimBilgiYaz(){
@@ -9481,8 +9479,7 @@ Dikkat edilmesi gereken 2 nokta:
       }
     }
     var stokId = (ie && ie.stokId) || urunStokId(v.urunId);
-    // r263: şirket kuruluşundan önceki üretim Virgo'nundur; stoğa girmez (sevkiyat o dönemde kapalı, girse hiç çıkmazdı)
-    var stokGiris = v.stokGirisYap && v.adet > 0 && uretimStokaGirer(v.tarih) ? v.adet : 0;
+    var stokGiris = v.stokGirisYap && v.adet > 0 ? v.adet : 0;
     var uyari = '';
     if (stokGiris && !stokId){ stokGiris = 0; uyari = ' (Bu ürünün stok kartı yok — Tanımlar > Eski ürün listesi\'nden birleştirin; stok girişi yapılmadı.)'; }
     var op = state.personel.find(function(p){ return p.id === v.operatorId; });
@@ -9511,7 +9508,7 @@ Dikkat edilmesi gereken 2 nokta:
     });
   }
   function uretimKaydiGuncelle(k, vals){
-    var eski = uretimStokGirisi(k);
+    var eski = Number(k.stokGiris)||0;
     if (eski > 0){
       var yeni = Number(vals.adet)||0;
       vals.stokGiris = yeni;
@@ -9522,7 +9519,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function uretimKaydiSil(id){
     var k = state.uretim.find(function(x){ return x.id === id; });
-    if (uretimStokGirisi(k) > 0) stokHareketi({ stokId: k.stokId || urunStokId(k.urunId), miktar: -uretimStokGirisi(k), tur: 'Üretim kaydı silindi', kaynakTur: 'uretim', kaynakId: id });
+    if (k && Number(k.stokGiris) > 0) stokHareketi({ stokId: k.stokId || urunStokId(k.urunId), miktar: -Number(k.stokGiris), tur: 'Üretim kaydı silindi', kaynakTur: 'uretim', kaynakId: id });
     db.collection('uretim').doc(id).delete().then(function(){ toast('Silindi'); }).catch(function(e){ toast('Silinemedi: '+dbErrMsg(e), true); });
   }
 
@@ -12700,7 +12697,7 @@ Dikkat edilmesi gereken 2 nokta:
   var VIRGO_TANIM = {
     key: 'virgo', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'virgo'; }, listeBaslik: 'Hareketler', yeniEtiket: '+ Hareket',
     bilgi: 'Bu süreçteki her parayı girin. Virgo hesabı yalnız Virgo\'nun ödedikleri / verdikleri, ona geri ödediklerimizdir; üretim karşılığı (Üretim Girişi\'ndeki adet × Virgo fiyatı) yalnız bilgi içindir, borcu düşürmez. "Virgo\'dan alınan": size verdiği nakit / havale (kişi: parayı alan). "Harcama": kim ödediyse onun adıyla; Virgo ödediyse borca eklenir. Ortak (siz, Ahmet) ödediyse paranın kaynağını seçin: Virgo\'nun verdiği paradan ya da kendi cebimizden — kendi cebimizden yapılanlar Virgo hesabına girmez, Ortaklar hesabında tutulur. "Geri ödeme": Virgo\'ya yapılan ödeme, borçtan düşer. "Ortaklar arası ödeme": ortaklar ödeşince (veren → alan). Henüz ödenmemiş kalemi "Ödenecek" durumuyla ve son ödeme günüyle girin; ödenince "Ödendi" yapın. Harcamada KDV oranını ve faturanın kimin adına olduğunu seçin: Virgo adına faturada maliyet KDV hariç, bizim adımıza / fişsizde KDV dahil; ödenen nakit hep KDV dahil izlenir. Belli aralıklarla Virgo\'yla borcu karşılaştırıp "Mutabakat" girin: programın hesabıyla farkı görünür ve o tarih dahil önceki kayıtlar kilitlenir. ⧉ Sonraki aya: maaş, kira gibi aylık kalemi bir ay sonrası için hazır form olarak açar. Tutarı ₺ ya da € yazın: o günün TCMB kuruyla öbürü de saklanır, her yerde ikisi birlikte görünür. Üretim, Üretim Girişi\'nden girilir; karşılığı bilgi olarak görünür, borçtan düşmez (Virgo\'ya yaptığınız ödemeyi "Geri ödeme" olarak girin). ⇩ Excel ile her şey (özet, aylık kazanç, hareketler, kişiler, kategoriler, üretim) indirilir. Muhasebeye işlemez; şirket kurulunca kalan borç Virgo carisine açılış bakiyesi olarak aktarılır.',
-    ustHtml: function(){ return virgoAktarimHtml() + virgoDonemStokHtml() + virgoUretimKontrolHtml() + virgoAracHtml() + virgoKartlar() + virgoOdemeHtml(); }, altHtml: virgoAltHtml,
+    ustHtml: function(){ return virgoAktarimHtml() + virgoUretimKontrolHtml() + virgoAracHtml() + virgoKartlar() + virgoOdemeHtml(); }, altHtml: virgoAltHtml,
     fields: function(){ return [
       {key:'tarih', label:'Tarih', type:'date', required:true},
       {key:'hareket', label:'Hareket', type:'select', options: VIRGO_HAREKET, required:true},
@@ -12782,7 +12779,6 @@ Dikkat edilmesi gereken 2 nokta:
       if (host.dataset.virgoBagli) return; host.dataset.virgoBagli = 1;
       host.addEventListener('click', function(e){
         if (e.target.closest('[data-vaktar]')){ virgoUretimAktar(); return; }
-        if (e.target.closest('[data-vstokcikar]')){ virgoDonemStokCikar(); return; }
         if (e.target.closest('[data-virgoyazdir]')){ virgoYazdir(); return; }
         var vs = e.target.closest('[data-vsekmesec]');
         if (vs){ try { localStorage.setItem(VIRGO_SEKME_KEY, vs.dataset.vsekmesec); } catch(er){}
@@ -12927,7 +12923,7 @@ Dikkat edilmesi gereken 2 nokta:
     var l = virgoUrunler(), kul = {}, kur = virgoGunKuru(todayISO());
     virgoUretimKayitlari().forEach(function(u){ var k = kul[u.urunId] || (kul[u.urunId] = { adet: 0, tutar: 0, tl: 0 }); k.adet += Number(u.adet) || 0; k.tutar += Number(u.tutar) || 0; k.tl += virgoUretimTl(u); });
     return '<div class="block"><div class="block-head"><h3>Ürünler ve fiyatlar (adet başı, KDV hariç) ' + infoIco('Virgo\'yla anlaştığınız parça başı fiyat, ₺ (gerekirse €); € karşılığı arka planda TCMB kuruyla hesaplanır. Üretim Girişi\'nde bu ürün (aynı stok kartı) seçilince karşılığı bu fiyatla, üretim gününün kuruyla hesaplanır (bilgi; borçtan düşmez). Yeni yazılan ürün aynı adlı stok kartına bağlanır, yoksa Mamul kartı açılır. Fiyatı değiştirirseniz aktarılmış eski Virgo girişleri kendi fiyatıyla kalır; Üretim Girişi\'nden girilenlerin hepsi güncel fiyatla görünür. Öbür para birimindeki karşılığı bugünkü kurla bilgi içindir. Üretim girilmiş ürün silinemez.') + '</h3>' +
-      '<div class="bh-actions"><button class="btn secondary small" data-virgoexcel="1" title="Virgo hesabı ve üretimin hepsi tek Excel dosyasında">⇩ Excel</button><button class="btn secondary small" data-vurunekle="1">+ Ürün</button><button class="btn small" data-vurunkaydet="1">Kaydet</button></div></div><div class="block-body">' +
+      '<div class="bh-actions"><button class="btn secondary small" data-virgoexcel="1" title="Virgo hesabı ve üretimin hepsi tek Excel dosyasında">⇩ Excel</button><button class="btn secondary small" data-vsevk="1" title="Satılan / teslim edilen parçayı stoktan düşer (Stok Hareketleri › Satış / sevk fişi)">− Satış / sevk</button><button class="btn secondary small" data-vurunekle="1">+ Ürün</button><button class="btn small" data-vurunkaydet="1">Kaydet</button></div></div><div class="block-body">' +
       '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ürün</th><th class="num">Fiyat / adet</th><th>Para birimi</th><th class="num">Karşılığı (bugünkü kur)</th><th class="num">Toplam üretilen</th><th class="num">Toplam karşılığı</th><th></th></tr></thead><tbody id="vUrunGovde">' +
         l.map(function(u){ return virgoUrunSatir(u, kul[u.id] || { adet: 0, tutar: 0, tl: 0 }, kur); }).join('') +
         (l.length ? '' : virgoUrunSatir({ id: '', ad: '', fiyat: '', pb: '₺' }, { adet: 0, tutar: 0, tl: 0 }, kur)) +
@@ -12942,7 +12938,7 @@ Dikkat edilmesi gereken 2 nokta:
     var secim = '<select data-vstok="1" data-vadeski="' + escAttr(sk ? '' : (u.ad || '')) + '" style="width:100%"><option value="">' + (u.ad && !sk ? esc(u.ad) + ' (stok kartı seçin)' : '— stok kartı seçin —') + '</option>' +
       kartlar.map(function(x){ return '<option value="' + escAttr(x.id) + '"' + (sk && x.id === sk.id ? ' selected' : '') + '>' + esc((x.kod ? x.kod + ' · ' : '') + (x.ad || '')) + '</option>'; }).join('') + '</select>';
     return '<tr data-vurun="' + escAttr(u.id || '') + '"><td>' + secim +
-      (sk ? '' : u.ad ? '<div class="vg-tl neg">stok kartına bağlı değil</div>' : '') + '</td>' +
+      (sk ? '<div class="vg-tl">stokta ' + fmt(Number(sk.miktar) || 0) + ' ' + esc(sk.birim || 'adet') + '</div>' : u.ad ? '<div class="vg-tl neg">stok kartına bağlı değil</div>' : '') + '</td>' +
       '<td class="num"><input type="number" step="any" min="0" data-vfiyat="1" value="' + (f || '') + '" placeholder="0,00" style="max-width:110px;text-align:right"></td>' +
       '<td><select data-vpb="1"><option' + (pb === '€' ? ' selected' : '') + '>€</option><option' + (pb === '₺' ? ' selected' : '') + '>₺</option></select></td>' +
       '<td class="num muted">' + ob + '</td>' +
@@ -12989,7 +12985,7 @@ Dikkat edilmesi gereken 2 nokta:
       l.map(function(r){ return satir(r, virgoAnalizAd(g, r.k)); }).join('') + (l.length > 1 ? satir(t, 'Toplam', true) : '') + '</tbody></table></div>' +
       (l.some(function(r){ return !r.k; }) && g !== 'urun' ? '<div class="helper" style="margin-top:6px">' + (g === 'makine' ? 'Makinesi girilmemiş girişler var; açıp makine seçerseniz analize girer.' : 'Operatörü girilmemiş girişler var.') + '</div>' : '') + '</div></div>';
   }
-  // ---------- r236: Virgo üretimi programın stoğuna da girer (r263: artık girmez; aşağıdaki eşitleme hedefi hep 0) ----------
+  // ---------- r236: Virgo üretimi programın stoğuna da girer ----------
   // Her Virgo ürünü bir stok kartına bağlanır (config.virgoUrunler[].stokId): yoksa aynı adlı kart bulunur, o da yoksa Mamul kartı açılır.
   // Her üretim girişi sağlam adet kadar "Üretimden giriş (Virgo)" stok hareketi yazar (kaynakTur 'virgoUretim', kaynakId = giriş id);
   // düzenlemede fark, silmede geri alma yazılır (belgeStokEsitle: net üzerinden, iki kez çağrılsa da çift yazmaz). Fire stoğa girmez.
@@ -13014,8 +13010,10 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoStokEsitle(u, eski){
     var id = (u || eski || {}).id; if (!id) return Promise.resolve();
     virgoStokSira = virgoStokSira.then(function(){
-      // r263: Virgo dönemi üretimi stoğa girmez; daha önce yazılmış hareket varsa geri alınır
-      return belgeStokEsitle('virgoUretim', id, 'Virgo üretim', {}, u ? VIRGO_STOK_TUR : 'Üretim girişi silindi (Virgo)', todayISO());
+      return (u && Number(u.adet) > 0 ? virgoStokKarti(u.urunId) : Promise.resolve(null)).then(function(kart){
+        var hedef = {}; if (kart) hedef[kart.id] = { miktar: Number(u.adet) || 0 };
+        return belgeStokEsitle('virgoUretim', id, 'Virgo üretim', hedef, u ? VIRGO_STOK_TUR : 'Üretim girişi silindi (Virgo)', u ? (u.bitisTarih || u.tarih) : todayISO());
+      });
     }).catch(function(e){ toast('Stoğa yazılamadı: ' + dbErrMsg(e), true); });
     return virgoStokSira;
   }
@@ -13033,44 +13031,10 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // ---------- r240: eski Virgo üretim girişleri → normal Üretim Kayıtları ----------
   // Her giriş aynı tarih aralığı, makine, operatör, vardiya, adet, fire ve açıklamayla üretim kaydı olur; ürün, Virgo ürününün stok kartı
-  // (yoksa aynı adlı kart, o da yoksa açılan Mamul kartı). r263: yeni kayıt stoğa girmez (stokGiris 0);
-  // eski girişin stok hareketi kalırsa "Stoktan çıkar" ile geri alınır. Eski giriş silinmez, aktarildi = yeni kayıt id ile gizlenir.
+  // (yoksa aynı adlı kart, o da yoksa açılan Mamul kartı). Stok: Virgo girişinin "Üretimden giriş (Virgo)" hareketi yerinde kalır, yeni kayıt
+  // stoğa girmiş sayılır (stokGiris = adet); eksik / fazla varsa yalnız fark yazılır. Eski giriş silinmez, aktarildi = yeni kayıt id ile gizlenir.
   var virgoAktarimSurer = false;
   // r256: Üretim kontrolü — Üretim Kayıtları'ndaki fişlerle Virgo'nun saydığını karşılaştırır, karşılığı eksik ya da Virgo'ya girmeyen fişleri listeler
-  // r263: Virgo dönemi üretiminden stoğa girmiş miktarlar (kaynak başına net). Normal üretim kaydı kuruluştan önceyse ya da eski Virgo girişiyse sayılır.
-  // "Stoktan çıkar" her kaynağın net hareketini ters kayıtla sıfırlar (silmez; Stok Hareketleri'nde iz kalır), üretim kaydını stokGeriAlindi ile işaretler.
-  var virgoStokCikarSurer = false;
-  function virgoDonemStokGirisleri(){
-    var kur = virgoKurulusTarihi(), uk = {}, net = {}, l = [];
-    (state.uretim || []).forEach(function(k){ if (k.tarih && k.tarih < kur) uk[k.id] = k; });
-    (state.stokHareketleri || []).forEach(function(h){
-      if (!(h.kaynakTur === 'virgoUretim' || (h.kaynakTur === 'uretim' && uk[h.kaynakId]))) return;
-      var a = h.kaynakTur + '|' + h.kaynakId; net[a] = (net[a] || 0) + (Number(h.miktar) || 0); });
-    Object.keys(net).forEach(function(a){ if (Math.abs(net[a]) > 1e-6){ var p = a.split('|'); l.push({ kaynakTur: p[0], kaynakId: p[1], miktar: net[a], k: p[0] === 'uretim' ? uk[p[1]] : null }); } });
-    return l;
-  }
-  function virgoDonemStokCikar(){
-    var l = virgoDonemStokGirisleri(); if (!l.length || !db || virgoStokCikarSurer) return;
-    if (!kovaDocs.stokHareketleri){ toast('Stok hareketleri henüz yüklenmedi; birkaç saniye sonra yeniden deneyin.', true); return; }
-    var adet = l.reduce(function(a, x){ return a + x.miktar; }, 0);
-    onayIste('Virgo döneminde üretilip stoğa girmiş ' + fmt(Math.round(adet)) + ' adet (' + l.length + ' kayıt) stoktan çıkarılacak. Parçalar Virgo\'nun; şirketin stoğu değil. Kayıtlar silinmez, Stok Hareketleri\'ne "Virgo dönemi: stoktan çıkarıldı" ters kaydı yazılır. Devam edilsin mi?', 'Stoktan çıkar', function(){
-      virgoStokCikarSurer = true; EK_RENDER.virgo();
-      var sira = Promise.resolve(), n = 0;
-      l.forEach(function(x){ sira = sira.then(function(){
-        return belgeStokEsitle(x.kaynakTur, x.kaynakId, 'Virgo dönemi', {}, 'Virgo dönemi: stoktan çıkarıldı', todayISO())
-          .then(function(){ return x.k && Number(x.k.stokGiris) > 0 ? kayitGuncelle('uretim', x.k.id, { stokGeriAlindi: true }) : null; })
-          .then(function(){ n++; }); }); });
-      sira.then(function(){ toast('✓ ' + n + ' kayıt stoktan çıkarıldı'); })
-        .catch(function(e){ toast((n ? n + ' kayıt çıkarıldı; ' : '') + 'Durdu: ' + dbErrMsg(e) + '. Yeniden basınca kalanlar yapılır.', true); })
-        .then(function(){ virgoStokCikarSurer = false; var h = byId('virgoIcerik'); if (h) h.__sonHtml = null; EK_RENDER.virgo(); });
-    });
-  }
-  function virgoDonemStokHtml(){
-    var l = virgoDonemStokGirisleri(); if (!l.length) return '';
-    var adet = l.reduce(function(a, x){ return a + x.miktar; }, 0);
-    return '<div class="vg-eski"><b>⚠ Virgo dönemi üretiminden stoğa girmiş ' + fmt(Math.round(adet)) + ' adet (' + l.length + ' kayıt)</b> — parçalar Virgo\'nun; o dönemde sevkiyat kapalı olduğu için stoktan hiç çıkmaz ve şirketin stoğunu şişirir. ' +
-      '<button class="btn small" data-vstokcikar="1"' + (virgoStokCikarSurer ? ' disabled' : '') + '>' + (virgoStokCikarSurer ? 'Çıkarılıyor…' : 'Stoktan çıkar') + '</button></div>';
-  }
   function virgoUretimKontrolHtml(){
     var kur = virgoKurulusTarihi(), tum = state.uretim || [], v = tum.filter(function(k){ return k.tarih && k.tarih < kur; }).map(virgoNormaldenUretim);
     var sayilan = v.filter(function(u){ return !u.araOp; }), adetK = tum.filter(function(k){ return k.tarih && k.tarih < kur && sonOperasyonKaydiMi(k); }).reduce(function(a, k){ return a + (Number(k.adet) || 0); }, 0);
@@ -13111,11 +13075,14 @@ Dikkat edilmesi gereken 2 nokta:
         var kayit = { tarih: a.bas, bitisTarih: a.bit > a.bas ? a.bit : '', makineId: u.makineId || '', urunId: kart.id, vardiya: u.vardiya || '', operasyon: '',
           adet: adet, fireAdet: fire, fireNedeni: fire > 0 && u.fireNedeni && u.fireNedeni !== '—' ? u.fireNedeni : '', baslangicSaat: u.baslangic || '', bitisSaat: u.bitis || '',
           operatorId: u.operatorId || '', operatorAd: op ? op.ad : '', giren: u.olusturan || aktifKullaniciAdi() || '', isEmriId: null, not_: u.aciklama || '',
-          stokGiris: 0, stokId: '', olusturma: u.olusturma || nowISO(), virgoKaynakId: u.id,
+          stokGiris: adet, stokId: kart.id, olusturma: u.olusturma || nowISO(), virgoKaynakId: u.id,
           virgoKarsilik: { paraBirimi: u.paraBirimi === '₺' ? '₺' : '€', fiyatGirilen: Number(u.fiyatGirilen) || Number(u.fiyat) || 0, kur: Number(u.kur) || 0, tutar: Number(u.tutar) || 0, tl: virgoUretimTl(u) } };
         return db.collection('uretim').add(temizle(kayit)).then(function(res){
-          var id = res && res.id;
-          return kayitGuncelle('tanimKayitlari', u.id, { aktarildi: id, aktarimTarihi: nowISO() })
+          var id = res && res.id, net = 0;
+          (state.stokHareketleri || []).forEach(function(h){ if (h.kaynakTur === 'virgoUretim' && h.kaynakId === u.id && h.stokId === kart.id) net += Number(h.miktar) || 0; });
+          var fark = Math.round((adet - net) * 10000) / 10000;
+          return (fark ? stokHareketi({ stokId: kart.id, miktar: fark, tur: 'Üretimden giriş', kaynakTur: 'uretim', kaynakId: id, tarih: a.bit || a.bas, aciklama: 'Virgo girişi aktarımı (eksik stok)' }) : Promise.resolve())
+            .then(function(){ return kayitGuncelle('tanimKayitlari', u.id, { aktarildi: id, aktarimTarihi: nowISO() }); })
             .then(function(){ u.aktarildi = id; n++; });
         });
       });
@@ -13278,6 +13245,7 @@ Dikkat edilmesi gereken 2 nokta:
       if (a.dataset.vanalizay) virgoAnalizAy = a.value; else virgoAnalizGrup = a.value;
       byId('virgoAnalizKutu').innerHTML = virgoAnalizHtml(); });
     host.addEventListener('click', function(e){
+      if (e.target.closest('[data-vsevk]')){ hareketFisiFormu({ tur: 'Satış / sevk' }); return; }
       if (e.target.closest('[data-vurunekle]')){ var g = byId('vUrunGovde'); if (g){ g.insertAdjacentHTML('beforeend', virgoUrunSatir({ id: '', ad: '', fiyat: '', pb: '₺' }, { adet: 0, tutar: 0, tl: 0 }, virgoGunKuru(todayISO()))); var i = g.querySelector('tr:last-child [data-vstok]'); if (i) i.focus(); } return; }
       var sil = e.target.closest('[data-vurunsil]'); if (sil){ sil.closest('tr').remove(); return; }
       if (!e.target.closest('[data-vurunkaydet]')) return;
