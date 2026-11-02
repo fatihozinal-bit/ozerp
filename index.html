@@ -731,6 +731,9 @@
   /* Geniş açılır formlarda da aynı hizalama: uzun etiket iki satıra düşse bile kutular aynı hizada */
   #formBox.wide #formFields > .field { display: grid; grid-template-rows: subgrid; grid-row: span 4; row-gap: 0; align-content: start; }
   #formBox.wide #formFields > .field > label { align-self: end; }
+  /* r255: aynı satırda çok satırlı not kutusu olsa da tek satırlık kutular uzamasın */
+  #formBox.wide #formFields > .field > input:not([type=checkbox]), #formBox.wide #formFields > .field > select, .grid2 > .field > input:not([type=checkbox]), .grid2 > .field > select { align-self: start; }
+  #formBox.wide #formFields > .field > textarea, .grid2 > .field > textarea { grid-row: 2 / span 2; } /* not kutusu ₺/€ karşılık satırını da kaplar; yandaki kutunun karşılığı hemen altında kalır */
   #formBox.wide #formFields > .field > input[type=checkbox], #formBox.wide #formFields > .field > .btn { justify-self: start; }
   .grid2 > .field > .btn, .grid2 > .field > input[type=checkbox], .grid2 > .field > input[type=file] { justify-self: start; }
   .kur-hint { margin-top: 1px; }
@@ -1168,15 +1171,20 @@
   .vg-form-bilgi { font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
   .vg-gunsec { grid-column:1 / -1; display:flex; gap:16px; margin:0 0 6px; font-size:12.5px; } .vg-gunsec label { display:flex; align-items:center; gap:5px; cursor:pointer; font-weight:400; }
   .kp-ozet { display:flex; flex-wrap:wrap; gap:4px 20px; font-size:13px; margin-bottom:8px; }
-  .kp-dz { display:flex; flex-wrap:wrap; gap:8px 28px; font-size:12.5px; } .kp-dz-g { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
-  .kp-dz-g > b { min-width:52px; } .kp-dz label { display:flex; align-items:center; gap:5px; font-weight:400; white-space:nowrap; } .kp-dz input[type=number] { width:64px; text-align:right; }
+  /* r255: çalışma düzeni hizalı ızgara: satır başlığı + 4 sabit sütun; her kutuda yazı solda, giriş sağda */
+  .grid2.ug6 { grid-template-columns:repeat(6, minmax(0, 1fr)); } .grid2.ug6 .ug-s2 { grid-column:span 2; } .grid2.ug6 .ug-s3 { grid-column:span 3; }
+  @media (max-width: 1000px){ .grid2.ug6 { grid-template-columns:repeat(3, minmax(0, 1fr)); } .grid2.ug6 .ug-s2 { grid-column:span 1; } }
+  @media (max-width: 600px){ .grid2.ug6 { grid-template-columns:repeat(2, minmax(0, 1fr)); } .grid2.ug6 .ug-s3, .grid2.ug6 .ug-s2 { grid-column:span 2; } }
+  .kp-dz { display:grid; grid-template-columns:62px repeat(4, max-content); gap:7px 26px; align-items:center; font-size:12.5px; } .kp-dz-r { display:contents; } .kp-dz-r > b { font-size:12.5px; }
+  .kp-dz label { display:flex; align-items:center; justify-content:space-between; gap:10px; font-weight:400; white-space:nowrap; } .kp-dz label.kp-dz-k { justify-content:flex-start; gap:6px; } .kp-dz input[type=number] { width:68px; text-align:right; } .kp-dz select { width:150px; }
+  @media (max-width: 760px){ .kp-dz { display:block; } .kp-dz-r { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:center; gap:6px 14px; margin-bottom:10px; } .kp-dz-r > b { grid-column:1 / -1; } .kp-dz-r > span:empty { display:none; }
+    .kp-dz label { white-space:normal; line-height:1.2; } .kp-dz input[type=number] { width:58px; flex:none; } .kp-dz select { width:100%; } }
   .kp-iki { display:grid; grid-template-columns:minmax(0, 1fr); gap:0 14px; align-items:start; } .kp-iki > div { min-width:0; }
   @media (min-width: 1180px){ .kp-iki { grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); } }
-  .kp-sonuc { width:100%; } .kp-sonuc td:first-child { white-space:normal; } .kp-sonuc td:first-child > .muted { display:block; line-height:1.3; } .kp-tablo { table-layout:fixed; width:auto; } .kp-tablo input, .kp-tablo select { width:100%; min-width:0; box-sizing:border-box; } .kp-tablo input[type=number] { text-align:right; } .kp-tablo td.num, .kp-tablo th.num { white-space:nowrap; overflow:hidden; }
+  /* r255: sonuç tablosunda kalem ve açıklaması tek satır; açıklama sığmazsa … ile kesilir, tamamı üzerine gelince */ .kp-sonuc { width:100%; table-layout:fixed; } .kp-sonuc th:nth-child(2), .kp-sonuc th:nth-child(3) { width:118px; } .kp-sonuc th:nth-child(4) { width:72px; } .kp-sonuc td { white-space:nowrap; } .kp-sonuc td:first-child { overflow:hidden; text-overflow:ellipsis; } .kp-sonuc td:first-child .muted { font-size:11px; margin-left:4px; } .kp-sonuc td.kp-cok { white-space:normal; } .kp-tablo { table-layout:fixed; width:auto; } .kp-tablo input, .kp-tablo select { width:100%; min-width:0; box-sizing:border-box; } .kp-tablo input[type=number] { text-align:right; } .kp-tablo td.num, .kp-tablo th.num { white-space:nowrap; overflow:hidden; }
   .kp-tablo td.num .muted, .kp-tablo td.num .vg-tl { font-size:10.5px; } .kp-tablo th { font-size:11.5px; line-height:1.25; white-space:normal; vertical-align:bottom; } .kp-fiyat { display:flex; gap:3px; } .kp-fiyat select { width:42px; flex:none; padding-left:3px; padding-right:0; }
   .kp-sonuc, .kp-tablo, .kp-gider, .kp-ozet { font-variant-numeric:tabular-nums; } .kp-pers { display:inline-flex; align-items:center; gap:5px; font-weight:400; cursor:pointer; } .kp-pers input { margin:0; } .kp-gider tr.kp-bos { display:none; } .kp-pers.kapali { color:var(--ink-soft); text-decoration:line-through; }
   .kp-sonuc tr.kp-alt td { font-size:11.5px; color:var(--ink-soft); padding-top:1px; padding-bottom:1px; } .kp-gider input[type=number] { max-width:130px; text-align:right; } .kp-gider td:first-child input { min-width:150px; width:100%; } .kp-gider select { max-width:150px; }
-  .kp-elek-alan { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:12px; } .kp-elek-alan input { width:96px; margin-left:4px; text-align:right; }
   .vg-ikili { display:flex; flex-wrap:wrap; gap:0 16px; align-items:flex-start; }
   /* r246: Virgo sayfa araç çubuğu, sekmeli ay ay tablolar, açılır Ayarlar */
   .vg-arac { display:flex; gap:6px; align-items:center; justify-content:flex-end; margin:-4px 0 8px; flex-wrap:wrap; }
@@ -1503,7 +1511,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-02-r254</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-02-r255</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1558,25 +1566,26 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
       </div>
       <div class="block">
         <div class="block-body">
-          <div class="grid2">
+          <!-- r255: hizalı 6 sütun (orta ekranda 3, telefonda 2); tek başına kalan satır yok -->
+          <div class="grid2 ug6">
             <div class="field"><label>Tarih</label><input type="date" id="uTarih"></div>
-            <div class="field"><label>Bitiş günü (aralıksa) <span class="info-ico" tabindex="0">!<span class="info-bubble">Birkaç günün toplamını tek kayıtta giriyorsanız son günü seçin; boşsa tek gün. Aralık birden çok aya düşerse aylık raporlarda adet gün sayısıyla aylara bölünür.</span></span></label><input type="date" id="uBitisTarih"></div>
-            <div class="field"><label>Makine</label><select id="uMakine"></select></div>
-            <div class="field"><label>Ürün</label><select id="uUrun"></select></div>
+            <div class="field"><label>Bitiş günü <span class="info-ico" tabindex="0">!<span class="info-bubble">Birkaç günün toplamını tek kayıtta giriyorsanız son günü seçin; boşsa tek gün. Aralık birden çok aya düşerse aylık raporlarda adet gün sayısıyla aylara bölünür.</span></span></label><input type="date" id="uBitisTarih"></div>
             <div class="field"><label>Vardiya</label><select id="uVardiya">
               <option>1. Vardiya</option><option>2. Vardiya</option><option>Cumartesi</option>
             </select></div>
+            <div class="field"><label>Makine</label><select id="uMakine"></select></div>
+            <div class="field"><label>Ürün</label><select id="uUrun"></select></div>
             <div class="field"><label>Operasyon</label><select id="uOperasyon"></select></div>
             <div class="field"><label>İyi (sağlam) adet</label><input type="number" id="uAdet" min="0" step="1" placeholder="örn. 210"></div>
             <div class="field"><label>Fire adet</label><input type="number" id="uFire" min="0" step="1" value="0"></div>
             <div class="field"><label>Fire nedeni</label><select id="uFireNeden"></select></div>
             <div class="field"><label>Başlangıç saati</label><input type="time" id="uBaslangic"></div>
             <div class="field"><label>Bitiş saati</label><input type="time" id="uBitis"></div>
-            <div class="field"><label>Operatör (personel)</label><select id="uOperator"></select></div>
+            <div class="field"><label>Operatör</label><select id="uOperator"></select></div>
+            <div class="field ug-s2"><label>İş emri <span class="muted">(isteğe bağlı)</span></label><select id="uIsEmri"><option value="">-</option></select></div>
             <div class="field"><label>Giren kişi</label><select id="uGiren"></select></div>
+            <div class="field ug-s3"><label>Not <span class="muted">(isteğe bağlı)</span></label><input type="text" id="uNot" placeholder="arıza, mola vb."></div>
           </div>
-          <div class="field"><label>İş Emri (opsiyonel)</label><select id="uIsEmri"><option value="">-</option></select></div>
-          <div class="field"><label>Not (opsiyonel)</label><input type="text" id="uNot" style="width:100%" placeholder="arıza, mola vb."></div>
           <label style="display:flex;gap:6px;align-items:center;margin-bottom:12px"><input type="checkbox" id="uStokGiris"> <span>Mamul depoya giriş yap (son operasyonsa otomatik işaretlenir)</span></label>
           <div class="helper" id="uIsEmriBilgi" style="margin:-4px 0 10px"></div>
           <button class="btn" id="uKaydet">Kaydı ekle</button>
@@ -2379,10 +2388,10 @@ Dikkat edilmesi gereken 2 nokta:
           '<button type="button" class="btn secondary small" data-fftekle="'+i+'">+ Satır</button></div>';
       }
       var isEuro = !!alanPara(f);
-      return '<div class="field"><label>'+esc(f.label)+(f.required ? '<span class="zorunlu" title="Zorunlu alan">*</span>' : '')+'</label><input type="'+(f.type||'text')+'" '+(f.type==='number'?'step="any"':'')+
+      // r255: açıklama kutunun altında satırlar kaplamasın; etiketteki ⓘ ipucunda
+      return '<div class="field"><label>'+esc(f.label)+(f.required ? '<span class="zorunlu" title="Zorunlu alan">*</span>' : '')+(f.hint ? ' <span class="info-ico" tabindex="0">!<span class="info-bubble">'+esc(f.hint)+'</span></span>' : '')+'</label><input type="'+(f.type||'text')+'" '+(f.type==='number'?'step="any"':'')+
         ' data-ffkey="'+i+'" value="'+escAttr(v==null?'':v)+'" placeholder="'+escAttr(f.placeholder||'')+'" style="width:100%">'+
-        (isEuro ? '<span class="kur-hint empty" data-ffhint="'+i+'"></span>' : '')+
-        (f.hint ? '<span class="field-hint">'+esc(f.hint)+'</span>' : '')+'</div>';
+        (isEuro ? '<span class="kur-hint empty" data-ffhint="'+i+'"></span>' : '')+'</div>';
     }).join('');
     overlay.classList.add('open');
     if (opts.onOpen) opts.onOpen(fieldsEl);
@@ -13300,14 +13309,14 @@ Dikkat edilmesi gereken 2 nokta:
   function kpSonucHtml(h){
     var kur = h.kur, gecmis = h.ay <= todayISO().slice(0, 7);
     var satir = function(ad, v, o){ o = o || {}; var b = o.kalin ? ['<b>', '</b>'] : ['', ''];
-      return '<tr class="' + (o.kalin ? 'kv-alt' : '') + (o.alt ? ' kp-alt' : '') + '"><td>' + b[0] + ad + b[1] + (o.not ? ' <span class="muted" style="font-size:11px">' + o.not + '</span>' : '') + '</td><td class="num' + (o.cls ? ' ' + o.cls : '') + '">' + b[0] + virgoTl(v) + b[1] + '</td><td class="num">' + (kur ? virgoEur(v / kur) : '') + '</td><td class="num muted">' + (h.top.adet && !o.alt && o.adetBasi ? virgoTl(v / h.top.adet) : '') + '</td></tr>'; };
+      return '<tr class="' + (o.kalin ? 'kv-alt' : '') + (o.alt ? ' kp-alt' : '') + '"><td' + (o.not ? ' title="' + escAttr(String(o.not).replace(/<[^>]*>/g, '')) + '"' : '') + '>' + b[0] + ad + b[1] + (o.not ? '<span class="muted">' + o.not + '</span>' : '') + '</td><td class="num' + (o.cls ? ' ' + o.cls : '') + '">' + b[0] + virgoTl(v) + b[1] + '</td><td class="num">' + (kur ? virgoEur(v / kur) : '') + '</td><td class="num muted">' + (h.top.adet && !o.alt && o.adetBasi ? virgoTl(v / h.top.adet) : '') + '</td></tr>'; };
     var dolu = h.gid.filter(function(x){ return x.tl > 0.004; }), bos = h.gid.length - dolu.length;
     return '<div class="kp-ozet"><span>İş günü <b>' + fmt2(h.ks.gun) + '</b>' + (h.ks.cmt ? ' + ' + h.ks.cmt + ' cumartesi' : '') + (h.ks.pazar ? ' + ' + h.ks.pazar + ' pazar' : '') + '</span><span>Makine saati <b>' + fmt2(h.ks.saat) + '</b> <span class="muted">(1 makine' + (h.ks.gece ? ': gündüz ' + fmt2(h.ks.gunduz) + ' + gece ' + fmt2(h.ks.gece) + ', ' + h.ks.geceGun + ' gece' : '') + ')</span></span>' +
       (h.verim < 1 || h.fireO > 0 || h.ks.gece ? '<span>Verimli saat <b>' + fmt2(h.etkin * h.verim * (1 - h.fireO)) + '</b> <span class="muted">(' + [h.ks.gece ? 'gece %' + fmt2(kpSayi(h.dz.geceVerim, 100)) : '', h.verim < 1 ? 'verim %' + fmt2(h.verim * 100) : '', h.fireO ? 'fire %' + fmt2(h.fireO * 100) : ''].filter(Boolean).join(', ') + ')</span></span>' : '') + '<span>Çalışan makine <b>' + fmt2(h.calisanMk) + '</b> <span class="muted">/ Tanımlar\'da aktif ' + h.aktifMk + '</span>' + (h.dzMk != null && h.top.makine > h.calisanMk + 0.001 ? ' <span class="neg" title="Ürün satırlarındaki makinelerin toplamı çalışan makine sayısından fazla">(ürünlerde ' + fmt2(h.top.makine) + '!)</span>' : '') + '</span><span>Personel <b>' + h.pers.length + '</b>' + (h.persHepsi.length > h.pers.length ? ' <span class="muted">/ ' + h.persHepsi.length + '</span>' : '') + '</span><span>Üretilebilir <b>' + fmt(h.top.adet) + ' adet</b></span>' +
       (gecmis ? '<span>Gerçekleşen <b>' + fmt(Math.round(h.ger.adet)) + ' adet</b>' + (h.top.adet ? ' <span class="muted">(%' + fmt(Math.round(h.ger.adet / h.top.adet * 100)) + ')</span>' : '') + '</span>' : '') + '</div>' +
       (h.ks.tatil.length ? '<div class="helper" style="margin:0 0 6px">Tatil: ' + h.ks.tatil.map(esc).join(' · ') + '</div>' : '') +
       '<table class="vg-tablo kp-sonuc"><thead><tr><th>' + esc(muhAyAdi(h.ay)) + '</th><th class="num">₺</th><th class="num">€ <span class="muted">(bugünkü kur)</span></th><th class="num">Adet başı</th></tr></thead><tbody>' +
-      satir('Ciro (KDV hariç)', h.top.ciroTl, { adetBasi: 1 }) + satir('− Adet başı giderler (malzeme, kaplama…)', h.top.degTl, { adetBasi: 1 }) + satir('= Katkı', h.katki, { kalin: 1, adetBasi: 1 }) +
+      satir('Ciro', h.top.ciroTl, { adetBasi: 1, not: 'KDV hariç' }) + satir('− Adet başı gider', h.top.degTl, { adetBasi: 1, not: 'malzeme, kaplama…' }) + satir('= Katkı', h.katki, { kalin: 1, adetBasi: 1 }) +
       satir('− Personel', h.persTl, { not: h.pers.length + ' kişi, Tanımlar · bordro kurallarıyla işveren maliyeti · kutuyu kaldırınca o kişi bu hesapta çalışmaz', adetBasi: 1 }) +
       h.persHepsi.map(function(p){ var ad = '<label class="kp-pers' + (p.kapali ? ' kapali' : '') + '"><input type="checkbox" data-kppers="' + escAttr(p.id) + '"' + (p.kapali ? '' : ' checked') + '> ' + esc(p.ad) + (p.rol ? ' <span class="muted">(' + esc(p.rol) + ')</span>' : '') + '</label>';
         return p.kapali ? '<tr class="kp-alt"><td>' + ad + '</td><td class="num muted" colspan="3">çalışmıyor</td></tr>' : satir(ad, p.tl, { alt: 1 }); }).join('') +
@@ -13316,13 +13325,13 @@ Dikkat edilmesi gereken 2 nokta:
           satir('&nbsp;&nbsp;Net (ev sahibine)', x.net, { alt: 1 }) + satir('&nbsp;&nbsp;Stopaj %20 (vergi dairesine, muhtasar)', x.stopaj, { alt: 1 });
         return satir('− ' + esc(x.g.ad || 'Kalem'), x.tl, { not: x.g.tur === 'kisi' ? fmt(x.carpan) + ' kişi × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'makine' ? fmt2(x.carpan) + ' makine × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'gece' ? 'gece vardiyası çalışıyor' : '', adetBasi: 1 }); }).join('') +
       satir('Toplam gider', h.giderTop, { kalin: 1, adetBasi: 1 }) +
-      satir('= Faaliyet kârı (amortisman ve vergi öncesi)', h.kalan, { kalin: 1, cls: h.kalan < 0 ? 'neg' : '', adetBasi: 1 }) +
+      satir('= Faaliyet kârı', h.kalan, { not: 'amortisman ve vergi öncesi', kalin: 1, cls: h.kalan < 0 ? 'neg' : '', adetBasi: 1 }) +
       satir('− Amortisman', h.amortTl, { not: h.amortMk ? h.amortMk + ' makine · kart alış bedeli ÷ amortisman süresi (nakit çıkmaz, vergiden düşer)' : 'makine kartlarında alış bedeli / süre yok', adetBasi: 1 }) +
       satir('= Vergi öncesi kâr', h.vOnce, { kalin: 1, cls: h.vOnce < 0 ? 'neg' : '', adetBasi: 1 }) +
       satir('− Kurumlar vergisi %' + fmt2(h.kvOran), h.vergi, { not: h.vOnce > 0 ? 'kârın %' + fmt2(h.kvOran) + '\'i · geçici vergiyle 3 ayda bir ödenir' : 'zarar: vergi yok', adetBasi: 1 }) +
-      satir('= Vergi sonrası kâr (net)', h.net, { kalin: 1, cls: h.net < 0 ? 'neg' : 'pos', adetBasi: 1, not: h.top.ciroTl ? 'cironun %' + fmt2(Math.round(h.net / h.top.ciroTl * 1000) / 10) + '\'i' : '' }) +
-      satir('Kasaya kalan nakit (net kâr + amortisman)', h.nakit, { cls: h.nakit < 0 ? 'neg' : '' }) +
-      (gecmis && (h.ger.eur || h.ger.tl || h.gerGid.tl) ? '<tr><td class="muted" colspan="4" style="font-size:11.5px">Gerçekleşen (Virgo): üretim karşılığı ₺' + muhTutar(h.ger.tl) + ' / €' + muhTutar(h.ger.eur) + ' · işletme harcamaları ₺' + muhTutar(h.gerGid.tl) + ' / €' + muhTutar(h.gerGid.eur) + '</td></tr>' : '') +
+      satir('= Net kâr', h.net, { kalin: 1, cls: h.net < 0 ? 'neg' : 'pos', adetBasi: 1, not: h.top.ciroTl ? 'cironun %' + fmt2(Math.round(h.net / h.top.ciroTl * 1000) / 10) + '\'i' : '' }) +
+      satir('Kasaya kalan nakit', h.nakit, { not: 'net kâr + amortisman', cls: h.nakit < 0 ? 'neg' : '' }) +
+      (gecmis && (h.ger.eur || h.ger.tl || h.gerGid.tl) ? '<tr><td class="muted kp-cok" colspan="4" style="font-size:11.5px">Gerçekleşen (Virgo): üretim karşılığı ₺' + muhTutar(h.ger.tl) + ' / €' + muhTutar(h.ger.eur) + ' · işletme harcamaları ₺' + muhTutar(h.gerGid.tl) + ' / €' + muhTutar(h.gerGid.eur) + '</td></tr>' : '') +
       '</tbody></table>' +
       '<div class="muted" style="font-size:11.5px;margin-top:6px">' + (bos ? bos + ' gider kalemine tutar yazılmadı (aşağıdaki Aylık giderler). ' : '') + '€ fiyatlı ürünler ve € makine bedelleri ₺\'ye bugünkü kurla (1 € = ₺' + kurYazi(kur) + ') çevrilir. Makine alımı (yatırım) gider değil, amortismanla girer. Kurumlar vergisi oranı Muhasebe ayarlarından.' +
       (h.kurulus && h.ay < h.kurulus.slice(0, 7) ? ' <b>Şirket kuruluşundan (' + esc(kvTarihTR(h.kurulus)) + ') önceki ay:</b> bu dönemde iş Virgo\'da, vergi Virgo\'nun beyannamesinde; burada şirket kurulmuş gibi gösterilir.' : '') + '</div>';
@@ -13369,16 +13378,17 @@ Dikkat edilmesi gereken 2 nokta:
     }).join('');
     var kpCol = '<colgroup><col style="width:26px"><col style="width:150px"><col style="width:118px"><col style="width:62px"><col style="width:66px"><col style="width:62px"><col style="width:62px"><col style="width:58px"><col style="width:58px"><col style="width:58px"><col style="width:80px"><col style="width:72px"><col style="width:78px"><col style="width:64px"><col style="width:74px"><col style="width:122px"><col style="width:122px"><col style="width:50px"></colgroup>';
     var e = plan.elektrik, kartKw = kpKartKw(), bosSay = 0;
-    var gidSatir = '<tr class="kp-elek"><td><b>Elektrik</b> <span class="muted" style="font-size:11px">hesaplanır</span></td><td colspan="2"><span class="kp-elek-alan"><label>Makine başı kW <input type="number" step="any" min="0" data-kpe="kwMakine" value="' + escAttr(e.kwMakine) + '" placeholder="' + (kartKw ? fmt2(kartKw) + ' (kartlardan)' : 'ör. 6,5') + '"></label><label>Genel kW <input type="number" step="any" min="0" data-kpe="kwGenel" value="' + escAttr(e.kwGenel) + '" placeholder="kompresör, ışık"></label><label>₺ / kWh <input type="number" step="any" min="0" data-kpe="fiyat" value="' + escAttr(e.fiyat) + '" placeholder="KDV hariç"></label></span></td><td class="num" data-kpelek></td><td></td></tr>' +
+    var gidSatir = '<tr class="kp-elek"><td colspan="3"><b>Elektrik</b> <span class="muted" style="font-size:11px">kW ve ₺ / kWh Çalışma düzeni\'nde</span></td><td class="num" data-kpelek></td><td></td></tr>' +
       plan.giderler.map(function(g){ var bos = !host.__bosGoster && !(Number(g.tutar) > 0); if (bos) bosSay++; return '<tr' + (bos ? ' class="kp-bos"' : '') + '><td>' + inp(g, 'ad', 'text', ' placeholder="Kalem adı"', 'data-kpg') + '</td><td><select data-kpg="' + g.id + '" data-kpa="tur">' + KP_GIDER_TUR.map(function(t){ return '<option value="' + t[0] + '"' + (g.tur === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select></td><td>' + inp(g, 'tutar', 'num', ' placeholder="₺, KDV hariç"', 'data-kpg') + '</td><td class="num" data-kpgc="' + g.id + '"></td><td><button class="btn danger small" data-kpgsil="' + g.id + '" title="Kalemi sil">Sil</button></td></tr>'; }).join('');
     var dz = plan.duzen, dzS = function(alan, etiket, ph, ipucu){ return '<label title="' + escAttr(ipucu || '') + '">' + etiket + ' <input type="number" step="any" min="0" data-kpd="' + alan + '" value="' + escAttr(dz[alan] == null ? '' : dz[alan]) + '" placeholder="' + escAttr(ph) + '"></label>'; };
+    var dzE = function(alan, etiket, ph, ipucu){ return '<label title="' + escAttr(ipucu || '') + '">' + etiket + ' <input type="number" step="any" min="0" data-kpe="' + alan + '" value="' + escAttr(e[alan] == null ? '' : e[alan]) + '" placeholder="' + escAttr(ph) + '"></label>'; };
     var dzK = function(alan, etiket, ipucu){ return '<label class="kp-dz-k" title="' + escAttr(ipucu || '') + '"><input type="checkbox" data-kpd="' + alan + '"' + (dz[alan] ? ' checked' : '') + '> ' + etiket + '</label>'; };
     var duzenHtml = '<div class="block"><div class="block-head"><h3>Çalışma düzeni ' + infoIco('Ayın makine saati buradan hesaplanır (1 makine için). Saat kutusu boşsa Tanımlar › Kapasite\'deki günlük saat kullanılır (soluk yazılı). Resmî / dinî bayramlarda çalışılmaz (seçmediyseniz); arifede gündüz yarım gün, gece vardiyası yok. Gece vardiyası açıksa seçilen günlerde gece saati eklenir; gece verimi gece üretiminin gündüze oranıdır (yorgunluk, az gözetim; genelde %85–95). Genel verim: duruş, ayar / bağlama, bakım, malzeme bekleme payı (OEE; çevrim süresinden hesaplıyorsanız %75–85 gerçekçi, vardiya adedi ölçülmüş gerçek üretimse %100 bırakın). Fire: sağlam olmayan parça oranı. Elektrik gece dahil bütün makine saatiyle hesaplanır.') + '</h3></div><div class="block-body"><div class="kp-dz">' +
-      '<div class="kp-dz-g"><b>Gündüz</b>' + dzS('gunduz', 'Hafta içi sa / gün', fmt2(kpTanimSaat(0)), 'Hafta içi günlük çalışma saati (mola hariç)') + dzS('cmt', 'Cumartesi sa', fmt2(kpTanimSaat(5)), '0: cumartesi çalışılmaz') + dzS('pazar', 'Pazar sa', fmt2(kpTanimSaat(6)), '0: pazar çalışılmaz') + dzK('tatilCalis', 'Resmî tatilde de çalış', 'İşaretlenirse bayram ve arifeler normal gün sayılır') + '</div>' +
-      '<div class="kp-dz-g"><b>Gece</b>' + dzK('gece', 'Gece vardiyası var', 'Gece vardiyası ek makine saati getirir; personeli Tanımlar › Personel\'e, gece zammı gibi ek gideri aşağıda "Gece vardiyası varsa / ay" kalemiyle ekleyin') + dzS('geceSaat', 'Gece sa / gün', '8') +
-        '<label>Günler <select data-kpd="geceGun"><option value="haftaici"' + (dz.geceGun !== 'cmt' ? ' selected' : '') + '>Hafta içi</option><option value="cmt"' + (dz.geceGun === 'cmt' ? ' selected' : '') + '>Hafta içi + cumartesi</option></select></label>' + dzS('geceVerim', 'Gece verimi %', '90') + '</div>' +
-      '<div class="kp-dz-g"><b>Verim</b>' + dzS('verim', 'Genel verim %', '100', 'Duruş, ayar, bakım payı (OEE)') + dzS('fire', 'Fire %', '0', 'Sağlam çıkmayan parça oranı') + '</div>' +
-      '<div class="kp-dz-g"><b>Makine</b>' + dzS('makine', 'Çalışan makine', 'ürünlerden', 'Bu ay kaç makine çalışıyor. Boş: ürün satırlarındaki makinelerin toplamı. Yazılırsa elektrik ve makine başı giderler bununla hesaplanır; ürün satırında makine kutusu boş olan işler kalan makineleri eşit paylaşır.') + '<span class="muted">Tanımlar\'da aktif ' + (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length + '</span></div>' +
+      '<div class="kp-dz-r"><b>Gündüz</b>' + dzS('gunduz', 'Hafta içi sa / gün', fmt2(kpTanimSaat(0)), 'Hafta içi günlük çalışma saati (mola hariç)') + dzS('cmt', 'Cumartesi sa / gün', fmt2(kpTanimSaat(5)), '0: cumartesi çalışılmaz') + dzS('pazar', 'Pazar sa / gün', fmt2(kpTanimSaat(6)), '0: pazar çalışılmaz') + dzK('tatilCalis', 'Resmî tatilde de çalış', 'İşaretlenirse bayram ve arifeler normal gün sayılır') + '</div>' +
+      '<div class="kp-dz-r"><b>Gece</b>' + dzS('geceSaat', 'Gece sa / gün', '8') +
+        '<label>Günler <select data-kpd="geceGun"><option value="haftaici"' + (dz.geceGun !== 'cmt' ? ' selected' : '') + '>Hafta içi</option><option value="cmt"' + (dz.geceGun === 'cmt' ? ' selected' : '') + '>Hafta içi + cumartesi</option></select></label>' + dzS('geceVerim', 'Gece verimi %', '90', 'Gece üretiminin gündüze oranı') + dzK('gece', 'Gece vardiyası var', 'Gece vardiyası ek makine saati getirir; personeli Tanımlar › Personel\'e, gece zammı gibi ek gideri aşağıda "Gece vardiyası varsa / ay" kalemiyle ekleyin') + '</div>' +
+      '<div class="kp-dz-r"><b>Üretim</b>' + dzS('makine', 'Çalışan makine', 'ürünler', 'Bu ay kaç makine çalışıyor. Boş: ürün satırlarındaki makinelerin toplamı. Yazılırsa elektrik ve makine başı giderler bununla hesaplanır; ürün satırında makine kutusu boş olan işler kalan makineleri eşit paylaşır.') + dzS('verim', 'Genel verim %', '100', 'Duruş, ayar, bakım payı (OEE)') + dzS('fire', 'Fire %', '0', 'Sağlam çıkmayan parça oranı') + '<span class="muted">Tanımlar\'da aktif makine ' + (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length + '</span></div>' +
+      '<div class="kp-dz-r"><b>Elektrik</b>' + dzE('kwMakine', 'Makine başı kW', kartKw ? fmt2(kartKw) : 'ör. 6,5', 'Çalışan makine başına ortalama güç. Boş: makine kartlarındaki güç ortalaması') + dzE('kwGenel', 'Genel kW', '0', 'Kompresör, aydınlatma, ofis…') + dzE('fiyat', '₺ / kWh', 'KDV hariç', 'Elektrik birim fiyatı, KDV hariç') + '<span></span></div>' +
       '</div></div></div>';
     var ayHtml = '<div class="block"><div class="block-head"><h3>Ay ' + infoIco('Ay seçince o ayın görüntüsü hesaplanır; hiçbir şey ay ay saklanmaz. Çalışma saatleri Tanımlar › Kapasite\'den, resmî tatiller programdan, personel Tanımlar › Personel\'den gelir. Ürünler ve giderler aşağıdaki tek listelerden.') + '</h3><div class="bh-actions"><button class="btn secondary small" data-kpay="-1" title="Önceki ay">‹</button> <input type="month" id="kpAySec" value="' + kpAy + '"> <button class="btn secondary small" data-kpay="1" title="Sonraki ay">›</button> <button class="btn secondary small" data-kpay="0">Bu ay</button></div></div><div class="block-body" id="kpSonuc"></div></div>';
     var urunHtml = '<div class="block"><div class="block-head"><h3>Ürünler ve çalışan makineler ' + infoIco('Her satır bir ürün ya da iş. Makine: bu işe ayrılan makine sayısı (yarım zamanlı için 0,5; boşsa Çalışma düzeni › Çalışan makine\'den kalan pay). Parça süresi saniyeyle: ya çevrim (sn / adet) yazılır ya da boy bilgisi: boydan çıkan adet ve boyun işlenme süresi (dk). Örnek: bir boydan 12 parça, boy 30 dk → 30 × 60 ÷ 12 = 150 sn. Boy değiştirme / bağlama süresi her boyda eklenir. Ayar: iş değişimindeki bir kerelik bağlama, program ve ilk parça onayı; ayar dk × ayda kaç kez ayın makine saatinden düşülür. Saatte = 3600 ÷ süre × genel verim × (1 − fire). Ayda = (makine × verimli saat − ayar saati) × saatte; günde = ayda ÷ çalışılan gün. Verimli saat = gündüz + gece × gece verimi (Çalışma düzeni). Satış sınırı varsa onunla sınırlanır. Ciro = adet × birim fiyat (KDV hariç). Katkı = ciro − adet başı giderler. Liste tektir, her ay için aynı kullanılır; yazdıkça kaydedilir.') + '</h3><div class="bh-actions"><button class="btn small" data-kpekle="1">+ Ürün / iş ekle</button></div></div><div class="block-body">' +
