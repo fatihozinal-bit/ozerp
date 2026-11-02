@@ -1488,7 +1488,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-02-r260</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-02-r261</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4067,7 +4067,14 @@ Dikkat edilmesi gereken 2 nokta:
     var mal = calcUrunMaliyet(u) * kur, bk = fiyat - mal;
     return { u: u, adet: adet, fiyat: fiyat, kaynak: vu ? 'Virgo fiyatı, sabit ₺' : 'fason ücret €' + fmt2(u.fasonUcret) + ' × kur', mal: mal, bk: bk, top: adet * bk };
   }
-  function ozetSabitTl(){ var ay = thisMonthKey(); return toplamla(state.personel.filter(function(p){ return !personelAyrildi(p, ay); }), function(p){ return personelMaliyet(p).tl; }); }
+  // r261: sabit gider Aylık Kapasite'deki bu ayın toplam giderinden (personel + elektrik + gider kalemleri; amortisman ve vergi hariç)
+  function ozetKapasite(){ return kpHesap(thisMonthKey(), kpPlan()); }
+  function ozetSabitTl(){ return ozetKapasite().giderTop; }
+  // r261: bu ay üretilen adet ürün ürün (son operasyon kayıtları, Üretilen kartının toplamıyla aynı), çoktan aza
+  function ozetUretimKirilim(){
+    var g = {}; buAyKayitlari().filter(sonOperasyonKaydiMi).forEach(function(x){ var ad = uretimUrunAdi(x).replace(/^\S+ · /, ''); g[ad] = (g[ad] || 0) + (Number(x.adet) || 0); }); // kod yazılmaz, kart küçük
+    return Object.keys(g).filter(function(ad){ return g[ad]; }).map(function(ad){ return { ad: ad, adet: g[ad] }; }).sort(function(a, b){ return b.adet - a.adet; });
+  }
   function tlEur(v){ var kur = ozetKur(); return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)) + (kur ? ' <span class="muted">(≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) + ')</span>' : ''); }
   function renderOzet(){
     var kur = ozetKur(), sabitTl = ozetSabitTl();
@@ -4085,9 +4092,9 @@ Dikkat edilmesi gereken 2 nokta:
 
     document.getElementById('ozetAyEtiket').textContent = new Date().toLocaleDateString('tr-TR',{month:'long', year:'numeric'});
     var cards = [
-      {label:'Üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim'},
+      {label:'Üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim', sub: ozetUretimKirilim().map(function(x){ return esc(x.ad) + ' <b>' + fmt(x.adet) + '</b>'; }).join(' · ')},
       {label:'Üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: eurYazi(toplamCiro)},
-      {label:'Sabit gider (personel)', value: '₺'+fmt(sabitTl), cls:'yetki-maliyet', detay:'sabit', sub: eurYazi(sabitTl)},
+      {label:'Sabit gider', value: '₺'+fmt(sabitTl), cls:'yetki-maliyet', detay:'sabit', sub: 'Aylık Kapasite' + (kur ? ' · ' + eurYazi(sabitTl) : '')},
       {label:'Tahmini katkı', value: (toplamKatki < -0.004 ? '−₺' : '₺')+fmt(Math.abs(toplamKatki)), cls:(toplamKatki < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'katki', sub: eurYazi(toplamKatki)},
       {label: net>=0 ? 'Tahmini net (kâr)' : 'Tahmini net (açık)', value: (net>=0?'₺':'−₺')+fmt(Math.abs(net)), cls: (net>=0?'good isaretli':'bad')+' yetki-maliyet', detay:'net', sub: eurYazi(net)},
       {label:'Açık iş emri', value: acikIe.length, cls: gecIe.length?'accent':'', detay:'isemri', sub: gecIe.length ? '<span class="neg">'+gecIe.length+' gecikmiş</span>' : 'gecikme yok'},
@@ -15811,10 +15818,12 @@ Dikkat edilmesi gereken 2 nokta:
         h: ozetDetayTablo(['Ürün','Kayıt sayısı','Adet'], Object.keys(grup).map(function(ad){ return [esc(ad), grup[ad].n, fmt(grup[ad].adet)]; }), ['Toplam', kay.length, fmt(toplamla(kay, function(x){ return x.adet; }))]),
         git: 'kayitlar', gitAd: 'Üretim Kayıtları' };
     } else if (k === 'sabit'){
-      d = { t: 'Aylık sabit gider', f: 'Personel (işveren maliyeti girilmişse o; girilmemişse ₺ net maaştan brüt + işveren SGK payı bordro kurallarıyla hesaplanır — cebinizden çıkan tutar; gelir vergisi dilimi yıl içinde arttığı için tam yılın 12 ay ortalaması) Kira ve diğer genel giderler elle yazılmaz; gerçekleşeni Finans Raporları\'nda. İşten ayrılanlar katılmaz; henüz işe başlamayanlar saat maliyeti tam kadroyla hesaplansın diye katılır. Hepsi <b>Sistem › Tanımlar</b> sayfasından gelir; değiştirmek için oraya gidin. Kârlılık planı ve Finans Raporları ay ay hesaplar (işe giriş ayında gün kadar).',
-        h: ozetDetayTablo(['Kalem','Kaynak','Aylık'], state.personel.filter(function(p){ return !personelAyrildi(p, ay); }).map(function(p){ var m = personelMaliyet(p); return [esc(p.ad), esc(m.kaynak), tlEur(m.tl)]; })
-          , ['Toplam', '', tlEur(ozetSabitTl())]),
-        git: 'tanimlar', gitAd: 'Tanımlar' };
+      var kh = ozetKapasite(), ksat = kh.pers.map(function(p){ return [esc(p.ad), 'personel (bordro, bu ay)', tlEur(p.tl)]; });
+      if (kh.elekTl > 0.5) ksat.push(['Elektrik', fmt(kh.kwh) + ' kWh', tlEur(kh.elekTl)]);
+      kh.gid.forEach(function(x){ if (x.tl > 0.5) ksat.push([esc(x.g.ad), x.carpan !== 1 ? '× ' + fmt2(x.carpan) : '', tlEur(x.tl)]); });
+      d = { t: 'Aylık sabit gider', f: '<b>Maliyet › Aylık Kapasite</b> sayfasında bu ay (' + esc(ay) + ') için hesaplanan toplam gider: çalışan personelin o ayki maliyeti, elektrik ve aylık gider kalemleri (kira, yemek, servis…). Amortisman ve kurumlar vergisi dahil değil. Değiştirmek için Aylık Kapasite\'ye gidin.',
+        h: ozetDetayTablo(['Kalem','Açıklama','Aylık'], ksat, ['Toplam', '', tlEur(kh.giderTop)]),
+        git: 'kapasiteplan', gitAd: 'Aylık Kapasite' };
     } else if (k === 'ciro'){
       var lc = urunListesi().map(ozetUrunKatki).filter(function(x){ return x.adet; });
       d = { t: 'Bu ay üretim karşılığı', f: 'Her ürün için <b>bu ay üretilen adet × birim fiyat</b>; maliyet düşülmez.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla.</span>',
@@ -15824,7 +15833,7 @@ Dikkat edilmesi gereken 2 nokta:
       var l = urunListesi().map(ozetUrunKatki).filter(function(x){ return x.adet; });
       var top = toplamla(l, function(x){ return x.top; }), sabitTl = ozetSabitTl();
       d = { t: k === 'katki' ? 'Tahmini toplam katkı' : 'Tahmini net',
-        f: 'Hesap ₺ esaslıdır (parça fiyatı ₺ sabit). Her ürün için: <b>bu ay üretilen adet × (birim fiyat − birim maliyet)</b>.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br>Birim maliyet = makine saat ücreti × birim süre (dk) ÷ 60, bugünkü kurla ₺ (saat ücreti €'+fmt2(saatM)+'/sa).'+(k === 'net' ? '<br><b>Tahmini net = toplam katkı − aylık sabit gider (personel, ₺).</b>' : '')+'<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla; kur değişince ₺ tutarlar değişmez.</span>',
+        f: 'Hesap ₺ esaslıdır (parça fiyatı ₺ sabit). Her ürün için: <b>bu ay üretilen adet × (birim fiyat − birim maliyet)</b>.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br>Birim maliyet = makine saat ücreti × birim süre (dk) ÷ 60, bugünkü kurla ₺ (saat ücreti €'+fmt2(saatM)+'/sa).'+(k === 'net' ? '<br><b>Tahmini net = toplam katkı − aylık sabit gider (Aylık Kapasite\'deki bu ayın gideri, ₺).</b>' : '')+'<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla; kur değişince ₺ tutarlar değişmez.</span>',
         h: ozetDetayTablo(['Ürün','Adet','Birim fiyat','Birim maliyet','Birim katkı','Katkı'], l.map(function(x){ return [esc(x.u.ad), fmt(x.adet), '₺'+fmt2(x.fiyat)+' <span class="muted">('+esc(x.kaynak)+')</span>', '₺'+fmt2(x.mal)+' <span class="muted">('+fmt2(x.u.birimSureDk)+' dk)</span>', '<span class="'+(x.bk<0?'neg':'pos')+'">₺'+fmt2(x.bk)+'</span>', tlEur(x.top)]; }), ['Toplam katkı','','','','',tlEur(top)])+
           (k === 'net' ? '<div style="height:10px"></div>'+ozetDetayTablo(['Hesap','Tutar'], [['Toplam katkı', tlEur(top)], ['− Aylık sabit gider', tlEur(-sabitTl)]], ['Tahmini net', tlEur(top - sabitTl)]) : ''),
         git: 'stok', gitAd: 'Stok Kartları', git2: 'tanimlar', git2Ad: 'Tanımlar' };
