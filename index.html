@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r272</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r273</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1549,10 +1549,10 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
             <div class="block-body tablewrap" id="ozetMakineTablo"></div>
           </div>
           <div class="block yetki-maliyet">
-            <div class="block-head"><h3>Ürün bazlı katkı</h3></div>
+            <div class="block-head"><h3>Bu ay ürün bazında karşılık</h3></div>
             <div class="block-body tablewrap">
               <table id="ozetUrunTablo"><thead><tr>
-                <th>Ürün</th><th class="num">Adet</th><th class="num">Maliyet ₺</th><th class="num">Fiyat ₺</th><th class="num">Birim kâr ₺</th><th class="num">Toplam katkı</th>
+                <th>Ürün</th><th class="num">Adet</th><th class="num">Fiyat ₺</th><th class="num">Karşılık</th>
               </tr></thead><tbody></tbody></table>
             </div>
           </div>
@@ -4093,15 +4093,29 @@ Dikkat edilmesi gereken 2 nokta:
   // bugünkü kurla), yoksa stok kartındaki fason ücret (€ × bugünkü kur). Birim maliyet (makine saat ücreti, €) ve personel ₺'ye çevrilir;
   // € karşılığı yalnız bilgi (bugünkü kurla), kur değişince ₺ katkı değişmez.
   function ozetKur(){ return state.config ? Number(state.config.eurTryKuru)||0 : 0; }
+  // r273: ürün başına bu ay adet × birim fiyat (karşılık). Birim maliyet (makine saat ücreti × süre) artık düşülmez: personel ve genel gider
+  // zaten gider tarafında (girilen harcamalar / Aylık Kapasite); ikisi birden düşülünce gider iki kez sayılıyordu.
   function ozetUrunKatki(u){
     var kur = ozetKur(), adet = urunAdedBuAy(u.id), vu = todayISO() < virgoKurulusTarihi() ? virgoUrunStokla({ urunId: u.id }) : null;
     var fiyat = vu ? (virgoUrunPb(vu) === '₺' ? Number(vu.fiyat)||0 : (Number(vu.fiyat)||0) * kur) : (Number(u.fasonUcret)||0) * kur;
-    var mal = calcUrunMaliyet(u) * kur, bk = fiyat - mal;
-    return { u: u, adet: adet, fiyat: fiyat, kaynak: vu ? 'Virgo fiyatı, sabit ₺' : 'fason ücret €' + fmt2(u.fasonUcret) + ' × kur', mal: mal, bk: bk, top: adet * bk };
+    return { u: u, adet: adet, fiyat: fiyat, kaynak: vu ? 'Virgo fiyatı, sabit ₺' : 'fason ücret €' + fmt2(u.fasonUcret) + ' × kur', top: adet * fiyat };
+  }
+  // r273: bu ay girilen işletme gideri (₺): Virgo Hesabı'ndaki ödenmiş harcamalar, yatırım (makine vb.) hariç — Virgo'daki "İşletme gideri" ile aynı
+  function ozetGiderKayitlari(){
+    var ay = thisMonthKey();
+    return virgoKayitlari().filter(function(v){ if (String(v.tarih || '').slice(0, 7) !== ay) return false; var n = virgoNorm(v); return n.tip === 'harcama' && n.odendi && !n.yatirim; });
+  }
+  function ozetGiderTl(){ var a = virgoAylar().find(function(x){ return x.ay === thisMonthKey(); }); return a ? a.isletme.tl : 0; }
+  // r273: ay sonu tahmini: bugüne kadarki karşılık ÷ geçen iş günü × ayın iş günü (Aylık Kapasite'deki çalışma düzeni, tatiller hariç);
+  // gider = Aylık Kapasite'deki ay toplamı. Gider bir kez düşülür.
+  function ozetTahmin(ciro){
+    var ay = thisMonthKey(), kh = ozetKapasite(), gunler = kh.ks.gunler || [], bugun = todayISO();
+    var gecen = gunler.filter(function(g){ return g <= bugun; }).length, toplam = gunler.length;
+    var ciroT = gecen > 0 && toplam > 0 ? ciro / gecen * toplam : ciro;
+    return { gecen: gecen, toplam: toplam, ciro: ciroT, gider: kh.giderTop, net: ciroT - kh.giderTop, kh: kh };
   }
   // r261: sabit gider Aylık Kapasite'deki bu ayın toplam giderinden (personel + elektrik + gider kalemleri; amortisman ve vergi hariç)
   function ozetKapasite(){ return kpHesap(thisMonthKey(), kpPlan()); }
-  function ozetSabitTl(){ return ozetKapasite().giderTop; }
   // r261: bu ay üretilen adet ürün ürün (son operasyon kayıtları, Üretilen kartının toplamıyla aynı), çoktan aza
   function ozetUretimKirilim(){
     var g = {}; buAyKayitlari().filter(sonOperasyonKaydiMi).forEach(function(x){ var ad = uretimUrunAdi(x).replace(/^\S+ · /, ''); g[ad] = (g[ad] || 0) + (Number(x.adet) || 0); }); // kod yazılmaz, kart küçük
@@ -4109,11 +4123,10 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function tlEur(v){ var kur = ozetKur(); return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)) + (kur ? ' <span class="muted">(≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) + ')</span>' : ''); }
   function renderOzet(){
-    var kur = ozetKur(), sabitTl = ozetSabitTl();
+    var kur = ozetKur();
     var toplamUretim = buAyKayitlari().filter(sonOperasyonKaydiMi).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
-    var katkilar = urunListesi().map(ozetUrunKatki), toplamKatki = toplamla(katkilar, function(x){ return x.top; });
-    var toplamCiro = toplamla(katkilar, function(x){ return x.adet * x.fiyat; });
-    var net = toplamKatki - sabitTl, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
+    var katkilar = urunListesi().map(ozetUrunKatki), toplamCiro = toplamla(katkilar, function(x){ return x.top; });
+    var gider = ozetGiderTl(), kazanc = toplamCiro - gider, th = ozetTahmin(toplamCiro), tlY = function(v){ return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)); }, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
     // r244: üretim / kalite kartları da aynı şeritte (eskiden ayrı satırdı)
     var bugun = todayISO(), ay = thisMonthKey();
     var acikIe = state.isemirleri.filter(function(ie){ return ie.durum !== 'İptal' && isEmriKalan(ie) > 0; });
@@ -4125,10 +4138,11 @@ Dikkat edilmesi gereken 2 nokta:
     document.getElementById('ozetAyEtiket').textContent = new Date().toLocaleDateString('tr-TR',{month:'long', year:'numeric'});
     var cards = [
       {label:'Üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim', sub: ozetUretimKirilim().map(function(x){ return '<div class="oz-kirilim"><span title="' + escAttr(x.ad) + '">' + esc(x.ad) + '</span><b>' + fmt(x.adet) + '</b></div>'; }).join('')},
-      {label:'Üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: eurYazi(toplamCiro)},
-      {label:'Sabit gider', value: '₺'+fmt(sabitTl), cls:'yetki-maliyet', detay:'sabit', sub: 'Aylık Kapasite' + (kur ? ' · ' + eurYazi(sabitTl) : '')},
-      {label:'Tahmini katkı', value: (toplamKatki < -0.004 ? '−₺' : '₺')+fmt(Math.abs(toplamKatki)), cls:(toplamKatki < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'katki', sub: eurYazi(toplamKatki)},
-      {label: net>=0 ? 'Tahmini net (kâr)' : 'Tahmini net (açık)', value: (net>=0?'₺':'−₺')+fmt(Math.abs(net)), cls: (net>=0?'good isaretli':'bad')+' yetki-maliyet', detay:'net', sub: eurYazi(net)},
+      // r273: gerçekleşen (bugüne kadar, Virgo Hesabı'yla aynı) + ay sonu tahmini
+      {label:'Üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: 'bugüne kadar' + (kur ? ' · ' + eurYazi(toplamCiro) : '')},
+      {label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: 'girilen harcamalar' + (kur ? ' · ' + eurYazi(gider) : '')},
+      {label:'Kazanç', value: tlY(kazanc), cls:(kazanc < -0.004 ? 'bad' : 'good isaretli')+' yetki-maliyet', detay:'kazanc', sub: 'bugüne kadar' + (kur ? ' · ' + eurYazi(kazanc) : '')},
+      {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)},
       {label:'Açık iş emri', value: acikIe.length, cls: gecIe.length?'accent':'', detay:'isemri', sub: gecIe.length ? '<span class="neg">'+gecIe.length+' gecikmiş</span>' : 'gecikme yok'},
       {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'},
       {label:'Plansız duruş', value: sureStrOlustur(durusDk), cls:'', detay:'durus'}
@@ -4140,12 +4154,11 @@ Dikkat edilmesi gereken 2 nokta:
 
     var tbody = document.querySelector('#ozetUrunTablo tbody');
     if (urunListesi().length === 0){
-      tbody.innerHTML = '<tr><td colspan="6" class="empty">Henüz ürün tanımlanmadı — Stok Kartları\'ndan mamul kartı açın.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">Henüz ürün tanımlanmadı — Stok Kartları\'ndan mamul kartı açın.</td></tr>';
     } else {
-      tbody.innerHTML = katkilar.map(function(x){
-        return '<tr><td>'+esc(x.u.ad)+'</td><td class="num">'+fmt(x.adet)+'</td><td class="num">₺'+fmt2(x.mal)+'</td><td class="num" title="'+escAttr(x.kaynak)+'">₺'+fmt2(x.fiyat)+'</td>'+
-          '<td class="num '+(x.bk>=0?'pos':'neg')+'">₺'+fmt2(x.bk)+'</td><td class="num'+(x.top < -0.004 ? ' neg' : '')+'"'+(kur?' title="≈ €'+fmt(x.top / kur)+' (bugünkü kurla)"':'')+'>'+(x.top < -0.004 ? '−₺' : '₺')+fmt(Math.abs(x.top))+'</td></tr>';
-      }).join('');
+      tbody.innerHTML = katkilar.filter(function(x){ return x.adet; }).map(function(x){
+        return '<tr><td>'+esc(x.u.ad)+'</td><td class="num">'+fmt(x.adet)+'</td><td class="num" title="'+escAttr(x.kaynak)+'">₺'+fmt2(x.fiyat)+'</td><td class="num"'+(kur?' title="≈ €'+fmt(x.top / kur)+' (bugünkü kurla)"':'')+'>₺'+fmt(x.top)+'</td></tr>';
+      }).join('') || '<tr><td colspan="4" class="empty">Bu ay üretim girilmedi.</td></tr>';
     }
 
     renderOzetMakineTablo();
@@ -13465,14 +13478,14 @@ Dikkat edilmesi gereken 2 nokta:
   // Ayın gün gün makine saati (1 makine): gündüz + gece. Tam gün tatilde çalışılmaz (seçilmediyse), arifede yarım gün gündüz, gece yok.
   function kpAySaat(ay, duzen){
     var dz = duzen || KP_DUZEN_VARS, son = new Date(Number(ay.slice(0, 4)), Number(ay.slice(5, 7)), 0).getDate();
-    var r = { gunduz: 0, gece: 0, saat: 0, gun: 0, cmt: 0, pazar: 0, geceGun: 0, tatil: [] };
+    var r = { gunduz: 0, gece: 0, saat: 0, gun: 0, cmt: 0, pazar: 0, geceGun: 0, tatil: [], gunler: [] }; // r273: gunler = çalışılan günler (Özet ay sonu tahmini)
     var saat = [0, 1, 2, 3, 4].map(function(i){ return kpSayi(dz.gunduz, kpTanimSaat(i)); }).concat([kpSayi(dz.cmt, kpTanimSaat(5)), kpSayi(dz.pazar, kpTanimSaat(6))]);
     for (var d = 1; d <= son; d++){
       var dd = String(d).padStart(2, '0'), g = ay + '-' + dd, w = (new Date(g + 'T12:00:00').getDay() + 6) % 7, gs = Math.max(0, saat[w]); if (!gs) continue;
       var to = dz.tatilCalis ? 0 : KV_MODEL.tatilOran(ay, dd), tAd = KV_MODEL.tatilAdi(ay, dd);
       if (to >= 1){ r.tatil.push(kvTarihTR(g) + ' ' + tAd); continue; }
       if (to > 0){ r.tatil.push(kvTarihTR(g) + ' ' + tAd + ' (yarım gün)'); gs *= 1 - to; }
-      r.gunduz += gs; if (w < 5) r.gun += to > 0 ? 1 - to : 1; else if (w === 5) r.cmt++; else r.pazar++;
+      r.gunduz += gs; r.gunler.push(g); if (w < 5) r.gun += to > 0 ? 1 - to : 1; else if (w === 5) r.cmt++; else r.pazar++;
       if (dz.gece && !to && (w < 5 || (w === 5 && dz.geceGun === 'cmt'))){ r.gece += Math.max(0, kpSayi(dz.geceSaat, 0)); r.geceGun++; }
     }
     r.saat = r.gunduz + r.gece;
@@ -16084,26 +16097,29 @@ Dikkat edilmesi gereken 2 nokta:
       d = { t: 'Bu ay üretilen adet', f: 'Üretim Kayıtları\'nda bu ay girilen kayıtlardan (Virgo üretim girişleri dahil), parçanın <b>son operasyonu</b> (ya da mamul girişi işaretli) olanların adetleri toplanır. Ara operasyonlar aynı parçayı iki kez saymamak için dahil edilmez; fire ayrı tutulur.',
         h: ozetDetayTablo(['Ürün','Kayıt sayısı','Adet'], Object.keys(grup).map(function(ad){ return [esc(ad), grup[ad].n, fmt(grup[ad].adet)]; }), ['Toplam', kay.length, fmt(toplamla(kay, function(x){ return x.adet; }))]),
         git: 'kayitlar', gitAd: 'Üretim Kayıtları' };
-    } else if (k === 'sabit'){
-      var kh = ozetKapasite(), ksat = kh.pers.map(function(p){ return [esc(p.ad), 'personel (bordro, bu ay)', tlEur(p.tl)]; });
+    } else if (k === 'gider'){
+      var gl = ozetGiderKayitlari().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); });
+      d = { t: 'Bu ay gider (girilen)', f: '<b>Virgo Hesabı</b>\'na bu ay girilen, ödenmiş harcamalar; yatırım (makine, kuruluş, demirbaş) hariç. Virgo adına faturalı harcamada KDV hariç tutar. Virgo Hesabı › Aylık kazanç\'taki "İşletme gideri" ile aynı rakamdır. Maaş, kira gibi giderler girilmediyse burada görünmez.',
+        h: ozetDetayTablo(['Tarih','Kategori','Açıklama','Tutar'], gl.map(function(v){ var n = virgoNorm(v); return [esc(kvTarihTR(v.tarih)), esc(v.kategori || ''), esc(v.aciklama || ''), tlEur(n.m.tl)]; }), ['Toplam', '', '', tlEur(ozetGiderTl())]),
+        git: 'virgo', gitAd: 'Virgo Hesabı' };
+    } else if (k === 'kazanc'){
+      var kc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), kg = ozetGiderTl();
+      d = { t: 'Bu ay kazanç (bugüne kadar)', f: 'Bu ay üretim karşılığı − bu ay girilen gider. Virgo Hesabı › Aylık kazanç\'taki "İşin kazancı" ile aynıdır. Ay bitmeden giderlerin bir kısmı (maaş, kira…) henüz girilmemiş olabilir; ay sonu için "Ay sonu tahmini" kartına bakın.',
+        h: ozetDetayTablo(['Hesap','Tutar'], [['Üretim karşılığı', tlEur(kc)], ['− Gider (girilen)', tlEur(-kg)]], ['Kazanç', tlEur(kc - kg)]),
+        git: 'virgo', gitAd: 'Virgo Hesabı' };
+    } else if (k === 'tahmin'){
+      var tc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), tt = ozetTahmin(tc), kh = tt.kh, ksat = kh.pers.map(function(p){ return [esc(p.ad), 'personel (bordro, bu ay)', tlEur(p.tl)]; });
       if (kh.elekTl > 0.5) ksat.push(['Elektrik', fmt(kh.kwh) + ' kWh', tlEur(kh.elekTl)]);
       kh.gid.forEach(function(x){ if (x.tl > 0.5) ksat.push([esc(x.g.ad), x.carpan !== 1 ? '× ' + fmt2(x.carpan) : '', tlEur(x.tl)]); });
-      d = { t: 'Aylık sabit gider', f: '<b>Maliyet › Aylık Kapasite</b> sayfasında bu ay (' + esc(ay) + ') için hesaplanan toplam gider: çalışan personelin o ayki maliyeti, elektrik ve aylık gider kalemleri (kira, yemek, servis…). Amortisman ve kurumlar vergisi dahil değil. Değiştirmek için Aylık Kapasite\'ye gidin.',
-        h: ozetDetayTablo(['Kalem','Açıklama','Aylık'], ksat, ['Toplam', '', tlEur(kh.giderTop)]),
+      d = { t: 'Ay sonu tahmini', f: 'Bu hızla giderse ay sonunda ne olur: <b>tahmini karşılık</b> = bugüne kadarki karşılık ÷ geçen iş günü × ayın iş günü (iş günleri <b>Aylık Kapasite</b>\'deki çalışma düzeninden, tatiller hariç). <b>Gider</b> = Aylık Kapasite\'deki bu ayın toplam gideri (personel, elektrik, gider kalemleri; amortisman ve vergi hariç). Gider bir kez düşülür.',
+        h: ozetDetayTablo(['Hesap','Tutar'], [['Bugüne kadar karşılık', tlEur(tc)], ['İş günü', tt.gecen + ' geçti / ' + tt.toplam], ['Tahmini ay sonu karşılık', tlEur(tt.ciro)], ['− Aylık gider (Aylık Kapasite)', tlEur(-tt.gider)]], ['Tahmini net', tlEur(tt.net)]) +
+          '<div style="height:10px"></div>' + ozetDetayTablo(['Gider kalemi','Açıklama','Aylık'], ksat, ['Toplam', '', tlEur(kh.giderTop)]),
         git: 'kapasiteplan', gitAd: 'Aylık Kapasite' };
     } else if (k === 'ciro'){
       var lc = urunListesi().map(ozetUrunKatki).filter(function(x){ return x.adet; });
       d = { t: 'Bu ay üretim karşılığı', f: 'Her ürün için <b>bu ay üretilen adet × birim fiyat</b>; maliyet düşülmez.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla.</span>',
-        h: ozetDetayTablo(['Ürün','Adet','Birim fiyat','Karşılığı'], lc.map(function(x){ return [esc(x.u.ad), fmt(x.adet), '₺'+fmt2(x.fiyat)+' <span class="muted">('+esc(x.kaynak)+')</span>', tlEur(x.adet * x.fiyat)]; }), ['Toplam', fmt(toplamla(lc, function(x){ return x.adet; })), '', tlEur(toplamla(lc, function(x){ return x.adet * x.fiyat; }))]),
+        h: ozetDetayTablo(['Ürün','Adet','Birim fiyat','Karşılığı'], lc.map(function(x){ return [esc(x.u.ad), fmt(x.adet), '₺'+fmt2(x.fiyat)+' <span class="muted">('+esc(x.kaynak)+')</span>', tlEur(x.top)]; }), ['Toplam', fmt(toplamla(lc, function(x){ return x.adet; })), '', tlEur(toplamla(lc, function(x){ return x.top; }))]),
         git: 'virgo', gitAd: 'Virgo Hesabı' };
-    } else if (k === 'katki' || k === 'net'){
-      var l = urunListesi().map(ozetUrunKatki).filter(function(x){ return x.adet; });
-      var top = toplamla(l, function(x){ return x.top; }), sabitTl = ozetSabitTl();
-      d = { t: k === 'katki' ? 'Tahmini toplam katkı' : 'Tahmini net',
-        f: 'Hesap ₺ esaslıdır (parça fiyatı ₺ sabit). Her ürün için: <b>bu ay üretilen adet × (birim fiyat − birim maliyet)</b>.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br>Birim maliyet = makine saat ücreti × birim süre (dk) ÷ 60, bugünkü kurla ₺ (saat ücreti €'+fmt2(saatM)+'/sa).'+(k === 'net' ? '<br><b>Tahmini net = toplam katkı − aylık sabit gider (Aylık Kapasite\'deki bu ayın gideri, ₺).</b>' : '')+'<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla; kur değişince ₺ tutarlar değişmez.</span>',
-        h: ozetDetayTablo(['Ürün','Adet','Birim fiyat','Birim maliyet','Birim katkı','Katkı'], l.map(function(x){ return [esc(x.u.ad), fmt(x.adet), '₺'+fmt2(x.fiyat)+' <span class="muted">('+esc(x.kaynak)+')</span>', '₺'+fmt2(x.mal)+' <span class="muted">('+fmt2(x.u.birimSureDk)+' dk)</span>', '<span class="'+(x.bk<0?'neg':'pos')+'">₺'+fmt2(x.bk)+'</span>', tlEur(x.top)]; }), ['Toplam katkı','','','','',tlEur(top)])+
-          (k === 'net' ? '<div style="height:10px"></div>'+ozetDetayTablo(['Hesap','Tutar'], [['Toplam katkı', tlEur(top)], ['− Aylık sabit gider', tlEur(-sabitTl)]], ['Tahmini net', tlEur(top - sabitTl)]) : ''),
-        git: 'stok', gitAd: 'Stok Kartları', git2: 'tanimlar', git2Ad: 'Tanımlar' };
     } else if (k === 'isemri'){
       var acik = state.isemirleri.filter(function(ie){ return ie.durum !== 'İptal' && isEmriKalan(ie) > 0; }).sort(function(a,b){ return (a.termin||'9').localeCompare(b.termin||'9'); });
       d = { t: 'Açık iş emirleri', f: 'İptal edilmemiş ve planlanan adedi henüz tamamlanmamış iş emirleri. Termini bugünden önce olanlar gecikmiş sayılır.',
