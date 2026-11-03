@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r273</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r274</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4097,8 +4097,8 @@ Dikkat edilmesi gereken 2 nokta:
   // zaten gider tarafında (girilen harcamalar / Aylık Kapasite); ikisi birden düşülünce gider iki kez sayılıyordu.
   function ozetUrunKatki(u){
     var kur = ozetKur(), adet = urunAdedBuAy(u.id), vu = todayISO() < virgoKurulusTarihi() ? virgoUrunStokla({ urunId: u.id }) : null;
-    var fiyat = vu ? (virgoUrunPb(vu) === '₺' ? Number(vu.fiyat)||0 : (Number(vu.fiyat)||0) * kur) : (Number(u.fasonUcret)||0) * kur;
-    return { u: u, adet: adet, fiyat: fiyat, kaynak: vu ? 'Virgo fiyatı, sabit ₺' : 'fason ücret €' + fmt2(u.fasonUcret) + ' × kur', top: adet * fiyat };
+    var fiyat = vu ? (virgoUrunPb(vu) === '₺' ? Number(vu.fiyat)||0 : (Number(vu.fiyat)||0) * kur) : u.fasonTl != null ? u.fasonTl : (Number(u.fasonUcret)||0) * kur;
+    return { u: u, adet: adet, fiyat: fiyat, kaynak: vu ? 'Virgo fiyatı, sabit ₺' : u.fasonTl != null ? 'stok kartı fason ücreti ₺' : 'fason ücret €' + fmt2(u.fasonUcret) + ' × kur', top: adet * fiyat };
   }
   // r273: bu ay girilen işletme gideri (₺): Virgo Hesabı'ndaki ödenmiş harcamalar, yatırım (makine vb.) hariç — Virgo'daki "İşletme gideri" ile aynı
   function ozetGiderKayitlari(){
@@ -4606,8 +4606,16 @@ Dikkat edilmesi gereken 2 nokta:
     // r267: Ürün Maliyet Hesabı'ndaki kalemler (sıfır olanlar yazılmaz)
     return olcu + k('Malzeme', e(h.malzeme)+(mh && !h.malzemeOlcuden ? ' (elle)' : '')) + (h.talas ? k('− Talaş', e(h.talas)) : '') +
       k('İşçilik', e(h.iscilik)+' <span class="muted">('+fmt2(h.dakikaUcreti)+' €/dk)</span>') + (h.takim ? k('Takım / uç', e(h.takim)) : '') +
-      (h.fire ? k('Fire payı', e(h.fire)) : '') + (h.disIslem ? k('Dış işlem', e(h.disIslem)) : '') + k('Toplam maliyet', e(h.toplamMaliyet), true);
+      (h.fire ? k('Fire payı', e(h.fire)) : '') + (h.disIslem ? k('Dış işlem', e(h.disIslem)) : '') + k('Birim maliyet', stokMaliyetIki(h.toplamMaliyet), true) +
+      (stokFasonTl(v) ? k('Fason ücreti', '₺' + fmt2(stokFasonTl(v)) + (Number(v.fasonUcretTl) > 0 ? '' : ' <span class="muted">(€' + fmt2(v.fasonUcret) + ' × kur)</span>')) : '');
   }
+  // r274: stok kartında fason ücreti ₺ (fasonUcretTl). Eski kartlarda yalnız € (fasonUcret) varsa bugünkü kurla ₺ gösterilir, karta yazılmaz.
+  function stokFasonTl(s){
+    if (!s) return 0; if (Number(s.fasonUcretTl) > 0) return Number(s.fasonUcretTl);
+    return Number(s.fasonUcret) > 0 ? Number(s.fasonUcret) * ozetKur() : 0;
+  }
+  // Birim maliyet (€) ₺ ve € birlikte: ₺ bugünkü kurla
+  function stokMaliyetIki(eur){ var k = ozetKur(); return (k ? '₺' + fmt2(eur * k) + ' / ' : '') + '€' + fmt2(eur); }
   // r267: stok kartının dakika ücreti: kartta yazılıysa o; yoksa makine kartlarındaki saat ücreti ÷ 60; o da yoksa Ürün Maliyet Hesabı varsayılanı
   function stokDakikaUcreti(s){
     if (Number(s.dakikaUcreti) > 0) return { deger: Number(s.dakikaUcreti), kaynak: 'kartta' };
@@ -4679,7 +4687,7 @@ Dikkat edilmesi gereken 2 nokta:
         var h = stokHesapla(s);
         var title = (s.kod?esc(s.kod)+' · ':'')+esc(s.ad)+' <span class="pill">'+esc(s.tip||'')+'</span>';
         var sub = (serbestH[s.id] ? stokSerbestHtml(s, serbestH[s.id]) : 'Miktar: '+fmt2(s.miktar)+' '+esc(s.birim||'adet'))+depoKirilimKisa(s)+
-          '<span class="yetki-maliyet"> · Maliyet: €'+fmt2(h.toplamMaliyet)+'</span> · Satış: €'+fmt2(s.birimFiyat)+
+          '<span class="yetki-maliyet"> · Maliyet: '+stokMaliyetIki(h.toplamMaliyet)+'</span>'+(stokFasonTl(s) ? ' · Fason: ₺'+fmt2(stokFasonTl(s)) : '')+' · Satış: €'+fmt2(s.birimFiyat)+
           (Math.round(h.onerilen*100)!==Math.round((Number(s.birimFiyat)||0)*100) ? ' <span class="muted yetki-maliyet">(önerilen €'+fmt2(h.onerilen)+')</span>' : '');
         return { title: title, sub: sub };
       },
@@ -6961,7 +6969,7 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'disIslem', label:'Dış işlem (€/adet)', type:'number', hint:'Pasivasyon, ısıl işlem, kaplama…'},
     {key:'bitmisAgirlik', label:'Bitmiş parça ağırlığı (kg)', type:'number', hint:'Talaş hesabı için; ölçüden hesapta'},
     {key:'talasFiyat', label:'Talaş satış fiyatı (€/kg)', type:'number'},
-    {key:'fasonUcret', label:'Fason ücreti (€/adet, müşteri malında)', type:'number'},
+    {key:'fasonUcretTl', label:'Fason ücreti (₺/adet)', type:'number', hint:'Müşteri malında (hammadde müşteriden) adet başı işçilik fiyatı, ₺. Eski kartlarda € yazılıysa boşken o tutar bugünkü kurla ₺ kullanılır.'},
     {key:'karMarji', label:'Kâr marjı (%)', type:'number', eksi:true},
     {key:'birimFiyat', label:'Satış fiyatı (€)', type:'number'}
   ];
@@ -8863,7 +8871,7 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Ürün: stok kartı (Mamul / Yarı Mamul) + eski "Ürünler" listesi ----------
   function stokUrunObj(s){
     return { id: s.id, ad: (s.kod ? s.kod+' · ' : '')+s.ad, kisaAd: s.ad, kod: s.kod, birimSureDk: urunBirimSure(s),
-      fasonUcret: Number(s.fasonUcret) || Number(s.birimFiyat) || 0, kaynak: 'stok', ref: s };
+      fasonUcret: Number(s.fasonUcret) || Number(s.birimFiyat) || 0, fasonTl: stokFasonTl(s) || (Number(s.birimFiyat) || 0) * ozetKur(), kaynak: 'stok', ref: s };
   }
   function urunBirimSure(s){
     var t = (s.rota||[]).reduce(function(a, r){ return a + (Number(r.cevrimDk)||0); }, 0);
@@ -15447,7 +15455,7 @@ Dikkat edilmesi gereken 2 nokta:
     dosyaIndir('ozerp-yedek-'+todayISO()+'.json', JSON.stringify(tumVeri(), null, 1), 'application/json').then(function(){ try { localStorage.setItem(YEDEK_KEY, todayISO()); } catch(e){} if (supabaseModu) configWrite({ sonYedekTarihi: todayISO(), sonYedekAlan: aktifKullaniciAdi() || '' }).catch(function(){}); });
   }
   var ICE_AKTARMA = {
-    stok: { ad:'Stok kartları', col:'stok', kod:'stok', alanlar: ['kod','ad','tip','birim','miktar','kritikSeviye','maliyet','uretimSuresiDk','fasonUcret','birimFiyat','malzemeCinsi','olcu','resimNo'], zorunlu:['ad'], sayi:['miktar','kritikSeviye','maliyet','uretimSuresiDk','fasonUcret','birimFiyat'], varsayilan: {tip:'Mamul', birim:'adet', karMarji:30} },
+    stok: { ad:'Stok kartları', col:'stok', kod:'stok', alanlar: ['kod','ad','tip','birim','miktar','kritikSeviye','maliyet','uretimSuresiDk','fasonUcretTl','fasonUcret','birimFiyat','malzemeCinsi','olcu','resimNo'], zorunlu:['ad'], sayi:['miktar','kritikSeviye','maliyet','uretimSuresiDk','fasonUcret','birimFiyat'], varsayilan: {tip:'Mamul', birim:'adet', karMarji:30} },
     musteriler: { ad:'Cari kartlar', col:'musteriler', kod:'musteri', alanlar: ['kod','ad','cariTipi','yetkili','telefon','eposta','adres','sehir','vergiDairesi','vergiNo','iban','odemeVadesiGun'], zorunlu:['ad'], sayi:['odemeVadesiGun'], varsayilan: {cariTipi:'Müşteri', aktif:'Aktif'} },
     personel: { ad:'Personel', col:'personel', alanlar: ['ad','rol','telefon','iseGiris','netMaasTL','isverenMaliyetTL','beceriler'], zorunlu:['ad'], sayi:['netMaasTL','isverenMaliyetTL'], varsayilan: {} },
     makineler: { ad:'Makineler', col:'makineler', alanlar: ['ad','marka','model','modelYili','seriNo','alisBedeli','amortismanAy','gucKw'], zorunlu:['ad'], sayi:['alisBedeli','amortismanAy','gucKw'], varsayilan: {durum:'Çalışıyor'} }
@@ -21822,7 +21830,7 @@ Dikkat edilmesi gereken 2 nokta:
     var h = stokHesapla(s);
     return '<span class="pill">' + esc(s.tip || '') + '</span> <span>birim: <b>' + esc(s.birim || 'adet') + '</b></span>' +
       '<span>stok: <b>' + fmt2(s.miktar) + '</b></span>' + '<span>üretim süresi: <b>' + fmt2(s.uretimSuresiDk) + ' dk</b></span>' +
-      '<span class="yetki-maliyet">maliyet: <b>€' + fmt2(h.toplamMaliyet) + '</b></span><span>satış: <b>€' + fmt2(s.birimFiyat) + '</b></span>';
+      '<span class="yetki-maliyet">maliyet: <b>' + stokMaliyetIki(h.toplamMaliyet) + '</b></span>' + (stokFasonTl(s) ? '<span>fason: <b>₺' + fmt2(stokFasonTl(s)) + '</b></span>' : '') + '<span>satış: <b>€' + fmt2(s.birimFiyat) + '</b></span>';
   }
   function utTabloYenile(bolum){ var t = byId('utTablo-' + bolum); if (t) t.innerHTML = utTabloHtml(bolum, !izinVar('duzenle')); utDurumYaz(); }
   function utBagla(host){
