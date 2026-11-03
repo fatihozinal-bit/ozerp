@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r271</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r272</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12761,6 +12761,17 @@ Dikkat edilmesi gereken 2 nokta:
     var kur = Number(v.kur) > 0 ? Number(v.kur) : virgoGunKuru(v.tarih || todayISO()), tl = 0;
     rows.forEach(function(r){ var u = virgoUrunler().find(function(x){ return x.ad === r.urun; }), a = Number(String(r.adet || '').replace(',', '.')) || 0; if (u && a > 0) tl += virgoUrunPb(u) === '€' ? a * (Number(u.fiyat) || 0) * kur : a * (Number(u.fiyat) || 0); });
     ti.value = tl ? muhR2(tl) : '';
+    // r272: her satırda sevk edilebilecek adet (stoktaki; düzenlenen kaydın kendi sevki geri sayılır); adet fazlaysa kırmızı
+    var once = {}; if (fe.dataset.vid) (state.stokHareketleri || []).forEach(function(h){ if (h.kaynakTur === 'virgoSevk' && h.kaynakId === fe.dataset.vid) once[h.stokId] = (once[h.stokId] || 0) - (Number(h.miktar) || 0); });
+    var istenen = {}; rows.forEach(function(r){ var u = virgoUrunler().find(function(x){ return x.ad === r.urun; }); if (u && u.stokId) istenen[u.stokId] = (istenen[u.stokId] || 0) + (Number(String(r.adet || '').replace(',', '.')) || 0); });
+    Array.prototype.forEach.call(tb.querySelectorAll('tbody tr'), function(tr){
+      var sel = tr.querySelector('[data-ffc="urun"]'), adI = tr.querySelector('[data-ffc="adet"]'); if (!sel || !adI) return;
+      var not = tr.querySelector('.vg-sevk-stok'); if (!not){ not = document.createElement('div'); not.className = 'vg-sevk-stok'; not.style.cssText = 'font-size:11px;margin-top:2px'; adI.parentNode.appendChild(not); }
+      var u = virgoUrunler().find(function(x){ return x.ad === sel.value; }), st = u && u.stokId ? stokKart(u.stokId) : null;
+      if (!st){ not.textContent = ''; return; }
+      var var_ = (Number(st.miktar) || 0) + (once[st.id] || 0), fazla = (istenen[st.id] || 0) > var_ + 1e-9;
+      not.className = 'vg-sevk-stok ' + (fazla ? 'neg' : 'muted'); not.textContent = 'stokta ' + fmt(var_) + ' ' + (st.birim || 'adet') + (fazla ? ' — yetmiyor' : '');
+    });
   }
   function virgoSevkStokEsitle(v, silindi){
     var iste = {}, var_ = {};
@@ -12773,6 +12784,7 @@ Dikkat edilmesi gereken 2 nokta:
     });
     return Promise.all(p).catch(function(e){ toast('Stok hareketi yazılamadı: ' + dbErrMsg(e), true); });
   }
+  var _virgoDuzenlenen = null;
   function virgoSevkYeni(){ crudYeni(VIRGO_TANIM, { hareket: VIRGO_HAREKET[6], sevkKarsilik: VIRGO_SEVK_KARSILIK[0], kategori: '', kdvOrani: '0', paraBirimi: '₺', odeyen: '' }); }
   // r268: nakde dönüş — ay ay üretilen, sevk edilen, karşılığı (borçtan düşen / para gelen), stokta bekleyen (birikimli) ve planlanan sevk (Ödenecek)
   function virgoNakdeHtml(){
@@ -12824,7 +12836,9 @@ Dikkat edilmesi gereken 2 nokta:
       var alan = VIRGO_TANIM.fields(), oku = function(){ var v = {}; alan.forEach(function(f, i){ var e = fe.querySelector('[data-ffkey="' + i + '"]'); if (e) v[f.key] = e.value; }); return v; };
       var kutu = document.createElement('div'); kutu.className = 'vg-onizleme'; fe.insertBefore(kutu, fe.firstChild);
       var guncelle = function(){ virgoSevkTutarYaz(fe, alan, oku()); kutu.innerHTML = '<div class="vg-onizleme-bas">Kaydedince</div>' + virgoOnizleme(virgoSahsiDuzelt(oku())); };
+      if (_virgoDuzenlenen && Date.now() - _virgoDuzenlenen.t < 1500) fe.dataset.vid = _virgoDuzenlenen.id; _virgoDuzenlenen = null;
       fe.addEventListener('input', guncelle); fe.addEventListener('change', guncelle); guncelle();
+      fe.addEventListener('click', function(e){ if (e.target.closest('[data-fftekle]')) setTimeout(guncelle, 0); }); // r272: yeni satırda da stok yazısı
       virgoFormDuzen(fe, alan, oku);
     },
     hazirla: function(v, eski){
@@ -12865,7 +12879,8 @@ Dikkat edilmesi gereken 2 nokta:
     },
     sirala: function(a, b){ return (b.tarih||'').localeCompare(a.tarih||'') || String(b.olusturma||'').localeCompare(String(a.olusturma||'')); },
     kilitliSatir: virgoKilitli,
-    degerler: virgoYeniAd,
+    // r272: düzenlenen kaydın id'si formAcildi'ye (sevk satırlarında kendi sevkini stoğa geri saymak için)
+    degerler: function(v){ _virgoDuzenlenen = { id: v.id, t: Date.now() }; return virgoYeniAd(v); },
     // Kontrol form açıkken yapılır: hata çıkarsa form kapanmaz, yazılanlar kaybolmaz (hazirla kayıtta yeniden çalışır)
     kayitOncesi: function(v, eski, devam){
       var h = VIRGO_TANIM.hazirla(Object.assign({}, v), eski); if (h === false) return;
