@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r274</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r275</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1533,7 +1533,7 @@
     <section class="panel active" id="panel-ozet">
       <div class="pagehead ozet-pagehead">
         <div>
-          <h1>Bu ayın özeti</h1>
+          <h1>Özet</h1>
           <p id="ozetAyEtiket"></p>
         </div>
         <div style="display:flex;gap:8px;align-items:center"><span class="muted" id="ozetDuzenNot" style="font-size:12px"></span><button type="button" class="btn secondary small" id="ozetDuzenBtn" title="Bölümleri sırala, istemediğin kutuları gizle">⚙ Özeti düzenle</button></div>
@@ -1543,13 +1543,13 @@
       <div class="ozet-izgara" id="ozetIzgara">
         <div class="ozet-kol">
           <div class="block">
-            <div class="block-head"><h3>Makineler — bu ay <span class="info-ico" tabindex="0">!<span class="info-bubble">Durum: makinenin son üretim kaydı (bugün kayıt varsa "bugün"). Satırın üzerine gelince son iş görünür.
+            <div class="block-head"><h3>Makineler <span class="info-ico" tabindex="0">!<span class="info-bubble">Durum: makinenin son üretim kaydı (bugün kayıt varsa "bugün"). Satırın üzerine gelince son iş görünür.
 Doluluk: bu ay üretilen her ürünün birim süresine (dk/adet) göre harcanan süre ÷ ayın 1'inden bugüne kapasite (Tanımlar &gt; Kapasite). Yeşil %70 altı · turuncu %70–100 · kırmızı kapasite aşıldı.
 OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayrıntı. Dünya standardı ≈ %85, %60 altı iyileştirme alanı.</span></span></h3></div>
             <div class="block-body tablewrap" id="ozetMakineTablo"></div>
           </div>
           <div class="block yetki-maliyet">
-            <div class="block-head"><h3>Bu ay ürün bazında karşılık</h3></div>
+            <div class="block-head"><h3>Ürün bazında karşılık</h3></div>
             <div class="block-body tablewrap">
               <table id="ozetUrunTablo"><thead><tr>
                 <th>Ürün</th><th class="num">Adet</th><th class="num">Fiyat ₺</th><th class="num">Karşılık</th>
@@ -3912,8 +3912,29 @@ Dikkat edilmesi gereken 2 nokta:
     var mk = thisMonthKey();
     return tumUretimKayitlari().filter(function(k){ return (k.tarih||'').slice(0,7) === mk; });
   }
+  // r275: Özet dönemi — seçilen ay (YYYY-MM; boş: bu ay) ya da 'genel' (başlangıçtan bugüne). Yalnız Özet sayfası kullanır.
+  var _ozetDonem = '';
+  function ozetDonem(){ return _ozetDonem || thisMonthKey(); }
+  function ozetGenel(){ return ozetDonem() === 'genel'; }
+  function ozetBuAy(){ return ozetDonem() === thisMonthKey(); }
+  function ozetDonemde(tarih){ return ozetGenel() ? !!tarih && tarih <= todayISO() : String(tarih || '').slice(0, 7) === ozetDonem(); }
+  function ozetDonemAd(){ if (ozetGenel()) return 'Genel toplam'; var d = ozetDonem(); return new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, 1).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }); }
+  // Dönemin gün aralığı: ay (bu aysa bugüne kadar) ya da genelde ilk kayıttan bugüne
+  function ozetAralik(){
+    var bugun = todayISO();
+    if (ozetGenel()){ var ilk = ozetAylar().slice(-1)[0]; return { bas: (ilk || thisMonthKey()) + '-01', bit: bugun }; }
+    var d = ozetDonem(), son = d + '-' + String(new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)), 0).getDate()).padStart(2, '0');
+    return { bas: d + '-01', bit: son < bugun ? son : bugun };
+  }
+  // Seçilebilecek aylar: ilk üretim / Virgo kaydının ayından bu aya (yeniden eskiye)
+  function ozetAylar(){
+    var ilk = thisMonthKey();
+    tumUretimKayitlari().concat(virgoKayitlari()).forEach(function(k){ var a = String(k.tarih || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(a) && a < ilk) ilk = a; });
+    var l = [], a = thisMonthKey(); while (a >= ilk && l.length < 120){ l.push(a); a = KV_MODEL.ayEkle(a, -1); } return l;
+  }
+  function ozetKayitlari(){ return tumUretimKayitlari().filter(function(k){ return ozetDonemde(k.tarih); }); }
   function urunAdedBuAy(urunId){
-    return buAyKayitlari().filter(function(k){ return urunEsit(k.urunId, urunId) && sonOperasyonKaydiMi(k); }).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
+    return ozetKayitlari().filter(function(k){ return urunEsit(k.urunId, urunId) && sonOperasyonKaydiMi(k); }).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
   }
 
   // ---------- Render ----------
@@ -4011,7 +4032,7 @@ Dikkat edilmesi gereken 2 nokta:
   // toplam süre; ayrıca hangi ürünün ne kadar süre harcadığının kırılımı. Kapasite artık elle
   // girilen bir "adet" değil, çalışma saatinden gelen bir süre bütçesiyle kıyaslanıyor.
   function makineUretilenBuAy(makineId){
-    var kayitlar = buAyKayitlari().filter(function(k){ return k.makineId===makineId; });
+    var kayitlar = ozetKayitlari().filter(function(k){ return k.makineId===makineId; }); // r275: Özet dönemi
     var urunKirilim = {};
     var toplamAdet = 0, toplamDk = 0;
     kayitlar.forEach(function(k){
@@ -4031,12 +4052,12 @@ Dikkat edilmesi gereken 2 nokta:
     if (!wrap) return;
     if (state.makineler.length === 0){ wrap.innerHTML = '<div class="empty">Henüz makine tanımlanmadı.</div>'; return; }
     // Kapasite: ayın 1'inden bugüne kapasite takvimindeki çalışma süresi (OEE ile aynı temel; ay ortasında oran düşük görünmesin)
-    var kapDk = 0, bugun = todayISO(), ayBas = thisMonthKey() + '-01';
-    for (var gK = ayBas; gK <= bugun; gK = tarihEkle(gK, 1)) kapDk += gunlukKapasiteDk(gK);
+    var bugun = todayISO(), ar = ozetAralik(), kapDk = 0, ayBas = ar.bas; // r275: seçilen dönemin günleri
+    for (var gK = ar.bas; gK <= ar.bit; gK = tarihEkle(gK, 1)) kapDk += gunlukKapasiteDk(gK);
     var tum = tumUretimKayitlari();
     wrap.innerHTML = '<table class="ozet-makine"><thead><tr><th>Makine</th><th>Durum</th><th>Doluluk</th><th class="num">OEE</th><th class="num">İyi / fire</th></tr></thead><tbody>' +
       state.makineler.map(function(m){
-        var u = makineUretilenBuAy(m.id), o = oeeHesapla(m.id, ayBas, bugun);
+        var u = makineUretilenBuAy(m.id), o = oeeHesapla(m.id, ayBas, ar.bit);
         var kay = tum.filter(function(k){ return k.makineId === m.id; });
         var son = kay.length ? kay.reduce(function(a, b){ return (b.tarih||'') > (a.tarih||'') ? b : a; }) : null;
         var durum = !son ? '<span class="muted">kayıt yok</span>' : (son.tarih === bugun ? '<span class="pos">● bugün</span>'
@@ -4102,10 +4123,9 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // r273: bu ay girilen işletme gideri (₺): Virgo Hesabı'ndaki ödenmiş harcamalar, yatırım (makine vb.) hariç — Virgo'daki "İşletme gideri" ile aynı
   function ozetGiderKayitlari(){
-    var ay = thisMonthKey();
-    return virgoKayitlari().filter(function(v){ if (String(v.tarih || '').slice(0, 7) !== ay) return false; var n = virgoNorm(v); return n.tip === 'harcama' && n.odendi && !n.yatirim; });
+    return virgoKayitlari().filter(function(v){ if (!ozetDonemde(v.tarih)) return false; var n = virgoNorm(v); return n.tip === 'harcama' && n.odendi && !n.yatirim; });
   }
-  function ozetGiderTl(){ var a = virgoAylar().find(function(x){ return x.ay === thisMonthKey(); }); return a ? a.isletme.tl : 0; }
+  function ozetGiderTl(){ return virgoAylar().filter(function(x){ return ozetGenel() ? x.ay <= thisMonthKey() : x.ay === ozetDonem(); }).reduce(function(t, x){ return t + x.isletme.tl; }, 0); }
   // r273: ay sonu tahmini: bugüne kadarki karşılık ÷ geçen iş günü × ayın iş günü (Aylık Kapasite'deki çalışma düzeni, tatiller hariç);
   // gider = Aylık Kapasite'deki ay toplamı. Gider bir kez düşülür.
   function ozetTahmin(ciro){
@@ -4118,35 +4138,40 @@ Dikkat edilmesi gereken 2 nokta:
   function ozetKapasite(){ return kpHesap(thisMonthKey(), kpPlan()); }
   // r261: bu ay üretilen adet ürün ürün (son operasyon kayıtları, Üretilen kartının toplamıyla aynı), çoktan aza
   function ozetUretimKirilim(){
-    var g = {}; buAyKayitlari().filter(sonOperasyonKaydiMi).forEach(function(x){ var ad = uretimUrunAdi(x).replace(/^\S+ · /, ''); g[ad] = (g[ad] || 0) + (Number(x.adet) || 0); }); // kod yazılmaz, kart küçük
+    var g = {}; ozetKayitlari().filter(sonOperasyonKaydiMi).forEach(function(x){ var ad = uretimUrunAdi(x).replace(/^\S+ · /, ''); g[ad] = (g[ad] || 0) + (Number(x.adet) || 0); }); // kod yazılmaz, kart küçük
     return Object.keys(g).filter(function(ad){ return g[ad]; }).map(function(ad){ return { ad: ad, adet: g[ad] }; }).sort(function(a, b){ return b.adet - a.adet; });
   }
   function tlEur(v){ var kur = ozetKur(); return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)) + (kur ? ' <span class="muted">(≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) + ')</span>' : ''); }
   function renderOzet(){
     var kur = ozetKur();
-    var toplamUretim = buAyKayitlari().filter(sonOperasyonKaydiMi).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
+    var toplamUretim = ozetKayitlari().filter(sonOperasyonKaydiMi).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
     var katkilar = urunListesi().map(ozetUrunKatki), toplamCiro = toplamla(katkilar, function(x){ return x.top; });
     var gider = ozetGiderTl(), kazanc = toplamCiro - gider, th = ozetTahmin(toplamCiro), tlY = function(v){ return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)); }, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
     // r244: üretim / kalite kartları da aynı şeritte (eskiden ayrı satırdı)
     var bugun = todayISO(), ay = thisMonthKey();
     var acikIe = state.isemirleri.filter(function(ie){ return ie.durum !== 'İptal' && isEmriKalan(ie) > 0; });
     var gecIe = acikIe.filter(function(ie){ return ie.termin && ie.termin < bugun; });
-    var fire = toplamla(buAyKayitlari(), function(k){ return k.fireAdet; }), iyi = toplamla(buAyKayitlari(), function(k){ return k.adet; });
-    var durusDk = toplamla((state.duruslar||[]).filter(function(d){ return ayAnahtari(d.tarih) === ay && PLANLI_DURUSLAR.indexOf(d.neden) < 0; }), durusSuresi);
+    var oka = ozetKayitlari(), fire = toplamla(oka, function(k){ return k.fireAdet; }), iyi = toplamla(oka, function(k){ return k.adet; });
+    var durusDk = toplamla((state.duruslar||[]).filter(function(d){ return ozetDonemde(d.tarih) && PLANLI_DURUSLAR.indexOf(d.neden) < 0; }), durusSuresi);
     var fk = faturaKalanlari(), acikAlacak = toplamla(Object.keys(fk), function(k){ return Math.max(0, fk[k]); });
 
-    document.getElementById('ozetAyEtiket').textContent = new Date().toLocaleDateString('tr-TR',{month:'long', year:'numeric'});
+    // r275: dönem seçimi (ay ay ya da genel toplam)
+    var donem = ozetDonem(), aylar = ozetAylar();
+    document.getElementById('ozetAyEtiket').innerHTML = '<select id="ozetDonemSec" title="Özet dönemi">' + aylar.map(function(a){ return '<option value="' + a + '"' + (a === donem ? ' selected' : '') + '>' + esc(new Date(Number(a.slice(0, 4)), Number(a.slice(5, 7)) - 1, 1).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })) + (a === thisMonthKey() ? ' (bu ay)' : '') + '</option>'; }).join('') +
+      '<option value="genel"' + (donem === 'genel' ? ' selected' : '') + '>Genel toplam (başlangıçtan bugüne)</option></select>';
+    var donemYazi = ozetGenel() ? 'başlangıçtan bugüne' : ozetBuAy() ? 'bugüne kadar' : 'ay toplamı';
     var cards = [
       {label:'Üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim', sub: ozetUretimKirilim().map(function(x){ return '<div class="oz-kirilim"><span title="' + escAttr(x.ad) + '">' + esc(x.ad) + '</span><b>' + fmt(x.adet) + '</b></div>'; }).join('')},
       // r273: gerçekleşen (bugüne kadar, Virgo Hesabı'yla aynı) + ay sonu tahmini
-      {label:'Üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: 'bugüne kadar' + (kur ? ' · ' + eurYazi(toplamCiro) : '')},
+      {label:'Üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: donemYazi + (kur ? ' · ' + eurYazi(toplamCiro) : '')},
       {label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: 'girilen harcamalar' + (kur ? ' · ' + eurYazi(gider) : '')},
-      {label:'Kazanç', value: tlY(kazanc), cls:(kazanc < -0.004 ? 'bad' : 'good isaretli')+' yetki-maliyet', detay:'kazanc', sub: 'bugüne kadar' + (kur ? ' · ' + eurYazi(kazanc) : '')},
-      {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)},
+      {label:'Kazanç', value: tlY(kazanc), cls:(kazanc < -0.004 ? 'bad' : 'good isaretli')+' yetki-maliyet', detay:'kazanc', sub: donemYazi + (kur ? ' · ' + eurYazi(kazanc) : '')}
+    ].concat(ozetBuAy() ? [ // ay sonu tahmini yalnız içinde bulunulan ayda
+      {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)}] : [], [
       {label:'Açık iş emri', value: acikIe.length, cls: gecIe.length?'accent':'', detay:'isemri', sub: gecIe.length ? '<span class="neg">'+gecIe.length+' gecikmiş</span>' : 'gecikme yok'},
       {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'},
       {label:'Plansız duruş', value: sureStrOlustur(durusDk), cls:'', detay:'durus'}
-    ];
+    ]);
     if (sekmeIzinli('carihesap') || sekmeIzinli('faturalar')) cards.push({label:'Açık alacak', value: euro(acikAlacak), cls:'', detay:'alacak'});
     document.getElementById('ozetCards').innerHTML = cards.map(function(c){
       return '<div class="card '+c.cls+(c.detay?' tiklanir" data-ozetdetay="'+c.detay+'" title="Hesabı görmek için tıklayın':'')+'"><div class="label">'+c.label+(c.detay?' <span class="kart-ok">›</span>':'')+'</div><div class="value">'+c.value+'</div>'+(c.sub?'<div class="sub">'+c.sub+'</div>':'')+'</div>';
@@ -16100,19 +16125,19 @@ Dikkat edilmesi gereken 2 nokta:
     var bugun = todayISO(), ay = thisMonthKey(), d = null;
     var sabit = calcSabitGider(), saatM = calcSaatMaliyeti(), kapasite = state.config ? Number(state.config.aylikMakineSaati)||0 : 0;
     if (k === 'uretim'){
-      var kay = buAyKayitlari().filter(sonOperasyonKaydiMi), grup = {};
+      var kay = ozetKayitlari().filter(sonOperasyonKaydiMi), grup = {};
       kay.forEach(function(x){ var ad = uretimUrunAdi(x) + (x.virgo ? ' (Virgo)' : ''), g = grup[ad] = grup[ad] || { adet: 0, n: 0 }; g.adet += Number(x.adet)||0; g.n++; });
-      d = { t: 'Bu ay üretilen adet', f: 'Üretim Kayıtları\'nda bu ay girilen kayıtlardan (Virgo üretim girişleri dahil), parçanın <b>son operasyonu</b> (ya da mamul girişi işaretli) olanların adetleri toplanır. Ara operasyonlar aynı parçayı iki kez saymamak için dahil edilmez; fire ayrı tutulur.',
+      d = { t: ozetDonemAd() + ' · üretilen adet', f: 'Üretim Kayıtları\'nda bu dönemde girilen kayıtlardan (Virgo üretim girişleri dahil), parçanın <b>son operasyonu</b> (ya da mamul girişi işaretli) olanların adetleri toplanır. Ara operasyonlar aynı parçayı iki kez saymamak için dahil edilmez; fire ayrı tutulur.',
         h: ozetDetayTablo(['Ürün','Kayıt sayısı','Adet'], Object.keys(grup).map(function(ad){ return [esc(ad), grup[ad].n, fmt(grup[ad].adet)]; }), ['Toplam', kay.length, fmt(toplamla(kay, function(x){ return x.adet; }))]),
         git: 'kayitlar', gitAd: 'Üretim Kayıtları' };
     } else if (k === 'gider'){
       var gl = ozetGiderKayitlari().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); });
-      d = { t: 'Bu ay gider (girilen)', f: '<b>Virgo Hesabı</b>\'na bu ay girilen, ödenmiş harcamalar; yatırım (makine, kuruluş, demirbaş) hariç. Virgo adına faturalı harcamada KDV hariç tutar. Virgo Hesabı › Aylık kazanç\'taki "İşletme gideri" ile aynı rakamdır. Maaş, kira gibi giderler girilmediyse burada görünmez.',
+      d = { t: ozetDonemAd() + ' · gider (girilen)', f: '<b>Virgo Hesabı</b>\'na bu dönemde girilen, ödenmiş harcamalar; yatırım (makine, kuruluş, demirbaş) hariç. Virgo adına faturalı harcamada KDV hariç tutar. Virgo Hesabı › Aylık kazanç\'taki "İşletme gideri" ile aynı rakamdır. Maaş, kira gibi giderler girilmediyse burada görünmez.',
         h: ozetDetayTablo(['Tarih','Kategori','Açıklama','Tutar'], gl.map(function(v){ var n = virgoNorm(v); return [esc(kvTarihTR(v.tarih)), esc(v.kategori || ''), esc(v.aciklama || ''), tlEur(n.m.tl)]; }), ['Toplam', '', '', tlEur(ozetGiderTl())]),
         git: 'virgo', gitAd: 'Virgo Hesabı' };
     } else if (k === 'kazanc'){
       var kc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), kg = ozetGiderTl();
-      d = { t: 'Bu ay kazanç (bugüne kadar)', f: 'Bu ay üretim karşılığı − bu ay girilen gider. Virgo Hesabı › Aylık kazanç\'taki "İşin kazancı" ile aynıdır. Ay bitmeden giderlerin bir kısmı (maaş, kira…) henüz girilmemiş olabilir; ay sonu için "Ay sonu tahmini" kartına bakın.',
+      d = { t: ozetDonemAd() + ' · kazanç', f: 'Bu dönemin üretim karşılığı − bu dönemde girilen gider. Virgo Hesabı › Aylık kazanç\'taki "İşin kazancı" ile aynıdır. Ay bitmeden giderlerin bir kısmı (maaş, kira…) henüz girilmemiş olabilir; ay sonu için "Ay sonu tahmini" kartına bakın.',
         h: ozetDetayTablo(['Hesap','Tutar'], [['Üretim karşılığı', tlEur(kc)], ['− Gider (girilen)', tlEur(-kg)]], ['Kazanç', tlEur(kc - kg)]),
         git: 'virgo', gitAd: 'Virgo Hesabı' };
     } else if (k === 'tahmin'){
@@ -16125,7 +16150,7 @@ Dikkat edilmesi gereken 2 nokta:
         git: 'kapasiteplan', gitAd: 'Aylık Kapasite' };
     } else if (k === 'ciro'){
       var lc = urunListesi().map(ozetUrunKatki).filter(function(x){ return x.adet; });
-      d = { t: 'Bu ay üretim karşılığı', f: 'Her ürün için <b>bu ay üretilen adet × birim fiyat</b>; maliyet düşülmez.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla.</span>',
+      d = { t: ozetDonemAd() + ' · üretim karşılığı', f: 'Her ürün için <b>bu ay üretilen adet × birim fiyat</b>; maliyet düşülmez.<br>Birim fiyat: şirket kuruluşuna kadar Virgo Hesabı\'ndaki ürün fiyatı (₺ sabit); fiyatı yoksa stok kartındaki fason ücret € × bugünkü kur.<br><span class="muted">Parantezdeki € yalnız bilgi, bugünkü kurla.</span>',
         h: ozetDetayTablo(['Ürün','Adet','Birim fiyat','Karşılığı'], lc.map(function(x){ return [esc(x.u.ad), fmt(x.adet), '₺'+fmt2(x.fiyat)+' <span class="muted">('+esc(x.kaynak)+')</span>', tlEur(x.top)]; }), ['Toplam', fmt(toplamla(lc, function(x){ return x.adet; })), '', tlEur(toplamla(lc, function(x){ return x.top; }))]),
         git: 'virgo', gitAd: 'Virgo Hesabı' };
     } else if (k === 'isemri'){
@@ -16134,13 +16159,13 @@ Dikkat edilmesi gereken 2 nokta:
         h: ozetDetayTablo(['İş emri','Termin','Kalan'], acik.map(function(ie){ return [esc(ie.isEmriNo)+' <span class="muted">'+esc(ie.urunId ? urunAdiById(ie.urunId) : '')+'</span>', ie.termin ? '<span class="'+(ie.termin < bugun ? 'neg' : '')+'">'+ie.termin+'</span>' : '-', fmt(isEmriKalan(ie))]; })),
         git: 'isemirleri', gitAd: 'İş Emirleri' };
     } else if (k === 'fire'){
-      var ka = buAyKayitlari(), fire = toplamla(ka, function(x){ return x.fireAdet; }), iyi = toplamla(ka, function(x){ return x.adet; });
-      d = { t: 'Bu ay fire oranı', f: 'Fire oranı = fire ÷ (sağlam + fire). Bu ayki tüm üretim kayıtlarının (her operasyon) adet ve fire alanlarından hesaplanır.',
+      var ka = ozetKayitlari(), fire = toplamla(ka, function(x){ return x.fireAdet; }), iyi = toplamla(ka, function(x){ return x.adet; });
+      d = { t: ozetDonemAd() + ' · fire oranı', f: 'Fire oranı = fire ÷ (sağlam + fire). Bu dönemdeki tüm üretim kayıtlarının (her operasyon) adet ve fire alanlarından hesaplanır.',
         h: ozetDetayTablo(['Kalem','Adet'], [['Sağlam adet', fmt(iyi)], ['Fire adet', fmt(fire)]], ['Fire oranı', (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-']), git: 'kayitlar', gitAd: 'Üretim Kayıtları' };
     } else if (k === 'durus'){
-      var du = (state.duruslar||[]).filter(function(x){ return ayAnahtari(x.tarih) === ay && PLANLI_DURUSLAR.indexOf(x.neden) < 0; }), gr = {};
+      var du = (state.duruslar||[]).filter(function(x){ return ozetDonemde(x.tarih) && PLANLI_DURUSLAR.indexOf(x.neden) < 0; }), gr = {};
       du.forEach(function(x){ gr[x.neden] = (gr[x.neden]||0) + durusSuresi(x); });
-      d = { t: 'Bu ay plansız duruş', f: 'Duruşlar sayfasındaki bu ayki kayıtların süreleri toplanır. "'+PLANLI_DURUSLAR.join('" ve "')+'" planlı sayılır, dahil edilmez.',
+      d = { t: ozetDonemAd() + ' · plansız duruş', f: 'Duruşlar sayfasındaki bu dönemdeki kayıtların süreleri toplanır. "'+PLANLI_DURUSLAR.join('" ve "')+'" planlı sayılır, dahil edilmez.',
         h: ozetDetayTablo(['Neden','Süre'], Object.keys(gr).map(function(n){ return [esc(n), sureStrOlustur(gr[n])]; }), ['Toplam', sureStrOlustur(toplamla(du, durusSuresi))]), git: 'duruslar', gitAd: 'Duruşlar' };
     } else if (k === 'alacak'){
       var kal = faturaKalanlari(), fl = state.faturalar.filter(function(f){ return (kal[f.id]||0) > 0.01; });
@@ -22327,6 +22352,7 @@ Dikkat edilmesi gereken 2 nokta:
     });
   }
   document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('#ozetDuzenBtn'); if (b) ozetDuzenAc(); });
+  document.addEventListener('change', function(e){ if (e.target && e.target.id === 'ozetDonemSec'){ _ozetDonem = e.target.value === thisMonthKey() ? '' : e.target.value; renderOzet(); } }); // r275
   init();
 })();
 </script>
