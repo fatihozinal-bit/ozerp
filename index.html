@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-03-r280</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-04-r281</div>
   </nav>
   <main>
     <div class="topbar">
@@ -13513,9 +13513,11 @@ Dikkat edilmesi gereken 2 nokta:
     var dz = Object.assign({}, KP_DUZEN_VARS, c.duzen || {}); dz.persKapali = Array.isArray(dz.persKapali) ? dz.persKapali.slice() : [];
     return { urunler: ur, giderler: gid, elektrik: Object.assign({ kwMakine: '', kwGenel: '', fiyat: '' }, c.elektrik || {}), duzen: dz };
   }
+  // r281: boydan sağlam adet = sayaçtaki boydan adet − M1 fazlası (CNC'de M1 her boyda sayacı bir fazla sayar: sayaç 24 → 23 sağlam)
+  function kpBoyAdet(u){ return Math.max(0, (Number(u.boyAdet) || 0) - Math.max(0, Number(u.m1Fazla) || 0)); }
   // r253: bir parçanın süresi (sn). Boy bilgisi varsa: (boy işleme dk + boy değiştirme dk) × 60 ÷ boydan çıkan adet; yoksa çevrim sn + boy değiştirme payı.
   function kpCevrimSn(u){
-    var ba = Number(u.boyAdet) || 0, bd = Number(u.boyDk) || 0, bg = Number(u.boyDegis) || 0;
+    var ba = kpBoyAdet(u), bd = Number(u.boyDk) || 0, bg = Number(u.boyDegis) || 0;
     if (ba > 0 && bd > 0) return (bd + bg) * 60 / ba;
     var cs = Number(u.cevrimSn) || 0; return cs > 0 ? cs + (ba > 0 ? bg * 60 / ba : 0) : 0;
   }
@@ -13616,7 +13618,7 @@ Dikkat edilmesi gereken 2 nokta:
     h.satir.forEach(function(x){ var tr = host.querySelector('tr[data-kpid="' + x.u.id + '"]'); if (!tr) return;
       var c = function(k, v){ var el = tr.querySelector('[data-kpc="' + k + '"]'); if (el) el.innerHTML = v; };
       var mi = tr.querySelector('[data-kpa="makine"]'); if (mi) mi.placeholder = x.makineBos ? fmt2(x.makine) : '';
-      var boyVar = Number(x.u.boyAdet) > 0 && Number(x.u.boyDk) > 0, ci = tr.querySelector('[data-kpa="cevrimSn"]');
+      var boyVar = kpBoyAdet(x.u) > 0 && Number(x.u.boyDk) > 0, m1 = Math.max(0, Number(x.u.m1Fazla) || 0), ci = tr.querySelector('[data-kpa="cevrimSn"]');
       // boy bilgisi varsa süre boydan: kutu kilitli, hesaplanan saniyeyi gösterir (kayıttaki çevrime dokunulmaz)
       if (ci && boyVar){ ci.disabled = true; ci.value = Math.round(x.cvSn); ci.title = 'Boydan hesaplanıyor (▸ ayrıntı)'; } else if (ci && ci.disabled){ ci.disabled = false; ci.value = x.u.cevrimSn == null ? '' : x.u.cevrimSn; ci.title = ''; }
       c('saat', x.netSaatlik ? fmt2(Math.round(x.netSaatlik * 10) / 10) : '<span class="muted">—</span>');
@@ -13624,10 +13626,10 @@ Dikkat edilmesi gereken 2 nokta:
       c('kap', '<b>' + fmt(x.adet) + '</b>');
       c('ciro', '₺' + muhTutar(x.ciroTl));
       // ayrıntı düğmesinde kısa özet; ayrıntı satırında boydan süre ve ayar kaybı
-      var oz = []; if (boyVar) oz.push('boy'); if (Number(x.u.ayarDk) > 0 && Number(x.u.ayarAy) > 0) oz.push('ayar'); if (Number(x.u.sinir) > 0) oz.push('sınır'); if (Number(x.u.degisken) > 0) oz.push('gider');
+      var oz = []; if (boyVar) oz.push('boy'); if (m1 && Number(x.u.boyAdet) > 0) oz.push('M1'); if (Number(x.u.ayarDk) > 0 && Number(x.u.ayarAy) > 0) oz.push('ayar'); if (Number(x.u.sinir) > 0) oz.push('sınır'); if (Number(x.u.degisken) > 0) oz.push('gider');
       var db = tr.querySelector('[data-kpdet]'); if (db) db.innerHTML = (host.__acik && host.__acik[x.u.id] ? '▾' : '▸') + (oz.length ? ' <span class="kp-det-oz">' + oz.join(' · ') + '</span>' : '');
       var dr = host.querySelector('tr[data-kpdetay="' + x.u.id + '"] [data-kpc="det"]');
-      if (dr) dr.innerHTML = (x.cvSn > 0 ? 'Parça süresi <b>' + fmt(Math.round(x.cvSn)) + ' sn</b>' + (boyVar ? ' (boydan)' : '') : 'Parça süresi yok') + (x.ayarSa ? ' · ayar <span class="' + (x.ayarFazla ? 'neg' : '') + '">−' + fmt2(Math.round(x.ayarSa * 10) / 10) + ' sa / ay</span>' : '') + (x.sinirli ? ' · kapasite ' + fmt(x.kapasite) + ', satış sınırı ' + fmt(x.adet) : '') + (x.degTl ? ' · katkı ₺' + muhTutar(x.ciroTl - x.degTl) : '');
+      if (dr) dr.innerHTML = (m1 && Number(x.u.boyAdet) > 0 ? 'Boydan ' + fmt(Number(x.u.boyAdet)) + ' (sayaç) → <b>' + fmt(kpBoyAdet(x.u)) + ' sağlam</b> · ' : '') + (x.cvSn > 0 ? 'Parça süresi <b>' + fmt(Math.round(x.cvSn)) + ' sn</b>' + (boyVar ? ' (boydan)' : '') : 'Parça süresi yok') + (x.ayarSa ? ' · ayar <span class="' + (x.ayarFazla ? 'neg' : '') + '">−' + fmt2(Math.round(x.ayarSa * 10) / 10) + ' sa / ay</span>' : '') + (x.sinirli ? ' · kapasite ' + fmt(x.kapasite) + ', satış sınırı ' + fmt(x.adet) : '') + (x.degTl ? ' · katkı ₺' + muhTutar(x.ciroTl - x.degTl) : '');
     });
     var gunTop = h.satir.reduce(function(a, x){ return a + x.gunluk; }, 0);
     var t = host.querySelector('[data-kptop]'); if (t) t.innerHTML = '<td></td><td><b>Toplam</b></td><td></td><td class="num"><b>' + fmt2(h.top.makine) + '</b></td><td></td><td></td><td class="num"><b>' + fmt(Math.round(gunTop)) + '</b></td><td class="num"><b>' + fmt(h.top.adet) + '</b></td><td class="num"><b>₺' + muhTutar(h.top.ciroTl) + '</b></td><td></td><td></td>';
@@ -13660,7 +13662,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<td>' + inp(u, 'cevrimSn', 'num', ' placeholder="sn"') + '</td><td><button type="button" class="btn secondary small kp-det-btn" data-kpdet="' + u.id + '" title="Boy, ayar, satış sınırı, adet başı gider"></button></td>' +
         '<td class="num kp-son" data-kpc="saat"></td><td class="num kp-son" data-kpc="gun"></td><td class="num kp-son" data-kpc="kap"></td><td class="num kp-son" data-kpc="ciro"></td><td><button class="kp-sil" data-kpsil="' + u.id + '" title="Ürünü listeden sil">×</button></td></tr>' +
         (acik ? '<tr class="kp-detay" data-kpdetay="' + u.id + '"><td></td><td colspan="10"><div class="kp-det-alan">' +
-          '<span class="kp-det-g"><b>Boy</b>' + detAlan(u, 'boyAdet', 'boydan', 'adet', 'Bir boydan (çubuktan) çıkan sağlam parça') + detAlan(u, 'boyDk', 'işleme', 'dk', 'Bir boyun makinede işlenme süresi (dakika). Boydan adetle birlikte yazılırsa süre = işleme × 60 ÷ boydan adet') + detAlan(u, 'boyDegis', 'değiştirme', 'dk', 'Boy değiştirme / bağlama / ölçü için makinenin her boyda durduğu süre (dakika)') + '</span>' +
+          '<span class="kp-det-g"><b>Boy</b>' + detAlan(u, 'boyAdet', 'boydan', 'adet', 'Bir boydan (çubuktan) çıkan parça; CNC sayacındaki değer yazılabilir, M1 fazlası ayrıca düşülür') + detAlan(u, 'm1Fazla', 'M1 fazlası', 'adet', 'CNC\'de M1 kodu her boyda sayacı fazla sayar (ör. sayaç 24, gerçek 23 → 1 yazın). Boydan adetten düşülür; boş: 0') + detAlan(u, 'boyDk', 'işleme', 'dk', 'Bir boyun makinede işlenme süresi (dakika). Boydan adetle birlikte yazılırsa süre = işleme × 60 ÷ boydan adet') + detAlan(u, 'boyDegis', 'değiştirme', 'dk', 'Boy değiştirme / bağlama / ölçü için makinenin her boyda durduğu süre (dakika)') + '</span>' +
           '<span class="kp-det-g"><b>Ayar</b>' + detAlan(u, 'ayarDk', 'süre', 'dk', 'İş değişiminde bir kerelik ayar: bağlama, takım, program, ilk parça onayı (dakika)') + detAlan(u, 'ayarAy', 'ayda', 'kez', 'Bu iş ayda kaç kez makineye bağlanıyor (bütün makinelerde toplam)') + '</span>' +
           '<span class="kp-det-g"><b>Satış</b>' + detAlan(u, 'sinir', 'ayda en çok', 'adet', 'Müşterinin ayda en fazla alacağı adet. Boş: üretilen her şey satılır') + detAlan(u, 'degisken', 'adet başı gider', '₺', 'Adet başına malzeme, kaplama, ürüne özel takım…') + '</span>' +
           '<span class="kp-det-sonuc muted" data-kpc="det"></span></div></td></tr>' : '');
@@ -13682,7 +13684,7 @@ Dikkat edilmesi gereken 2 nokta:
         dzE('kwMakine', 'Makine başı kW', kartKw ? fmt2(kartKw) : 'ör. 6,5', 'Çalışan makine başına ortalama güç. Boş: makine kartlarındaki güç ortalaması') + dzE('kwGenel', 'Genel kW', '0', 'Kompresör, aydınlatma, ofis…') + dzE('fiyat', 'Elektrik ₺ / kWh', 'KDV hariç', 'Elektrik birim fiyatı, KDV hariç') + '</div>' +
       '</div></div></div>';
     var ayHtml = '<div class="block"><div class="block-head"><h3>Ay ' + infoIco('Ay seçince o ayın görüntüsü hesaplanır; hiçbir şey ay ay saklanmaz. Çalışma saatleri Tanımlar › Kapasite\'den, resmî tatiller programdan, personel Tanımlar › Personel\'den gelir. Ürünler ve giderler aşağıdaki tek listelerden.') + '</h3><div class="bh-actions"><button class="btn secondary small" data-kpay="-1" title="Önceki ay">‹</button> <input type="month" id="kpAySec" value="' + kpAy + '"> <button class="btn secondary small" data-kpay="1" title="Sonraki ay">›</button> <button class="btn secondary small" data-kpay="0">Bu ay</button></div></div><div class="block-body" id="kpSonuc"></div></div>';
-    var urunHtml = '<div class="block"><div class="block-head"><h3>Ürünler ve çalışan makineler ' + infoIco('Her satır bir ürün ya da iş. Makine: bu işe ayrılan makine sayısı (yarım zamanlı için 0,5; boşsa Çalışma düzeni › Çalışan makine\'den kalan pay). Parça süresi saniyeyle: ya çevrim (sn / adet) yazılır ya da boy bilgisi: boydan çıkan adet ve boyun işlenme süresi (dk). Örnek: bir boydan 12 parça, boy 30 dk → 30 × 60 ÷ 12 = 150 sn. Boy değiştirme / bağlama süresi her boyda eklenir. Ayar: iş değişimindeki bir kerelik bağlama, program ve ilk parça onayı; ayar dk × ayda kaç kez ayın makine saatinden düşülür. Saatte = 3600 ÷ süre × genel verim × (1 − fire). Ayda = (makine × verimli saat − ayar saati) × saatte; günde = ayda ÷ çalışılan gün. Verimli saat = gündüz + gece × gece verimi (Çalışma düzeni). Satış sınırı varsa onunla sınırlanır. Ciro = adet × birim fiyat (KDV hariç). Katkı = ciro − adet başı giderler. Liste tektir, her ay için aynı kullanılır; yazdıkça kaydedilir.') + '</h3><div class="bh-actions"><button class="btn small" data-kpekle="1">+ Ürün / iş ekle</button></div></div><div class="block-body">' +
+    var urunHtml = '<div class="block"><div class="block-head"><h3>Ürünler ve çalışan makineler ' + infoIco('Her satır bir ürün ya da iş. Makine: bu işe ayrılan makine sayısı (yarım zamanlı için 0,5; boşsa Çalışma düzeni › Çalışan makine\'den kalan pay). Parça süresi saniyeyle: ya çevrim (sn / adet) yazılır ya da boy bilgisi: boydan çıkan adet ve boyun işlenme süresi (dk). Örnek: bir boydan 12 parça, boy 30 dk → 30 × 60 ÷ 12 = 150 sn. M1 fazlası: CNC\'de M1 kodu her boyda sayacı bir fazla sayar; yazılan değer boydan adetten düşülür (sayaç 24, M1 fazlası 1 → 23 sağlam). Boy değiştirme / bağlama süresi her boyda eklenir. Ayar: iş değişimindeki bir kerelik bağlama, program ve ilk parça onayı; ayar dk × ayda kaç kez ayın makine saatinden düşülür. Saatte = 3600 ÷ süre × genel verim × (1 − fire). Ayda = (makine × verimli saat − ayar saati) × saatte; günde = ayda ÷ çalışılan gün. Verimli saat = gündüz + gece × gece verimi (Çalışma düzeni). Satış sınırı varsa onunla sınırlanır. Ciro = adet × birim fiyat (KDV hariç). Katkı = ciro − adet başı giderler. Liste tektir, her ay için aynı kullanılır; yazdıkça kaydedilir.') + '</h3><div class="bh-actions"><button class="btn small" data-kpekle="1">+ Ürün / iş ekle</button></div></div><div class="block-body">' +
       (plan.urunler.length ? '<div class="tablewrap"><table class="edit-tablo kv-urun-tablo kp-tablo">' + kpCol + '<thead>' + bas + '</thead><tbody>' + satirlar + '</tbody><tfoot><tr class="kv-toplam" data-kptop></tr></tfoot></table></div>'
         : '<div class="kv-urun-bos">Henüz ürün yok. Ürettiğiniz her parça ya da iş için bir satır ekleyin: fiyat, kaç makinede yapıldığı ve bir parçanın süresi (sn) yeterli; boy ve ayar ▸ ayrıntıda.<br><button class="btn" data-kpekle="1" style="margin-top:8px">+ İlk ürünü ekle</button></div>') + '</div></div>';
     var giderHtml = '<div class="block"><div class="block-head"><h3>Aylık giderler ' + infoIco('Her ay için aynı liste (ay ay plan yok). Tutar ₺, KDV hariç. Aylık sabit: o tutar. Kişi başı / ay: tutar × o ayki personel sayısı (yemek, servis, iş elbisesi). Makine başı / ay: tutar × çalışan makine (uç, yağ). Şahıstan (stopajlı): şahıstan kiralanan işyeri; ev sahibiyle anlaşılan net kira yazılır, gider brüt = net ÷ 0,80, aradaki %20 stopaj muhtasar beyanla vergi dairesine ödenir. Şirketten / faturalı kirada Aylık sabit seçip KDV hariç tutarı yazın. Elektrik hesaplanır: (çalışan makine × makine başı kW + genel kW) × ayın makine saati × ₺/kWh; makine başı kW boşsa makine kartlarındaki güç ortalaması. Personel maliyeti Tanımlar\'dan gelir, burada yazılmaz. Boş kalem 0 sayılır.') + '</h3><div class="bh-actions"><button class="btn small" data-kpgekle="1">+ Kalem ekle</button></div></div><div class="block-body">' +
@@ -13705,7 +13707,7 @@ Dikkat edilmesi gereken 2 nokta:
     host.addEventListener('click', function(e){
       var a = e.target.closest('[data-kpay]'); if (a){ var d = Number(a.dataset.kpay); kpAy = d ? KV_MODEL.ayEkle(kpAy, d) : todayISO().slice(0, 7); host.__key = null; EK_RENDER.kapasiteplan(); return; }
       var p = host.__plan;
-      if (e.target.closest('[data-kpekle]')){ p.urunler.push({ id: 'u' + Date.now().toString(36), ad: '', pb: '₺', fiyat: '', makine: '', cevrimSn: '', boyAdet: '', boyDk: '', boyDegis: '', ayarDk: '', ayarAy: '', sinir: '', degisken: '' }); host.__key = null; kpKaydet(p, true); return; }
+      if (e.target.closest('[data-kpekle]')){ p.urunler.push({ id: 'u' + Date.now().toString(36), ad: '', pb: '₺', fiyat: '', makine: '', cevrimSn: '', boyAdet: '', m1Fazla: '', boyDk: '', boyDegis: '', ayarDk: '', ayarAy: '', sinir: '', degisken: '' }); host.__key = null; kpKaydet(p, true); return; }
       var dt = e.target.closest('[data-kpdet]'); if (dt){ host.__acik[dt.dataset.kpdet] = !host.__acik[dt.dataset.kpdet]; host.__key = null; EK_RENDER.kapasiteplan(); return; }
       if (e.target.closest('[data-kpbos]')){ host.__bosGoster = !host.__bosGoster; host.__key = null; EK_RENDER.kapasiteplan(); return; }
       if (e.target.closest('[data-kpgekle]')){ host.__bosGoster = true; p.giderler.push({ id: 'g' + Date.now().toString(36), ad: '', tur: 'ay', tutar: '' }); host.__key = null; kpKaydet(p, true); return; }
