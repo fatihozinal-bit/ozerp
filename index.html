@@ -1193,7 +1193,7 @@
   .kp-det-btn { width:100%; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .kp-det-oz { font-size:11px; color:var(--ink-soft); }
   .kp-det-alan { display:flex; flex-wrap:wrap; align-items:center; gap:6px 22px; padding:6px 0 8px; font-size:12px; } .kp-det-g { display:flex; align-items:center; gap:10px; } .kp-det-g label { display:flex; align-items:center; gap:4px; font-weight:400; white-space:nowrap; }
   .kp-det-alan input[type=number] { width:64px !important; } .kp-det-sonuc { font-size:12px; } .kp-sil { border:0; background:none; color:var(--bad); font-size:17px; line-height:1; cursor:pointer; padding:2px 4px; } .kp-pers.kapali { color:var(--ink-soft); text-decoration:line-through; }
-  .kp-sonuc tr.kp-alt td { font-size:11.5px; color:var(--ink-soft); padding-top:1px; padding-bottom:1px; } .kp-gider input[type=number] { max-width:130px; text-align:right; } .kp-gider td:first-child input { min-width:150px; width:100%; } .kp-gider select { max-width:150px; } .kp-gider td.kp-kdv input { max-width:58px; }
+  .kp-sonuc tr.kp-alt td { font-size:11.5px; color:var(--ink-soft); padding-top:1px; padding-bottom:1px; } .kp-gider input[type=number] { max-width:130px; text-align:right; } .kp-gider td:first-child input { min-width:150px; width:100%; } .kp-gider select { max-width:150px; } .kp-gider td.kp-kdv input { max-width:58px; } .kp-sonuc tr.kp-kdv-ac { cursor:pointer; } .kp-sonuc tr.kp-kdv-ac:hover td { background:var(--hover, rgba(0,0,0,.04)); } .kp-sonuc .kp-ok { display:inline-block; width:10px; color:var(--ink-soft); font-size:10px; } .kp-sonuc tr.kp-kdv-dok td:first-child { padding-left:34px; }
   .vg-ikili { display:flex; flex-wrap:wrap; gap:0 16px; align-items:flex-start; }
   /* r246: Virgo sayfa araç çubuğu, sekmeli ay ay tablolar, açılır Ayarlar */
   .vg-arac { display:flex; gap:6px; align-items:center; justify-content:flex-end; margin:-4px 0 8px; flex-wrap:wrap; }
@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-05-r291</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-05-r292</div>
   </nav>
   <main>
     <div class="topbar">
@@ -13592,7 +13592,7 @@ Dikkat edilmesi gereken 2 nokta:
   //   elektrik: { kwMakine (çalışan makine başı ortalama kW), kwGenel (kompresör, aydınlatma…), fiyat (₺ / kWh, KDV hariç) } }
   // Ayın makine saati = Σ (Tanımlar › Kapasite'deki günlük saat), resmî / dinî tatiller hariç. Adet = makine × (makine saati / 8) × vardiya adedi, satış sınırıyla.
   // Elektrik = (çalışan makine × kwMakine + kwGenel) × makine saati × fiyat. Personel: Tanımlar'daki personelin o ayki maliyeti (bordro kuralları, giriş / çıkış ayında kıst).
-  var KP_VARDIYA_SAAT = 8, kpAy = null, kpYazZaman = null;
+  var KP_VARDIYA_SAAT = 8, kpAy = null, kpYazZaman = null, kpKdvAcik = {}; // r292: KDV tablosunda açılan satırlar (hes / oran)
   // r218: 'stopaj' = şahıstan kira, net yazılır; gider brüt = net ÷ (1 − %20), stopaj vergi dairesine (GVK 94/5-a)
   var KP_STOPAJ = 0.20;
   var KP_GIDER_TUR = [['ay', 'Aylık sabit'], ['kisi', 'Kişi başı / ay'], ['makine', 'Makine başı / ay'], ['gece', 'Gece vardiyası varsa / ay'], ['stopaj', 'Şahıstan (stopajlı, net yazılır)']];
@@ -13688,6 +13688,9 @@ Dikkat edilmesi gereken 2 nokta:
     var satisKdv = Number((kvParam() || {}).kdvOrani); if (!(satisKdv >= 0) || (kvParam() || {}).kdvOrani == null) satisKdv = 20;
     var kdvOranlar = {}, kdvEkle = function(o, v){ if (o > 0 && v > 0.004) kdvOranlar[o] = (kdvOranlar[o] || 0) + v; };
     kdvEkle(KP_ELEKTRIK_KDV, elekTl * KP_ELEKTRIK_KDV / 100); gid.forEach(function(x){ kdvEkle(x.kdvOran, x.kdvTl); });
+    // r292: hangi kalemin KDV'si: oran oran kalem listesi (KDV tablosunda orana tıklanınca açılır)
+    var kdvKalem = []; if (elekTl > 0.004) kdvKalem.push({ ad: 'Elektrik', not: fmt(Math.round(kwh)) + ' kWh', oran: KP_ELEKTRIK_KDV, matrah: elekTl, kdv: elekTl * KP_ELEKTRIK_KDV / 100 });
+    gid.forEach(function(x){ if (x.tl > 0.004) kdvKalem.push({ ad: x.g.ad || 'Kalem', not: x.g.tur === 'stopaj' ? 'şahıstan kira, KDV yok' : x.g.tur === 'kisi' ? fmt(x.carpan) + ' kişi' : x.g.tur === 'makine' ? fmt2(x.carpan) + ' makine' : '', oran: x.kdvOran, matrah: x.tl, kdv: x.kdvTl }); });
     var kdvInd = Object.keys(kdvOranlar).reduce(function(a, o){ return a + kdvOranlar[o]; }, 0);
     // r257: bir kişinin kişi başı giderleri (yemek, servis…) — çalışmayan kişide bunlar da düşer, satırında gösterilir
     var kisiBasi = plan.giderler.reduce(function(a, g){ return a + (g.tur === 'kisi' ? Number(g.tutar) || 0 : 0); }, 0);
@@ -13699,19 +13702,25 @@ Dikkat edilmesi gereken 2 nokta:
     var faal = katki - giderTop, vOnce = faal - amortTl, kvOran = Number(muhAyar().kvOrani) || 25, vergi = Math.max(0, vOnce) * kvOran / 100, net = vOnce - vergi;
     var kurulus = (kvParam() || {}).kurulusTarihi || '';
     return { ay: ay, ks: ks, dz: dz, etkin: etkin, verim: verim, fireO: fireO, kur: kur, satir: satir, top: top, calisanMk: calisanMk, dzMk: dzMk, kisiBasi: kisiBasi, isGun: isGun, pers: pers, persHepsi: persHepsi, persTl: persTl, kwh: kwh, kwM: kwM, kwG: kwG, elekTl: elekTl, gid: gid, gidTl: gidTl, giderTop: giderTop,
-      satisKdv: satisKdv, kdvHes: top.ciroTl * satisKdv / 100, kdvOranlar: kdvOranlar, kdvInd: kdvInd, kdvOde: top.ciroTl * satisKdv / 100 - kdvInd,
+      satisKdv: satisKdv, kdvHes: top.ciroTl * satisKdv / 100, kdvOranlar: kdvOranlar, kdvKalem: kdvKalem, kdvInd: kdvInd, kdvOde: top.ciroTl * satisKdv / 100 - kdvInd,
       katki: katki, kalan: faal, amortTl: amortTl, amortMk: amortMk.length, vOnce: vOnce, kvOran: kvOran, vergi: vergi, net: net, nakit: net + amortTl, kurulus: kurulus, aktifMk: aktifMk };
   }
   // r291: KDV hesabı (kâra girmez): satışta hesaplanan KDV − giderlerde ödenen (indirilecek) KDV = ödenecek KDV; eksiyse sonraki aya devreden KDV
   function kpKdvHtml(h){
     var kur = h.kur, sat = function(ad, v, o){ o = o || {}; var b = o.kalin ? ['<b>', '</b>'] : ['', ''];
-      return '<tr class="' + (o.kalin ? 'kv-alt' : '') + (o.alt ? ' kp-alt' : '') + '"><td>' + b[0] + ad + b[1] + (o.not ? ' <span class="muted">' + o.not + '</span>' : '') + '</td><td class="num' + (o.cls ? ' ' + o.cls : '') + '">' + b[0] + virgoTl(v) + b[1] + '</td><td class="num">' + (kur ? virgoEur(v / kur) : '') + '</td></tr>'; };
+      return '<tr class="' + (o.kalin ? 'kv-alt' : '') + (o.alt ? ' kp-alt' : '') + (o.ac ? ' kp-kdv-ac' : '') + '"' + (o.ac ? ' data-kpkdv="' + o.ac + '" title="Tıklayın: hangi kalemin KDV\'si"' : '') + '><td>' + (o.ac ? '<span class="kp-ok">' + (kpKdvAcik[o.ac] ? '▾' : '▸') + '</span> ' : '') + b[0] + ad + b[1] + (o.not ? ' <span class="muted">' + o.not + '</span>' : '') + '</td><td class="num' + (o.cls ? ' ' + o.cls : '') + '">' + b[0] + virgoTl(v) + b[1] + '</td><td class="num">' + (kur ? virgoEur(v / kur) : '') + '</td></tr>'; };
+    var dok = function(ad, not, matrah, kdv){ return '<tr class="kp-alt kp-kdv-dok"><td>' + esc(ad) + (not ? ' <span class="muted">' + not + '</span>' : '') + ' <span class="muted">· matrah ₺' + muhTutar(matrah) + '</span></td><td class="num">' + virgoTl(kdv) + '</td><td class="num">' + (kur ? virgoEur(kdv / kur) : '') + '</td></tr>'; };
     var oranlar = Object.keys(h.kdvOranlar).map(Number).sort(function(a, b){ return b - a; }), devir = h.kdvOde < -0.004;
-    return '<h4 style="margin:14px 0 6px">KDV ' + infoIco('KDV kâr ya da gider değildir: satışta müşteriden alınır (hesaplanan KDV), giderlerin faturasında ödenen KDV bundan düşülür (indirilecek KDV), farkı KDV beyannamesiyle ertesi ay ödenir. Bu yüzden yukarıdaki giderler ve kâr KDV hariçtir. Gider kalemlerinin KDV oranı Aylık giderler tablosundaki KDV % sütunundan (boş: kalemin varsayılanı); elektrik %' + KP_ELEKTRIK_KDV + '. Personel, şahıstan (stopajlı) kira, sigorta ve banka masrafında KDV yoktur. İndirilecek KDV hesaplanandan fazlaysa ödeme çıkmaz, fark sonraki aya devreder. Satış KDV oranı Tanımlar\'dan.') + '</h4>' +
+    var urunDok = kpKdvAcik.hes ? h.satir.filter(function(x){ return x.ciroTl > 0.004; }).map(function(x){ return dok(x.u.ad || 'Ürün', fmt(x.adet) + ' adet', x.ciroTl, x.ciroTl * h.satisKdv / 100); }).join('') : '';
+    var kdvsiz = h.kdvKalem.filter(function(k){ return !(k.oran > 0); });
+    return '<h4 style="margin:14px 0 6px">KDV ' + infoIco('KDV kâr ya da gider değildir: satışta müşteriden alınır (hesaplanan KDV), giderlerin faturasında ödenen KDV bundan düşülür (indirilecek KDV), farkı KDV beyannamesiyle ertesi ay ödenir. Bu yüzden yukarıdaki giderler ve kâr KDV hariçtir. Satırlara tıklayınca hangi ürünün / gider kaleminin KDV\'si olduğu açılır. Gider kalemlerinin KDV oranı Aylık giderler tablosundaki KDV % sütunundan (boş: kalemin varsayılanı); elektrik %' + KP_ELEKTRIK_KDV + '. Personel, şahıstan (stopajlı) kira, sigorta ve banka masrafında KDV yoktur. İndirilecek KDV hesaplanandan fazlaysa ödeme çıkmaz, fark sonraki aya devreder. Satış KDV oranı Tanımlar\'dan.') + '</h4>' +
       '<table class="vg-tablo kp-sonuc"><thead><tr><th>' + esc(muhAyAdi(h.ay)) + '</th><th class="num">₺</th><th class="num">€ <span class="muted">(bugünkü kur)</span></th></tr></thead><tbody>' +
-      sat('Hesaplanan KDV', h.kdvHes, { not: 'ciro ₺' + muhTutar(h.top.ciroTl) + ' × %' + fmt2(h.satisKdv) }) +
+      sat('Hesaplanan KDV', h.kdvHes, { not: 'ciro ₺' + muhTutar(h.top.ciroTl) + ' × %' + fmt2(h.satisKdv), ac: 'hes' }) + urunDok +
       sat('− İndirilecek KDV', h.kdvInd, { not: 'giderlerin ve elektriğin KDV\'si' }) +
-      oranlar.map(function(o){ return sat('&nbsp;&nbsp;%' + fmt2(o) + ' KDV', h.kdvOranlar[o], { alt: 1, not: 'matrah ₺' + muhTutar(h.kdvOranlar[o] * 100 / o) }); }).join('') +
+      oranlar.map(function(o){ var k = 'o' + o;
+        return sat('&nbsp;&nbsp;%' + fmt2(o) + ' KDV', h.kdvOranlar[o], { alt: 1, ac: k, not: 'matrah ₺' + muhTutar(h.kdvOranlar[o] * 100 / o) }) +
+          (kpKdvAcik[k] ? h.kdvKalem.filter(function(x){ return x.oran === o; }).sort(function(a, b){ return b.kdv - a.kdv; }).map(function(x){ return dok(x.ad, x.not, x.matrah, x.kdv); }).join('') : ''); }).join('') +
+      (kdvsiz.length ? sat('&nbsp;&nbsp;KDV\'siz', 0, { alt: 1, ac: 'o0', not: kdvsiz.length + ' kalem' }) + (kpKdvAcik.o0 ? kdvsiz.map(function(x){ return dok(x.ad, x.not, x.matrah, 0); }).join('') : '') : '') +
       sat(devir ? '= Devreden KDV' : '= Ödenecek KDV', Math.abs(h.kdvOde), { kalin: 1, cls: devir ? 'pos' : '', not: devir ? 'ödeme yok, sonraki ayın KDV\'sinden düşülür' : 'ertesi ay KDV beyannamesiyle ödenir' }) +
       '</tbody></table>';
   }
@@ -13840,6 +13849,7 @@ Dikkat edilmesi gereken 2 nokta:
       var p = host.__plan;
       if (e.target.closest('[data-kpekle]')){ p.urunler.push({ id: 'u' + Date.now().toString(36), ad: '', pb: '₺', fiyat: '', makine: '', cevrimSn: '', boyAdet: '', m1Fazla: '', boyDk: '', boyDegis: '', ayarDk: '', ayarAy: '', sinir: '', degisken: '' }); host.__key = null; kpKaydet(p, true); return; }
       var dt = e.target.closest('[data-kpdet]'); if (dt){ host.__acik[dt.dataset.kpdet] = !host.__acik[dt.dataset.kpdet]; host.__key = null; EK_RENDER.kapasiteplan(); return; }
+      var kk = e.target.closest('[data-kpkdv]'); if (kk){ kpKdvAcik[kk.dataset.kpkdv] = !kpKdvAcik[kk.dataset.kpkdv]; kpHucreGuncelle(host, kpHesap(kpAy, host.__plan)); return; }
       if (e.target.closest('[data-kpbos]')){ host.__bosGoster = !host.__bosGoster; host.__key = null; EK_RENDER.kapasiteplan(); return; }
       if (e.target.closest('[data-kpgekle]')){ host.__bosGoster = true; p.giderler.push({ id: 'g' + Date.now().toString(36), ad: '', tur: 'ay', tutar: '' }); host.__key = null; kpKaydet(p, true); return; }
       var s = e.target.closest('[data-kpsil]'); if (s){ var id = s.dataset.kpsil, u = p.urunler.find(function(x){ return x.id === id; });
