@@ -1520,7 +1520,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-04-r284</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-05-r285</div>
   </nav>
   <main>
     <div class="topbar">
@@ -13664,7 +13664,13 @@ Dikkat edilmesi gereken 2 nokta:
     // r257: bir kişinin kişi başı giderleri (yemek, servis…) — çalışmayan kişide bunlar da düşer, satırında gösterilir
     var kisiBasi = plan.giderler.reduce(function(a, g){ return a + (g.tur === 'kisi' ? Number(g.tutar) || 0 : 0); }, 0);
     var ger = { adet: 0, eur: 0, tl: 0 }; virgoUretimKayitlari().forEach(function(v){ if (v.araOp) return; virgoUretimParcalar(v).forEach(function(pp){ if (pp.ay !== ay) return; ger.adet += (Number(v.adet) || 0) * pp.oran; ger.eur += (Number(v.tutar) || 0) * pp.oran; ger.tl += virgoUretimTl(v) * pp.oran; }); });
-    var gerGid = vgS(); virgoKayitlari().forEach(function(v){ if (String(v.tarih || '').slice(0, 7) !== ay) return; var n = virgoNorm(v); if (n.odendi && n.tip === 'harcama' && !n.yatirim) vgEkle(gerGid, n.m); });
+    // r285: gerçekleşen giderler Virgo Hesabı'ndaki ödenmiş harcamalardan, kategori kategori. Virgo adına faturada gider KDV hariç (KDV'yi Virgo indirir),
+    // bizim adımıza / fişsizde KDV indirilemediği için gidere girer. Yatırım (makine vb.) gider değil, ayrı gösterilir.
+    var gerGid = vgS(), gerKat = {}, gerKdv = { virgo: 0, biz: 0 }, gerYat = 0; // biz: bizim adımıza / fişsiz harcamaların ödenen tutarı (KDV dahil)
+    virgoKayitlari().forEach(function(v){ if (String(v.tarih || '').slice(0, 7) !== ay) return; var n = virgoNorm(v); if (!n.odendi || n.tip !== 'harcama') return;
+      if (n.fatura === 'virgo') gerKdv.virgo += n.kdv.tl; else gerKdv.biz += n.m.tl;
+      if (n.yatirim){ gerYat += n.m.tl; return; }
+      vgEkle(gerGid, n.m); var k = v.kategori || 'Kategorisiz'; gerKat[k] = (gerKat[k] || 0) + n.m.tl; });
     var aktifMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length;
     var katki = top.ciroTl - top.degTl, giderTop = persTl + elekTl + gidTl;
     // r219: amortisman (makine kartı alış bedeli € ÷ süre ay, bugünkü kurla) ve kurumlar vergisi (Muhasebe ayarındaki oran, kârsa)
@@ -13673,7 +13679,26 @@ Dikkat edilmesi gereken 2 nokta:
     var faal = katki - giderTop, vOnce = faal - amortTl, kvOran = Number(muhAyar().kvOrani) || 25, vergi = Math.max(0, vOnce) * kvOran / 100, net = vOnce - vergi;
     var kurulus = (kvParam() || {}).kurulusTarihi || '';
     return { ay: ay, ks: ks, dz: dz, etkin: etkin, verim: verim, fireO: fireO, kur: kur, satir: satir, top: top, calisanMk: calisanMk, dzMk: dzMk, kisiBasi: kisiBasi, isGun: isGun, pers: pers, persHepsi: persHepsi, persTl: persTl, kwh: kwh, kwM: kwM, kwG: kwG, elekTl: elekTl, gid: gid, gidTl: gidTl, giderTop: giderTop,
-      katki: katki, kalan: faal, amortTl: amortTl, amortMk: amortMk.length, vOnce: vOnce, kvOran: kvOran, vergi: vergi, net: net, nakit: net + amortTl, kurulus: kurulus, ger: ger, gerGid: gerGid, aktifMk: aktifMk };
+      katki: katki, kalan: faal, amortTl: amortTl, amortMk: amortMk.length, vOnce: vOnce, kvOran: kvOran, vergi: vergi, net: net, nakit: net + amortTl, kurulus: kurulus, ger: ger, gerGid: gerGid, gerKat: gerKat, gerKdv: gerKdv, gerYat: gerYat, aktifMk: aktifMk };
+  }
+  // r285: seçilen ayın gerçekleşeni — üretim karşılığı (Virgo fiyatıyla) eksi girilen faturalar (Virgo Hesabı, kategori kategori); yanında plan
+  function kpGercekHtml(h){
+    var kat = Object.keys(h.gerKat).filter(function(k){ return Math.abs(h.gerKat[k]) > 0.004; }).sort(function(a, b){ return h.gerKat[b] - h.gerKat[a]; });
+    if (!h.ger.tl && !kat.length && !h.gerYat) return '<div class="muted" style="font-size:11.5px;margin-top:8px">Bu ay için gerçekleşen yok: üretim girişi ya da Virgo Hesabı\'nda ödenmiş harcama bulunmuyor.</div>';
+    var gid = h.gerGid.tl, faal = h.ger.tl - gid, vOnce = faal - h.amortTl, vergi = Math.max(0, vOnce) * h.kvOran / 100, net = vOnce - vergi;
+    var sat = function(ad, v, plan, o){ o = o || {}; var b = o.kalin ? ['<b>', '</b>'] : ['', ''];
+      return '<tr class="' + (o.kalin ? 'kv-alt' : '') + (o.alt ? ' kp-alt' : '') + '"><td>' + b[0] + ad + b[1] + (o.not ? ' <span class="muted">' + o.not + '</span>' : '') + '</td><td class="num' + (o.cls ? ' ' + o.cls : '') + '">' + b[0] + virgoTl(v) + b[1] + '</td><td class="num muted">' + (plan == null ? '' : virgoTl(plan)) + '</td></tr>'; };
+    return '<h4 style="margin:14px 0 6px">Gerçekleşen ' + infoIco('Üretim karşılığı: bu ay girilen üretim × Virgo fiyat listesindeki birim fiyat. Giderler: Virgo Hesabı\'nda bu ay tarihli, ödenmiş harcamalar (kategoriye göre). Fatura Virgo adınaysa gider KDV hariç yazılır, KDV\'yi Virgo indirir; bizim adımıza / fişsiz harcamada KDV indirilemez, gidere eklenir. Makine, kuruluş, demirbaş yatırımdır: gider değil, amortismanla düşer. Plan sütunu yukarıdaki hesaptır.') + '</h4>' +
+      '<table class="vg-tablo kp-sonuc"><thead><tr><th>' + esc(muhAyAdi(h.ay)) + '</th><th class="num">Gerçekleşen ₺</th><th class="num">Plan ₺</th></tr></thead><tbody>' +
+      sat('Üretim karşılığı', h.ger.tl, h.top.ciroTl, { not: fmt(Math.round(h.ger.adet)) + ' adet, KDV hariç' }) +
+      kat.map(function(k){ return sat('− ' + esc(k), h.gerKat[k], null, { alt: 1 }); }).join('') +
+      sat('Toplam gider (faturalar)', gid, h.giderTop, { kalin: 1 }) +
+      sat('= Faaliyet kârı', faal, h.kalan, { kalin: 1, cls: faal < 0 ? 'neg' : '' }) +
+      sat('− Amortisman', h.amortTl, h.amortTl) +
+      sat('− Kurumlar vergisi %' + fmt2(h.kvOran), vergi, h.vergi, { not: vOnce < -0.004 ? 'zarar: vergi yok' : '' }) +
+      sat('= Net kâr', net, h.net, { kalin: 1, cls: net < 0 ? 'neg' : 'pos' }) +
+      '</tbody></table>' +
+      '<div class="muted" style="font-size:11.5px;margin-top:6px">Faturalardaki KDV: Virgo adına ₺' + muhTutar(h.gerKdv.virgo) + ' (Virgo indirir, kâra girmez)' + (h.gerKdv.biz > 0.004 ? ' · <span class="neg">bizim adımıza / fişsiz ₺' + muhTutar(h.gerKdv.biz) + ' (KDV\'si indirilemez, tamamı gider)</span>' : '') + (h.gerYat > 0.004 ? ' · yatırım ₺' + muhTutar(h.gerYat) + ' (gider değil)' : '') + '.</div>';
   }
   function kpSonucHtml(h){
     var kur = h.kur, gecmis = h.ay <= todayISO().slice(0, 7);
@@ -13701,8 +13726,7 @@ Dikkat edilmesi gereken 2 nokta:
       satir('− Kurumlar vergisi %' + fmt2(h.kvOran), h.vergi, { not: h.vOnce > 0 ? 'kârın %' + fmt2(h.kvOran) + '\'i · geçici vergiyle 3 ayda bir ödenir' : 'zarar: vergi yok', adetBasi: 1 }) +
       satir('= Net kâr', h.net, { kalin: 1, cls: h.net < 0 ? 'neg' : 'pos', adetBasi: 1, not: h.top.ciroTl ? 'cironun %' + fmt2(Math.round(h.net / h.top.ciroTl * 1000) / 10) + '\'i' : '' }) +
       satir('Kasaya kalan nakit', h.nakit, { not: 'net kâr + amortisman', cls: h.nakit < 0 ? 'neg' : '' }) +
-      (gecmis && (h.ger.eur || h.ger.tl || h.gerGid.tl) ? '<tr><td class="muted kp-cok" colspan="4" style="font-size:11.5px">Gerçekleşen (Virgo): üretim karşılığı ₺' + muhTutar(h.ger.tl) + ' / €' + muhTutar(h.ger.eur) + ' · işletme harcamaları ₺' + muhTutar(h.gerGid.tl) + ' / €' + muhTutar(h.gerGid.eur) + '</td></tr>' : '') +
-      '</tbody></table>' +
+      '</tbody></table>' + (gecmis ? kpGercekHtml(h) : '') +
       '<div class="muted" style="font-size:11.5px;margin-top:6px">' + (bos ? bos + ' gider kalemine tutar yazılmadı (aşağıdaki Aylık giderler). ' : '') + '€ fiyatlı ürünler ve € makine bedelleri ₺\'ye bugünkü kurla (1 € = ₺' + kurYazi(kur) + ') çevrilir. Makine alımı (yatırım) gider değil, amortismanla girer. Kurumlar vergisi oranı Muhasebe ayarlarından.' +
       (h.kurulus && h.ay < h.kurulus.slice(0, 7) ? ' <b>Şirket kuruluşundan (' + esc(kvTarihTR(h.kurulus)) + ') önceki ay:</b> bu dönemde iş Virgo\'da, vergi Virgo\'nun beyannamesinde; burada şirket kurulmuş gibi gösterilir.' : '') + '</div>';
   }
