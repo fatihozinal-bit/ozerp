@@ -1537,7 +1537,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r301</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r302</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2451,7 +2451,13 @@ Dikkat edilmesi gereken 2 nokta:
         para = function(){ return sel ? sel.value : 'EUR'; };
         if (sel) sel.addEventListener('change', function(){ if (inp._kurUpd) inp._kurUpd(); });
       }
-      wireKurHint(inp, fieldsEl.querySelector('[data-ffhint="'+i+'"]'), para);
+      var kurFn = null;
+      if (f.kurTarih){ // r302: kur o alandaki tarihin kuru (ör. makinenin alış tarihi); boşsa güncel kur
+        var tIdx = opts.fields.findIndex(function(x){ return x.key === f.kurTarih; }), tInp = fieldsEl.querySelector('[data-ffkey="'+tIdx+'"]');
+        kurFn = function(){ var d = tInp && tInp.value, k = d ? muhKur(d) : 0; return k > 0 ? { kur: k, ad: kvTarihTR(d)+' kuruyla' } : null; };
+        if (tInp) tInp.addEventListener('change', function(){ if (inp._kurUpd) inp._kurUpd(); });
+      }
+      wireKurHint(inp, fieldsEl.querySelector('[data-ffhint="'+i+'"]'), para, kurFn);
     });
     function topla(){
       var out = {};
@@ -3778,22 +3784,24 @@ Dikkat edilmesi gereken 2 nokta:
   // Para kutusu ⇄ kur eşi: para 'EUR' ise kutu € tutarıdır, altındaki ₺ kutusu; 'TRY' ise kutu ₺ tutarıdır,
   // altındaki € kutusu. Hangisine yazılırsa öteki güncel kurla hesaplanır; kaydedilen her zaman ana kutudur.
   // para bir fonksiyon da olabilir (formdaki para birimi seçimine göre); USD vb. için eş gizlenir.
-  function wireKurHint(inputEl, hintEl, para){
+  function wireKurHint(inputEl, hintEl, para, kurFn){
     if (!inputEl || !hintEl) return;
     var paraAl = typeof para === 'function' ? para : function(){ return para || 'EUR'; };
-    function kurAl(){ return state.config ? Number(state.config.eurTryKuru)||0 : 0; }
+    function kurAl(){ var o = kurFn && kurFn(); if (o) return o.kur; return state.config ? Number(state.config.eurTryKuru)||0 : 0; }
+    function kurAd(){ var o = kurFn && kurFn(); return o ? o.ad : 'güncel kurla'; }
     if (!hintEl.dataset.tlWired){
       hintEl.dataset.tlWired = '1';
-      hintEl.innerHTML = '<span class="kur-tl-wrap"><span class="kur-isaret"></span><input type="number" step="any" class="kur-tl"></span>';
+      hintEl.innerHTML = '<span class="kur-tl-wrap"><span class="kur-isaret"></span><input type="number" step="any" class="kur-tl"></span>' + (kurFn ? ' <span class="kur-not muted" style="font-size:11px"></span>' : '');
     }
-    var tlEl = hintEl.querySelector('.kur-tl'), isaretEl = hintEl.querySelector('.kur-isaret');
+    var tlEl = hintEl.querySelector('.kur-tl'), isaretEl = hintEl.querySelector('.kur-isaret'), notEl = hintEl.querySelector('.kur-not');
     function upd(){
       var kur = kurAl(), p = paraAl(), ok = kur > 0 && (p === 'EUR' || p === 'TRY');
       hintEl.classList.toggle('empty', !ok);
       if (!ok) return;
       isaretEl.textContent = p === 'EUR' ? '≈ ₺' : '≈ €';
       tlEl.placeholder = p === 'EUR' ? '₺ yazın' : '€ yazın';
-      tlEl.title = (p === 'EUR' ? '₺' : '€')+' yazarsanız '+(p === 'EUR' ? '€' : '₺')+' karşılığı güncel kurla (1 € = ₺'+fmt2(kur)+') hesaplanır';
+      tlEl.title = (p === 'EUR' ? '₺' : '€')+' yazarsanız '+(p === 'EUR' ? '€' : '₺')+' karşılığı '+kurAd()+' (1 € = ₺'+fmt2(kur)+') hesaplanır';
+      if (notEl) notEl.textContent = '1 € = ₺'+kurYazi(kur)+' · '+kurAd();
       if (document.activeElement === tlEl) return;
       var v = Number(inputEl.value)||0;
       tlEl.value = v ? Math.round((p === 'EUR' ? v*kur : v/kur)*100)/100 : '';
@@ -4469,7 +4477,10 @@ Dikkat edilmesi gereken 2 nokta:
 
     renderSimpleList('makineListe', state.makineler, 'makineler', { kartBaslik: 'Makine kartı',
       emptyText: 'Makine eklenmedi',
-      rowFn: function(m){ var u = makineSaatUcreti(m); return { title: esc(m.ad)+' '+makineDurumBadge(m), sub: [m.marka, m.model, m.modelYili, m.seriNo?'SN '+m.seriNo:''].filter(Boolean).map(esc).join(' · ')+' · Aylık kapasite: '+sureStrOlustur(tekMakineAylikSaat()*60)+' · <b>€'+fmt2(u.toplam)+'/saat</b>'+(u.kart ? '' : ' <span class="muted">(öneri)</span>')+' '+infoIco((u.kart ? 'Saat ücreti kartta yazılı.\n' : 'Kartta saat ücreti yok; öneri kullanılıyor (Düzenle › Saat ücreti).\n')+'Öneri €'+fmt2(u.oneri)+'/sa = amortisman €'+fmt2(u.amortisman)+' + genel gider €'+fmt2(u.genel)+' ('+u.genelKaynak+')') }; },
+      rowFn: function(m){ var u = makineSaatUcreti(m); return { title: esc(m.ad)+' '+makineDurumBadge(m), sub: [m.marka, m.model, m.modelYili, m.seriNo?'SN '+m.seriNo:''].filter(Boolean).map(esc).join(' · ')+' · Aylık kapasite: '+sureStrOlustur(tekMakineAylikSaat()*60)+(makineAlisTl(m) ? ' · alış ₺'+fmt(makineAlisTl(m))+' <span class="muted">(≈ €'+fmt(makineAlisEur(m))+(m.alisTarihi ? ', '+esc(kvTarihTR(m.alisTarihi))+' kuruyla' : ', güncel kurla')+')</span>' : '')+' · <b>€'+fmt2(u.toplam)+'/saat</b>'+(u.kart ? '' : ' <span class="muted">(öneri)</span>')+' '+infoIco((u.kart ? 'Saat ücreti kartta yazılı.\n' : 'Kartta saat ücreti yok; öneri kullanılıyor (Düzenle › Saat ücreti).\n')+'Öneri €'+fmt2(u.oneri)+'/sa = amortisman €'+fmt2(u.amortisman)+' + genel gider €'+fmt2(u.genel)+' ('+u.genelKaynak+')') }; },
+      // r302: eski € alış bedeli düzenlenirken ₺'ye çevrilmiş gelir; kaydedince ₺ yazılır, eski € alanı sıfırlanır
+      degerler: function(m){ return Object.assign({}, m, { alisBedeliTl: makineAlisTl(m) || '' }); },
+      onSaveTransform: function(v){ v.alisBedeli = 0; },
       fields: MAKINE_FIELDS,
       editTitle: 'Makineyi düzenle',
       deleteMsg: 'Bu makineyi silmek istediğinize emin misiniz?',
@@ -7195,7 +7206,7 @@ Dikkat edilmesi gereken 2 nokta:
     openNewRecordForm('personel', 'Yeni personel', PERSONEL_FIELDS, {ad:'', rol:'Operatör', netMaasTL:0, isverenMaliyetTL:0, vardiya:'1. Vardiya', iseGiris: todayISO()}, 'Personel eklendi');
   });
   document.getElementById('mEkleBtn').addEventListener('click', function(){
-    openNewRecordForm('makineler', 'Yeni makine', MAKINE_FIELDS, {ad:'', model:'', durum:'Çalışıyor', saatUcreti:'', amortismanAy:60, alisBedeli:0}, 'Makine eklendi');
+    openNewRecordForm('makineler', 'Yeni makine', MAKINE_FIELDS, {ad:'', model:'', durum:'Çalışıyor', saatUcreti:'', amortismanAy:60, alisBedeliTl:0}, 'Makine eklendi');
   });
   document.getElementById('urBirlestirBtn').addEventListener('click', function(){ urunleriStokaBirlestir(); });
   document.getElementById('urEkleBtn').addEventListener('click', function(){
@@ -9353,10 +9364,14 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'durum', label:'Durum', type:'select', options:['Çalışıyor','Bekliyor','Arızalı','Bakımda','Pasif'], hint:'Bekliyor: sağlam ama şu an iş verilmiyor (yedek)'},
     {type:'section', label:'Maliyet'},
     {key:'saatUcreti', label:'Saat ücreti (€/sa)', type:'number', hint:'Teklif ve ürün maliyeti bu ücretle hesaplanır (IFS / Canias\'taki iş merkezi saat ücreti). Boş: amortisman + genel gider önerisi.'},
-    {key:'alisBedeli', label:'Alış bedeli (€)', type:'number', hint:'Amortisman payı için'},
+    {key:'alisBedeliTl', label:'Alış bedeli (₺)', type:'number', kurTarih:'alisTarihi', hint:'Faturadaki ₺ tutar (KDV hariç). Altında alış tarihindeki kurla € karşılığı görünür (tarih boşsa güncel kur). Amortisman payı ve sabit kıymet için.'},
     {key:'alisTarihi', label:'Alış tarihi', type:'date'},
     {key:'amortismanAy', label:'Amortisman süresi (ay)', type:'number'}
   ];
+  // r302: alış bedeli ₺ saklanır (alisBedeliTl); eski kayıtlarda € (alisBedeli) alış tarihinin kuruyla ₺'ye çevrilir
+  function makineAlisKur(m){ var t = m && m.alisTarihi, k = t ? muhKur(t) : 0; return k > 0 ? k : Number((state.config || {}).eurTryKuru) || 0; }
+  function makineAlisTl(m){ var t = Number(m && m.alisBedeliTl) || 0; if (t > 0) return t; var e = Number(m && m.alisBedeli) || 0; return e > 0 ? muhR2(e * makineAlisKur(m)) : 0; }
+  function makineAlisEur(m){ var t = Number(m && m.alisBedeliTl) || 0; if (t > 0){ var k = makineAlisKur(m); return k ? t / k : 0; } return Number(m && m.alisBedeli) || 0; }
   function makineDurumBadge(m){
     var d = m.durum || 'Çalışıyor';
     var acikDurus = (state.duruslar||[]).some(function(x){ return x.makineId === m.id && !x.bitis && x.baslangic; });
@@ -9366,7 +9381,7 @@ Dikkat edilmesi gereken 2 nokta:
   // Makine saat ücreti (€/sa, IFS / Canias'taki iş merkezi standart ücreti): kartta yazan ücret geçerlidir; gider girildikçe kendiliğinden kaymaz.
   // Kartta yoksa öneri = amortisman (alış bedeli ÷ süre ÷ aylık saat) + genel gider payı (son 3 ayın belgeli genel gideri ÷ aylık makine-saat).
   function makineSaatUcreti(m){
-    var aylikSaat = tekMakineAylikSaat() || 1, bedel = Number(m.alisBedeli) || 0;
+    var aylikSaat = tekMakineAylikSaat() || 1, bedel = makineAlisEur(m);
     var amort = (Number(m.amortismanAy)||0) > 0 ? bedel / Number(m.amortismanAy) / aylikSaat : 0;
     var on = genelGiderOnerisi(), oneri = amort + on.saat, kart = Number(m.saatUcreti) || 0;
     return { toplam: kart > 0 ? kart : oneri, kart: kart > 0, oneri: oneri, amortisman: amort, genel: on.saat, genelKaynak: on.kaynak };
@@ -14113,8 +14128,8 @@ Dikkat edilmesi gereken 2 nokta:
     var aktifMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length;
     var katki = top.ciroTl - top.degTl, giderTop = persTl + elekTl + gidTl;
     // r219: amortisman (makine kartı alış bedeli € ÷ süre ay, bugünkü kurla) ve kurumlar vergisi (Muhasebe ayarındaki oran, kârsa)
-    var amortMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif' && Number(m.alisBedeli) > 0 && Number(m.amortismanAy) > 0; });
-    var amortTl = amortMk.reduce(function(a, m){ return a + Number(m.alisBedeli) / Number(m.amortismanAy) * kur; }, 0);
+    var amortMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif' && makineAlisTl(m) > 0 && Number(m.amortismanAy) > 0; });
+    var amortTl = amortMk.reduce(function(a, m){ return a + makineAlisTl(m) / Number(m.amortismanAy); }, 0);
     var faal = katki - giderTop, vOnce = faal - amortTl, kvOran = Number(muhAyar().kvOrani) || 25, vergi = Math.max(0, vOnce) * kvOran / 100, net = vOnce - vergi;
     var kurulus = (kvParam() || {}).kurulusTarihi || '';
     return { ay: ay, ks: ks, dz: dz, etkin: etkin, verim: verim, fireO: fireO, kur: kur, satir: satir, top: top, calisanMk: calisanMk, dzMk: dzMk, kisiBasi: kisiBasi, isGun: isGun, pers: pers, persHepsi: persHepsi, persTl: persTl, kwh: kwh, kwM: kwM, kwG: kwG, elekTl: elekTl, gid: gid, gidTl: gidTl, giderTop: giderTop,
@@ -16052,7 +16067,7 @@ Dikkat edilmesi gereken 2 nokta:
     stok: { ad:'Stok kartları', col:'stok', kod:'stok', alanlar: ['kod','ad','tip','birim','miktar','kritikSeviye','maliyet','uretimSuresiDk','fasonUcretTl','fasonUcret','birimFiyat','malzemeCinsi','olcu','resimNo'], zorunlu:['ad'], sayi:['miktar','kritikSeviye','maliyet','uretimSuresiDk','fasonUcret','birimFiyat'], varsayilan: {tip:'Mamul', birim:'adet', karMarji:30} },
     musteriler: { ad:'Cari kartlar', col:'musteriler', kod:'musteri', alanlar: ['kod','ad','cariTipi','yetkili','telefon','eposta','adres','sehir','vergiDairesi','vergiNo','iban','odemeVadesiGun'], zorunlu:['ad'], sayi:['odemeVadesiGun'], varsayilan: {cariTipi:'Müşteri', aktif:'Aktif'} },
     personel: { ad:'Personel', col:'personel', alanlar: ['ad','rol','telefon','iseGiris','netMaasTL','isverenMaliyetTL','beceriler'], zorunlu:['ad'], sayi:['netMaasTL','isverenMaliyetTL'], varsayilan: {} },
-    makineler: { ad:'Makineler', col:'makineler', alanlar: ['ad','marka','model','modelYili','seriNo','alisBedeli','amortismanAy','gucKw'], zorunlu:['ad'], sayi:['alisBedeli','amortismanAy','gucKw'], varsayilan: {durum:'Çalışıyor'} }
+    makineler: { ad:'Makineler', col:'makineler', alanlar: ['ad','marka','model','modelYili','seriNo','alisBedeliTl','amortismanAy','gucKw'], zorunlu:['ad'], sayi:['alisBedeliTl','amortismanAy','gucKw'], varsayilan: {durum:'Çalışıyor'} }
   };
   var ETIKET_ESLE = { 'stok kodu':'kod', 'kod':'kod', 'ad':'ad', 'adı':'ad', 'ürün':'ad', 'ürün adı':'ad', 'firma':'ad', 'unvan':'ad', 'ünvan':'ad', 'tip':'tip', 'birim':'birim', 'miktar':'miktar', 'stok':'miktar', 'kritik':'kritikSeviye', 'kritik seviye':'kritikSeviye',
     'maliyet':'maliyet', 'satış fiyatı':'birimFiyat', 'fiyat':'birimFiyat', 'vergi no':'vergiNo', 'vkn':'vergiNo', 'vergi dairesi':'vergiDairesi', 'telefon':'telefon', 'e-posta':'eposta', 'eposta':'eposta', 'adres':'adres', 'şehir':'sehir', 'iban':'iban', 'vade':'odemeVadesiGun', 'yetkili':'yetkili', 'maaş':'netMaasTL', 'net maaş':'netMaasTL', 'işveren maliyeti':'isverenMaliyetTL', 'rol':'rol', 'marka':'marka', 'model':'model', 'seri no':'seriNo' };
@@ -18840,12 +18855,12 @@ Dikkat edilmesi gereken 2 nokta:
   function muhMakinelerdenAktar(){
     if (!muhYazmaYetkisi()) return;
     var var_ = {}; muhSabitKiymetler().forEach(function(k){ if (k.makineId) var_[k.makineId] = 1; });
-    var aday = state.makineler.filter(function(m){ return !var_[m.id] && Number(m.alisBedeli) > 0; });
+    var aday = state.makineler.filter(function(m){ return !var_[m.id] && makineAlisTl(m) > 0; });
     if (!aday.length){ toast('Aktarılacak makine yok (alış bedeli girilmiş ve henüz kartı açılmamış makine).', true); return; }
-    onayIste(aday.length + ' makine sabit kıymet olarak açılsın mı? (' + aday.map(function(m){ return m.ad; }).join(', ') + ') Bedel: alış bedeli (€) × alış tarihindeki kur; ömür: makinedeki amortisman süresi. Sonra kartlardan düzeltebilirsiniz.', 'Aktar', function(){
+    onayIste(aday.length + ' makine sabit kıymet olarak açılsın mı? (' + aday.map(function(m){ return m.ad; }).join(', ') + ') Bedel: alış bedeli (₺); ömür: makinedeki amortisman süresi. Sonra kartlardan düzeltebilirsiniz.', 'Aktar', function(){
       Promise.all(aday.map(function(m){
         var t = m.alisTarihi || todayISO();
-        return kayitEkle('tanimKayitlari', { tur: 'sabitKiymet', ad: m.ad + (m.marka ? ' (' + m.marka + ' ' + (m.model || '') + ')' : ''), hesap: '253', alisTarihi: t, bedel: muhR2((Number(m.alisBedeli) || 0) * muhKur(t)), omurYil: Math.max(1, Math.round((Number(m.amortismanAy) || 120) / 12)), yontem: 'Normal', giderHesap: '730', makineId: m.id, satisTarihi: '', not_: 'Makineden aktarıldı' });
+        return kayitEkle('tanimKayitlari', { tur: 'sabitKiymet', ad: m.ad + (m.marka ? ' (' + m.marka + ' ' + (m.model || '') + ')' : ''), hesap: '253', alisTarihi: t, bedel: makineAlisTl(m), omurYil: Math.max(1, Math.round((Number(m.amortismanAy) || 120) / 12)), yontem: 'Normal', giderHesap: '730', makineId: m.id, satisTarihi: '', not_: 'Makineden aktarıldı' });
       })).then(function(){ toast('✓ ' + aday.length + ' sabit kıymet kartı açıldı'); });
     });
   }
