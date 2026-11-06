@@ -169,7 +169,25 @@
   .ozet-dol { display: flex; align-items: center; gap: 6px; min-width: 110px; }
   .ozet-dol .makine-bar-track { height: 10px; }
   .ozet-dol span { font-size: 11px; color: var(--ink-soft); min-width: 34px; text-align: right; }
-  #ozetTrendGrafik svg { max-width: 100% !important; max-height: 130px; }
+  #ozetTrendGrafik svg { max-width: 100% !important; max-height: 150px; }
+  /* r304: üstte dönem şeridi (bugün, dün, bu hafta, geçen hafta, bu ay, geçen ay) ve günlük / haftalık ürün bazlı trend */
+  .ozet-serit { margin-bottom: 10px; }
+  .ozet-serit .block-body { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; padding: 0; }
+  .ozet-serit .os-h { padding: 7px 12px; border-left: 1px solid var(--line); min-width: 0; }
+  .ozet-serit .os-h:first-child { border-left: none; }
+  .ozet-serit .os-l { font-size: 11px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ozet-serit .os-v { font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .ozet-serit .os-s { font-size: 11px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ozet-serit .os-h.bos .os-v { color: var(--ink-soft); font-weight: 400; }
+  @media (max-width: 980px) { .ozet-serit .block-body { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ozet-serit .os-h:nth-child(4) { border-left: none; } .ozet-serit .os-h:nth-child(n+4) { border-top: 1px solid var(--line); } }
+  @media (max-width: 520px) { .ozet-serit .block-body { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ozet-serit .os-h:nth-child(odd) { border-left: none; } .ozet-serit .os-h:nth-child(4) { border-left: 1px solid var(--line); } .ozet-serit .os-h:nth-child(n+3) { border-top: 1px solid var(--line); } }
+  .ozet-trend-svg { width: 100%; height: auto; display: block; }
+  #ozetTrend2Grafik svg { max-width: 100% !important; max-height: 170px; }
+  .oz-lejant { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+  .oz-lejant i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .oz-sekme { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .oz-sekme button { border: none; background: none; padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--ink-soft); font-family: inherit; }
+  .oz-sekme button.aktif { background: var(--steel); color: #fff; }
   .ozet-izgara td.num, .ozet-izgara th.num { white-space: nowrap; }
   @media (min-width: 981px) { .cards.ozet-kpi { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); } }
   @media (max-width: 980px) { .ozet-izgara { grid-template-columns: minmax(0, 1fr); } }
@@ -1537,7 +1555,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r303</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r304</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1555,6 +1573,7 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center"><span class="muted" id="ozetDuzenNot" style="font-size:12px"></span><button type="button" class="btn secondary small" id="ozetDuzenBtn" title="Bölümleri sırala, istemediğin kutuları gizle">⚙ Özeti düzenle</button></div>
       </div>
+      <div class="block ozet-serit" id="ozetDonemSerit"><div class="block-body" id="ozetDonemSeritIc"></div></div>
       <div class="cards ozet-kpi" id="ozetCards"></div>
       <!-- r244: tek ekran — solda makineler + ürün katkısı, sağda uyarılar + trend + darboğaz -->
       <div class="ozet-izgara" id="ozetIzgara">
@@ -1577,8 +1596,13 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
         <div class="ozet-kol">
           <div id="ozetEkUst"></div>
           <div class="block">
-            <div class="block-head"><h3>Aylık üretim (son 6 ay)</h3></div>
+            <div class="block-head"><h3>Aylık üretim (son 6 ay) <span class="info-ico" tabindex="0">!<span class="info-bubble">Son operasyon (mamul) adetleri ürün ürün üst üste. Çubuğun üzerine gelince ürün kırılımı ve ₺ karşılığı görünür. Birkaç günü kapsayan kayıt günlere eşit bölünür.</span></span></h3></div>
             <div class="block-body" id="ozetTrendGrafik"></div>
+          </div>
+          <div class="block">
+            <div class="block-head"><h3>Günlük / haftalık üretim <span class="info-ico" tabindex="0">!<span class="info-bubble">Günlük: son 14 gün; haftalık: son 8 hafta (pazartesi başlar). Adetler ürün ürün üst üste; çubuğun üzerine gelince ürün kırılımı ve ₺ karşılığı. Hafta sonu ve tatil günleri soluk. Birkaç günü kapsayan kayıt (bitiş günü seçilmiş) günlere eşit bölünür.</span></span></h3>
+              <div class="bh-actions"><span class="oz-sekme" id="ozetTrend2Sekme"><button type="button" data-oztrend="gun">Günlük</button><button type="button" data-oztrend="hafta">Haftalık</button></span></div></div>
+            <div class="block-body" id="ozetTrend2Grafik"></div>
           </div>
         </div>
       </div>
@@ -4120,30 +4144,112 @@ Dikkat edilmesi gereken 2 nokta:
           oeeHucre + '</tr>';
       }).join('') + '</tbody></table>';
   }
+  // r304: günlük / haftalık / aylık üretim ürün ürün (son operasyon kayıtları). Bitiş günü olan kayıt günlere eşit bölünür
+  // (tumUretimKayitlari aylara zaten bölüyor; burada o ayın parçası o ayın günlerine). ₺ karşılığı ürünün Özet fiyatıyla (adet × fiyat).
+  function ozetGunPaylari(k){
+    var bas = k.tarih || ''; if (!/^\d{4}-\d{2}-\d{2}$/.test(bas)) return [];
+    var bit = k.bitisTarih && k.bitisTarih > bas ? k.bitisTarih : bas, ayS = bas.slice(0, 7) + '-' + String(new Date(Number(bas.slice(0, 4)), Number(bas.slice(5, 7)), 0).getDate()).padStart(2, '0');
+    if (bit > ayS) bit = ayS;
+    var l = [], g = bas, guv = 0; while (g <= bit && guv++ < 40){ l.push(g); g = tarihEkle(g, 1); }
+    return l.map(function(x){ return { gun: x, oran: 1 / l.length }; });
+  }
+  function ozetHaftaBasi(g){ var w = (new Date(g + 'T12:00:00').getDay() + 6) % 7; return tarihEkle(g, -w); }
+  // Kayıt başına adet fiyatı ₺ (Özet'in ürün bazında karşılığıyla aynı kaynak)
+  function ozetKayitFiyatTl(k, onbellek){
+    var anahtar = k.virgo ? 'v:' + k.virgoId : 'u:' + k.urunId; if (onbellek.hasOwnProperty(anahtar)) return onbellek[anahtar];
+    var f = 0;
+    if (k.virgo){ var o = virgoHamUretim().find(function(x){ return x.id === k.virgoId; }); f = o && Number(o.adet) > 0 ? virgoUretimTl(o) / Number(o.adet) : 0; }
+    else { var u = urunBul(k.urunId); f = u ? ozetUrunFiyat(u).fiyat : 0; }
+    return (onbellek[anahtar] = f);
+  }
+  // Kova kova toplam: anahtarFn(gün) → kova anahtarı; dönüş { anahtar: { adet, tl, urun: { ad: adet } } }
+  function ozetUretimKovala(anahtarFn, basGun, bitGun){
+    var out = {}, fb = {};
+    tumUretimKayitlari().forEach(function(k){
+      if (!sonOperasyonKaydiMi(k)) return; var adet = Number(k.adet) || 0; if (!adet) return;
+      var ad = uretimUrunAdi(k).replace(/^\S+ · /, ''), fiyat = ozetKayitFiyatTl(k, fb);
+      ozetGunPaylari(k).forEach(function(p){
+        if ((basGun && p.gun < basGun) || (bitGun && p.gun > bitGun)) return;
+        var a = anahtarFn(p.gun), o = out[a] || (out[a] = { adet: 0, tl: 0, urun: {} }), v = adet * p.oran;
+        o.adet += v; o.tl += v * fiyat; o.urun[ad] = (o.urun[ad] || 0) + v;
+      });
+    });
+    return out;
+  }
+  var OZ_RENK = ['#3E566E', '#E08A3C', '#4A90C8', '#5FA05A', '#9B6BC2', '#C25B56', '#8A8F96'];
+  // Üst üste çubuk grafik: kovalar [{ etiket, alt, veri: { adet, tl, urun }, soluk }]; ürünler en çok üretilenden, ilk 6 + Diğer
+  function ozetYiginSvg(kovalar, baslik){
+    var topU = {}; kovalar.forEach(function(k){ var u = (k.veri || {}).urun || {}; Object.keys(u).forEach(function(ad){ topU[ad] = (topU[ad] || 0) + u[ad]; }); });
+    var adlar = Object.keys(topU).filter(function(a){ return topU[a] > 0.0001; }).sort(function(a, b){ return topU[b] - topU[a]; });
+    var ana = adlar.slice(0, 6), digerVar = adlar.length > 6, seri = ana.concat(digerVar ? ['Diğer'] : []);
+    var renk = function(i){ return OZ_RENK[i % OZ_RENK.length]; };
+    var W = 480, H = 150, padL = 6, padB = 20, n = kovalar.length, adim = (W - padL - 6) / n, barW = Math.max(2, adim * (n > 10 ? 0.72 : 0.62));
+    var tops = kovalar.map(function(k){ return (k.veri || {}).adet || 0; }), maxV = Math.max.apply(null, tops.concat([1])), kur = ozetKur();
+    var fnt = ' font-family="IBM Plex Sans, system-ui, sans-serif"';
+    var g = kovalar.map(function(k, i){
+      var v = k.veri || { adet: 0, tl: 0, urun: {} }, x = padL + i * adim + (adim - barW) / 2, yAlt = H - padB, hTop = (H - padB - 22) * (v.adet / maxV), y = yAlt;
+      var parca = seri.map(function(ad, si){ var a = ad === 'Diğer' ? adlar.slice(6).reduce(function(t, x2){ return t + (v.urun[x2] || 0); }, 0) : (v.urun[ad] || 0); return { ad: ad, a: a, renk: renk(si) }; }).filter(function(p){ return p.a > 0.0001; });
+      var rects = parca.map(function(p){ var h = v.adet ? hTop * p.a / v.adet : 0; y -= h; return '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(0, h).toFixed(1) + '" fill="' + p.renk + '"' + (k.soluk ? ' opacity="0.55"' : '') + '></rect>'; }).join('');
+      var ipucu = k.uzun + ': ' + fmt(Math.round(v.adet)) + ' adet' + (parca.length ? '\n' + parca.map(function(p){ return p.ad + ': ' + fmt(Math.round(p.a)); }).join('\n') : '') + (v.tl > 0.5 && !document.body.classList.contains('maliyet-gizli') ? '\nKarşılık ₺' + fmt(v.tl) + (kur ? ' (≈ €' + fmt(v.tl / kur) + ')' : '') : '');
+      var yaziX = (x + barW / 2).toFixed(1), kucuk = n > 10 ? 9 : 10;
+      return '<g><title>' + esc(ipucu) + '</title><rect x="' + (padL + i * adim).toFixed(1) + '" y="0" width="' + adim.toFixed(1) + '" height="' + H + '" fill="transparent"></rect>' + rects +
+        '<text x="' + yaziX + '" y="' + (H - 6) + '" font-size="' + kucuk + '" text-anchor="middle"' + fnt + ' fill="var(--ink-soft)"' + (k.soluk ? ' opacity="0.6"' : '') + '>' + esc(k.etiket) + '</text>' +
+        (v.adet >= 0.5 ? '<text x="' + yaziX + '" y="' + (yAlt - hTop - 4).toFixed(1) + '" font-size="' + kucuk + '" text-anchor="middle"' + fnt + ' fill="var(--ink)">' + fmt(Math.round(v.adet)) + '</text>' : '') + '</g>';
+    }).join('');
+    var lej = seri.length > 1 ? '<div class="oz-lejant">' + seri.map(function(ad, si){ return '<span><i style="background:' + renk(si) + '"></i>' + esc(ad) + '</span>'; }).join('') + '</div>' : '';
+    var topAdet = tops.reduce(function(a, b){ return a + b; }, 0), topTl = kovalar.reduce(function(a, k){ return a + ((k.veri || {}).tl || 0); }, 0);
+    var alt = '<div class="muted" style="font-size:11px;margin-top:3px">' + esc(baslik) + ': <b>' + fmt(Math.round(topAdet)) + ' adet</b>' + (topTl > 0.5 ? '<span class="yetki-maliyet"> · ₺' + fmt(topTl) + '</span>' : '') + ' · ortalama ' + fmt(Math.round(topAdet / Math.max(1, kovalar.filter(function(k){ return !k.soluk || ((k.veri || {}).adet || 0) > 0; }).length))) + ' adet</div>';
+    return '<svg class="ozet-trend-svg" viewBox="0 0 ' + W + ' ' + H + '">' + g + '</svg>' + lej + alt;
+  }
+  var OZ_GUN_KISA = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'];
   function renderOzetTrendGrafik(){
     var wrap = document.getElementById('ozetTrendGrafik');
-    if (!wrap) return;
-    var ayEtiketleri = [], ayToplam = [];
-    var d0 = new Date();
-    for (var i=5; i>=0; i--){
-      var d = new Date(d0.getFullYear(), d0.getMonth()-i, 1);
-      var key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-      ayEtiketleri.push(d.toLocaleDateString('tr-TR',{month:'short'}));
-      ayToplam.push(tumUretimKayitlari().filter(function(k){ return (k.tarih||'').slice(0,7) === key && sonOperasyonKaydiMi(k); }).reduce(function(s,k){ return s+(Number(k.adet)||0); },0));
+    if (wrap){
+      var d0 = new Date(), ilk = new Date(d0.getFullYear(), d0.getMonth() - 5, 1), ilkGun = ilk.getFullYear() + '-' + String(ilk.getMonth() + 1).padStart(2, '0') + '-01';
+      var v = ozetUretimKovala(function(g){ return g.slice(0, 7); }, ilkGun, '');
+      var kov = []; for (var i = 5; i >= 0; i--){ var d = new Date(d0.getFullYear(), d0.getMonth() - i, 1), key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        kov.push({ etiket: d.toLocaleDateString('tr-TR', { month: 'short' }), uzun: d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }), veri: v[key] }); }
+      wrap.innerHTML = ozetYiginSvg(kov, 'Son 6 ay');
     }
-    var W = 480, H = 140, padL = 30, padB = 20, barGap = 10;
-    var maxV = Math.max.apply(null, ayToplam.concat([1]));
-    var barW = (W - padL - 10) / ayToplam.length - barGap;
-    var bars = ayToplam.map(function(v, i){
-      var h = (H-padB-22) * (v/maxV); // r242: üstte sayı için yer (en yüksek çubuğun etiketi kesilmesin)
-      var x = padL + i*((W-padL-10)/ayToplam.length) + barGap/2;
-      var y = H - padB - h;
-      return '<rect x="'+x+'" y="'+y+'" width="'+Math.max(1,barW)+'" height="'+h+'" fill="var(--steel)"></rect>'+
-        '<text x="'+(x+barW/2)+'" y="'+(H-4)+'" font-size="10" text-anchor="middle" font-family="IBM Plex Sans, system-ui, sans-serif" fill="var(--ink-soft)">'+esc(ayEtiketleri[i])+'</text>'+
-        '<text x="'+(x+barW/2)+'" y="'+(y-4)+'" font-size="10" text-anchor="middle" font-family="IBM Plex Sans, system-ui, sans-serif" fill="var(--ink)">'+fmt(v)+'</text>';
-    }).join('');
-    wrap.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;height:auto;display:block">'+bars+'</svg>';
+    var w2 = document.getElementById('ozetTrend2Grafik'); if (!w2) return;
+    var mod = 'gun'; try { mod = localStorage.getItem('ozerp_ozet_trend2') === 'hafta' ? 'hafta' : 'gun'; } catch(e){}
+    var sk = document.getElementById('ozetTrend2Sekme'); if (sk) Array.prototype.forEach.call(sk.querySelectorAll('button'), function(b){ b.classList.toggle('aktif', b.dataset.oztrend === mod); });
+    var bugun = todayISO(), kv = [];
+    if (mod === 'hafta'){
+      var hb = ozetHaftaBasi(bugun), bas = tarihEkle(hb, -49), vh = ozetUretimKovala(ozetHaftaBasi, bas, bugun);
+      for (var h = 7; h >= 0; h--){ var hk = tarihEkle(hb, -7 * h), hs = tarihEkle(hk, 6);
+        kv.push({ etiket: hk.slice(8, 10) + '.' + hk.slice(5, 7), uzun: kvTarihTR(hk) + ' – ' + kvTarihTR(hs) + (h === 0 ? ' (bu hafta)' : ''), veri: vh[hk] }); }
+      w2.innerHTML = ozetYiginSvg(kv, 'Son 8 hafta');
+    } else {
+      var gb = tarihEkle(bugun, -13), vg = ozetUretimKovala(function(g){ return g; }, gb, bugun);
+      for (var t = 13; t >= 0; t--){ var gn = tarihEkle(bugun, -t), wd = (new Date(gn + 'T12:00:00').getDay() + 6) % 7;
+        var kapali = gunlukKapasiteDk(gn) <= 0 || kapaliOran(gn) >= 1;
+        kv.push({ etiket: gn.slice(8, 10) + ' ' + OZ_GUN_KISA[wd], uzun: kvTarihTR(gn) + ' ' + OZ_GUN_KISA[wd] + (kapali ? ' (çalışılmayan gün)' : ''), veri: vg[gn], soluk: kapali }); }
+      w2.innerHTML = ozetYiginSvg(kv, 'Son 14 gün');
+    }
   }
+  // r304: Özet üstündeki dönem şeridi: bugün, dün, bu hafta, geçen hafta, bu ay, geçen ay — adet ve ₺ karşılığı (dönem seçiminden bağımsız, bugüne göre)
+  function renderOzetDonemSerit(){
+    var el = document.getElementById('ozetDonemSeritIc'); if (!el) return;
+    var b = todayISO(), dun = tarihEkle(b, -1), hb = ozetHaftaBasi(b), ghb = tarihEkle(hb, -7), ab = b.slice(0, 7) + '-01', gab = KV_MODEL.ayEkle(b.slice(0, 7), -1) + '-01';
+    var v = ozetUretimKovala(function(g){ return g; }, gab, b), kur = ozetKur();
+    var topla = function(bas, bit){ var o = { adet: 0, tl: 0, urun: {} }; Object.keys(v).forEach(function(g){ if (g < bas || g > bit) return; var x = v[g]; o.adet += x.adet; o.tl += x.tl; Object.keys(x.urun).forEach(function(ad){ o.urun[ad] = (o.urun[ad] || 0) + x.urun[ad]; }); }); return o; };
+    var hucre = [
+      ['Bugün', kvTarihTR(b), topla(b, b)], ['Dün', kvTarihTR(dun), topla(dun, dun)],
+      ['Bu hafta', kvTarihTR(hb) + ' – bugün', topla(hb, b)], ['Geçen hafta', kvTarihTR(ghb) + ' – ' + kvTarihTR(tarihEkle(hb, -1)), topla(ghb, tarihEkle(hb, -1))],
+      ['Bu ay', muhAyAdi(b.slice(0, 7)) + ', bugüne kadar', topla(ab, b)], ['Geçen ay', muhAyAdi(gab.slice(0, 7)), topla(gab, tarihEkle(ab, -1))]
+    ];
+    var gizli = document.body.classList.contains('maliyet-gizli');
+    el.innerHTML = hucre.map(function(h){ var o = h[2], ur = Object.keys(o.urun).sort(function(a, c){ return o.urun[c] - o.urun[a]; });
+      var ip = h[0] + ' (' + h[1] + ')\n' + fmt(Math.round(o.adet)) + ' adet' + (ur.length ? '\n' + ur.map(function(ad){ return ad + ': ' + fmt(Math.round(o.urun[ad])); }).join('\n') : '') + (!gizli && o.tl > 0.5 ? '\nKarşılık ₺' + fmt(o.tl) + (kur ? ' (≈ €' + fmt(o.tl / kur) + ')' : '') : '');
+      return '<div class="os-h' + (o.adet < 0.5 ? ' bos' : '') + '" title="' + escAttr(ip) + '"><div class="os-l">' + h[0] + '</div>' +
+        '<div class="os-v"><span class="yetki-maliyet">₺' + fmt(o.tl) + '</span>' + (gizli ? fmt(Math.round(o.adet)) + ' adet' : '') + '</div>' +
+        '<div class="os-s">' + (gizli ? esc(h[1]) : fmt(Math.round(o.adet)) + ' adet' + (kur && o.tl > 0.5 ? ' · ≈ €' + fmt(o.tl / kur) : '')) + '</div></div>'; }).join('');
+  }
+  (function(){
+    var sk = document.getElementById('ozetTrend2Sekme'); if (!sk) return;
+    sk.addEventListener('click', function(e){ var bt = e.target.closest('[data-oztrend]'); if (!bt) return; try { localStorage.setItem('ozerp_ozet_trend2', bt.dataset.oztrend); } catch(er){} renderOzetTrendGrafik(); });
+  })();
 
   // Üst çubuktaki € kuru kutusu (her sayfada güncel kalır)
   function kurKutusunuGuncelle(){
@@ -4160,10 +4266,14 @@ Dikkat edilmesi gereken 2 nokta:
   function ozetKur(){ return state.config ? Number(state.config.eurTryKuru)||0 : 0; }
   // r273: ürün başına bu ay adet × birim fiyat (karşılık). Birim maliyet (makine saat ücreti × süre) artık düşülmez: personel ve genel gider
   // zaten gider tarafında (girilen harcamalar / Aylık Kapasite); ikisi birden düşülünce gider iki kez sayılıyordu.
-  function ozetUrunKatki(u){
-    var kur = ozetKur(), adet = urunAdedBuAy(u.id), vu = todayISO() < virgoKurulusTarihi() ? virgoUrunStokla({ urunId: u.id }) : null;
+  function ozetUrunFiyat(u){
+    var kur = ozetKur(), vu = todayISO() < virgoKurulusTarihi() ? virgoUrunStokla({ urunId: u.id }) : null;
     var fiyat = vu ? (virgoUrunPb(vu) === '₺' ? Number(vu.fiyat)||0 : (Number(vu.fiyat)||0) * kur) : u.fasonTl != null ? u.fasonTl : (Number(u.fasonUcret)||0) * kur;
-    return { u: u, adet: adet, fiyat: fiyat, kaynak: vu ? 'Virgo fiyatı, sabit ₺' : u.fasonTl != null ? 'stok kartı fason ücreti ₺' : 'fason ücret €' + fmt2(u.fasonUcret) + ' × kur', top: adet * fiyat };
+    return { fiyat: fiyat, kaynak: vu ? 'Virgo fiyatı, sabit ₺' : u.fasonTl != null ? 'stok kartı fason ücreti ₺' : 'fason ücret €' + fmt2(u.fasonUcret) + ' × kur' };
+  }
+  function ozetUrunKatki(u){
+    var adet = urunAdedBuAy(u.id), f = ozetUrunFiyat(u);
+    return { u: u, adet: adet, fiyat: f.fiyat, kaynak: f.kaynak, top: adet * f.fiyat };
   }
   // r273: bu ay girilen işletme gideri (₺): Virgo Hesabı'ndaki ödenmiş harcamalar, yatırım (makine vb.) hariç — Virgo'daki "İşletme gideri" ile aynı
   function ozetGiderKayitlari(){
@@ -4231,6 +4341,7 @@ Dikkat edilmesi gereken 2 nokta:
     }
 
     renderOzetMakineTablo();
+    try { renderOzetDonemSerit(); } catch(e){ renderHatasi('dönem şeridi', e); }
     renderOzetTrendGrafik();
     try { renderOzetPano(); } catch(e){ renderHatasi('pano', e); }
   }
@@ -22915,7 +23026,7 @@ Dikkat edilmesi gereken 2 nokta:
   // yukarı / aşağı taşınır; her blok tek tek gizlenebilir. Ayar kullanıcıya özel, bu tarayıcıda saklanır.
   // Bölümler kendi kaplarında yeniden çizildiği için düzen her çizimden sonra (MutationObserver) yeniden uygulanır.
   var OZET_DUZEN_KEY = 'ozerp_ozet_duzen_v1';
-  var OZET_BOLUM_AD = { ozetCards: 'Kartlar (üretim, katkı, iş emri, fire, duruş…)', ozetIzgara: 'Makineler, ürün katkısı, uyarılar, trend', ozetPano: 'Yönetim panosu (grafikler)' };
+  var OZET_BOLUM_AD = { ozetDonemSerit: 'Dönem şeridi (bugün, hafta, ay: adet ve ₺)', ozetCards: 'Kartlar (üretim, katkı, iş emri, fire, duruş…)', ozetIzgara: 'Makineler, ürün katkısı, uyarılar, trend', ozetPano: 'Yönetim panosu (grafikler)' };
   function ozetDuzen(){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); return t[aktifKullaniciId() || '-'] || { sira: [], gizli: [] }; } catch(e){ return { sira: [], gizli: [] }; } }
   function ozetDuzenYaz(d){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); t[aktifKullaniciId() || '-'] = d; localStorage.setItem(OZET_DUZEN_KEY, JSON.stringify(t)); } catch(e){} }
   function ozetBlokAdi(b){ var h = b.querySelector('.block-head h3'); if (!h) return ''; var k = h.cloneNode(true); k.querySelectorAll('.info-ico, button, select').forEach(function(x){ x.remove(); }); return k.textContent.replace(/\s*\(\d[\d.]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -22943,7 +23054,9 @@ Dikkat edilmesi gereken 2 nokta:
   function ozetDuzenUygula(){
     if (_ozetUyguluyor) return; _ozetUyguluyor = true;
     try {
-      var d = ozetDuzen(), p = byId('panel-ozet'), bl = ozetBolumleri(), sira = d.sira && d.sira.length ? d.sira : OZET_VARSAYILAN_SIRA;
+      var d = ozetDuzen(), p = byId('panel-ozet'), bl = ozetBolumleri(), sira = d.sira && d.sira.length ? d.sira.slice() : OZET_VARSAYILAN_SIRA;
+      // r304: kayıtlı sırada olmayan yeni bölüm (ör. dönem şeridi) sona değil, varsayılan yerine (kendisinden sonraki bölümün önüne) girer
+      if (sira !== OZET_VARSAYILAN_SIRA) OZET_VARSAYILAN_SIRA.forEach(function(k, i){ if (sira.indexOf(k) > -1) return; var son = OZET_VARSAYILAN_SIRA.slice(i + 1).map(function(x){ return sira.indexOf(x); }).filter(function(x){ return x > -1; })[0]; sira.splice(son == null ? sira.length : son, 0, k); });
       if (sira.length){
         var sirali = bl.slice().sort(function(a, b){ var ia = sira.indexOf(a.k), ib = sira.indexOf(b.k); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); });
         var gecerli = bl.map(function(x){ return x.k; }).join('|'), istenen = sirali.map(function(x){ return x.k; }).join('|');
