@@ -1098,6 +1098,9 @@
   .tg-tablo thead tr.tg-filtre th { top:31px; cursor:default; padding:3px 4px; }
   .tg-tablo thead tr.tg-filtre input { width:100%; min-width:70px; font-size:11.5px; padding:3px 5px; }
   .tg-tablo thead th.tg-sirali { color:var(--accent); }
+  .tg-boy { position:absolute; top:0; right:-3px; width:7px; height:100%; cursor:col-resize; z-index:3; }
+  .tg-boy:hover, body.tg-boyluyor .tg-boy { background:color-mix(in srgb, var(--accent) 35%, transparent); }
+  body.tg-boyluyor, body.tg-boyluyor * { cursor:col-resize !important; user-select:none !important; }
   .tg-tablo th.tg-sec, .tg-tablo td.tg-sec { width:26px; padding-left:8px; padding-right:2px; cursor:default; }
   .tg-tablo td { padding:6px 8px; white-space:nowrap; max-width:320px; overflow:hidden; text-overflow:ellipsis; }
   .tg-tablo tr.tg-satir { cursor:pointer; }
@@ -1534,7 +1537,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r299</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r300</div>
   </nav>
   <main>
     <div class="topbar">
@@ -21292,11 +21295,14 @@ Dikkat edilmesi gereken 2 nokta:
       '<div class="tg-secim" style="display:none"></div>' +
       '<div class="tablewrap tg-kutu"><table class="tg-tablo"><thead><tr>' +
         '<th class="tg-sec"><input type="checkbox" class="tg-hepsi" title="Görünen tümünü seç"></th>' +
-        gor.map(function(k){ var s = sira.k === k.k ? (sira.yon === -1 ? ' ▼' : ' ▲') : ''; return '<th data-k="' + k.k + '" class="' + (tgSayisalMi(k) ? 'num ' : '') + (s ? 'tg-sirali' : '') + '" title="Sıralamak için tıklayın">' + esc(k.b) + s + '</th>'; }).join('') +
+        gor.map(function(k){ var s = sira.k === k.k ? (sira.yon === -1 ? ' ▼' : ' ▲') : ''; return '<th data-k="' + k.k + '" class="' + (tgSayisalMi(k) ? 'num ' : '') + (s ? 'tg-sirali' : '') + '" title="Sıralamak için tıklayın · genişlik: sağ kenarı sürükleyin (çift tık: eski haline)"><div class="tg-g" data-gk="' + k.k + '">' + esc(k.b) + s + '</div><span class="tg-boy" data-boy="' + k.k + '"></span></th>'; }).join('') +
       '</tr>' +
       (filtreAcik ? '<tr class="tg-filtre"><th></th>' + gor.map(function(k){ return '<th><input type="search" data-fk="' + k.k + '" value="' + escAttr(filtre[k.k] || '') + '" placeholder="' + escAttr(tgFiltreIpucu(k)) + '" title="' + escAttr(tgFiltreAciklama(k)) + '"></th>'; }).join('') + '</tr>' : '') +
-      '</thead><tbody></tbody><tfoot></tfoot></table></div>';
+      '</thead><tbody></tbody><tfoot></tfoot></table></div><style class="tg-gstil"></style>';
+    tg.dataset.tgid = el.id;
+    tgGenislikStil(el, tg);
     tgBagla(el, tg);
+    tgBoyBagla(el, tg);
     tgGovde(el);
   }
   function tgGovde(el){
@@ -21312,7 +21318,8 @@ Dikkat edilmesi gereken 2 nokta:
         '<td class="tg-sec"><input type="checkbox" data-sec="' + escAttr(x.rid) + '"' + (d.secili[x.rid] ? ' checked' : '') + '></td>' +
         gor.map(function(k){
           var gec = k.k === 'vade' && x.o && tgDeger(k, x) && tgDeger(k, x) < bugun && tgFiltreGecikme(el, x);
-          return '<td' + (tgSayisalMi(k) ? ' class="num"' : '') + (gec ? ' style="color:var(--bad)"' : '') + '>' + tgHucre(k, x) + '</td>';
+          var hv = tgHucre(k, x), ham = tgSayisalMi(k) ? '' : String(tgDeger(k, x) == null ? '' : tgDeger(k, x));
+          return '<td' + (tgSayisalMi(k) ? ' class="num"' : '') + (gec ? ' style="color:var(--bad)"' : '') + (ham.length > 12 ? ' title="' + escAttr(k.t === 'tarih' ? kvTarihTR(ham) : ham) + '"' : '') + '><div class="tg-g" data-gk="' + k.k + '">' + hv + '</div></td>';
         }).join('') + '</tr>';
       if (d.acik[x.rid]) tr += '<tr class="tg-ac"><td colspan="' + n + '" data-tgkart="' + escAttr(x.rid) + '"></td></tr>';
       return tr;
@@ -21359,6 +21366,33 @@ Dikkat edilmesi gereken 2 nokta:
     cubuk.querySelector('.tg-sec-temizle').addEventListener('click', function(){ d.secili = {}; tgGovde(el); });
   }
   function tgAyarDegistir(el, fn){ var a = tgAyar(el.id); fn(a); if (a.gorunum) a.gorunum = ''; tgAyarYaz(el.id, a); }
+  // r300: sütun genişliği elle — başlığın sağ kenarı sürüklenir; genişlik bu tarayıcıda tablo tablo saklanır (a.genislik), çift tık siler.
+  // Hücre içeriği .tg-g ile sarılı; genişlik verilen sütunda sığmayan yazı "…" ile kısalır, tamamı ipucunda.
+  function tgGenislikStil(el, tg){
+    var st = tg.querySelector('style.tg-gstil'); if (!st) return;
+    var g = tgAyar(el.id).genislik || {}, sec = '[data-tgid="' + String(el.id).replace(/"/g, '') + '"] ';
+    st.textContent = Object.keys(g).filter(function(k){ return /^[\w-]+$/.test(k) && Number(g[k]) > 0; }).map(function(k){
+      return sec + '.tg-g[data-gk="' + k + '"]{width:' + Math.round(g[k]) + 'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' + sec + 'input[data-fk="' + k + '"]{min-width:0}'; }).join('');
+  }
+  function tgBoyBagla(el, tg){
+    var surukle = null, sonBitis = 0;
+    tg.addEventListener('click', function(e){ if (Date.now() - sonBitis < 350 && e.target.closest('thead')){ e.stopPropagation(); e.preventDefault(); } }, true);
+    tg.querySelectorAll('.tg-boy').forEach(function(h){
+      h.addEventListener('click', function(e){ e.stopPropagation(); });
+      h.addEventListener('dblclick', function(e){ e.stopPropagation(); e.preventDefault(); var k = h.dataset.boy, a = tgAyar(el.id);
+        if (a.genislik){ delete a.genislik[k]; if (!Object.keys(a.genislik).length) delete a.genislik; tgAyarYaz(el.id, a); } tgGenislikStil(el, tg); sonBitis = Date.now(); });
+      h.addEventListener('pointerdown', function(e){
+        if (e.button !== 0) return; e.stopPropagation(); e.preventDefault();
+        var k = h.dataset.boy, g = h.parentElement.querySelector('.tg-g'), bas = g ? g.getBoundingClientRect().width : h.parentElement.offsetWidth;
+        surukle = { k: k, x: e.clientX, w: bas }; h.setPointerCapture && h.setPointerCapture(e.pointerId); document.body.classList.add('tg-boyluyor');
+      });
+      // sürüklerken ayar bellekte (stil anında), bırakınca bir kez yazılır; kayıtlı görünüm seçimi bozulmaz
+      h.addEventListener('pointermove', function(e){ if (!surukle) return; var w = Math.round(Math.max(24, Math.min(900, surukle.w + e.clientX - surukle.x)));
+        var a = tgAyar(el.id); a.genislik = a.genislik || {}; a.genislik[surukle.k] = w; surukle.a = a; tgAyarYaz(el.id, a); tgGenislikStil(el, tg); });
+      var bitir = function(){ if (!surukle) return; surukle = null; sonBitis = Date.now(); document.body.classList.remove('tg-boyluyor'); };
+      h.addEventListener('pointerup', bitir); h.addEventListener('pointercancel', bitir);
+    });
+  }
   function tgBagla(el, tg){
     var d = tgDurum(el.id);
     tg.querySelectorAll('thead th[data-k]').forEach(function(th){
