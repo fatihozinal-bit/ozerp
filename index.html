@@ -795,6 +795,13 @@
   .kap-alt .field { margin-bottom: 0; }
   .kap-alt .cards { flex: 1; }
   #kapTatil { margin-top: 10px; }
+  .vg-fat-top { margin-top: 6px; display: flex; justify-content: flex-end; }
+  .vg-fat-top table { width: auto; min-width: 240px; }
+  .vg-fat-top td { padding: 2px 6px; }
+  .vg-satici-bilgi { font-size: 11px; margin-top: 2px; }
+  .vg-satici-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; }
+  .vg-satici-mini input[data-vs="ad"], .vg-satici-mini input[data-vs="adres"], .vg-satici-mini div { grid-column: 1 / -1; }
+  .vg-xml { margin: 0 0 4px; grid-column: 1 / -1; }
   #kapTatil .kt-bas { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
   #kapTatil .kt-bas h4 { margin: 0; font-size: 13px; flex: 1; }
   #kapTatil table { width: 100%; }
@@ -1527,7 +1534,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r296</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r297</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12235,21 +12242,43 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoTlFaturaTarihte(gun){ var b = 0; virgoKayitlari().forEach(function(v){ if ((v.tarih || '') <= gun) b += virgoNorm(v).tlFaturaE.tl; }); return muhR2(b); }
   var VIRGO_KDV = ['0', '1', '10', '20'];
   // r296: harcama kalemleri (faturadaki ürünler) — fiyat geçmişi için. Kalem girilirse tutar kalemlerin toplamıdır.
-  var VIRGO_KALEM_BIRIM = ['adet', 'kg', 'lt', 'm', 'kutu', 'paket', 'takım', 'set'];
+  var VIRGO_KALEM_BIRIM = ['adet', 'kg', 'g', 'lt', 'm', 'm²', 'm³', 'ton', 'kutu', 'paket', 'takım', 'set', 'çift', 'saat', 'gün', 'ay'];
+  var VIRGO_KALEM_KDV = ['20', '10', '1', '0'];
   function virgoSayi(x){ var t = String(x == null ? '' : x).trim().replace(/\s/g, ''); if (t.indexOf(',') > -1) t = t.replace(/\./g, '').replace(',', '.'); var n = Number(t); return isFinite(n) ? n : NaN; }
   function virgoKalemAnahtar(ad){ return String(ad || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('tr'); }
-  // Satırları çözer: { satir: [{urun, miktar, birim, fiyat, tutar}], toplam } ya da { hata }
-  function virgoKalemCoz(l){
-    var satir = [], hata = '';
+  // r297: fatura gibi hesap. Satır: miktar × birim fiyat (KDV hariç) − iskonto % = satır tutarı (matrah); KDV satır satır (oran oran toplanır).
+  // gevsek: yarım satırlar atlanır (form içi canlı hesap); değilse ilk hatada { hata }. vKdv: satırda KDV yoksa (r296 kayıtları) kaydın oranı.
+  function virgoKalemHesap(l, vKdv, gevsek){
+    var satir = [], hata = '', brut = 0, net = 0, kdvO = {};
     (Array.isArray(l) ? l : []).forEach(function(r){ if (hata) return;
-      var ad = String(r.urun || '').trim().replace(/\s+/g, ' '), m = virgoSayi(r.miktar), f = virgoSayi(r.fiyat);
-      if (!ad && !String(r.miktar || '').trim() && !String(r.fiyat || '').trim()) return;
-      if (!ad){ hata = 'Kalemlerde ürün / malzeme adı boş bir satır var.'; return; }
-      if (!(m > 0)){ hata = ad + ' için miktar girin.'; return; }
-      if (!(f >= 0) || String(r.fiyat || '').trim() === ''){ hata = ad + ' için birim fiyat girin.'; return; }
-      satir.push({ urun: ad, miktar: m, birim: r.birim || VIRGO_KALEM_BIRIM[0], fiyat: f, tutar: muhR2(m * f) });
+      var ad = String(r.urun || '').trim().replace(/\s+/g, ' '), m = virgoSayi(r.miktar), f = virgoSayi(r.fiyat), fBos = String(r.fiyat == null ? '' : r.fiyat).trim() === '';
+      var iT = String(r.isk == null ? '' : r.isk).trim(), isk = iT === '' ? 0 : virgoSayi(iT), kT = String(r.kdv == null ? '' : r.kdv).trim(), k = kT === '' ? (Number(vKdv) || 0) : Number(kT);
+      if (!ad && !String(r.miktar == null ? '' : r.miktar).trim() && fBos) return;
+      var sorun = !ad ? 'Kalemlerde ürün / malzeme adı boş bir satır var.' : !(m > 0) ? ad + ' için miktar girin.' : (fBos || !(f >= 0)) ? ad + ' için birim fiyat girin.' : !(isk >= 0 && isk < 100) ? ad + ' için iskonto 0–99 arası olmalı.' : !(k >= 0) ? ad + ' için KDV oranı geçersiz.' : '';
+      if (sorun){ if (!gevsek) hata = sorun; return; }
+      var b = m * f, n = muhR2(b * (1 - isk / 100)), kd = muhR2(n * k / 100), ko = String(k);
+      satir.push({ urun: ad, miktar: m, birim: r.birim || VIRGO_KALEM_BIRIM[0], fiyat: f, isk: isk > 0 ? isk : '', kdv: k, tutar: n });
+      brut += b; net += n; (kdvO[ko] || (kdvO[ko] = { matrah: 0, kdv: 0 })); kdvO[ko].matrah += n; kdvO[ko].kdv += kd;
     });
-    return hata ? { hata: hata } : { satir: satir, toplam: muhR2(satir.reduce(function(a, x){ return a + x.tutar; }, 0)) };
+    if (hata) return { hata: hata };
+    var kdv = 0, ana = '0', anaM = -1; Object.keys(kdvO).forEach(function(o){ kdvO[o].matrah = muhR2(kdvO[o].matrah); kdvO[o].kdv = muhR2(kdvO[o].kdv); kdv += kdvO[o].kdv; if (kdvO[o].matrah > anaM){ anaM = kdvO[o].matrah; ana = o; } });
+    net = muhR2(net); kdv = muhR2(kdv);
+    return { satir: satir, brut: muhR2(brut), iskonto: muhR2(brut - net), matrah: net, kdvO: kdvO, kdv: kdv, genel: muhR2(net + kdv), anaOran: ana, toplam: net };
+  }
+  // Formdaki kalem tablosunun satırları (ham)
+  function virgoKalemSatirlari(fe, alan){
+    var tb = fe.querySelector('[data-ffkey="' + alan.findIndex(function(f){ return f.key === 'kalemler'; }) + '"]'); if (!tb) return [];
+    return Array.prototype.map.call(tb.querySelectorAll('tbody tr'), function(tr){ var r = {}; tr.querySelectorAll('[data-ffc]').forEach(function(x){ r[x.dataset.ffc] = x.value; }); return r; });
+  }
+  // Satıcı firmalar: Cari Kartları'ndaki tedarikçiler (Virgo faturalarının satıcısı)
+  function virgoSaticilar(secili){ return (state.musteriler || []).filter(function(m){ return tedarikciMi(m) || m.id === secili; }).slice().sort(function(a, b){ return String(a.ad || '').localeCompare(String(b.ad || ''), 'tr'); }); }
+  function virgoSaticiBilgi(id){ var m = (state.musteriler || []).find(function(x){ return x.id === id; }); if (!m) return '';
+    return [m.vergiNo ? (String(kimlikNoTemiz(m.vergiNo)).length === 11 ? 'TCKN ' : 'VKN ') + m.vergiNo : '', m.vergiDairesi ? m.vergiDairesi + ' VD' : '', m.telefon || '', [m.adres, m.sehir].filter(Boolean).join(' ')].filter(Boolean).join(' · '); }
+  // Aynı firmanın aynı numaralı faturası (ya da aynı ETTN) başka Virgo kaydında var mı
+  function virgoFaturaTekrari(v, eski){
+    if (!/^Harcama$/.test(v.hareket || '')) return null; var a = belgeNoAnahtar(v.belgeNo), id = eski && eski.id;
+    return virgoKayitlari().find(function(x){ if (x.id === id || !/^Harcama$/.test(x.hareket || '')) return false;
+      return (v.ettn && x.ettn && String(v.ettn).toLowerCase() === String(x.ettn).toLowerCase()) || (a && v.saticiId && x.saticiId === v.saticiId && belgeNoAnahtar(x.belgeNo) === a); }) || null;
   }
   function virgoKalemAdlari(){ var g = {}, l = [];
     virgoKayitlari().slice().sort(function(p, q){ return String(p.tarih || '').localeCompare(String(q.tarih || '')); }).forEach(function(v){ (v.kalemler || []).forEach(function(k){ var a = virgoKalemAnahtar(k.urun); if (a && !g[a]){ g[a] = 1; l.push(String(k.urun).trim()); } }); });
@@ -12590,13 +12619,29 @@ Dikkat edilmesi gereken 2 nokta:
   // r224: basit harcama takibi. Virgo'nun parasıyla ödenenler KDV hariç / KDV / KDV dahil; ortakların şahsi ödemeleri yalnız ödenen tutar (KDV izlenmez).
   // Ay satırına tıklayınca o ayın kayıtları açılır. Ödenecek kayıtlar girmez.
   // r296: Alınanlar — harcama kalemlerinden ürün ürün alım ve fiyat geçmişi (₺; € fiyat kaydın kuruyla). Satıra tıklayınca alımlar açılır.
+  // r297: Virgo harcamasının fatura dökümü (satıcı, alıcı, kalemler, iskonto, oran oran KDV, genel toplam)
+  function virgoFaturaYazdir(v){
+    var m = (state.musteriler || []).find(function(x){ return x.id === v.saticiId; }) || {}, n = virgoNorm(v), h = virgoKalemHesap(v.kalemler, v.kdvOrani, true), pb = v.paraBirimi === '€' ? '€' : '₺';
+    var P = function(x){ return pb === '€' ? virgoEur(x) : virgoTl(x); }, sat = function(a, b){ return b ? '<tr><td class="muted">' + a + '</td><td>' + esc(b) + '</td></tr>' : ''; };
+    var alici = n.fatura === 'virgo' ? VIRGO_FINANSOR : 'Bizim adımıza / fişsiz';
+    var html = '<div class="print-doc-head"><div><h2>ALIŞ FATURASI</h2><div>' + esc(v.belgeNo || '(fatura no yok)') + '</div></div><div style="text-align:right">Fatura tarihi: <b>' + esc(kvTarihTR(v.tarih)) + '</b>' + (v.ettn ? '<div class="muted" style="font-size:11px">ETTN ' + esc(v.ettn) + '</div>' : '') + '</div></div>' +
+      '<table class="kart-tablo"><tbody><tr><td style="width:50%;vertical-align:top"><b>Satıcı</b><table>' + sat('Unvan', m.ad || (v.saticiId ? cariAdi(v.saticiId) : '—')) + sat(String(kimlikNoTemiz(m.vergiNo)).length === 11 ? 'TCKN' : 'VKN', m.vergiNo) + sat('Vergi dairesi', m.vergiDairesi) + sat('Adres', [m.adres, m.sehir].filter(Boolean).join(' ')) + sat('Telefon', m.telefon) + '</table></td>' +
+      '<td style="vertical-align:top"><b>Alıcı</b><table>' + sat('Fatura adına', alici) + sat('Ödeyen', n.kisi) + sat('Kategori', v.kategori) + sat('Durum', v.durum === 'Ödenecek' ? 'Ödenecek' + (v.vade ? ' (' + kvTarihTR(v.vade) + ')' : '') : 'Ödendi') + sat('Açıklama', v.aciklama) + '</table></td></tr></tbody></table>' +
+      '<table><thead><tr><th>#</th><th>Ürün / malzeme</th><th class="num">Miktar</th><th>Birim</th><th class="num">Birim fiyat</th><th class="num">İsk. %</th><th class="num">KDV %</th><th class="num">Tutar</th></tr></thead><tbody>' +
+      h.satir.map(function(k, i){ return '<tr><td>' + (i + 1) + '</td><td>' + esc(k.urun) + '</td><td class="num">' + fmt2(k.miktar) + '</td><td>' + esc(k.birim) + '</td><td class="num">' + P(k.fiyat) + '</td><td class="num">' + (k.isk ? fmt2(k.isk) : '') + '</td><td class="num">' + fmt2(k.kdv) + '</td><td class="num">' + P(k.tutar) + '</td></tr>'; }).join('') + '</tbody></table>' +
+      '<table style="width:auto;margin-left:auto;margin-top:8px"><tbody><tr><td>Ara toplam</td><td class="num">' + P(h.brut) + '</td></tr>' + (h.iskonto > 0.004 ? '<tr><td>İskonto</td><td class="num">− ' + P(h.iskonto) + '</td></tr><tr><td>Matrah</td><td class="num">' + P(h.matrah) + '</td></tr>' : '') +
+      Object.keys(h.kdvO).sort(function(a, b){ return Number(b) - Number(a); }).map(function(o){ return '<tr><td>KDV %' + o + ' <span class="muted">(matrah ' + P(h.kdvO[o].matrah) + ')</span></td><td class="num">' + P(h.kdvO[o].kdv) + '</td></tr>'; }).join('') +
+      '<tr><td><b>Genel toplam</b></td><td class="num"><b>' + P(h.genel) + '</b></td></tr>' + (pb === '€' ? '<tr><td class="muted">Kur 1 € = ₺' + esc(kurYazi(v.kur)) + '</td><td class="num muted">' + virgoTl(h.genel * (Number(v.kur) || 0)) + '</td></tr>' : '') + '</tbody></table>' +
+      '<p class="muted" style="font-size:11px;margin-top:10px">Virgo Hesabı kayıt dökümüdür; yasal fatura yerine geçmez.</p>';
+    yazdirHtml(html);
+  }
   function virgoAlinanlar(){
     var g = {};
     virgoKayitlari().forEach(function(v){ if (!/^Harcama$/.test(v.hareket || '') || !(v.kalemler || []).length) return;
       var kur = Number(v.kur) || virgoGunKuru(v.tarih) || 0, eur = v.paraBirimi === '€', sahsi = virgoSahsi(v);
       v.kalemler.forEach(function(k){ var a = virgoKalemAnahtar(k.urun); if (!a) return;
-        var x = g[a] || (g[a] = { ad: String(k.urun).trim(), l: [] }), f = Number(k.fiyat) || 0, m = Number(k.miktar) || 0;
-        x.l.push({ v: v, tarih: v.tarih || '', miktar: m, birim: k.birim || 'adet', fiyatTl: eur ? f * kur : f, tutarTl: (eur ? f * kur : f) * m, fiyat: f, pb: eur ? '€' : '₺', sahsi: sahsi, odendi: v.durum !== 'Ödenecek' }); }); });
+        var x = g[a] || (g[a] = { ad: String(k.urun).trim(), l: [] }), f = (Number(k.fiyat) || 0) * (1 - (Number(k.isk) || 0) / 100), m = Number(k.miktar) || 0; // r297: iskonto düşülmüş birim fiyat
+        x.l.push({ v: v, tarih: v.tarih || '', miktar: m, birim: k.birim || 'adet', fiyatTl: eur ? f * kur : f, tutarTl: (eur ? f * kur : f) * m, fiyat: f, pb: eur ? '€' : '₺', sahsi: sahsi, firma: v.saticiId ? cariAdi(v.saticiId) : '', odendi: v.durum !== 'Ödenecek' }); }); });
     return Object.keys(g).map(function(a){ var x = g[a]; x.l.sort(function(p, q){ return p.tarih.localeCompare(q.tarih); });
       x.ilk = x.l[0]; x.son = x.l[x.l.length - 1]; x.ad = x.ilk.v.kalemler.filter(function(k){ return virgoKalemAnahtar(k.urun) === a; })[0].urun; x.anahtar = a;
       x.tutar = x.l.reduce(function(t, y){ return t + y.tutarTl; }, 0);
@@ -12607,15 +12652,15 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoAlinanlarHtml(){
     var l = virgoAlinanlar(), tl = function(v){ return virgoTl(v); };
     var yuzde = function(d){ return d == null ? '<span class="muted">—</span>' : Math.abs(d) < 0.05 ? '%0' : '<span class="' + (d > 0 ? 'neg' : 'pos') + '">' + (d > 0 ? '+' : '−') + '%' + fmt2(Math.abs(d)) + '</span>'; };
-    var fy = function(y){ return tl(y.fiyatTl) + (y.sahsi ? '<sup title="Şahsi ödeme: ödenen fiyat (KDV dahil olabilir)">*</sup>' : '') + (y.pb === '€' ? '<div class="muted" style="font-size:11px">' + virgoEur(y.fiyat) + '</div>' : ''); };
-    var html = '<div class="block" data-vsekme="alinan"><div class="block-head"><h3>Alınanlar ' + infoIco('Harcama kayıtlarına girilen kalemlerden (uç, takım, malzeme) ürün ürün: kaç kez, ne kadar alındı, ilk ve son birim fiyat, değişim. Aynı ürün aynı adla yazılırsa bir satırda toplanır (formda önceki adlar öneri olarak çıkar). Fiyatlar ₺; € alımlar kaydın kuruyla. * şahsi ödeme: ödenen fiyat (KDV dahil olabilir). Satıra tıklayınca alımlar açılır.') + '</h3></div><div class="block-body">';
+    var fy = function(y){ return tl(y.fiyatTl) + (y.pb === '€' ? '<div class="muted" style="font-size:11px">' + virgoEur(y.fiyat) + '</div>' : ''); };
+    var html = '<div class="block" data-vsekme="alinan"><div class="block-head"><h3>Alınanlar ' + infoIco('Harcama kayıtlarına girilen kalemlerden (uç, takım, malzeme) ürün ürün: kaç kez, ne kadar alındı, ilk ve son birim fiyat, değişim. Aynı ürün aynı adla yazılırsa bir satırda toplanır (formda önceki adlar öneri olarak çıkar). Birim fiyat KDV hariç, iskonto düşülmüş; ₺ (€ alımlar kaydın kuruyla). Satıra tıklayınca alımlar ve hangi firmadan alındığı açılır.') + '</h3></div><div class="block-body">';
     if (!l.length) return html + '<div class="empty">Henüz kalem girilmiş harcama yok. Harcama formunda "Kalemler" tablosuna faturadaki ürünleri yazın.</div></div></div>';
     html += '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ürün / malzeme</th><th class="num">Alım</th><th class="num">Toplam miktar</th><th class="num">Toplam tutar</th><th class="num">İlk fiyat</th><th class="num">Son fiyat</th><th class="num">Değişim</th><th>Son alım</th></tr></thead><tbody>' +
       l.map(function(x, i){
         return '<tr class="vg-satir" data-valinan="' + i + '" title="Alımları görmek için tıklayın"><td><span class="vg-ok">▸</span> ' + esc(x.ad) + '</td><td class="num">' + x.l.length + '</td><td class="num">' + esc(x.miktar) + '</td><td class="num">' + tl(x.tutar) + '</td>' +
           '<td class="num">' + fy(x.ilk) + '</td><td class="num">' + (x.l.length > 1 ? fy(x.son) : '<span class="muted">—</span>') + '</td><td class="num">' + yuzde(x.degisim) + '</td><td>' + esc(kvTarihTR(x.son.tarih)) + '</td></tr>' +
           x.l.slice().reverse().map(function(y){
-            return '<tr class="vg-tik" data-valinanic="' + i + '" data-vduzelt="' + escAttr(y.v.id) + '" style="display:none" title="Kaydı açmak için tıklayın"><td class="muted" style="padding-left:22px">' + esc(kvTarihTR(y.tarih)) + ' · ' + esc(y.v.odeyen || '') + (y.v.aciklama ? ' · ' + esc(y.v.aciklama) : '') + (y.v.belgeNo ? ' · ' + esc(y.v.belgeNo) : '') + (y.odendi ? '' : ' · <i>ödenecek</i>') + '</td>' +
+            return '<tr class="vg-tik" data-valinanic="' + i + '" data-vduzelt="' + escAttr(y.v.id) + '" style="display:none" title="Kaydı açmak için tıklayın"><td class="muted" style="padding-left:22px">' + esc(kvTarihTR(y.tarih)) + (y.firma ? ' · <b>' + esc(y.firma) + '</b>' : '') + ' · ' + esc(y.v.odeyen || '') + (y.v.aciklama ? ' · ' + esc(y.v.aciklama) : '') + (y.v.belgeNo ? ' · ' + esc(y.v.belgeNo) : '') + (y.odendi ? '' : ' · <i>ödenecek</i>') + '</td>' +
               '<td></td><td class="num">' + fmt2(y.miktar) + ' ' + esc(y.birim) + '</td><td class="num">' + tl(y.tutarTl) + '</td><td></td><td class="num">' + fy(y) + '</td><td></td><td></td></tr>'; }).join('');
       }).join('') + '</tbody></table></div>';
     return html + '</div></div>';
@@ -12989,9 +13034,11 @@ Dikkat edilmesi gereken 2 nokta:
       if (!harcama){ x.kdvOrani = '0'; x.tutarTuru = 'KDV hariç'; x.fatura = ''; }
       if (x.paraBirimi === '€'){ x.eur = muhR2(haric); x.tl = muhR2(haric * kur); } else { x.tl = muhR2(haric); x.eur = muhR2(kur ? haric / kur : 0); }
       x.kdvEur = muhR2(x.eur * o / 100); x.kdvTl = muhR2(x.tl * o / 100);
+      var khO = harcama && !virgoSahsi(x) && o > 0 ? virgoKalemHesap(v.kalemler, v.kdvOrani, true) : null;
+      if (khO && khO.satir.length){ if (x.paraBirimi === '€'){ x.kdvEur = khO.kdv; x.kdvTl = muhR2(khO.kdv * kur); } else { x.kdvTl = khO.kdv; x.kdvEur = muhR2(kur ? khO.kdv / kur : 0); } }
       // r226: önizleme sade — tutar KDV hariç / KDV / KDV dahil (şahsi ödemede yalnız ödenen tutar) ve tek cümle hesaba etkisi
       var n = virgoNorm(x), kisi = esc(n.kisi === '—' ? '(kişi yok)' : n.kisi), ET = function(e, t){ return '<b>' + virgoET({ eur: e, tl: t }) + '</b>'; }, ne = '';
-      if (harcama && n.kaynak !== 'cep') out += '<table class="vg-oniz-t"><thead><tr><th></th><th class="num">KDV hariç</th><th class="num">KDV' + (o ? ' %' + o : '') + '</th><th class="num">KDV dahil</th></tr></thead><tbody>' +
+      if (harcama && n.kaynak !== 'cep') out += '<table class="vg-oniz-t"><thead><tr><th></th><th class="num">KDV hariç</th><th class="num">KDV' + (o && !(khO && Object.keys(khO.kdvO).length > 1) ? ' %' + o : '') + '</th><th class="num">KDV dahil</th></tr></thead><tbody>' +
         '<tr><td>€</td><td class="num">' + virgoEur(n.haric.eur) + '</td><td class="num">' + virgoEur(n.kdv.eur) + '</td><td class="num"><b>' + virgoEur(n.eur) + '</b></td></tr>' +
         '<tr><td>₺</td><td class="num">' + virgoTl(n.haric.tl) + '</td><td class="num">' + virgoTl(n.kdv.tl) + '</td><td class="num"><b>' + virgoTl(n.tl) + '</b></td></tr></tbody></table>';
       else out += '<div>Tutar ' + ET(n.eur, n.tl) + '</div>';
@@ -13033,21 +13080,93 @@ Dikkat edilmesi gereken 2 nokta:
   // mevcut = bu kayda bağlı (kaynakTur 'virgoSevk') hareketlerin toplamı; fark kadar hareket yazılır. Ekleme, düzenleme ve silmede aynı.
   // r268: sevk formunda tutar satırlardan kendiliğinden yazılır (elle değiştirilemez); sevk değilse tutar kutusu serbest
   // r296: harcamada kalem girildiyse tutar kalemlerin toplamı (kutu kilitlenir; Virgo parasıyla olanlarda 'KDV hariç'); kalem yoksa tutar serbest
+  // r297: Satıcı firma — seçilenin bilgileri altta; "+ Yeni firma…" seçilince küçük kart formu (unvan, VKN / TCKN, vergi dairesi, telefon, adres)
+  function virgoSaticiSel(fe, alan){ return fe.querySelector('[data-ffkey="' + alan.findIndex(function(f){ return f.key === 'saticiId'; }) + '"]'); }
+  function virgoSaticiCiz(fe, alan){
+    var sel = virgoSaticiSel(fe, alan); if (!sel) return; var w = sel.closest('.field'), bilgi = w.querySelector('.vg-satici-bilgi'), mini = w.querySelector('.vg-satici-mini');
+    if (bilgi) bilgi.textContent = sel.value && sel.value !== '__yeni' ? virgoSaticiBilgi(sel.value) : '';
+    if (mini){ var ac = sel.value === '__yeni'; if ((mini.style.display !== 'none') !== ac){ mini.style.display = ac ? '' : 'none'; if (ac){ var u = mini.querySelector('[data-vs="ad"]'); if (u && !u.value) u.focus(); } } }
+  }
+  function virgoSaticiKur(fe, alan, guncelle){
+    var sel = virgoSaticiSel(fe, alan); if (!sel) return; var w = sel.closest('.field');
+    var bilgi = document.createElement('div'); bilgi.className = 'vg-satici-bilgi muted'; w.appendChild(bilgi);
+    var mini = document.createElement('div'); mini.className = 'vg-satici-mini'; mini.style.display = 'none';
+    mini.innerHTML = [['ad', 'Unvan *'], ['vergiNo', 'VKN / TCKN'], ['vergiDairesi', 'Vergi dairesi'], ['telefon', 'Telefon'], ['adres', 'Adres']].map(function(x){ return '<input type="text" data-vs="' + x[0] + '" placeholder="' + x[1] + '">'; }).join('') +
+      '<div><button type="button" class="btn small" data-vs-ekle="1">Kartı aç</button> <button type="button" class="btn secondary small" data-vs-vazgec="1">Vazgeç</button></div>';
+    w.appendChild(mini);
+    mini.addEventListener('click', function(e){
+      if (e.target.closest('[data-vs-vazgec]')){ sel.value = ''; sel.dispatchEvent(new Event('change', { bubbles: true })); return; }
+      if (!e.target.closest('[data-vs-ekle]')) return;
+      if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
+      var d = {}; mini.querySelectorAll('[data-vs]').forEach(function(x){ d[x.dataset.vs] = x.value.trim(); });
+      if (!d.ad){ toast('Firmanın unvanını yazın.', true); return; }
+      var var_ = d.vergiNo && (state.musteriler || []).find(function(m){ return kimlikNoTemiz(m.vergiNo) === kimlikNoTemiz(d.vergiNo); });
+      var sec = function(id, ad){ if (!Array.prototype.some.call(sel.options, function(o){ return o.value === id; })){ var o = document.createElement('option'); o.value = id; o.textContent = ad; sel.insertBefore(o, sel.lastElementChild); }
+        mini.querySelectorAll('[data-vs]').forEach(function(x){ x.value = ''; }); sel.value = id; sel.dispatchEvent(new Event('change', { bubbles: true })); };
+      if (var_){ toast('Bu vergi numarasıyla kart zaten var: ' + var_.ad + ' — o seçildi.'); if (!tedarikciMi(var_)) kayitGuncelle('musteriler', var_.id, { cariTipi: 'Her ikisi' }); sec(var_.id, var_.ad); return; }
+      kayitKontrolu(cariKartKontrolu({ ad: d.ad, vergiNo: d.vergiNo }, null), function(){
+        var kb = nextKodBilgisi('musteri'), kayit = { kod: kb.kod, ad: d.ad, cariTipi: 'Tedarikçi', vergiNo: d.vergiNo, vergiDairesi: d.vergiDairesi, telefon: d.telefon, adres: d.adres, yetkili: '' };
+        db.collection('musteriler').add(kayit).then(function(res){
+          var id = res && res.id; if (id && !state.musteriler.some(function(m){ return m.id === id; })) state.musteriler.push(Object.assign({ id: id }, kayit));
+          configWrite(kb.kodPayload).catch(function(){}); toast('✓ Firma kartı açıldı: ' + d.ad); sec(id, d.ad);
+        }).catch(function(er){ toast('Kart açılamadı: ' + dbErrMsg(er), true); });
+      });
+    });
+  }
+  // r297: e-Fatura XML (ya da GİB / entegratör ZIP'i) ile formu doldurur: satıcı (VKN ile bulunur, yoksa yeni firma formu dolar), fatura no, tarih, ETTN, para birimi, kalemler
+  function virgoXmlKur(fe, alan, guncelle){
+    var bar = document.createElement('div'); bar.className = 'vg-xml';
+    bar.innerHTML = '<button type="button" class="btn secondary small" data-vxml="1">🧾 e-Fatura XML\'den doldur</button><input type="file" accept=".xml,.zip" style="display:none">';
+    var onz = fe.querySelector('.vg-onizleme'); fe.insertBefore(bar, onz ? onz.nextSibling : fe.firstChild);
+    var dosya = bar.querySelector('input');
+    bar.querySelector('[data-vxml]').addEventListener('click', function(){ dosya.value = ''; dosya.click(); });
+    dosya.addEventListener('change', function(){
+      var f = dosya.files && dosya.files[0]; if (!f) return;
+      var oku = /\.zip$/i.test(f.name) ? f.arrayBuffer().then(zipXmlleri).then(function(l){ if (!l.length) throw new Error('ZIP içinde XML yok'); if (l.length > 1) toast('ZIP\'te ' + l.length + ' fatura var; ilki (' + l[0].ad + ') okundu.'); return l[0].metin; }) : f.text();
+      oku.then(function(xml){ virgoXmlDoldur(fe, alan, ublOku(xml), guncelle); }).catch(function(e){ toast('Okunamadı: ' + (e && e.message || e), true); });
+    });
+  }
+  function virgoXmlDoldur(fe, alan, r, guncelle){
+    var ix = function(k){ return alan.findIndex(function(f){ return f.key === k; }); }, el = function(k){ return fe.querySelector('[data-ffkey="' + ix(k) + '"]'); };
+    var yaz = function(k, val){ var e = el(k); if (!e || val == null) return; e.value = val; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); };
+    if (r.paraBirimi !== 'TRY' && r.paraBirimi !== 'EUR'){ toast('Bu faturanın para birimi ' + r.paraBirimi + '; Virgo hesabı yalnız ₺ ve € alır.', true); return; }
+    yaz('hareket', 'Harcama'); if (r.tarih) yaz('tarih', r.tarih); yaz('belgeNo', r.faturaNo); yaz('ettn', r.ettn || ''); yaz('paraBirimi', r.paraBirimi === 'EUR' ? '€' : '₺');
+    if (r.paraBirimi === 'EUR' && r.kur > 0) yaz('kur', r.kur);
+    var f = alan[ix('kalemler')], tb = el('kalemler');
+    if (f && tb){ tb.querySelector('tbody').innerHTML = r.kalemler.map(function(k){
+      var b = VIRGO_KALEM_BIRIM.indexOf(k.birim) > -1 ? k.birim : 'adet', kd = String(k.kdvOrani || 0);
+      return ffTabloSatir(f, { urun: k.ad + (k.kod ? ' (' + k.kod + ')' : ''), miktar: k.miktar, birim: b, fiyat: k.birimFiyat, isk: k.iskonto ? k.iskonto : '', kdv: VIRGO_KALEM_KDV.indexOf(kd) > -1 ? kd : VIRGO_KALEM_KDV[0] }); }).join(''); }
+    var sel = virgoSaticiSel(fe, alan), cari = r.vkn && (state.musteriler || []).find(function(m){ return kimlikNoTemiz(m.vergiNo) === r.vkn; });
+    if (sel && cari){ if (!Array.prototype.some.call(sel.options, function(o){ return o.value === cari.id; })){ var o = document.createElement('option'); o.value = cari.id; o.textContent = cari.ad; sel.insertBefore(o, sel.lastElementChild); }
+      if (!tedarikciMi(cari)) kayitGuncelle('musteriler', cari.id, { cariTipi: 'Her ikisi' }); sel.value = cari.id; }
+    else if (sel){ sel.value = '__yeni'; var mini = sel.closest('.field').querySelector('.vg-satici-mini');
+      if (mini){ var d = { ad: r.unvan, vergiNo: r.vkn, vergiDairesi: r.vergiDairesi, telefon: r.telefon, adres: [r.adres, r.sehir && r.adres.indexOf(r.sehir) < 0 ? r.sehir : ''].filter(Boolean).join(' ') };
+        mini.querySelectorAll('[data-vs]').forEach(function(x){ x.value = d[x.dataset.vs] || ''; }); } }
+    if (sel) sel.dispatchEvent(new Event('change', { bubbles: true }));
+    guncelle();
+    var h = virgoKalemHesap(virgoKalemSatirlari(fe, alan), 0, true), fark = Math.abs((h.genel || 0) - (r.odenecek || 0));
+    toast('XML okundu: ' + r.kalemler.length + ' kalem' + (cari ? ', satıcı ' + cari.ad : ', satıcı kayıtlı değil — "Kartı aç"a basın') + '. Kategori ve ödeyeni seçip kaydedin.' + (r.odenecek && fark > 0.05 ? ' Dikkat: faturada ödenecek ' + virgoTl(r.odenecek) + ', hesaplanan ' + virgoTl(h.genel) + (r.tevkifat ? ' (tevkifat ' + r.tevkifat + ')' : '') + '.' : ''));
+  }
   function virgoKalemTutarYaz(fe, alan, v){
     var ix = function(k){ return alan.findIndex(function(f){ return f.key === k; }); };
-    var ti = fe.querySelector('[data-ffkey="' + ix('tutar') + '"]'), tt = fe.querySelector('[data-ffkey="' + ix('tutarTuru') + '"]'), tb = fe.querySelector('[data-ffkey="' + ix('kalemler') + '"]');
+    var ti = fe.querySelector('[data-ffkey="' + ix('tutar') + '"]'), tt = fe.querySelector('[data-ffkey="' + ix('tutarTuru') + '"]'), ko = fe.querySelector('[data-ffkey="' + ix('kdvOrani') + '"]'), tb = fe.querySelector('[data-ffkey="' + ix('kalemler') + '"]');
     if (!ti || !tb || virgoSevkMi(v)) return;
-    var rows = Array.prototype.map.call(tb.querySelectorAll('tbody tr'), function(tr){ var r = {}; tr.querySelectorAll('[data-ffc]').forEach(function(x){ r[x.dataset.ffc] = x.value; }); return r; });
-    var top = 0, var_ = false; rows.forEach(function(r){ var m = virgoSayi(r.miktar), f = virgoSayi(r.fiyat); if (String(r.urun || '').trim() && m > 0 && f >= 0 && String(r.fiyat || '').trim() !== ''){ top += m * f; var_ = true; } });
-    // yarım satırda eksik kutu kırmızı çerçeveli (ad, miktar, birim fiyat)
-    Array.prototype.forEach.call(tb.querySelectorAll('tbody tr'), function(tr){ var g = function(k){ return tr.querySelector('[data-ffc="' + k + '"]'); }, u = g('urun'), mi = g('miktar'), fi = g('fiyat'); if (!u || !mi || !fi) return;
-      var dolu = [u, mi, fi].some(function(x){ return String(x.value || '').trim(); });
-      [[u, !!String(u.value).trim()], [mi, virgoSayi(mi.value) > 0], [fi, String(fi.value).trim() !== '' && virgoSayi(fi.value) >= 0]].forEach(function(p){ p[0].style.borderColor = dolu && !p[1] ? 'var(--bad)' : ''; }); });
-    var harcama = /^Harcama$/.test(v.hareket || '');
-    ti.readOnly = harcama && var_; if (tt) tt.disabled = harcama && var_;
-    if (!harcama || !var_) return;
+    var harcama = /^Harcama$/.test(v.hareket || ''), sahsi = virgoSahsi(v), h = virgoKalemHesap(virgoKalemSatirlari(fe, alan), ko ? ko.value : 0, true), var_ = harcama && h.satir.length > 0;
+    // yarım satırda eksik / hatalı kutu kırmızı çerçeveli
+    Array.prototype.forEach.call(tb.querySelectorAll('tbody tr'), function(tr){ var g = function(k){ return tr.querySelector('[data-ffc="' + k + '"]'); }, u = g('urun'), mi = g('miktar'), fi = g('fiyat'), is = g('isk'); if (!u || !mi || !fi) return;
+      var dolu = [u, mi, fi].some(function(x){ return String(x.value || '').trim(); }), iv = is ? String(is.value).trim() : '';
+      [[u, !!String(u.value).trim()], [mi, virgoSayi(mi.value) > 0], [fi, String(fi.value).trim() !== '' && virgoSayi(fi.value) >= 0], [is, iv === '' || (virgoSayi(iv) >= 0 && virgoSayi(iv) < 100)]].forEach(function(p){ if (p[0]) p[0].style.borderColor = dolu && !p[1] ? 'var(--bad)' : ''; }); });
+    ti.readOnly = var_; if (tt) tt.disabled = var_; if (ko) ko.disabled = var_;
+    // fatura toplamları kalem tablosunun altında
+    var kutu = fe.querySelector('.vg-fat-top'); if (!kutu){ kutu = document.createElement('div'); kutu.className = 'vg-fat-top'; tb.closest('.field').appendChild(kutu); }
+    var pb = v.paraBirimi === '€' ? '€' : '₺', P = function(x){ return pb === '€' ? virgoEur(x) : virgoTl(x); };
+    kutu.innerHTML = var_ ? '<table><tbody><tr><td>Ara toplam</td><td class="num">' + P(h.brut) + '</td></tr>' + (h.iskonto > 0.004 ? '<tr><td>İskonto</td><td class="num">− ' + P(h.iskonto) + '</td></tr><tr><td>Matrah</td><td class="num">' + P(h.matrah) + '</td></tr>' : '') +
+      Object.keys(h.kdvO).sort(function(a, b){ return Number(b) - Number(a); }).map(function(o){ return '<tr><td>KDV %' + o + (Object.keys(h.kdvO).length > 1 ? ' <span class="muted">(matrah ' + P(h.kdvO[o].matrah) + ')</span>' : '') + '</td><td class="num">' + P(h.kdvO[o].kdv) + '</td></tr>'; }).join('') +
+      '<tr class="kv-alt"><td><b>Genel toplam</b></td><td class="num"><b>' + P(h.genel) + '</b></td></tr></tbody></table>' + (sahsi ? '<div class="muted" style="font-size:11px">Şahsi ödeme: ödenen tutar genel toplamdır.</div>' : '') : '';
+    if (!var_) return;
     if (tt && tt.value !== 'KDV hariç') tt.value = 'KDV hariç';
-    var yeni = String(muhR2(top)); if (ti.value !== yeni) ti.value = yeni;
+    if (ko && !sahsi && ko.value !== h.anaOran && Array.prototype.some.call(ko.options, function(o){ return o.value === h.anaOran; })) ko.value = h.anaOran;
+    var yeni = String(sahsi ? h.genel : h.matrah); if (ti.value !== yeni) ti.value = yeni;
   }
   function virgoSevkTutarYaz(fe, alan, v){
     var ti = fe.querySelector('[data-ffkey="' + alan.findIndex(function(f){ return f.key === 'tutar'; }) + '"]'), tb = fe.querySelector('[data-ffkey="' + alan.findIndex(function(f){ return f.key === 'sevkKalemler'; }) + '"]');
@@ -13113,10 +13232,12 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'alici', label:'Alan ortak', type:'select', options: [''].concat(virgoOrtaklar())},
       {key:'kaynak', label:'Paranın kaynağı', type:'select', options: VIRGO_KAYNAK, hint:'Otomatik: Virgo ödediyse onun parası (borca eklenir); ortak ödediyse kendi cebimizden (ortaklar hesabına; Virgo hesabına girmez). Virgo\'nun size verdiği paradan harcadıysanız onu seçin.'},
       {key:'kategori', label:'Kategori', type:'select', options: [{ value: '', label: '— seçin —' }].concat(VIRGO_KATEGORI), hint:'Harcamada zorunlu. Yatırım: Makine (nakliye, montaj dahil), Kuruluş & tesisat, Demirbaş & ekipman (ölçü aleti, bilgisayar). Sarf malzeme: yağ, eldiven, temizlik, kırtasiye, çay-şeker gibi tüketilen küçük alımlar. Malzeme & takım: hammadde, kesici uç. Resmî & finans: vergi, harç, sigorta, banka, muhasebe.'},
-      {key:'aciklama', label:'Açıklama', type:'text', placeholder:'ör. Ekim maaşları, CNC-101 bedeli, kesici uç'},
-      {key:'kalemler', label:'Kalemler', type:'tablo', hint:'isteğe bağlı; doldurulursa tutar kalemlerin toplamı (birim fiyat KDV hariç)',
-        kolonlar:[{key:'urun', label:'Ürün / malzeme', placeholder:'ör. CNMG 120408 uç', list:'vgKalemAdlari'}, {key:'miktar', label:'Miktar', width:'70px'}, {key:'birim', label:'Birim', type:'select', options: VIRGO_KALEM_BIRIM}, {key:'fiyat', label:'Birim fiyat', width:'100px'}]},
+      {key:'saticiId', label:'Satıcı firma', type:'select', options: [{ value: '', label: '— seçin —' }].concat(virgoSaticilar().map(function(m){ return { value: m.id, label: m.ad }; })).concat([{ value: '__yeni', label: '+ Yeni firma…' }]), hint:'Faturayı kesen firma; Cari Kartları\'ndaki tedarikçiler. Yoksa "+ Yeni firma…" ile buradan açılır.'},
       {key:'belgeNo', label:'Belge / fatura / dekont no', type:'text'},
+      {key:'ettn', label:'ETTN', type:'text'},
+      {key:'aciklama', label:'Açıklama', type:'text', placeholder:'ör. Ekim maaşları, CNC-101 bedeli, kesici uç'},
+      {key:'kalemler', label:'Kalemler', type:'tablo', hint:'isteğe bağlı; doldurulursa tutar ve KDV kalemlerden hesaplanır (birim fiyat KDV hariç)',
+        kolonlar:[{key:'urun', label:'Ürün / malzeme', placeholder:'ör. CNMG 120408 uç', list:'vgKalemAdlari'}, {key:'miktar', label:'Miktar', width:'64px'}, {key:'birim', label:'Birim', type:'select', options: VIRGO_KALEM_BIRIM}, {key:'fiyat', label:'Birim fiyat', width:'90px'}, {key:'isk', label:'İsk. %', width:'52px'}, {key:'kdv', label:'KDV %', type:'select', options: VIRGO_KALEM_KDV}]},
       {key:'odemeSekli', label:'Ödeme şekli', type:'select', options: VIRGO_ODEME},
       {key:'durum', label:'Durum', type:'select', options: VIRGO_DURUM, hint:'Ödenecek: toplamlara ve borca girmez, ayrıca görünür.'},
       {key:'vade', label:'Son ödeme günü', type:'date', hint:'Yaklaşınca ve geçince Özet\'teki uyarılarda görünür.'},
@@ -13133,7 +13254,9 @@ Dikkat edilmesi gereken 2 nokta:
       var alan = VIRGO_TANIM.fields(), oku = function(){ var v = {}; alan.forEach(function(f, i){ var e = fe.querySelector('[data-ffkey="' + i + '"]'); if (e) v[f.key] = e.value; }); return v; };
       var kutu = document.createElement('div'); kutu.className = 'vg-onizleme'; fe.insertBefore(kutu, fe.firstChild);
       var dl = document.createElement('datalist'); dl.id = 'vgKalemAdlari'; dl.innerHTML = virgoKalemAdlari().map(function(a){ return '<option value="' + escAttr(a) + '">'; }).join(''); fe.appendChild(dl);
-      var guncelle = function(){ virgoSevkTutarYaz(fe, alan, oku()); virgoKalemTutarYaz(fe, alan, oku()); kutu.innerHTML = '<div class="vg-onizleme-bas">Kaydedince</div>' + virgoOnizleme(virgoSahsiDuzelt(oku())); };
+      var okuTam = function(){ var v = oku(); v.kalemler = virgoKalemSatirlari(fe, alan); return v; };
+      var guncelle = function(){ virgoSevkTutarYaz(fe, alan, oku()); virgoKalemTutarYaz(fe, alan, okuTam()); virgoSaticiCiz(fe, alan); kutu.innerHTML = '<div class="vg-onizleme-bas">Kaydedince</div>' + virgoOnizleme(virgoSahsiDuzelt(okuTam())); };
+      virgoSaticiKur(fe, alan, guncelle); virgoXmlKur(fe, alan, guncelle);
       if (_virgoDuzenlenen && Date.now() - _virgoDuzenlenen.t < 1500) fe.dataset.vid = _virgoDuzenlenen.id; _virgoDuzenlenen = null;
       fe.addEventListener('input', guncelle); fe.addEventListener('change', guncelle); guncelle();
       fe.addEventListener('click', function(e){ if (e.target.closest('[data-fftekle]')) setTimeout(guncelle, 0); }); // r272: yeni satırda da stok yazısı
@@ -13149,11 +13272,15 @@ Dikkat edilmesi gereken 2 nokta:
         v.sevkKalemler = kl.satir; v.tutar = muhR2(kl.tl); v.paraBirimi = '₺'; v.odeyen = ''; v.borcPb = VIRGO_BORC_PB[0];
         if (v.sevkKarsilik !== VIRGO_SEVK_KARSILIK[1]){ v.sevkKarsilik = VIRGO_SEVK_KARSILIK[0]; v.odemeSekli = 'Mahsup'; }
       }
+      if (v.saticiId === '__yeni') v.saticiId = '';
       if (v.hareket === 'Harcama' || v.hareket === 'Kadir Bey ödedi'){
-        var kc = virgoKalemCoz(v.kalemler); if (kc.hata){ toast(kc.hata, true); return false; }
+        var kc = virgoKalemHesap(v.kalemler, v.kdvOrani); if (kc.hata){ toast(kc.hata, true); return false; }
         var adlar = {}; virgoKalemAdlari().forEach(function(a){ adlar[virgoKalemAnahtar(a)] = a; }); kc.satir.forEach(function(k){ var a = adlar[virgoKalemAnahtar(k.urun)]; if (a) k.urun = a; }); // aynı ürün hep aynı adla
-        v.kalemler = kc.satir; if (kc.satir.length){ v.tutar = kc.toplam; v.tutarTuru = 'KDV hariç'; }
-      } else delete v.kalemler;
+        v.kalemler = kc.satir;
+        if (kc.satir.length){ v.tutarTuru = 'KDV hariç'; if (virgoSahsi(v)) v.tutar = kc.genel; else { v.tutar = kc.matrah; v.kdvOrani = kc.anaOran; }
+          v.faturaToplam = { brut: kc.brut, iskonto: kc.iskonto, matrah: kc.matrah, kdv: kc.kdv, genel: kc.genel, kdvO: kc.kdvO }; }
+        else delete v.faturaToplam;
+      } else { delete v.kalemler; delete v.faturaToplam; v.saticiId = ''; v.ettn = ''; }
       var tutar = Number(v.tutar) || 0; if (!(tutar > 0)){ toast('Tutar 0\'dan büyük olmalı.', true); return false; }
       if (v.hareket === 'Kadir Bey ödedi'){ v.hareket = 'Harcama'; if (!v.odeyen) v.odeyen = VIRGO_FINANSOR; }
       else if (v.hareket === 'Geri ödeme') v.hareket = VIRGO_HAREKET[2];
@@ -13180,6 +13307,8 @@ Dikkat edilmesi gereken 2 nokta:
       var o = harcama ? Math.max(0, Number(v.kdvOrani) || 0) : 0, haric = v.tutarTuru === 'KDV dahil' && o ? tutar / (1 + o / 100) : tutar;
       if (v.paraBirimi === '€'){ v.eur = muhR2(haric); v.tl = muhR2(haric * kur); } else { v.tl = muhR2(haric); v.eur = muhR2(haric / kur); }
       v.kdvEur = muhR2(v.eur * o / 100); v.kdvTl = muhR2(v.tl * o / 100);
+      // r297: kalemli faturada KDV satır satır (karışık oranlar) — toplam KDV kalemlerden
+      if (harcama && v.faturaToplam && !virgoSahsi(v) && Number(v.kdvOrani) > 0){ var kd = Number(v.faturaToplam.kdv) || 0; if (v.paraBirimi === '€'){ v.kdvEur = muhR2(kd); v.kdvTl = muhR2(kd * kur); } else { v.kdvTl = muhR2(kd); v.kdvEur = muhR2(kd / kur); } }
       return v;
     },
     sirala: function(a, b){ return (b.tarih||'').localeCompare(a.tarih||'') || String(b.olusturma||'').localeCompare(String(a.olusturma||'')); },
@@ -13189,6 +13318,9 @@ Dikkat edilmesi gereken 2 nokta:
     // Kontrol form açıkken yapılır: hata çıkarsa form kapanmaz, yazılanlar kaybolmaz (hazirla kayıtta yeniden çalışır)
     kayitOncesi: function(v, eski, devam){
       var h = VIRGO_TANIM.hazirla(Object.assign({}, v), eski); if (h === false) return;
+      // r297: aynı firmanın aynı numaralı faturası (ya da aynı ETTN) zaten girilmişse sorulur
+      var tk = virgoFaturaTekrari(h, eski);
+      if (tk && !h.__tekrarOnay){ onayIste('Bu fatura zaten girilmiş görünüyor:\n' + (tk.belgeNo || '') + ' · ' + (tk.saticiId ? cariAdi(tk.saticiId) : '') + ' · ' + kvTarihTR(tk.tarih) + ' · ' + virgoTl(Number(tk.tl) || 0) + '\n\nAynı fatura iki kez girilirse borç ve gider iki kez sayılır. Yine de kaydedilsin mi?', 'Yine de kaydet', function(){ VIRGO_TANIM.kayitOncesi(Object.assign({}, v, { __tekrarOnay: true }), eski, devam); }); return; }
       // r268: sevkte stoktaki miktar yetmiyorsa sorulur (bu kaydın önceki sevki stoğa geri sayılır)
       if (!virgoSevkMi(h) || h.durum === 'Ödenecek') return devam();
       var once = {}; (state.stokHareketleri || []).forEach(function(x){ if (eski && x.kaynakTur === 'virgoSevk' && x.kaynakId === eski.id) once[x.stokId] = (once[x.stokId] || 0) - (Number(x.miktar) || 0); });
@@ -13204,7 +13336,7 @@ Dikkat edilmesi gereken 2 nokta:
       db.collection('tanimKayitlari').doc(id).delete().then(function(){ toast('Silindi'); if (v && virgoSevkMi(v)) virgoSevkStokEsitle(v, true); })
         .catch(function(e){ toast('Silinemedi: ' + dbErrMsg(e), true); });
     },
-    ekAksiyon: function(v){ var n = virgoNorm(v); return n.tip === 'mutabakat' ? '' : '<button class="btn secondary small" data-vkopya="' + v.id + '" title="Aynı kaydı bir ay sonrası için form olarak açar (maaş, kira gibi aylık kalemler); kaydetmeden önce kontrol edin">⧉ Sonraki aya</button>'; },
+    ekAksiyon: function(v){ var n = virgoNorm(v); return (n.tip === 'harcama' && (v.kalemler || []).length ? '<button class="btn secondary small" data-vfatura="' + v.id + '" title="Faturayı döküm olarak açar (yazdırılabilir)">🧾 Fatura</button> ' : '') + (n.tip === 'mutabakat' ? '' : '<button class="btn secondary small" data-vkopya="' + v.id + '" title="Aynı kaydı bir ay sonrası için form olarak açar (maaş, kira gibi aylık kalemler); kaydetmeden önce kontrol edin">⧉ Sonraki aya</button>'); },
     rowFn: function(v){
       v = virgoYeniAd(v);
       var n = virgoNorm(v), sinif = n.borcEur > 0 ? 'neg' : n.borcEur < 0 ? 'pos' : 'muted';
@@ -13213,7 +13345,7 @@ Dikkat edilmesi gereken 2 nokta:
           sub: 'program o gün ' + virgoET(p) + ' · ' + (Math.abs(f) < 0.5 ? 'tutuyor' : '<span class="neg">fark ' + virgoET({ eur: f, tl: f * (Number(v.kur) || virgoGunKuru(v.tarih)) }) + '</span> (eksik / fazla kayıt olabilir)') + (v.aciklama ? ' · ' + esc(v.aciklama) : '') + ' · bu tarih dahil önceki kayıtlar kilitli' }; }
       var bugun = todayISO(), vadeYazi = !n.odendi && v.vade ? ' · son ödeme ' + kvTarihTR(v.vade) : '';
       return { title: kvTarihTR(v.tarih) + ' · ' + esc(virgoTipAd(n)) + ' · ' + esc(n.kisi) + (n.tip === 'ortak' && n.alici ? ' → ' + esc(n.alici) : '') + (v.kategori && n.tip === 'harcama' ? ' · ' + esc(v.kategori) : '') + ' · <b class="' + sinif + '">' + virgoTl(n.tl) + '</b> <span class="muted">/ ' + virgoEur(n.eur) + '</span>' + (n.odendi ? '' : ' ' + badgeHtml(v.vade && v.vade < bugun ? 'vadesi geçti' : 'ödenecek', v.vade && v.vade < bugun ? 'reddedildi' : 'bekliyor')) + (virgoKilitli(v) ? ' ' + badgeHtml('kilitli', 'taslak') : ''),
-        sub: (n.sevk ? (v.sevkKalemler || []).map(function(k){ return esc(k.urun) + ' × <b>' + fmt(k.adet) + '</b>'; }).join(', ') + ' · ' : '') + (v.aciklama ? esc(v.aciklama) + ' · ' : '') + ((v.kalemler || []).length ? v.kalemler.length + ' kalem · ' : '') + (n.odendi ? '' : 'ödenince: ') + (n.kaynak ? esc(virgoKaynakAd(n)) + ' · ' : n.tip === 'alinan' ? 'borca eklenir · ' : n.tip === 'geri' ? 'borçtan düşer · ' : n.tip === 'ortak' ? 'yalnız ortaklar dengesi · ' : '') + (v.odemeSekli ? esc(v.odemeSekli) + ' · ' : '') +
+        sub: (n.sevk ? (v.sevkKalemler || []).map(function(k){ return esc(k.urun) + ' × <b>' + fmt(k.adet) + '</b>'; }).join(', ') + ' · ' : '') + (v.saticiId ? esc(cariAdi(v.saticiId)) + (v.belgeNo ? ' ' + esc(v.belgeNo) : '') + ' · ' : '') + (v.aciklama ? esc(v.aciklama) + ' · ' : '') + ((v.kalemler || []).length ? v.kalemler.length + ' kalem · ' : '') + (n.odendi ? '' : 'ödenince: ') + (n.kaynak ? esc(virgoKaynakAd(n)) + ' · ' : n.tip === 'alinan' ? 'borca eklenir · ' : n.tip === 'geri' ? 'borçtan düşer · ' : n.tip === 'ortak' ? 'yalnız ortaklar dengesi · ' : '') + (v.odemeSekli ? esc(v.odemeSekli) + ' · ' : '') +
           'girilen ' + esc(v.paraBirimi || '₺') + muhTutar(v.tutar) + (n.tip === 'harcama' && n.oran ? ' (' + esc(v.tutarTuru || 'KDV hariç') + ', KDV %' + n.oran + ' = ' + virgoET(n.kdv) + ' · ' + esc(virgoFaturaAd(n)) + ' · maliyet ' + virgoET(n.m) + ')' : '') +
           ' · işlem günü kuru ₺' + kurYazi(v.kur || virgoGunKuru(v.tarih)) + (function(){ var kb = virgoGunKuru(todayISO()); return kb ? ' · bugünkü kurla ' + virgoTl(n.eur * kb) + ' (₺' + kurYazi(kb) + ')' : ''; })() + vadeYazi + (v.belgeNo ? ' · belge ' + esc(v.belgeNo) : '') };
     },
@@ -13231,6 +13363,7 @@ Dikkat edilmesi gereken 2 nokta:
           host.querySelectorAll('#virgoAlt [data-vsekme]').forEach(function(b){ b.style.display = b.dataset.vsekme === vs.dataset.vsekmesec ? '' : 'none'; });
           var alt = byId('virgoAlt'); if (alt) alt.__sonHtml = null; return; }
         if (e.target.closest('[data-virgoexcel]')){ virgoExcel(); return; }
+        var vf = e.target.closest('[data-vfatura]'); if (vf){ var fv = virgoKayitlari().find(function(x){ return x.id === vf.dataset.vfatura; }); if (fv) virgoFaturaYazdir(fv); return; }
         var va = e.target.closest('[data-valinan]');
         if (va){ var ac = va.dataset.acik !== '1'; va.dataset.acik = ac ? '1' : ''; var ok = va.querySelector('.vg-ok'); if (ok) ok.textContent = ac ? '▾' : '▸';
           host.querySelectorAll('[data-valinanic="' + va.dataset.valinan + '"]').forEach(function(r){ r.style.display = ac ? '' : 'none'; }); return; }
@@ -13242,7 +13375,7 @@ Dikkat edilmesi gereken 2 nokta:
         var kb = e.target.closest('[data-vkopya]');
         if (kb){ var v = virgoKayitlari().find(function(x){ return x.id === kb.dataset.vkopya; }); if (!v) return;
           var ay = KV_MODEL.ayEkle((v.tarih || todayISO()).slice(0, 7), 1), sonGun = new Date(Number(ay.slice(0, 4)), Number(ay.slice(5, 7)), 0).getDate(), gun = Math.min(Number((v.tarih || '').slice(8, 10)) || 1, sonGun);
-          var kopya = {}; ['hareket', 'odeyen', 'alici', 'kaynak', 'kategori', 'aciklama', 'odemeSekli', 'durum', 'paraBirimi', 'tutarTuru', 'tutar', 'kdvOrani', 'fatura'].forEach(function(k){ if (v[k] !== undefined) kopya[k] = v[k]; });
+          var kopya = {}; ['hareket', 'odeyen', 'alici', 'kaynak', 'kategori', 'aciklama', 'odemeSekli', 'durum', 'paraBirimi', 'tutarTuru', 'tutar', 'kdvOrani', 'fatura', 'saticiId'].forEach(function(k){ if (v[k] !== undefined) kopya[k] = v[k]; });
           kopya.tarih = ay + '-' + String(gun).padStart(2, '0'); kopya.belgeNo = ''; kopya.kur = ''; if (v.vade) kopya.vade = kopya.tarih;
           crudYeni(VIRGO_TANIM, kopya); return; }
         if (!e.target.closest('[data-vkisikaydet]')) return;
@@ -13288,9 +13421,9 @@ Dikkat edilmesi gereken 2 nokta:
     if (/^Ortaklar arası/.test(h)) return { ana: ['tarih', 'hareket', 'odeyen', 'alici', 'paraBirimi', 'tutar', 'aciklama'], ayr: durum.concat(['odemeSekli', 'belgeNo', 'kur']), kisi: 'Veren ortak' };
     if (/^Mutabakat/.test(h)) return { ana: ['tarih', 'hareket', 'paraBirimi', 'tutar', 'aciklama'], ayr: ['kur'], tutar: 'Virgo ile anlaşılan borç' };
     if (/^Bilgi/.test(h)) return { ana: ['tarih', 'hareket', 'odeyen', 'paraBirimi', 'tutar', 'aciklama'], ayr: ['belgeNo', 'kur'], kisi: 'Kişi' };
-    if (virgoSahsi(v)) return { ana: ['tarih', 'hareket', 'odeyen', 'kategori', 'aciklama', 'kalemler', 'paraBirimi', 'tutar'], ayr: ['kaynak'].concat(durum, ['odemeSekli', 'belgeNo', 'kur']), kisi: 'Ödeyen (harcamayı yapan)', tutar: 'Ödenen tutar' };
-    return { ana: ['tarih', 'hareket', 'odeyen', 'kategori', 'aciklama', 'kalemler', 'paraBirimi', 'tutarTuru', 'tutar', 'kdvOrani'],
-      ayr: (vg ? ['borcPb'] : ['kaynak', 'fatura']).concat(durum, ['odemeSekli', 'belgeNo', 'kur']), kisi: 'Ödeyen (harcamayı yapan)' };
+    if (virgoSahsi(v)) return { ana: ['tarih', 'hareket', 'odeyen', 'kategori', 'saticiId', 'belgeNo', 'aciklama', 'kalemler', 'paraBirimi', 'tutar'], ayr: ['kaynak'].concat(durum, ['odemeSekli', 'kur']), kisi: 'Ödeyen (harcamayı yapan)', tutar: 'Ödenen tutar' };
+    return { ana: ['tarih', 'hareket', 'odeyen', 'kategori', 'saticiId', 'belgeNo', 'aciklama', 'kalemler', 'paraBirimi', 'tutarTuru', 'tutar', 'kdvOrani'],
+      ayr: (vg ? ['borcPb'] : ['kaynak', 'fatura']).concat(durum, ['odemeSekli', 'kur']), kisi: 'Ödeyen (harcamayı yapan)' };
   }
   function virgoFormDuzen(fe, alan, oku){
     var sar = {}, etiket = function(w, yazi){ var l = w && w.querySelector('label'); if (l && l.firstChild && l.firstChild.nodeType === 3) l.firstChild.nodeValue = yazi; };
@@ -13309,6 +13442,8 @@ Dikkat edilmesi gereken 2 nokta:
       var v = oku(), g = virgoFormGorunum(v), anahtar = g.ana.join() + '|' + g.ayr.join();
       if (sar.odeyen) etiket(sar.odeyen, g.kisi || 'Kişi');
       if (sar.tutar) etiket(sar.tutar, g.tutar || 'Tutar');
+      if (sar.belgeNo) etiket(sar.belgeNo, /^Harcama$/.test(v.hareket || '') ? 'Fatura no' : 'Belge / fatura / dekont no');
+      if (sar.tarih) etiket(sar.tarih, /^Harcama$/.test(v.hareket || '') ? 'Fatura tarihi' : 'Tarih');
       // Mutabakatta kişi sorulmaz: Virgo
       if (!g.kisi && sar.odeyen){ var s = sar.odeyen.querySelector('select'); if (s && !s.value) s.value = VIRGO_FINANSOR; }
       if (anahtar === son) return; son = anahtar;
