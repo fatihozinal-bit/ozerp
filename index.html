@@ -1537,7 +1537,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r300</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r301</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12535,6 +12535,8 @@ Dikkat edilmesi gereken 2 nokta:
       virgoKart('Üretim karşılığı', t.gelir, fmt(t.adet) + ' adet · fire ' + fmt(t.fire) + ' · bilgi, borçtan düşmez', '', 'gelir') +
       virgoKart('Virgo\'ya geri ödenen', t.geri, 'borçtan düştü', '', 'geri') +
       virgoKart('İşin kazancı', t.kazanc, 'üretim − işletme gideri (yatırım hariç)', (t.kazanc.tl || t.kazanc.eur) < -0.004 ? 'bad' : 'good isaretli', 'kazanc') +
+      (function(){ var h = virgoVergiHesap(); if (!h.aylar.length || h.A.kim !== 'biz') return ''; var o = h.aylar.reduce(function(x, a){ x.s += a.sonra; x.v += a.vergi; return x; }, { s: 0, v: 0 }); if (Math.abs(o.v) < 0.5) return '';
+        return '<div class="card' + (o.s < 0 ? ' bad' : ' good isaretli') + '"><div class="label">Vergi sonrası kazanç ' + infoIco('İşin kazancı − tahmini kurumlar vergisi (amortisman düşülerek; Vergi & amortisman sekmesi). Vergiyi biz üstlenirsek Virgo borcundan düşmesi hakkaniyetli tutar.') + '</div><div class="value">' + virgoTl(o.s) + '</div><div class="sub">vergi ' + virgoTl(o.v) + '</div></div>'; })() +
       (Math.abs(t.tlFaturaKalan.tl) > 0.5 ? '<div class="card accent vg-satir" data-vd="top||tlFaturaE" title="Bu rakamın kayıtları için tıklayın"><div class="label">Virgo ₺ fatura ' + infoIco('Formda "Hangi borç = Virgo ₺ fatura" seçilen kayıtlar (KDV hariç) ve bu borca yapılan ödemeler. ₺ izlenir; € bugünkü kurla yalnız bilgi. Virgo\'ya kalan borca girmez.') + '</div><div class="value">' + virgoTl(t.tlFaturaKalan.tl) + '</div>' + (kur ? '<div class="sub">≈ ' + virgoEur(t.tlFaturaKalan.tl / kur) + ' bugünkü kurla</div>' : '') + '</div>' : '') +
       (Math.abs(t.elde.eur) > 0.004 ? virgoKart('Elimizdeki Virgo parası', t.elde, t.elde.eur < 0 ? 'eksi: verdiğinden fazla harcanmış, "Virgo\'dan alınan" kaydı eksik olabilir' : 'verdiği paradan harcanmayan', '', 'elde') : '') +
       (t.bekleyen.eur > 0.004 ? virgoKart('Ödenecek (bekleyen)', t.bekleyen, 'toplamlara girmedi', '', 'bekleyen') : '') +
@@ -12729,11 +12731,125 @@ Dikkat edilmesi gereken 2 nokta:
           '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Ortak</th><th>Kayıt</th><th>Açıklama</th><th class="num">Tutar</th><th>Nereye işlendi</th><th>Kendi parasıysa</th></tr></thead><tbody>' +
           d.map(function(x){ return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + esc(x.n.kisi) + '</td><td>' + esc(virgoTipAd(x.n)) + (x.n.tip === 'harcama' && x.v.kategori ? ' · ' + esc(x.v.kategori) : '') + '</td><td>' + esc(x.v.aciklama || '') + '</td><td class="num">' + virgoIki({ eur: x.n.eur, tl: x.n.tl }) + '</td><td>' + esc(x.yer) + '</td><td class="muted">' + esc(x.oneri) + '</td></tr>'; }).join('') +
           '</tbody></table></div>'; })() + '</div></div>';
+    html += virgoVergiHtml();
     // r246: ay ay tablolar tek blokta sekmeli; aynı anda biri görünür (seçim bu tarayıcıda hatırlanır)
-    var sekmeler = [['kazanc', 'Aylık kazanç'], ['ayay', 'Virgo hesabı ay ay'], ['harcama', 'Harcamalar'], ['alinan', 'Alınanlar'], ['ortak', 'Ortaklar']].filter(function(x){ return html.indexOf('data-vsekme="' + x[0] + '"') > -1; });
+    var sekmeler = [['kazanc', 'Aylık kazanç'], ['ayay', 'Virgo hesabı ay ay'], ['harcama', 'Harcamalar'], ['alinan', 'Alınanlar'], ['ortak', 'Ortaklar'], ['vergi', 'Vergi & amortisman']].filter(function(x){ return html.indexOf('data-vsekme="' + x[0] + '"') > -1; });
     var sec = virgoSekme(); if (!sekmeler.some(function(x){ return x[0] === sec; })) sec = sekmeler.length ? sekmeler[0][0] : '';
     sekmeler.forEach(function(x){ if (x[0] !== sec) html = html.replace('data-vsekme="' + x[0] + '"', 'data-vsekme="' + x[0] + '" style="display:none"'); });
     return '<div class="sekme-bar vg-sekmeler">' + sekmeler.map(function(x){ return '<button type="button" data-vsekmesec="' + x[0] + '"' + (x[0] === sec ? ' class="aktif"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>' + html;
+  }
+  // r301: Vergi & amortisman. Makineler / demirbaş Virgo'nun aktifinde (Virgo adına fatura): amortismanı Virgo ayırır, işin kârı Virgo'nun
+  // kurumlar vergisi matrahına girer. Burada bu işin payına düşen tahmini vergi, amortisman ve Virgo'nun bu işten doğan KDV'si hesaplanır (₺).
+  // Seçenekler config'te: virgoAmortYontem ('normal' | 'azalan'), virgoAmortOmur { kategori: yıl }, virgoVergiKim ('biz' | 'virgo').
+  // VUK: kurumlarda alındığı yıl tam yıl amortisman (kıst yok); burada o yılın tutarı alış ayından yıl sonuna eşit yayılır, sonraki yıllar 12 aya.
+  var VIRGO_AMORT_OMUR = { 'Makine': 10, 'Kuruluş & tesisat': 10, 'Demirbaş & ekipman': 5 };
+  var VIRGO_KDV_BEKLENEN = ['Makine', 'Kuruluş & tesisat', 'Demirbaş & ekipman', 'Elektrik & enerji', 'Malzeme & takım', 'Sarf malzeme', 'Bakım & onarım', 'Nakliye & taşıma'];
+  function virgoVergiAyar(){
+    var c = state.config || {}, o = c.virgoAmortOmur || {}, omur = {};
+    VIRGO_YATIRIM.forEach(function(k){ var v = Number(o[k]); omur[k] = v >= 1 && v <= 50 ? Math.round(v) : VIRGO_AMORT_OMUR[k] || 5; });
+    var sk = (kvParam() || {}).kdvOrani; sk = sk == null || sk === '' || isNaN(Number(sk)) ? 20 : Number(sk);
+    return { yontem: c.virgoAmortYontem === 'azalan' ? 'azalan' : 'normal', omur: omur, kim: c.virgoVergiKim === 'virgo' ? 'virgo' : 'biz', oran: Number(muhAyar().kvOrani) || 25, satisKdv: sk };
+  }
+  // Bir varlığın yıl yıl amortismanı: normal = maliyet ÷ ömür; azalan bakiyeler = kalan × (2 ÷ ömür, en çok %50), son yıl kalanın tamamı
+  function virgoAmortPlan(maliyet, omur, yontem){
+    var l = [], kalan = maliyet, o = Math.max(1, omur), r = Math.min(0.5, 2 / o);
+    for (var i = 0; i < o; i++){ var a = i === o - 1 ? kalan : yontem === 'azalan' ? kalan * r : maliyet / o; a = muhR2(Math.min(a, kalan)); kalan = muhR2(kalan - a); l.push(a); }
+    return l;
+  }
+  // Yatırım harcamaları: Virgo adına faturalı olanlar Virgo'nun demirbaşıdır (amortisman, KDV indirimi); fişsiz / bizim adımıza olanlar olamaz
+  function virgoVarliklar(){
+    var A = virgoVergiAyar(), l = [];
+    virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.tip !== 'harcama' || !n.odendi || !n.yatirim || !/^\d{4}-\d{2}/.test(v.tarih || '')) return;
+      var uygun = n.fatura === 'virgo', omur = A.omur[v.kategori] || 5, maliyet = uygun ? n.haric.tl : n.tl;
+      l.push({ v: v, n: n, uygun: uygun, maliyet: muhR2(maliyet), omur: omur, plan: uygun ? virgoAmortPlan(maliyet, omur, A.yontem) : [] }); });
+    return l.sort(function(a, b){ return (a.v.tarih || '').localeCompare(b.v.tarih || ''); });
+  }
+  // Varlığın o aya düşen amortismanı
+  function virgoAmortAy(x, ay){
+    if (!x.uygun) return 0; var y0 = Number(x.v.tarih.slice(0, 4)), m0 = Number(x.v.tarih.slice(5, 7)), y = Number(ay.slice(0, 4)), m = Number(ay.slice(5, 7)), i = y - y0;
+    if (i < 0 || i >= x.plan.length || (i === 0 && m < m0)) return 0;
+    return x.plan[i] / (i === 0 ? 13 - m0 : 12);
+  }
+  function virgoAmortYilSonu(x, yil){ var t = 0; x.plan.forEach(function(a, i){ if (Number(x.v.tarih.slice(0, 4)) + i <= yil) t += a; }); return muhR2(t); }
+  // Ay ay: üretim, vergide düşülen gider, kabul edilmeyen gider (fişsiz / bizim adımıza), amortisman, matrah, vergi (yıl içinde birikimli, geçmiş yıl zararı düşülür), KDV
+  function virgoVergiHesap(){
+    var A = virgoVergiAyar(), m = {}, al = function(ay){ return m[ay] || (m[ay] = { ay: ay, gelir: 0, gider: 0, kkeg: 0, amort: 0, kdvInd: 0 }); };
+    virgoAylar().forEach(function(a){ al(a.ay).gelir = a.gelir.tl; });
+    virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.tip !== 'harcama' || !n.odendi || !/^\d{4}-\d{2}/.test(v.tarih || '')) return; var x = al(v.tarih.slice(0, 7));
+      if (n.fatura === 'virgo') x.kdvInd += n.kdv.tl;
+      if (n.yatirim) return; if (n.fatura === 'virgo') x.gider += n.haric.tl; else x.kkeg += n.tl; });
+    var anahtar = Object.keys(m).sort(), varl = virgoVarliklar(); if (!anahtar.length && !varl.length) return { A: A, aylar: [], varl: varl };
+    var bas = anahtar.concat(varl.map(function(x){ return x.v.tarih.slice(0, 7); })).sort()[0], son = anahtar.concat([todayISO().slice(0, 7)]).sort().pop();
+    for (var ay = bas; ay <= son; ay = KV_MODEL.ayEkle(ay, 1)) al(ay);
+    var l = Object.keys(m).sort().filter(function(k){ return k >= bas && k <= son; }).map(function(k){ return m[k]; });
+    var yil = '', kum = 0, vKum = 0, zarar = 0, devKdv = 0;
+    l.forEach(function(a){
+      if (a.ay.slice(0, 4) !== yil){ if (yil){ var e = kum - zarar; zarar = e < 0 ? -e : 0; } yil = a.ay.slice(0, 4); kum = 0; vKum = 0; }
+      varl.forEach(function(x){ a.amort += virgoAmortAy(x, a.ay); });
+      a.amort = muhR2(a.amort); a.kazanc = a.gelir - a.gider - a.kkeg; a.matrah = a.gelir - a.gider - a.amort;
+      kum += a.matrah; var yeni = Math.max(0, kum - zarar) * A.oran / 100; a.vergi = muhR2(yeni - vKum); vKum = yeni; a.zarar = zarar;
+      a.sonra = a.kazanc - (A.kim === 'biz' ? a.vergi : 0);
+      a.kdvHes = a.gelir * A.satisKdv / 100; var f = a.kdvHes - a.kdvInd - devKdv; a.kdvOde = Math.max(0, f); devKdv = f < 0 ? -f : 0; a.kdvDev = devKdv;
+    });
+    return { A: A, aylar: l, varl: varl };
+  }
+  // KDV ve belge kontrolü: Virgo'nun KDV'yi indirebilmesi ve amortisman için eksik kayıtlar
+  function virgoKdvKontrol(){
+    var l = [];
+    virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.tip !== 'harcama' || !n.odendi) return;
+      if (n.fatura === 'virgo' && n.kdv.tl > 0.004 && !v.belgeNo && !v.ettn) l.push({ v: v, n: n, s: 'Virgo adına fatura ama fatura no yok', o: 'Virgo bu KDV\'yi faturayla indirir; fatura no girin, yoksa KDV borçtan haksız düşmüş olabilir' });
+      else if (n.fatura === 'virgo' && !n.oran && VIRGO_KDV_BEKLENEN.indexOf(v.kategori) > -1) l.push({ v: v, n: n, s: 'Virgo adına fatura, KDV %0', o: 'Faturada KDV varsa oranı girin: Virgo indirir, borçtan düşer' });
+      if (n.yatirim && n.fatura !== 'virgo') l.push({ v: v, n: n, s: 'Yatırım fişsiz / bizim adımıza', o: 'Virgo\'nun demirbaşı olmaz: amortisman ayrılmaz, KDV indirilmez, 2028 devrinde faturası olmaz. Fatura Virgo adınaysa Fatura = Virgo adına seçin' });
+      if (v.kategori === 'Kira' && !n.oran) l.push({ v: v, n: n, s: 'Kira KDV\'siz (şahıstan kira olabilir)', o: 'Şahıstan işyeri kirasında Virgo %20 stopajı muhtasarla öder; gider brüt kiradır (net ÷ 0,80). Tutarı brüt girin' });
+    });
+    return l.sort(function(a, b){ return (b.v.tarih || '').localeCompare(a.v.tarih || ''); });
+  }
+  function virgoVergiHtml(){
+    var h = virgoVergiHesap(), A = h.A, l = h.aylar; if (!l.length) return '';
+    var T = function(v, kalin, isaret){ v = Number(v) || 0; if (Math.abs(v) < 0.5) return '<td class="num"><span class="muted">—</span></td>'; var y = virgoTl(v); return '<td class="num' + (isaret ? (v < 0 ? ' neg' : ' pos') : '') + '">' + (kalin ? '<b>' + y + '</b>' : y) + '</td>'; };
+    var sec = function(k, deg, ops){ return '<select data-vvergi="' + k + '">' + ops.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === deg ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'; };
+    var html = '<div class="block" data-vsekme="vergi"><div class="block-head"><h3>Vergi & amortisman ' + infoIco('Makineler ve demirbaşlar Virgo adına faturalı olduğu için Virgo\'nun demirbaşıdır: amortismanı Virgo ayırır, KDV\'sini Virgo indirir. İşin kârı Virgo\'nun kurumlar vergisi matrahına girer. Vergi matrahı = üretim − vergide düşülen gider (Virgo adına faturalı, KDV hariç) − amortisman. Fişsiz / bizim adımıza giderler vergide düşülmez (kabul edilmeyen gider), ama işin kazancından düşer. Vergi yıl içinde birikimli hesaplanır (geçici vergi gibi); bir ay zarar edilirse sonraki ayların vergisini azaltır; yıl zararla biterse sonraki yıla devreder. "Vergiyi biz üstleniriz" seçiliyse vergi sonrası kazanç = Virgo borcundan düşmesi hakkaniyetli tutar. Tahmindir; borç kendiliğinden değişmez.') + '</h3></div><div class="block-body">' +
+      '<div class="vg-vergi-ayar" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:10px">' +
+        '<label class="muted" style="margin:0">Amortisman ' + sec('virgoAmortYontem', A.yontem, [['normal', 'Normal (eşit)'], ['azalan', 'Azalan bakiyeler']]) + ' ' + infoIco('Normal: her yıl maliyet ÷ ömür. Azalan bakiyeler: her yıl kalan değer × (2 ÷ ömür, en çok %50); ilk yıllarda daha çok gider, vergi öne ertelenir; son yıl kalanın tamamı. Alındığı yıl tam yıl ayrılır (VUK, kurumlarda kıst yok). Yöntem bir kez seçilince o varlık için değiştirilmemelidir.') + '</label>' +
+        VIRGO_YATIRIM.map(function(k){ return '<label class="muted" style="margin:0">' + esc(k) + ' <input type="number" min="1" max="50" step="1" data-vvergi="omur|' + escAttr(k) + '" value="' + A.omur[k] + '" style="width:56px"> yıl</label>'; }).join('') + infoIco('Faydalı ömür: VUK amortisman listesindeki süre (oran = 100 ÷ ömür). Talaşlı imalat tezgâhlarında genelde 10 yıl, bilgisayar / ölçü aleti 4–5 yıl.') +
+        '<label class="muted" style="margin:0">Vergiyi ' + sec('virgoVergiKim', A.kim, [['biz', 'biz üstleniriz (borçtan düşecek tutardan)'], ['virgo', 'Virgo üstlenir']]) + '</label>' +
+        '<span class="muted">Kurumlar vergisi %' + fmt2(A.oran) + ' · satış KDV %' + fmt2(A.satisKdv) + '</span></div>' +
+      '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Üretim karşılığı</th><th class="num">Vergide düşülen gider</th><th class="num">Kabul edilmeyen gider ' + infoIco('Fişsiz / bizim adımıza giderler (KDV dahil): işin kazancından düşer ama Virgo vergiden düşemez.') + '</th><th class="num">Amortisman</th><th class="num">Vergi matrahı</th><th class="num">Tahmini vergi</th><th class="num">İşin kazancı</th><th class="num">' + (A.kim === 'biz' ? 'Vergi sonrası kazanç' : 'Kazanç (vergi Virgo\'da)') + '</th></tr></thead><tbody>';
+    var t = { gelir: 0, gider: 0, kkeg: 0, amort: 0, matrah: 0, vergi: 0, kazanc: 0, sonra: 0 }, yil = '', yt = null;
+    var ySatir = function(y, o){ return '<tr class="kv-alt"><td><b>' + y + ' toplamı</b></td>' + T(o.gelir, true) + T(o.gider, true) + T(o.kkeg, true) + T(o.amort, true) + T(o.matrah, true, true) + T(o.vergi, true) + T(o.kazanc, true, true) + T(o.sonra, true, true) + '</tr>'; };
+    l.forEach(function(a){
+      if (a.ay.slice(0, 4) !== yil){ if (yt) html += ySatir(yil, yt); yil = a.ay.slice(0, 4); yt = { gelir: 0, gider: 0, kkeg: 0, amort: 0, matrah: 0, vergi: 0, kazanc: 0, sonra: 0 }; }
+      Object.keys(t).forEach(function(k){ t[k] += a[k]; yt[k] += a[k]; });
+      html += '<tr><td>' + esc(muhAyAdi(a.ay)) + (a.zarar > 0.5 && a.ay.slice(5) === '01' ? ' <span class="muted" title="Geçmiş yıldan devreden zarar">· devreden zarar ' + virgoTl(a.zarar) + '</span>' : '') + '</td>' + T(a.gelir) + T(a.gider) + T(a.kkeg) + T(a.amort) + T(a.matrah, false, true) + T(a.vergi) + T(a.kazanc, false, true) + T(a.sonra, true, true) + '</tr>';
+    });
+    if (yt) html += ySatir(yil, yt);
+    if (l.length && l[0].ay.slice(0, 4) !== yil) html += '<tr class="kv-alt"><td><b>Genel toplam</b></td>' + T(t.gelir, true) + T(t.gider, true) + T(t.kkeg, true) + T(t.amort, true) + T(t.matrah, true, true) + T(t.vergi, true) + T(t.kazanc, true, true) + T(t.sonra, true, true) + '</tr>';
+    html += '</tbody></table></div>';
+    // Amortisman tablosu: varlık varlık
+    var bu = Number(todayISO().slice(0, 4));
+    if (h.varl.length){
+      var vt = { m: 0, b: 0, y: 0 };
+      html += '<h4 style="margin:14px 0 6px">Demirbaşlar ve amortisman ' + infoIco('Yatırım kategorisindeki (Makine, Kuruluş & tesisat, Demirbaş & ekipman) ödenmiş harcamalar. Maliyet KDV hariç (KDV\'yi Virgo indirdi). Bu yıl: ' + bu + ' yılına düşen amortisman; birikmiş: ' + bu + ' sonuna kadar; net değer = maliyet − birikmiş. 2028 devrinde Virgo makineleri net değerin üstünde satarsa fark Virgo\'ya kâr yazılır, vergisi çıkar.') + '</h4>' +
+        '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Fatura</th><th class="num">Maliyet</th><th class="num">Ömür</th><th class="num">' + bu + ' amortismanı</th><th class="num">Birikmiş</th><th class="num">Net değer</th></tr></thead><tbody>' +
+        h.varl.map(function(x){ var i = bu - Number(x.v.tarih.slice(0, 4)), by = x.uygun && i >= 0 && i < x.plan.length ? x.plan[i] : 0, bk = x.uygun ? virgoAmortYilSonu(x, bu) : 0;
+          if (x.uygun){ vt.m += x.maliyet; vt.b += bk; vt.y += by; }
+          return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + esc(x.v.kategori || '') + '</td><td>' + esc((x.v.saticiId ? cariAdi(x.v.saticiId) + ' · ' : '') + (x.v.aciklama || '')) + '</td><td>' + (x.uygun ? 'Virgo adına' : '<span class="neg">fişsiz / bizim adımıza — amortisman yok</span>') + '</td>' + T(x.maliyet) +
+            '<td class="num">' + (x.uygun ? x.omur + ' yıl' : '—') + '</td>' + T(by) + T(bk) + T(x.uygun ? x.maliyet - bk : 0) + '</tr>'; }).join('') +
+        '<tr class="kv-alt"><td colspan="4"><b>Toplam (Virgo adına)</b></td>' + T(vt.m, true) + '<td></td>' + T(vt.y, true) + T(vt.b, true) + T(vt.m - vt.b, true) + '</tr></tbody></table></div>';
+    }
+    // KDV: Virgo'nun bu işten beyannamesine giren KDV
+    var kt = { hes: 0, ind: 0, ode: 0 };
+    html += '<h4 style="margin:14px 0 6px">KDV (Virgo\'nun beyannamesinde) ' + infoIco('Hesaplanan KDV: üretim karşılığı × satış KDV oranı (Virgo müşteriye faturada keser, müşteriden tahsil eder). İndirilecek KDV: Virgo adına faturaların KDV\'si (makine dahil). Ödenecek = hesaplanan − indirilecek − önceki aydan devreden; eksiyse sonraki aya devreder. Bu KDV\'yi Virgo öder ve müşteriden tahsil ettiği için kazancınızı değiştirmez; Virgo adına faturalarda sizin ödediğiniz KDV zaten borçtan düşüldü. Fişsiz / bizim adımıza giderlerin KDV\'si indirilemez, gider olarak kalır.') + '</h4>' +
+      '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Hesaplanan (satış)</th><th class="num">İndirilecek (alış)</th><th class="num">Ödenecek</th><th class="num">Devreden</th></tr></thead><tbody>' +
+      l.filter(function(a){ return a.kdvHes > 0.5 || a.kdvInd > 0.5 || a.kdvDev > 0.5; }).map(function(a){ kt.hes += a.kdvHes; kt.ind += a.kdvInd; kt.ode += a.kdvOde;
+        return '<tr><td>' + esc(muhAyAdi(a.ay)) + '</td>' + T(a.kdvHes) + T(a.kdvInd) + T(a.kdvOde, true) + T(a.kdvDev) + '</tr>'; }).join('') +
+      '<tr class="kv-alt"><td><b>Toplam</b></td>' + T(kt.hes, true) + T(kt.ind, true) + T(kt.ode, true) + T(l.length ? l[l.length - 1].kdvDev : 0, true) + '</tr></tbody></table></div>';
+    var k = virgoKdvKontrol();
+    html += '<h4 style="margin:14px 0 6px">Kontrol ' + infoIco('KDV indirimi, amortisman ve stopaj için eksik görünen kayıtlar. Satıra tıklayınca kayıt açılır.') + '</h4>' +
+      (k.length ? '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th class="num">Tutar</th><th>Eksik</th><th>Ne yapılmalı</th></tr></thead><tbody>' +
+        k.map(function(x){ return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + esc(x.v.kategori || '') + '</td><td>' + esc(x.v.aciklama || '') + '</td>' + T(x.n.tl) + '<td class="neg">' + esc(x.s) + '</td><td class="muted">' + esc(x.o) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="helper">✓ Eksik görünen kayıt yok.</div>') +
+      '</div></div>';
+    return html;
   }
   var VIRGO_SEKME_KEY = 'ozerp_virgo_sekme_v1';
   function virgoSekme(){ try { return localStorage.getItem(VIRGO_SEKME_KEY) || 'kazanc'; } catch(e){ return 'kazanc'; } }
@@ -13409,6 +13525,12 @@ Dikkat edilmesi gereken 2 nokta:
         if (ok){ var kv = Number(String(ok.value).replace(',', '.')) || 0;
           configWrite({ virgoOrtakKur: kv > 0 ? kv : null }).then(function(){ toast(kv > 0 ? '✓ Ortaklar hesabı kuru: 1 € = ₺' + kurYazi(kv) : '✓ Kur silindi; bugünün TCMB kuru kullanılır'); var el = byId('virgoAlt'); if (el) el.__sonHtml = null; EK_RENDER.virgo(); })
             .catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); });
+          return; }
+        var vv = e.target.closest('[data-vvergi]');
+        if (vv){ var ka = vv.dataset.vvergi, yaz = {};
+          if (ka.indexOf('omur|') === 0){ var om = Object.assign({}, (state.config || {}).virgoAmortOmur || {}), n = Math.round(Number(String(vv.value).replace(',', '.')) || 0); om[ka.slice(5)] = n >= 1 && n <= 50 ? n : null; yaz.virgoAmortOmur = om; }
+          else yaz[ka] = vv.value;
+          configWrite(yaz).then(function(){ toast('✓ Kaydedildi'); var el = byId('virgoAlt'); if (el) el.__sonHtml = null; EK_RENDER.virgo(); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); });
           return; }
         var s = e.target.closest('[data-virgopb]'); if (!s) return;
         try { localStorage.setItem(VIRGO_PB_KEY, s.value); } catch(er){}
