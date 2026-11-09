@@ -1557,7 +1557,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-09-r309</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-09-r310</div>
   </nav>
   <main>
     <div class="topbar">
@@ -13240,6 +13240,11 @@ Dikkat edilmesi gereken 2 nokta:
     }
     return null;
   }
+  // r310: ayrıntı penceresinde fatura tanınsın: firma · fatura no · açıklama (açıklama boşsa kalemlerdeki ürünler)
+  function virgoDetayMetin(v){
+    var k = (v.kalemler || []).map(function(x){ return x.urun; }).filter(Boolean), ic = v.aciklama || (k.slice(0, 3).join(', ') + (k.length > 3 ? ' +' + (k.length - 3) : ''));
+    return [v.saticiId ? cariAdi(v.saticiId) : '', v.belgeNo || '', ic].filter(Boolean).join(' · ');
+  }
   function virgoDetaySatirlar(kapsam, deger, alan){
     var parca = alan === 'hepsi' ? [['gelir', 1], ['hepsiK', 1]] : VIRGO_DETAY_BILESIK[alan] || [[alan, 1]], birikim = alan === 'kalan' || alan === 'elde', satir = [];
     var ayUygun = function(ay){ return kapsam !== 'ay' || (birikim ? ay <= deger : ay === deger); };
@@ -13257,7 +13262,7 @@ Dikkat edilmesi gereken 2 nokta:
         if (kapsam === 'ortak' && n.kisi !== deger && !(n.tip === 'ortak' && n.alici === deger)) return;
         if (kapsam === 'kat' && (n.tip !== 'harcama' || (v.kategori || 'Diğer') !== deger)) return;
         var t = virgoKalemTutar(v, n, k, kapsam === 'ortak' ? deger : ''); if (!t || (!t.eur && !t.tl)) return;
-        satir.push({ tarih: v.tarih, tur: virgoTipAd(n) + (n.tip === 'harcama' && v.kategori ? ' · ' + v.kategori : ''), kalem: k, yer: virgoYerAd(n), kur: Number(v.kur) || virgoGunKuru(v.tarih), girilen: (v.paraBirimi || '₺') + muhTutar(v.tutar) + (n.tip === 'harcama' && n.oran ? ' ' + (v.tutarTuru || 'KDV hariç') + ' %' + n.oran : ''), kisi: n.kisi + (n.alici ? ' → ' + n.alici : ''), aciklama: v.aciklama || '', eur: isaret * t.eur, tl: isaret * t.tl, kayit: v });
+        satir.push({ tarih: v.tarih, tur: virgoTipAd(n) + (n.tip === 'harcama' && v.kategori ? ' · ' + v.kategori : ''), kalem: k, yer: virgoYerAd(n), kur: Number(v.kur) || virgoGunKuru(v.tarih), girilen: (v.paraBirimi || '₺') + muhTutar(v.tutar) + (n.tip === 'harcama' && n.oran ? ' ' + (v.tutarTuru || 'KDV hariç') + ' %' + n.oran : ''), kisi: n.kisi + (n.alici ? ' → ' + n.alici : ''), aciklama: virgoDetayMetin(v), eur: isaret * t.eur, tl: isaret * t.tl, kayit: v });
       });
     });
     return satir.sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); });
