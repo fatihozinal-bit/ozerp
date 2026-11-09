@@ -1184,8 +1184,8 @@
   .ro-sonuc td, .ro-sonuc th { white-space:nowrap; }
   .ro-sonuc tr.ro-toplam td { border-top:2px solid var(--border); background:var(--surface-alt); }
   /* Virgo dönemi: € ve ₺ birlikte; tablolar ve borç planı grafiği */
-  .card.vg-uc { grid-column: span 2; }
-  .vg-iki-uc { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:2px 14px; }
+  .card.vg-uc { container-type:inline-size; }
+  .card .value.vg-iki-uc { display:flex; justify-content:space-between; align-items:baseline; gap:8px; white-space:nowrap; font-size:clamp(12px, 9cqw, 20px); }
   .vg-satir { cursor:pointer; } tr.vg-satir:hover > td { background:var(--hover, rgba(0,0,0,.035)); } .card.vg-satir:hover { outline:1px solid var(--line, #ccd); }
   .vg-tl { font-size:11px; color:var(--ink-soft); font-weight:400; }
   /* r233: Virgo tabloları içerik kadar geniş (ekranı boydan boya kaplamaz) */
@@ -1557,7 +1557,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-09-r307</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-09-r308</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12733,8 +12733,10 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoKart(ad, o, alt, cls, vd){ var g = virgoPbGorunum();
     return '<div class="card' + (cls ? ' ' + cls : '') + (vd ? ' vg-satir" data-vd="top||' + vd + '" title="Bu rakamın kayıtları için tıklayın' : '') + '"><div class="label">' + ad + (alt ? ' ' + infoIco(alt) : '') + '</div><div class="value">' + (g === '€' ? virgoEur(o.eur) : virgoTl(o.tl)) + '</div>' + (g === 'ikisi' ? '<div class="sub">' + virgoEur(o.eur) + '</div>' : '') + '</div>'; }
   // r307: iki fatura kartı: ₺ solda, € sağda, aynı satırda (Tutarlar seçiminden bağımsız, ikisi de hep görünür)
+  // r308: diğer kartlarla aynı boyda; sığsın diye kuruşsuz, yazı kart genişliğine göre küçülür; tam tutar üzerine gelince
   function virgoKartUc(ad, ipucu, tl, eur, vd){
-    return '<div class="card accent vg-satir vg-uc" data-vd="top||' + vd + '" title="Bu rakamın kayıtları için tıklayın"><div class="label">' + ad + ' ' + infoIco(ipucu) + '</div><div class="value vg-iki-uc"><span>' + tl + '</span><span>' + eur + '</span></div></div>'; }
+    var tam = function(v, pb){ return (v < 0 ? '−' : '') + pb + fmt(Math.round(Math.abs(v))); };
+    return '<div class="card accent vg-satir vg-uc" data-vd="top||' + vd + '" title="Bu rakamın kayıtları için tıklayın"><div class="label">' + ad + ' ' + infoIco(ipucu) + '</div><div class="value vg-iki-uc"><span title="' + escAttr(virgoTl(tl)) + '">' + tam(tl, '₺') + '</span>' + (eur === null ? '' : '<span title="' + escAttr(virgoEur(eur)) + '">' + tam(eur, '€') + '</span>') + '</div></div>'; }
   // Sayfa araç çubuğu: para birimi görünümü, Excel, yazdır (r246: Aylık kazanç bloğundan taşındı)
   function virgoAracHtml(){ var g = virgoPbGorunum();
     return '<div class="vg-arac"><label class="muted" style="margin:0">Tutarlar</label><select data-virgopb="1" title="Sayfadaki tutarlar">' + [['₺', 'Yalnız ₺'], ['ikisi', '₺ + €'], ['€', 'Yalnız €']].map(function(x){ return '<option value="' + x[0] + '"' + (g === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>' +
@@ -12743,8 +12745,8 @@ Dikkat edilmesi gereken 2 nokta:
     // r222: dört ana kart (kalan borç, üretim, geri ödenen, kazanç); Virgo ₺ fatura, elimizdeki para, ödenecek ve son mutabakat yalnız varsa
     var t = virgoToplam(), kur = virgoGunKuru(todayISO());
     return '<div class="cards">' +
-      (Math.abs(t.tlFaturaKalan.tl) > 0.5 ? virgoKartUc('Virgo ₺ fatura', 'Formda "Hangi borç = Virgo ₺ fatura" seçilen kayıtlar (KDV hariç) ve bu borca yapılan ödemeler. ₺ izlenir; € bugünkü kurla yalnız bilgi. Virgo € faturaya girmez. Tıklayınca ay ay döküm.', virgoTl(t.tlFaturaKalan.tl), kur ? '≈ ' + virgoEur(t.tlFaturaKalan.tl / kur) : '', 'tlFaturaE') : '') +
-      virgoKartUc('Virgo € fatura', (t.kalanTl < -0.004 ? 'eksi: Virgo size borçlu · ' : '') + 'Virgo\'ya kalan borç: gelen − geri ödeme; ₺ sabit, kurla değişmez', virgoTl(t.kalanO.tl), virgoEur(t.kalanO.eur), 'kalan') +
+      (Math.abs(t.tlFaturaKalan.tl) > 0.5 ? virgoKartUc('Virgo ₺ fatura', 'Formda "Hangi borç = Virgo ₺ fatura" seçilen kayıtlar (KDV hariç) ve bu borca yapılan ödemeler. ₺ izlenir; € bugünkü kurla yalnız bilgi. Virgo € faturaya girmez. Tıklayınca ay ay döküm.', t.tlFaturaKalan.tl, kur ? t.tlFaturaKalan.tl / kur : null, 'tlFaturaE') : '') +
+      virgoKartUc('Virgo € fatura', (t.kalanTl < -0.004 ? 'eksi: Virgo size borçlu · ' : '') + 'Virgo\'ya kalan borç: gelen − geri ödeme; ₺ sabit, kurla değişmez', t.kalanO.tl, t.kalanO.eur, 'kalan') +
       virgoKart('Üretim karşılığı', t.gelir, fmt(t.adet) + ' adet · fire ' + fmt(t.fire) + ' · bilgi, borçtan düşmez', '', 'gelir') +
       virgoKart('Virgo\'ya geri ödenen', t.geri, 'borçtan düştü', '', 'geri') +
       virgoKart('İşin kazancı', t.kazanc, 'üretim − işletme gideri (yatırım hariç)', (t.kazanc.tl || t.kazanc.eur) < -0.004 ? 'bad' : 'good isaretli', 'kazanc') +
