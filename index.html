@@ -1555,7 +1555,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-09-r305</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-09-r306</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2027,6 +2027,7 @@ Dikkat edilmesi gereken 2 nokta:
 
     <section class="panel" id="panel-stokhareket">
       <div class="pagehead"><h1>Stok hareketleri &amp; depo</h1><p>Tüm giriş / çıkış / transfer / sayım hareketleri. Kart miktarı bu hareketlerin toplamıdır.</p></div>
+      <div id="stokOnarimKutu"></div>
       <div id="stokhareketIcerik"></div>
     </section>
 
@@ -7403,12 +7404,24 @@ Dikkat edilmesi gereken 2 nokta:
   // yerine aylık "kova" belgelerinde (id: YYYY-MM-p1, p2…) bir harita içinde tutulur.
   var KOVA_LIMIT = { stokHareketleri: 600, islemGecmisi: 450, puantaj: 900, makineKontrolleri: 900 };
   var kovaDocs = {}, kovaBekleyen = {}, kovaZamanlayici = {}, kovaSozler = {};
+  // r306: yazma sürerken ya da hemen sonra gelen eski sunucu kopyası, yeni eklenen satırları siliyordu (sonraki yazma satırsız belgeyi kaydediyordu).
+  // kovaUcusta: yazılmakta olan belgeler; kovaOnaysiz: eklendi ama sunucudan henüz geri görülmedi; kovaZincir: bir koleksiyonun yazmaları sırayla gider.
+  var kovaUcusta = {}, kovaOnaysiz = {}, kovaZincir = {};
   var hamDb = null;
   function kovaSnapshot(col, docs){
     var yeni = {};
     docs.forEach(function(d){ yeni[d.id] = d; });
-    var bek = kovaBekleyen[col] || {};
-    Object.keys(bek).forEach(function(id){ if (kovaDocs[col] && kovaDocs[col][id]) yeni[id] = kovaDocs[col][id]; });
+    var bek = kovaBekleyen[col] || {}, ucus = kovaUcusta[col] || {}, ons = kovaOnaysiz[col] || {}, yerelDocs = kovaDocs[col] || {};
+    Object.keys(bek).concat(Object.keys(ucus)).forEach(function(id){ if (yerelDocs[id]) yeni[id] = yerelDocs[id]; });
+    // Yazması bitmiş ama sunucu kopyasında henüz görünmeyen satırlar korunur; sunucuda görünen onaylanır
+    Object.keys(ons).forEach(function(rid){
+      var did = ons[rid]; if (bek[did] || ucus[did]) return;
+      var sunucu = yeni[did], yerel = yerelDocs[did];
+      if (sunucu && sunucu.kayitlar && sunucu.kayitlar[rid]){ delete ons[rid]; return; }
+      if (!yerel || !yerel.kayitlar || !yerel.kayitlar[rid]){ delete ons[rid]; return; } // bu arada silinmiş
+      if (!sunucu){ yeni[did] = yerel; return; }
+      yeni[did] = Object.assign({}, sunucu, { kayitlar: Object.assign({}, sunucu.kayitlar) }); yeni[did].kayitlar[rid] = yerel.kayitlar[rid];
+    });
     kovaDocs[col] = yeni;
     state[col] = kovaDuzlestir(col);
   }
@@ -7441,10 +7454,14 @@ Dikkat edilmesi gereken 2 nokta:
     clearTimeout(kovaZamanlayici[col]);
     kovaZamanlayici[col] = setTimeout(function(){
       var ids = Object.keys(kovaBekleyen[col] || {}); kovaBekleyen[col] = {}; kovaSozler[col] = null;
-      var hedef = (col === 'islemGecmisi' && hamDb) ? hamDb : db;
-      Promise.all(ids.map(function(id){ var d = kovaDocs[col][id]; if (!d) return null;
-        return hedef.doc(col+'/'+id).set(temizle({ ay: d.ay, parca: d.parca || 1, olusturma: d.olusturma, kayitlar: d.kayitlar || {} })); }))
-        .then(function(){ soz.coz(); renderAll(); }, function(e){ soz.red(e); if (col !== 'islemGecmisi') toast('Kayıt yazılamadı: '+dbErrMsg(e), true); });
+      var hedef = (col === 'islemGecmisi' && hamDb) ? hamDb : db, ucus = kovaUcusta[col] = kovaUcusta[col] || {};
+      ids.forEach(function(id){ ucus[id] = (ucus[id] || 0) + 1; });
+      var inis = function(){ ids.forEach(function(id){ if (--ucus[id] <= 0) delete ucus[id]; }); };
+      var yaz = function(){ return Promise.all(ids.map(function(id){ var d = kovaDocs[col][id]; if (!d) return null;
+        return hedef.doc(col+'/'+id).set(temizle({ ay: d.ay, parca: d.parca || 1, olusturma: d.olusturma, kayitlar: d.kayitlar || {} })); })); };
+      var yazim = (kovaZincir[col] || Promise.resolve()).then(yaz);
+      kovaZincir[col] = yazim.catch(function(){});
+      yazim.then(function(){ inis(); soz.coz(); renderAll(); }, function(e){ inis(); soz.red(e); if (col !== 'islemGecmisi') toast('Kayıt yazılamadı: '+dbErrMsg(e), true); });
     }, 200);
     return soz.p;
   }
@@ -7453,6 +7470,7 @@ Dikkat edilmesi gereken 2 nokta:
     var id = 'k'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     var d = kovaSec(col, ayAnahtari(tarih || todayISO()));
     d.kayitlar = Object.assign({}, d.kayitlar); d.kayitlar[id] = temizle(Object.assign({ olusturma: nowISO(), olusturan: aktifKullaniciAdi() || '' }, veri));
+    (kovaOnaysiz[col] = kovaOnaysiz[col] || {})[id] = d.id;
     return kovaPlanla(col, d.id).then(function(){ if (KOVA_DENETIM[col]) denetimYaz(col, id, 'Ekleme', veri, null); return { id: id }; });
   }
   // Çok satır tek seferde: her satırda tüm kovaları düzleyip sıralamak (kovaPlanla) binlerce satırda saniyeler sürüyordu
@@ -7462,6 +7480,7 @@ Dikkat edilmesi gereken 2 nokta:
       var id = 'k'+Date.now().toString(36)+Math.random().toString(36).slice(2,7), d = kovaSec(col, ay);
       if (!dokunulan[d.id]){ d.kayitlar = Object.assign({}, d.kayitlar); dokunulan[d.id] = 1; }
       d.kayitlar[id] = temizle(Object.assign({ olusturma: nowISO(), olusturan: aktifKullaniciAdi() || '' }, veri));
+      (kovaOnaysiz[col] = kovaOnaysiz[col] || {})[id] = d.id;
     });
     return Promise.all(Object.keys(dokunulan).map(function(did){ return kovaPlanla(col, did); }));
   }
@@ -9583,7 +9602,49 @@ Dikkat edilmesi gereken 2 nokta:
       return true;
     } });
   }
+  // r306: tek seferlik onarım (P1-DN 12). 30 Ekim'de üç Virgo stok hareketi listeye yazılamadı, oto-eşitleme aynı 384 adedi ikinci kez stoğa ekledi;
+  // 5 Kasım'da iki M1 düzeltme satırı da listeden kayboldu. Kaybolan 5 satır geri yazılır (karta dokunmaz), sonra çift giriş −384 düzeltilir.
+  // Kart ile hareket toplamı onarımdan sonra eşit çıkmıyorsa düğme kapalı. Bittiğinde config.stokOnarimR306 yazılır, kutu kaybolur.
+  var STOK_ONARIM = { id: 'r306', stokId: 'smvq8ywxpuwo836', fazla: 384, satirlar: [
+    { kaynakTur: 'virgoUretim', kaynakId: 'smvvcx0wm538in6', miktar: 171, tarih: '2026-10-30', tur: 'Üretimden giriş (Virgo)', kaynakNo: 'Virgo üretim', bakiyeSonrasi: 336, olusturma: '2026-10-30T22:18:40.995Z' },
+    { kaynakTur: 'virgoUretim', kaynakId: 'smvujw4n4bveg3a', miktar: 163, tarih: '2026-10-28', tur: 'Üretimden giriş (Virgo)', kaynakNo: 'Virgo üretim', bakiyeSonrasi: 552, olusturma: '2026-10-30T22:18:41.900Z' },
+    { kaynakTur: 'virgoUretim', kaynakId: 'smvujty82cr9p9b', miktar: 50, tarih: '2026-10-29', tur: 'Üretimden giriş (Virgo)', kaynakNo: 'Virgo üretim', bakiyeSonrasi: 623, olusturma: '2026-10-30T22:18:42.100Z' },
+    { kaynakTur: 'uretim', kaynakId: 'smvw5vgkciczq4n', miktar: -2, tarih: '2026-10-29', tur: 'Üretim düzeltme', kaynakNo: '', bakiyeSonrasi: 2423, olusturma: '2026-11-05T07:45:38.900Z' },
+    { kaynakTur: 'uretim', kaynakId: 'smvw5vgzoymap08', miktar: -2, tarih: '2026-10-29', tur: 'Üretim düzeltme', kaynakNo: '', bakiyeSonrasi: 2421, olusturma: '2026-11-05T07:45:38.950Z' }
+  ] };
+  function stokOnarimDurum(){
+    if ((state.config || {}).stokOnarimR306 || aktifRol() !== 'Yönetici' || !kovaDocs.stokHareketleri) return null;
+    var kart = stokKart(STOK_ONARIM.stokId); if (!kart) return null;
+    var hh = (state.stokHareketleri || []).filter(function(h){ return h.stokId === kart.id; }), toplam = hh.reduce(function(a, h){ return a + (Number(h.miktar) || 0); }, 0);
+    var eksik = STOK_ONARIM.satirlar.filter(function(x){ return !hh.some(function(h){ return h.onarim === STOK_ONARIM.id && h.kaynakId === x.kaynakId && Number(h.miktar) === x.miktar; }); });
+    var dzYapildi = hh.some(function(h){ return h.kaynakTur === 'onarim' && h.kaynakId === STOK_ONARIM.id; });
+    // Kaybolan satırlar hâlâ kayıp mı: +171 / +163 / +50 listede bir kez (yeniden yazılan), −2'ler hiç yok
+    var hala = eksik.every(function(x){ var n = hh.filter(function(h){ return h.kaynakId === x.kaynakId && Number(h.miktar) === x.miktar && !h.onarim; }).length; return x.miktar > 0 ? n === 1 : n === 0; });
+    var ek = eksik.reduce(function(a, x){ return a + x.miktar; }, 0), dus = dzYapildi ? 0 : STOK_ONARIM.fazla, kartSon = (Number(kart.miktar) || 0) - dus, harSon = toplam + ek - dus;
+    return { kart: kart, eksik: eksik, dzYapildi: dzYapildi, kartSon: kartSon, harSon: harSon, uygun: hala && Math.abs(kartSon - harSon) < 0.001 };
+  }
+  function stokOnarimCiz(){
+    var el = byId('stokOnarimKutu'); if (!el) return; var d = stokOnarimDurum();
+    if (!d){ if (el.innerHTML) el.innerHTML = ''; return; }
+    var yeni = '<div class="block"><div class="block-head"><h3>Stok onarımı (tek seferlik): ' + esc(d.kart.ad) + ' ' + infoIco('30 Ekim\'de üç stok hareketi (171, 163, 50 adet) listeye yazılamadı ve program aynı 384 adedi ikinci kez stoğa ekledi. 5 Kasım\'da iki M1 düzeltme satırı (−2, −2) da listeden kayboldu. Bu işlem kaybolan beş satırı geri yazar (kart miktarı değişmez) ve 384 adetlik çift girişi düzeltir.') + '</h3></div><div class="block-body">' +
+      '<div class="helper" style="margin:0 0 8px">Stok kartı <b>' + fmt(Number(d.kart.miktar) || 0) + '</b> → <b>' + fmt(d.kartSon) + '</b> · Hareket toplamı onarımdan sonra <b>' + fmt(d.harSon) + '</b> · geri yazılacak satır: ' + d.eksik.length + (d.dzYapildi ? ' · −' + STOK_ONARIM.fazla + ' düzeltmesi yapılmış' : ' · −' + STOK_ONARIM.fazla + ' düzeltme hareketi') + '</div>' +
+      (d.uygun ? '<button class="btn" id="stokOnarimUygula">Onarımı uygula</button>' : '<div class="neg">Kart ile hareket toplamı onarımdan sonra eşit çıkmıyor ya da kayıtlar değişmiş; onarım yapılamaz.</div>') + '</div></div>';
+    if (el.__sonHtml !== yeni){ el.__sonHtml = yeni; el.innerHTML = yeni; }
+  }
+  function stokOnarimUygula(btn){
+    var d = stokOnarimDurum(); if (!d || !d.uygun) return;
+    onayIste(d.kart.ad + ': ' + d.eksik.length + ' kayıp hareket satırı geri yazılacak, stok ' + fmt(Number(d.kart.miktar) || 0) + ' → ' + fmt(d.kartSon) + ' olacak. Onaylıyor musunuz?', 'Evet, onar', function(){
+      btn.disabled = true; var kart = d.kart, sira = Promise.resolve(), kisi = aktifKullaniciAdi() || '';
+      d.eksik.forEach(function(x){ sira = sira.then(function(){ return kovaEkle('stokHareketleri', { tarih: x.tarih, tur: x.tur, stokId: kart.id, stokAd: kart.ad, miktar: x.miktar, birim: kart.birim || 'adet', depo: varsayilanDepo(kart), lotId: '', lotNo: '', kaynakTur: x.kaynakTur, kaynakId: x.kaynakId, kaynakNo: x.kaynakNo, aciklama: 'Onarım: kaybolan satır geri yazıldı (kart miktarı değişmedi)', bakiyeSonrasi: x.bakiyeSonrasi, kullanici: kisi, olusturma: x.olusturma, onarim: STOK_ONARIM.id }, x.tarih); }); });
+      if (!d.dzYapildi) sira = sira.then(function(){ return stokHareketi({ stokId: kart.id, miktar: -STOK_ONARIM.fazla, tur: 'Üretim düzeltme', kaynakTur: 'onarim', kaynakId: STOK_ONARIM.id, kaynakNo: 'Onarım', aciklama: '30 Ekim çift giriş düzeltmesi: 384 adet iki kez stoğa yazılmıştı' }); }).then(function(r){ if (!r) throw { message: 'stok düzeltmesi yazılamadı' }; });
+      sira.then(function(){ return configWrite({ stokOnarimR306: { tarih: nowISO(), kisi: kisi } }); })
+        .then(function(){ toast('✓ Stok onarıldı'); stokOnarimCiz(); })
+        .catch(function(e){ btn.disabled = false; toast('Onarım durdu: ' + dbErrMsg(e) + '. Yeniden basınca kalan adımlar yapılır.', true); });
+    });
+  }
+  (function(){ var k = byId('stokOnarimKutu'); if (k) k.addEventListener('click', function(e){ if (e.target.id === 'stokOnarimUygula') stokOnarimUygula(e.target); }); })();
   EK_RENDER.stokhareket = function(){
+    try { stokOnarimCiz(); } catch(e){ renderHatasi('stok onarımı', e); }
     var host = byId('stokhareketIcerik'); if (!host) return;
     if (!host.dataset.kuruldu){
       host.dataset.kuruldu = '1';
