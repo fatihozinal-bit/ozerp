@@ -1555,7 +1555,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-06-r304</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-09-r305</div>
   </nav>
   <main>
     <div class="topbar">
@@ -12464,7 +12464,9 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoNormaldenUretim(k){
     var vu = virgoUrunStokla(k), adet = Number(k.adet) || 0, vk = k.virgoKarsilik, pb = '₺', fg = 0, kur = 0, tutar = 0, tl = 0, araOp = !sonOperasyonKaydiMi(k);
     if (araOp){ if (vu) pb = virgoUrunPb(vu); }
-    else if (vk){ pb = vk.paraBirimi === '€' ? '€' : '₺'; fg = Number(vk.fiyatGirilen) || 0; kur = Number(vk.kur) || 0; tutar = Number(vk.tutar) || 0; tl = Number(vk.tl) || 0; }
+    // r305: aktarılan kayıtta saklı olan fiyat ve kurdur; tutar güncel adetten hesaplanır (M1 / boydan adet düzeltmesi ya da kayıt düzenlemesi adedi değiştirince eski tutar kalıyordu)
+    else if (vk){ pb = vk.paraBirimi === '€' ? '€' : '₺'; fg = Number(vk.fiyatGirilen) || 0; kur = Number(vk.kur) || 0; tutar = Number(vk.tutar) || 0; tl = Number(vk.tl) || 0;
+      if (fg > 0){ if (pb === '€'){ tutar = adet * fg; if (kur) tl = tutar * kur; } else { tl = adet * fg; tutar = kur ? tl / kur : 0; } } }
     else if (vu){ pb = virgoUrunPb(vu); fg = Number(vu.fiyat) || 0; kur = virgoGunKuru(k.bitisTarih || k.tarih);
       if (pb === '€'){ tutar = adet * fg; tl = tutar * kur; } else { tl = adet * fg; tutar = kur ? tl / kur : 0; } }
     return { id: k.id, tur: 'virgoUretim', normal: true, tarih: k.tarih || '', bitisTarih: k.bitisTarih || '', vardiya: k.vardiya || '', urunId: vu ? vu.id : k.urunId,
