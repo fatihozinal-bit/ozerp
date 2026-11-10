@@ -1215,6 +1215,19 @@
   .grid2.ug6 { grid-template-columns:repeat(6, minmax(0, 1fr)); } .grid2.ug6 .ug-s2 { grid-column:span 2; } .grid2.ug6 .ug-s3 { grid-column:span 3; } .grid2.ug6 .ug-s6 { grid-column:1 / -1; }
   @media (max-width: 1000px){ .grid2.ug6 { grid-template-columns:repeat(3, minmax(0, 1fr)); } .grid2.ug6 .ug-s2 { grid-column:span 1; } }
   @media (max-width: 600px){ .grid2.ug6 { grid-template-columns:repeat(2, minmax(0, 1fr)); } .grid2.ug6 .ug-s3, .grid2.ug6 .ug-s2 { grid-column:span 2; } }
+  /* r312: Üretim Girişi — adet bandı, iyi adet vurgulu, not + kaydet tek satır; Üretim Kayıtları tek satırlık hücreler */
+  @media (max-width: 1000px){ .grid2.ug6.ug-bas .ug-s2 { grid-column:span 2; } }
+  .grid2.ug-adet { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px 10px 3px; margin:2px 0 6px; }
+  .ug-iyi label { color:var(--ink); font-weight:700; }
+  .ug-iyi input { font-weight:700; font-size:14px; border-color:var(--accent); background:var(--surface); }
+  .ug-bilgi { margin:0 0 6px; } .ug-bilgi:empty { display:none; }
+  .ug-alt { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-top:2px; }
+  .ug-alt .ug-not { flex:1 1 280px; margin-bottom:0; display:block; } .ug-alt .ug-not input { width:100%; box-sizing:border-box; }
+  .ug-stok { display:flex; gap:6px; align-items:center; margin:0 0 5px; font-size:12px; white-space:nowrap; }
+  #uMsg:empty { display:none; }
+  #uSonGiris td, #uSonGiris th, #kayitTablo td, #kayitTablo th { white-space:nowrap; }
+  #uSonGiris td:nth-child(3), #kayitTablo td:nth-child(3), #kayitTablo td:nth-child(12) { white-space:normal; min-width:150px; }
+  #kayitTablo td:nth-last-child(-n+2), #kayitTablo th:nth-last-child(-n+2) { padding-left:2px; padding-right:2px; }
   /* r258: çalışma düzeni iki satır (Çalışma / Üretim), 8 hizalı sütun; başlık kutunun üstünde küçük yazı */
   .kp-dz { display:grid; grid-template-columns:62px repeat(8, minmax(0, 1fr)); gap:8px 14px; align-items:end; } .kp-dz-r { display:contents; } .kp-dz-r > b { font-size:12.5px; align-self:end; padding-bottom:6px; }
   .kp-dzc { display:flex; flex-direction:column; gap:3px; font-weight:400; font-size:11px; color:var(--ink-soft); white-space:nowrap; margin:0; } .kp-dzc input[type=number] { width:100%; text-align:right; } .kp-dzc select { width:100%; }
@@ -1557,7 +1570,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r311</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r312</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1618,35 +1631,45 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
       </div>
       <div class="block">
         <div class="block-body">
-          <!-- r255: hizalı 6 sütun (orta ekranda 3, telefonda 2); tek başına kalan satır yok -->
-          <div class="grid2 ug6">
+          <!-- r312: tek akış — ne / nerede, adet bandı, kim / ne zaman, not ve kaydet aynı satırda -->
+          <div class="grid2 ug6 ug-bas">
             <div class="field"><label>Tarih</label><input type="date" id="uTarih"></div>
             <div class="field"><label>Bitiş günü <span class="info-ico" tabindex="0">!<span class="info-bubble">Birkaç günün toplamını tek kayıtta giriyorsanız son günü seçin; boşsa tek gün. Aralık birden çok aya düşerse aylık raporlarda adet gün sayısıyla aylara bölünür.</span></span></label><input type="date" id="uBitisTarih"></div>
             <div class="field"><label>Vardiya</label><select id="uVardiya">
               <option>1. Vardiya</option><option>2. Vardiya</option><option>Cumartesi</option>
             </select></div>
             <div class="field"><label>Makine</label><select id="uMakine"></select></div>
-            <div class="field"><label>Ürün</label><select id="uUrun"></select></div>
-            <div class="field"><label>Operasyon</label><select id="uOperasyon"></select></div>
+            <div class="field ug-s2"><label>Ürün</label><select id="uUrun"></select></div>
+          </div>
+          <div class="grid2 ug6 ug-adet">
             <div class="field"><label>CNC sayacı <span class="info-ico" tabindex="0">!<span class="info-bubble">İsteğe bağlı. Makinenin sayacındaki adet. M1 kodu her boyda sayacı fazla saydığından iyi adet = sayaç − tam boy sayısı × M1 fazlası − fire. Yazınca iyi adet kendiliğinden dolar; elle düzeltebilirsiniz. Boş bırakırsanız iyi adedi doğrudan yazın.</span></span></label><input type="number" id="uSayac" min="0" step="1" placeholder="sayaçtaki adet"></div>
             <div class="field"><label>Boydan adet <span class="info-ico" tabindex="0">!<span class="info-bubble">Bir boyda sayacın saydığı adet (ör. 24). Ürün seçince bu ürünün son kaydındaki değer gelir.</span></span></label><input type="number" id="uBoyAdet" min="0" step="1" placeholder="sayaç / boy"></div>
             <div class="field"><label>M1 fazlası <span class="info-ico" tabindex="0">!<span class="info-bubble">M1 kodu yüzünden sayacın her boyda fazla saydığı adet (genelde 1). Ürün seçince bu ürünün son kaydındaki değer gelir.</span></span></label><input type="number" id="uM1" min="0" step="1" placeholder="adet / boy"></div>
-            <div class="field"><label>İyi (sağlam) adet</label><input type="number" id="uAdet" min="0" step="1" placeholder="örn. 210"></div>
+            <div class="field ug-iyi"><label>İyi (sağlam) adet</label><input type="number" id="uAdet" min="0" step="1" placeholder="örn. 210"></div>
             <div class="field"><label>Fire adet</label><input type="number" id="uFire" min="0" step="1" value="0"></div>
             <div class="field"><label>Fire nedeni</label><select id="uFireNeden"></select></div>
+          </div>
+          <div class="helper ug-bilgi" id="uSayacBilgi"></div>
+          <div class="grid2 ug6">
+            <div class="field"><label>Operasyon</label><select id="uOperasyon"></select></div>
             <div class="field"><label>Başlangıç saati</label><input type="time" id="uBaslangic"></div>
             <div class="field"><label>Bitiş saati</label><input type="time" id="uBitis"></div>
             <div class="field"><label>Operatör</label><select id="uOperator"></select></div>
-            <div class="field ug-s2"><label>İş emri <span class="muted">(isteğe bağlı)</span></label><select id="uIsEmri"><option value="">-</option></select></div>
             <div class="field"><label>Giren kişi</label><select id="uGiren"></select></div>
-            <div class="field ug-s6"><label>Not <span class="muted">(isteğe bağlı)</span></label><input type="text" id="uNot" placeholder="arıza, mola vb."></div>
+            <div class="field"><label>İş emri <span class="muted">(isteğe bağlı)</span></label><select id="uIsEmri"><option value="">-</option></select></div>
           </div>
-          <label style="display:flex;gap:6px;align-items:center;margin-bottom:12px"><input type="checkbox" id="uStokGiris"> <span>Mamul depoya giriş yap (son operasyonsa otomatik işaretlenir)</span></label>
-          <div class="helper" id="uSayacBilgi" style="margin:-4px 0 10px"></div>
-          <div class="helper" id="uIsEmriBilgi" style="margin:-4px 0 10px"></div>
-          <button class="btn" id="uKaydet">Kaydı ekle</button>
+          <div class="helper ug-bilgi" id="uIsEmriBilgi"></div>
+          <div class="ug-alt">
+            <div class="field ug-not"><label>Not <span class="muted">(isteğe bağlı)</span></label><input type="text" id="uNot" placeholder="arıza, mola vb."></div>
+            <label class="ug-stok"><input type="checkbox" id="uStokGiris"> <span>Mamul depoya giriş <span class="info-ico" tabindex="0">!<span class="info-bubble">Son operasyonsa otomatik işaretlenir. İşaretliyse iyi adet stoğa girer.</span></span></span></label>
+            <button class="btn" id="uKaydet">Kaydı ekle</button>
+          </div>
           <div class="helper" id="uMsg"></div>
         </div>
+      </div>
+      <div class="block" id="uSonBlok" style="display:none">
+        <div class="block-head"><h3>Son girişler</h3><div class="bh-actions"><span class="muted" id="uSonOzet" style="align-self:center;font-size:12px"></span><button class="btn secondary small" type="button" id="uSonTumu">Tüm kayıtlar ›</button></div></div>
+        <div class="block-body tablewrap" id="uSonGiris"></div>
       </div>
       <details class="block" id="m1Duzelt">
         <summary class="block-head" style="cursor:pointer"><h3>M1 / boydan adet düzeltmesi <span class="info-ico" tabindex="0">!<span class="info-bubble">CNC sayacı her boyda M1 yüzünden fazla sayar. İyi adede sayaç yazılmış eski kayıtlar burada düzeltilir: yeni iyi adet = eski adet − tam boy (eski adet ÷ boydan adet) × M1 fazlası; fire değişmez. Boydan adet yanlış yazılmışsa (ör. 24 yerine 25): doğru değeri yazın, sayaçla girilmiş ya da düzeltilmiş kayıtlarda boy sayısı sayaçtan yeniden bulunur ve fark iyi adede eklenir / düşülür (sayaç 195: 24'le 8 boy, 25'le 7 boy → +1). Önce önizleme görünür, Uygula'ya basmadan hiçbir şey değişmez. Depoya giriş yapılmış kayıtta stok da fark kadar değişir. Aynı değerlerle düzeltilmiş kayıt listeye gelmez (iki kez düzeltilmez).</span></span></h3></summary>
@@ -4464,8 +4487,22 @@ Dikkat edilmesi gereken 2 nokta:
     Array.prototype.forEach.call(tb.rows, function(r){ if (r.style.display === 'none' || r.dataset.kg == null) return; t.g += Number(r.dataset.kg) || 0; t.i += Number(r.dataset.ki) || 0; t.f += Number(r.dataset.kf) || 0; t.n++; });
     tf.innerHTML = '<tr class="kv-toplam"><td colspan="5"><b>Toplam</b> <span class="muted">(' + t.n + ' kayıt)</span></td><td class="num"><b>' + fmt(Math.round(t.g)) + '</b></td><td class="num"><b>' + fmt(Math.round(t.i)) + '</b>' + (t.g - t.i > 0.5 ? ' <span class="muted" style="font-size:11px">(−' + fmt(Math.round(t.g - t.i)) + ')</span>' : '') + '</td><td class="num' + (t.f > 0 ? ' neg' : '') + '"><b>' + fmt(Math.round(t.f)) + '</b></td><td colspan="6"></td></tr>';
   }
+  function kayitTarihHtml(k){ return esc(kvTarihTR(k.tarih||''))+(k.bitisTarih?' <span class="muted">– '+esc(kvTarihTR(k.bitisTarih))+'</span>':''); }
+  // r312: Üretim Girişi'nin altında son girilen kayıtlar (girilenin görülmesi, çift girişin fark edilmesi için) ve bugünün toplamı
+  function uSonGirisRender(){
+    var kut = byId('uSonGiris'), blok = byId('uSonBlok'); if (!kut || !blok) return;
+    var l = (state.uretim || []).slice().sort(function(a, b){ return String(b.olusturma || '').localeCompare(String(a.olusturma || '')) || String(b.tarih || '').localeCompare(String(a.tarih || '')); });
+    blok.style.display = l.length ? '' : 'none'; if (!l.length) return;
+    var bugun = todayISO(), bg = l.filter(function(k){ return k.tarih === bugun; });
+    var html = '<table><thead><tr><th>Tarih</th><th>Makine</th><th>Ürün</th><th>Vardiya</th><th class="num">Girilen</th><th class="num">İyi</th><th class="num">Fire</th><th>Giren</th></tr></thead><tbody>' +
+      l.slice(0, 8).map(function(k){ return '<tr><td>' + kayitTarihHtml(k) + '</td><td>' + esc(makineAdiById(k.makineId)) + '</td><td>' + esc(urunAdiById(k.urunId)) + '</td><td>' + esc(k.vardiya || '') + '</td><td class="num">' + fmt(kayitGirilenAdet(k)) + '</td><td class="num"><b>' + fmt(Number(k.adet) || 0) + '</b></td><td class="num' + (Number(k.fireAdet) > 0 ? ' neg' : '') + '">' + fmt(Number(k.fireAdet) || 0) + '</td><td>' + esc(k.giren || '') + '</td></tr>'; }).join('') + '</tbody></table>';
+    if (kut.__sonHtml !== html){ kut.__sonHtml = html; kut.innerHTML = html; }
+    byId('uSonOzet').textContent = 'Bugün: ' + bg.length + ' kayıt · ' + fmt(toplamla(bg, function(k){ return k.adet; })) + ' iyi · ' + fmt(toplamla(bg, function(k){ return k.fireAdet; })) + ' fire';
+    var tum = byId('uSonTumu'); if (tum) tum.style.display = sekmeIzinli('kayitlar') ? '' : 'none';
+  }
+  (function(){ var b = byId('uSonTumu'); if (b) b.addEventListener('click', function(){ gitSekme('kayitlar'); }); })();
   function renderKayitlar(){
-    m1Render();
+    m1Render(); uSonGirisRender();
     var tbody = document.querySelector('#kayitTablo tbody');
     var empty = document.getElementById('kayitEmpty');
     var ham = virgoUretimNormalSatirlar(), liste = ham.length ? state.uretim.concat(ham).sort(function(a, b){ return (b.tarih || '').localeCompare(a.tarih || ''); }) : state.uretim; // aralıklı kayıt bölünmeden, tek satır
@@ -4474,14 +4511,14 @@ Dikkat edilmesi gereken 2 nokta:
     }
     empty.style.display = 'none';
     tbody.innerHTML = liste.map(function(k){
-      if (k.virgo) return '<tr data-kg="'+(Number(k.adet)||0)+'" data-ki="'+(Number(k.adet)||0)+'" data-kf="'+(Number(k.fireAdet)||0)+'"><td>'+esc(k.tarih||'')+(k.bitisTarih?' <span class="muted">– '+esc(k.bitisTarih)+'</span>':'')+'</td><td>'+(k.makineId?esc(makineAdiById(k.makineId)):'')+'</td><td>'+esc(k.urunAd)+'</td>'+
+      if (k.virgo) return '<tr data-rid="'+escAttr(k.id||'')+'" data-kg="'+(Number(k.adet)||0)+'" data-ki="'+(Number(k.adet)||0)+'" data-kf="'+(Number(k.fireAdet)||0)+'"><td>'+kayitTarihHtml(k)+'</td><td>'+(k.makineId?esc(makineAdiById(k.makineId)):'')+'</td><td>'+esc(k.urunAd)+'</td>'+
         '<td><span class="pill">Virgo</span></td><td>'+esc(k.vardiya||'')+'</td><td class="num">'+fmt(Math.round(k.adet))+'</td><td class="num">'+fmt(Math.round(k.adet))+'</td><td class="num'+(k.fireAdet>0?' neg':'')+'">'+fmt(Math.round(k.fireAdet))+(k.fireNedeni&&k.fireAdet>0?' <span class="muted">('+esc(k.fireNedeni)+')</span>':'')+'</td><td>'+esc(k.operatorAd||'')+'</td><td></td><td></td><td>'+esc(k.not_||'')+(k.oran<1?' <span class="muted">(aralığın bu aya düşen payı)</span>':'')+'</td>'+
         '<td colspan="2"><button class="btn secondary small" data-virgoac="1" title="Henüz aktarılmamış eski Virgo üretim girişi; Virgo Hesabı sayfasındaki Aktar düğmesiyle normal kayda dönüşür">Virgo Hesabı\'nda aktar</button></td></tr>';
       var ie = k.isEmriId ? state.isemirleri.find(function(x){ return x.id===k.isEmriId; }) : null;
       // r286: girilen (CNC sayacı yazıldıysa sayaç, yoksa girilen iyi adet) ve düşülmüş (M1 fazlası ve fire düşülmüş iyi adet) yan yana
       var gir = kayitGirilenAdet(k), fark = gir - (Number(k.adet) || 0);
-      return '<tr data-kg="'+gir+'" data-ki="'+(Number(k.adet)||0)+'" data-kf="'+(Number(k.fireAdet)||0)+'"><td>'+esc(k.tarih||'')+(k.bitisTarih?' <span class="muted">– '+esc(k.bitisTarih)+'</span>':'')+'</td><td>'+esc(makineAdiById(k.makineId))+'</td><td>'+esc(urunAdiById(k.urunId))+'</td>'+
-        '<td>'+esc(operasyonAdi(k.operasyon))+'</td><td>'+esc(k.vardiya||'')+'</td><td class="num"'+(Number(k.sayacAdet)>0?' title="CNC sayacı'+(Number(k.boySayacAdet)>0?' · boydan '+fmt(k.boySayacAdet)+', M1 fazlası '+fmt(k.m1Fazla||0):'')+'"':'')+'>'+fmt(gir)+'</td><td class="num"><b>'+fmt(k.adet)+'</b>'+(fark>0?' <span class="muted" style="font-size:11px">(−'+fmt(fark)+')</span>':'')+'</td><td class="num'+(Number(k.fireAdet)>0?' neg':'')+'">'+fmt(k.fireAdet||0)+(k.fireNedeni&&Number(k.fireAdet)>0?' <span class="muted">('+esc(k.fireNedeni)+')</span>':'')+'</td><td>'+esc(k.operatorAd||'')+'</td><td>'+esc(k.giren||'')+'</td><td>'+(ie?esc(ie.isEmriNo):'')+'</td><td>'+esc(k.not_||'')+(k.stokGiris?' <span class="pill">stoğa +'+fmt(k.stokGiris)+'</span>':'')+'</td>'+
+      return '<tr data-rid="'+escAttr(k.id)+'" data-kg="'+gir+'" data-ki="'+(Number(k.adet)||0)+'" data-kf="'+(Number(k.fireAdet)||0)+'"><td>'+kayitTarihHtml(k)+'</td><td>'+esc(makineAdiById(k.makineId))+'</td><td>'+esc(urunAdiById(k.urunId))+'</td>'+
+        '<td'+(k.operasyon?'':' class="muted"')+'>'+esc(operasyonAdi(k.operasyon))+'</td><td>'+esc(k.vardiya||'')+'</td><td class="num"'+(Number(k.sayacAdet)>0?' title="CNC sayacı'+(Number(k.boySayacAdet)>0?' · boydan '+fmt(k.boySayacAdet)+', M1 fazlası '+fmt(k.m1Fazla||0):'')+'"':'')+'>'+fmt(gir)+'</td><td class="num"><b>'+fmt(k.adet)+'</b>'+(fark>0?' <span class="muted" style="font-size:11px">(−'+fmt(fark)+')</span>':'')+'</td><td class="num'+(Number(k.fireAdet)>0?' neg':'')+'">'+fmt(k.fireAdet||0)+(k.fireNedeni&&Number(k.fireAdet)>0?' <span class="muted">('+esc(k.fireNedeni)+')</span>':'')+'</td><td>'+esc(k.operatorAd||'')+'</td><td>'+esc(k.giren||'')+'</td><td>'+(ie?esc(ie.isEmriNo):'')+'</td><td>'+esc(k.not_||'')+(k.stokGiris?' <span class="pill">stoğa +'+fmt(k.stokGiris)+'</span>':'')+'</td>'+
         '<td><button class="btn secondary small" data-kayitedit="'+k.id+'">Düzenle</button></td>'+
         '<td><button class="btn danger" data-del="'+k.id+'">Sil</button></td></tr>';
     }).join('');
@@ -9842,7 +9879,7 @@ Dikkat edilmesi gereken 2 nokta:
       byId('uAdet').addEventListener('input', function(){ uSayacGuncelle(); });
       stokGirisKutusuGuncelle(); uSayacUrunDegis();
     }
-    uretimBilgiYaz(); m1Render();
+    uretimBilgiYaz(); m1Render(); uSonGirisRender();
   }
   function sonOperasyonMu(ie, urunId, op){
     if (!op) return true;
@@ -22826,6 +22863,7 @@ Dikkat edilmesi gereken 2 nokta:
   function lfCari(o){ var id = o && (o.musteriId || o.tedarikciId || o.cariId); if (!id) return ''; var a = cariAdi(id); return a && a !== '-' ? a : ''; }
   // Tablo tanımı olan listede değerler o tablonun Durum / Tür (Çeşit) / Cari sütunundan gelir (tablo görünümüyle aynı)
   function lfAlanlar(el){
+    if (el && el.id === 'kayitTablo') return { durum: function(o){ return o && o.vardiya ? String(o.vardiya) : ''; }, tur: function(o){ return o && o.makineId ? makineAdiById(o.makineId) : ''; }, cari: function(o){ return o ? (o.urunId ? urunAdiById(o.urunId) : String(o.urunAd || '')) : ''; } }; // r312
     var t = el && TABLO_TANIM[el.id];
     var kol = function(k){ var c = t && t.kolonlar.find(function(x){ return x.k === k; }); return c ? function(o){ try { var v = o ? c.d(o) : ''; return v == null ? '' : String(v); } catch(e){ return ''; } } : null; };
     return { durum: kol('durum') || lfDurum, tur: kol('tur') || kol('tip') || lfTur, cari: kol('cari') || lfCari };
@@ -22885,7 +22923,7 @@ Dikkat edilmesi gereken 2 nokta:
       return '<select ' + attr(k) + (sec ? ' class="secili"' : '') + '><option value="">' + etiket + ': tümü</option>' + degerler.map(function(v){ return '<option' + (v === sec ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select>';
     };
     var h = (donemVar ? lfDonemHtml(f.donem, f.bas, f.bit, attr).replace('<select ', '<select ' + (f.donem ? 'class="secili" ' : '')) : '') +
-      secim('durum', 'Durum', durumlar) + secim('tur', 'Tür', turler) + secim('cari', 'Cari', cariler) +
+      secim('durum', el.id === 'kayitTablo' ? 'Vardiya' : 'Durum', durumlar) + secim('tur', el.id === 'kayitTablo' ? 'Makine' : 'Tür', turler) + secim('cari', el.id === 'kayitTablo' ? 'Ürün' : 'Cari', cariler) +
       (lfAktif(f) ? '<button class="btn secondary small" type="button" data-lf="temizle" title="Dönem, durum, tür ve cari seçimlerini kaldır">✕ Filtreleri temizle</button>' : '');
     kap.innerHTML = h;
     kap.style.display = h ? '' : 'none';
