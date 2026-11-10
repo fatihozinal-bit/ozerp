@@ -1570,7 +1570,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r316</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r317</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4524,12 +4524,16 @@ Dikkat edilmesi gereken 2 nokta:
   function m1RenderZorla(){ var on = byId('m1Onizleme'); if (on) on.__sonHtml = null; var a = document.activeElement, odak = a && on && on.contains(a); if (odak) a.blur(); m1Render(); }
   // r286: girilen adet — CNC sayacı yazılmışsa (ya da M1 düzeltmesindeki eski adet) sayaç, yoksa girilen iyi adet
   function kayitGirilenAdet(k){ return Number(k.sayacAdet) > 0 ? Number(k.sayacAdet) : Number(k.adet) || 0; }
-  // r286: Üretim Kayıtları alt toplamı — yalnız görünen (aramayla süzülmüş) satırlar
+  // r286: Üretim Kayıtları alt toplamı — yalnız görünen (aramayla / filtreyle süzülmüş) satırlar; r317: birden çok ürün görünüyorsa ürün ürün de
   function kayitToplamYaz(){
     var tf = byId('kayitToplam'), tb = document.querySelector('#kayitTablo tbody'); if (!tf || !tb) return;
-    var t = { g: 0, i: 0, f: 0, n: 0 };
-    Array.prototype.forEach.call(tb.rows, function(r){ if (r.style.display === 'none' || r.dataset.kg == null) return; t.g += Number(r.dataset.kg) || 0; t.i += Number(r.dataset.ki) || 0; t.f += Number(r.dataset.kf) || 0; t.n++; });
-    tf.innerHTML = '<tr class="kv-toplam"><td colspan="5"><b>Toplam</b> <span class="muted">(' + t.n + ' kayıt)</span></td><td class="num"><b>' + fmt(Math.round(t.g)) + '</b></td><td class="num"><b>' + fmt(Math.round(t.i)) + '</b>' + (t.g - t.i > 0.5 ? ' <span class="muted" style="font-size:11px">(−' + fmt(Math.round(t.g - t.i)) + ')</span>' : '') + '</td><td class="num' + (t.f > 0 ? ' neg' : '') + '"><b>' + fmt(Math.round(t.f)) + '</b></td><td colspan="6"></td></tr>';
+    var bos = function(){ return { g: 0, i: 0, f: 0, n: 0 }; }, t = bos(), u = {};
+    Array.prototype.forEach.call(tb.rows, function(r){ if (r.style.display === 'none' || r.dataset.kg == null) return; var ad = r.dataset.ku || '';
+      [t, u[ad] || (u[ad] = bos())].forEach(function(x){ x.g += Number(r.dataset.kg) || 0; x.i += Number(r.dataset.ki) || 0; x.f += Number(r.dataset.kf) || 0; x.n++; }); });
+    var satir = function(etiket, x, kalin, cizgisiz){ var b = function(v){ var y = fmt(Math.round(v)); return kalin ? '<b>' + y + '</b>' : y; };
+      return '<tr' + (cizgisiz ? '' : ' class="kv-toplam"') + '><td colspan="5">' + etiket + ' <span class="muted">(' + x.n + ' kayıt)</span></td><td class="num">' + b(x.g) + '</td><td class="num"><b>' + fmt(Math.round(x.i)) + '</b>' + (x.g - x.i > 0.5 ? ' <span class="muted" style="font-size:11px">(−' + fmt(Math.round(x.g - x.i)) + ')</span>' : '') + '</td><td class="num' + (x.f > 0 ? ' neg' : '') + '">' + b(x.f) + '</td><td colspan="6"></td></tr>'; };
+    var adlar = Object.keys(u).sort(function(a, b){ return a.localeCompare(b, 'tr'); });
+    tf.innerHTML = (adlar.length > 1 ? adlar.map(function(ad, i){ return satir(esc(ad || '—'), u[ad], false, i > 0); }).join('') : '') + satir('<b>Toplam</b>', t, true);
   }
   function kayitTarihHtml(k){ return esc(kvTarihTR(k.tarih||''))+(k.bitisTarih?' <span class="muted">– '+esc(kvTarihTR(k.bitisTarih))+'</span>':''); }
   // r312: Üretim Girişi'nin altında son girilen kayıtlar (girilenin görülmesi, çift girişin fark edilmesi için) ve bugünün toplamı
@@ -4555,13 +4559,13 @@ Dikkat edilmesi gereken 2 nokta:
     }
     empty.style.display = 'none';
     tbody.innerHTML = liste.map(function(k){
-      if (k.virgo) return '<tr data-rid="'+escAttr(k.id||'')+'" data-kg="'+(Number(k.adet)||0)+'" data-ki="'+(Number(k.adet)||0)+'" data-kf="'+(Number(k.fireAdet)||0)+'"><td>'+kayitTarihHtml(k)+'</td><td>'+(k.makineId?esc(makineAdiById(k.makineId)):'')+'</td><td>'+esc(k.urunAd)+'</td>'+
+      if (k.virgo) return '<tr data-rid="'+escAttr(k.id||'')+'" data-ku="'+escAttr(k.urunAd||'')+'" data-kg="'+(Number(k.adet)||0)+'" data-ki="'+(Number(k.adet)||0)+'" data-kf="'+(Number(k.fireAdet)||0)+'"><td>'+kayitTarihHtml(k)+'</td><td>'+(k.makineId?esc(makineAdiById(k.makineId)):'')+'</td><td>'+esc(k.urunAd)+'</td>'+
         '<td><span class="pill">Virgo</span></td><td>'+esc(k.vardiya||'')+'</td><td class="num">'+fmt(Math.round(k.adet))+'</td><td class="num">'+fmt(Math.round(k.adet))+'</td><td class="num'+(k.fireAdet>0?' neg':'')+'">'+fmt(Math.round(k.fireAdet))+(k.fireNedeni&&k.fireAdet>0?' <span class="muted">('+esc(k.fireNedeni)+')</span>':'')+'</td><td>'+esc(k.operatorAd||'')+'</td><td></td><td></td><td>'+esc(k.not_||'')+(k.oran<1?' <span class="muted">(aralığın bu aya düşen payı)</span>':'')+'</td>'+
         '<td colspan="2"><button class="btn secondary small" data-virgoac="1" title="Henüz aktarılmamış eski Virgo üretim girişi; Virgo Hesabı sayfasındaki Aktar düğmesiyle normal kayda dönüşür">Virgo Hesabı\'nda aktar</button></td></tr>';
       var ie = k.isEmriId ? state.isemirleri.find(function(x){ return x.id===k.isEmriId; }) : null;
       // r286: girilen (CNC sayacı yazıldıysa sayaç, yoksa girilen iyi adet) ve düşülmüş (M1 fazlası ve fire düşülmüş iyi adet) yan yana
       var gir = kayitGirilenAdet(k), fark = gir - (Number(k.adet) || 0);
-      return '<tr data-rid="'+escAttr(k.id)+'" data-kg="'+gir+'" data-ki="'+(Number(k.adet)||0)+'" data-kf="'+(Number(k.fireAdet)||0)+'"><td>'+kayitTarihHtml(k)+'</td><td>'+esc(makineAdiById(k.makineId))+'</td><td>'+esc(urunAdiById(k.urunId))+'</td>'+
+      return '<tr data-rid="'+escAttr(k.id)+'" data-ku="'+escAttr(urunAdiById(k.urunId))+'" data-kg="'+gir+'" data-ki="'+(Number(k.adet)||0)+'" data-kf="'+(Number(k.fireAdet)||0)+'"><td>'+kayitTarihHtml(k)+'</td><td>'+esc(makineAdiById(k.makineId))+'</td><td>'+esc(urunAdiById(k.urunId))+'</td>'+
         '<td'+(k.operasyon?'':' class="muted"')+'>'+esc(operasyonAdi(k.operasyon))+'</td><td>'+esc(k.vardiya||'')+'</td><td class="num"'+(Number(k.sayacAdet)>0?' title="CNC sayacı'+(Number(k.boySayacAdet)>0?' · boydan '+fmt(k.boySayacAdet)+', M1 fazlası '+fmt(k.m1Fazla||0):'')+'"':'')+'>'+fmt(gir)+'</td><td class="num"><b>'+fmt(k.adet)+'</b>'+(fark>0?' <span class="muted" style="font-size:11px">(−'+fmt(fark)+')</span>':'')+'</td><td class="num'+(Number(k.fireAdet)>0?' neg':'')+'">'+fmt(k.fireAdet||0)+(k.fireNedeni&&Number(k.fireAdet)>0?' <span class="muted">('+esc(k.fireNedeni)+')</span>':'')+'</td><td>'+esc(k.operatorAd||'')+'</td><td>'+esc(k.giren||'')+'</td><td>'+(ie?esc(ie.isEmriNo):'')+'</td><td>'+esc(k.not_||'')+(k.stokGiris?' <span class="pill">stoğa +'+fmt(k.stokGiris)+'</span>':'')+'</td>'+
         '<td><button class="btn secondary small" data-kayitedit="'+k.id+'">Düzenle</button></td>'+
         '<td><button class="btn danger" data-del="'+k.id+'">Sil</button></td></tr>';
@@ -21498,6 +21502,8 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('kisi', 'Kişi', function(v){ var n = virgoNorm(v); return n.kisi + (n.alici ? ' → ' + n.alici : ''); }),
       tgK('kategori', 'Kategori', function(v){ return virgoNorm(v).tip === 'harcama' ? (virgoYeniAd(v).kategori || '') : ''; }),
       tgK('firma', 'Firma', function(v){ return v.saticiId ? cariAdi(v.saticiId) : ''; }), // r298: malın alındığı firma (harcamadaki Satıcı firma)
+      tgK('belge', 'Fatura no', function(v){ return v.belgeNo || ''; }), // r317: fatura bilgisi tabloda
+      tgK('faturaAd', 'Fatura adına', function(v){ var n = virgoNorm(v); return n.tip !== 'harcama' ? '' : { virgo: 'Virgo', biz: 'Bizim / fişsiz' }[n.fatura] || ''; }),
       tgK('aciklama', 'Açıklama', function(v){ return v.aciklama || ''; }),
       tgK('kaynak', 'Kaynak', function(v){ var n = virgoNorm(v); return { kb: 'Virgo', avans: 'Virgo parasından', cep: 'Kendi cebimiz' }[n.kaynak] || (n.tip === 'alinan' ? 'borca eklenir' : n.tip === 'geri' ? 'borçtan düşer' : ''); }),
       tgK('durum', 'Durum', function(v){ var n = virgoNorm(v); return n.tip === 'mutabakat' ? 'Mutabakat' : n.odendi ? 'Ödendi' : (v.vade && v.vade < todayISO() ? 'Vadesi geçti' : 'Ödenecek'); }, 'durum'),
@@ -21511,7 +21517,6 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('maliyet', 'Maliyet €', function(v){ var n = virgoNorm(v); return n.tip === 'harcama' ? n.m.eur : ''; }, 'eur', { toplam: true, gizli: true }),
       tgK('borc', 'Borca etkisi €', function(v){ return virgoNorm(v).borcEur || ''; }, 'eur', { toplam: true, gizli: true }),
       tgK('odeme', 'Ödeme şekli', function(v){ return v.odemeSekli || ''; }, 'metin', { gizli: true }),
-      tgK('belge', 'Belge no', function(v){ return v.belgeNo || ''; }, 'metin', { gizli: true }),
       tgK('vade', 'Son ödeme', function(v){ return v.vade || ''; }, 'tarih', { gizli: true })
     ] },
     virgouretimListe: { kaynak: 'tanimKayitlari', mod: 'tablo', kolonlar: [
@@ -22898,9 +22903,9 @@ Dikkat edilmesi gereken 2 nokta:
     if (donem === 'aralik') return (bas ? kvTarihTR(bas) : '…') + ' – ' + (bit ? kvTarihTR(bit) : '…');
     var x = LF_DONEM.find(function(d){ return d[0] === donem; }); return x ? x[1] : '';
   }
-  function lfDonemHtml(secili, bas, bit, attr){
+  function lfDonemHtml(secili, bas, bit, attr, hepTarih){
     return '<select ' + attr('donem') + ' title="Kaydın tarihine göre">' + LF_DONEM.map(function(d){ return '<option value="' + d[0] + '"' + (d[0] === (secili || '') ? ' selected' : '') + '>' + d[1] + '</option>'; }).join('') + '</select>' +
-      (secili === 'aralik' ? '<input type="date" ' + attr('bas') + ' value="' + escAttr(bas || '') + '" title="İlk gün"><span class="muted">–</span><input type="date" ' + attr('bit') + ' value="' + escAttr(bit || '') + '" title="Son gün">' : '');
+      (secili === 'aralik' || hepTarih ? '<input type="date" ' + attr('bas') + ' value="' + escAttr(bas || '') + '" title="İlk gün"><span class="muted">–</span><input type="date" ' + attr('bit') + ' value="' + escAttr(bit || '') + '" title="Son gün">' : '');
   }
   // Kaydın alanları
   function lfTarih(o){ var t = o && (o.tarih || o.duzenlemeTarihi || o.sevkTarihi); t = t == null ? '' : String(t); return /^\d{4}-\d{2}-\d{2}/.test(t) ? t.slice(0, 10) : ''; }
@@ -22909,13 +22914,13 @@ Dikkat edilmesi gereken 2 nokta:
   function lfCari(o){ var id = o && (o.musteriId || o.tedarikciId || o.cariId); if (!id) return ''; var a = cariAdi(id); return a && a !== '-' ? a : ''; }
   // Tablo tanımı olan listede değerler o tablonun Durum / Tür (Çeşit) / Cari sütunundan gelir (tablo görünümüyle aynı)
   function lfAlanlar(el){
-    if (el && el.id === 'kayitTablo') return { durum: function(o){ return o && o.vardiya ? String(o.vardiya) : ''; }, tur: function(o){ return o && o.makineId ? makineAdiById(o.makineId) : ''; }, cari: function(o){ return o ? (o.urunId ? urunAdiById(o.urunId) : String(o.urunAd || '')) : ''; } }; // r312
+    if (el && el.id === 'kayitTablo') return { durum: function(o){ return o && o.vardiya ? String(o.vardiya) : ''; }, tur: function(o){ return o && o.makineId ? makineAdiById(o.makineId) : ''; }, cari: function(o){ return o ? (o.urunId ? urunAdiById(o.urunId) : String(o.urunAd || '')) : ''; }, op: function(o){ return o && o.operatorAd ? String(o.operatorAd) : ''; } }; // r312; r317: operatör
     var t = el && TABLO_TANIM[el.id];
     var kol = function(k){ var c = t && t.kolonlar.find(function(x){ return x.k === k; }); return c ? function(o){ try { var v = o ? c.d(o) : ''; return v == null ? '' : String(v); } catch(e){ return ''; } } : null; };
     return { durum: kol('durum') || lfDurum, tur: kol('tur') || kol('tip') || lfTur, cari: kol('cari') || lfCari };
   }
   function lfAyar(el){ var a = el && el.id ? tgAyar(el.id).lf : null; return a && typeof a === 'object' ? a : {}; }
-  function lfAktif(f){ return !!(f && (f.donem || f.durum || f.tur || f.cari)); }
+  function lfAktif(f){ return !!(f && (f.donem || f.durum || f.tur || f.cari || f.op || f.fire)); }
   function lfTemizle(el){ if (!el || !el.id) return; var a = tgAyar(el.id); if (!a.lf) return; delete a.lf; tgAyarYaz(el.id, a); }
   // Filtre varsa kayıt → uyuyor mu; yoksa null. Kayda bağlanamayan satır filtre varken gizlenir.
   function lfUyar(el){
@@ -22923,10 +22928,12 @@ Dikkat edilmesi gereken 2 nokta:
     var ar = f.donem ? lfAralik(f.donem, f.bas, f.bit) : null, A = lfAlanlar(el);
     return function(o){
       if (!o) return false;
-      if (ar){ var t = lfTarih(o); if (!t || t < ar[0] || t > ar[1]) return false; }
+      if (ar){ var t = lfTarih(o), tSon = el.id === 'kayitTablo' && o.bitisTarih ? String(o.bitisTarih) : t; if (!t || tSon < ar[0] || t > ar[1]) return false; } // r317: birkaç günlük üretim kaydı aralığa değiyorsa gelir
       if (f.durum && A.durum(o) !== f.durum) return false;
       if (f.tur && A.tur(o) !== f.tur) return false;
       if (f.cari && A.cari(o) !== f.cari) return false;
+      if (f.op && (!A.op || A.op(o) !== f.op)) return false;
+      if (f.fire && (Number(o.fireAdet) > 0) !== (f.fire === 'var')) return false;
       return true;
     };
   }
@@ -22935,16 +22942,18 @@ Dikkat edilmesi gereken 2 nokta:
     if (el._tg && tgTabloMu(el)) return tgSatirlar(el, TABLO_TANIM[el.id]).map(function(x){ return x.o; });
     return listeSatirlari(el).map(function(n){ var rid = n.dataset && n.dataset.rid; return rid ? tgKayitBul(rid) : null; });
   }
+  function lfTarihOdakta(kap){ var a = document.activeElement; return !!(a && a.type === 'date' && kap.contains(a)); }
   function lfKutular(el, arac){
     if (!el || !el.id || !arac) return;
     var kayitlar = lfKayitlar(el).filter(Boolean), f = lfAyar(el);
     var benzersiz = function(fn){ var o = {}; kayitlar.forEach(function(k){ var v = fn(k); if (v) o[v] = 1; }); return Object.keys(o).sort(function(a, b){ return a.localeCompare(b, 'tr'); }); };
     var tarihli = kayitlar.filter(function(k){ return lfTarih(k); }).length;
     var donemVar = (kayitlar.length && tarihli >= kayitlar.length / 2) || !!f.donem;
-    var A = lfAlanlar(el), durumlar = benzersiz(A.durum), turler = benzersiz(A.tur), cariler = benzersiz(A.cari);
+    var A = lfAlanlar(el), durumlar = benzersiz(A.durum), turler = benzersiz(A.tur), cariler = benzersiz(A.cari), uretimL = el.id === 'kayitTablo', opler = uretimL ? benzersiz(A.op) : [];
     var kap = arac.querySelector('.lf');
-    var key = JSON.stringify([donemVar, durumlar, turler, cariler, f]);
+    var key = JSON.stringify([donemVar, durumlar, turler, cariler, opler, f]);
     if (kap && kap.__key === key) return;
+    if (kap && uretimL && !kap.__zorla && lfTarihOdakta(kap)){ kap.__ertelendi = true; return; } // r317: tarih yazılırken kutu yenilenmesin (imleç kaçmasın); çıkınca çizilir
     if (!kap){
       kap = document.createElement('span'); kap.className = 'lf';
       var inp = arac.querySelector('input[type=search]');
@@ -22952,15 +22961,19 @@ Dikkat edilmesi gereken 2 nokta:
       kap.addEventListener('change', function(e){
         var k = e.target.dataset && e.target.dataset.lf; if (!k) return;
         var a = tgAyar(el.id); a.lf = Object.assign({}, a.lf || {});
+        var tarihKutu = el.id === 'kayitTablo' && (k === 'bas' || k === 'bit'); // r317: tarih kutuları hep açık; elle yazılınca seçili dönem aralığa döner
+        if (tarihKutu && a.lf.donem !== 'aralik'){ var ar0 = a.lf.donem ? lfAralik(a.lf.donem) : null; if (ar0){ a.lf.bas = ar0[0]; a.lf.bit = ar0[1]; } a.lf.donem = 'aralik'; }
         if (e.target.value) a.lf[k] = e.target.value; else delete a.lf[k];
+        if (tarihKutu && !a.lf.bas && !a.lf.bit) delete a.lf.donem;
         if (k === 'donem' && e.target.value !== 'aralik'){ delete a.lf.bas; delete a.lf.bit; }
         if (!lfAktif(a.lf) && !a.lf.bas && !a.lf.bit) delete a.lf;
         tgAyarYaz(el.id, a);
         filtreUygula(el, arac);
       });
-      kap.addEventListener('click', function(e){ if (e.target.dataset && e.target.dataset.lf === 'temizle'){ e.target.blur(); lfTemizle(el); filtreUygula(el, arac); } });
+      kap.addEventListener('focusout', function(){ if (kap.__ertelendi) setTimeout(function(){ if (kap.__ertelendi && !lfTarihOdakta(kap)) lfKutular(el, arac); }, 0); });
+      kap.addEventListener('click', function(e){ if (e.target.dataset && e.target.dataset.lf === 'temizle'){ e.target.blur(); kap.__zorla = true; lfTemizle(el); filtreUygula(el, arac); } });
     }
-    kap.__key = key;
+    kap.__key = key; kap.__ertelendi = false; kap.__zorla = false;
     var attr = function(k){ return 'data-lf="' + k + '"'; };
     var secim = function(k, etiket, degerler){
       var sec = f[k] || '';
@@ -22968,8 +22981,15 @@ Dikkat edilmesi gereken 2 nokta:
       if (degerler.length < 2 && !sec) return '';
       return '<select ' + attr(k) + (sec ? ' class="secili"' : '') + '><option value="">' + etiket + ': tümü</option>' + degerler.map(function(v){ return '<option' + (v === sec ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select>';
     };
+    if (uretimL){ // r317: Üretim Kayıtları — tarih kutuları hep açık, operatör ve fire seçimi
+      var ar1 = f.donem && f.donem !== 'aralik' ? lfAralik(f.donem) : null, gb = ar1 ? ar1[0] : (f.bas || ''), gs = ar1 ? ar1[1] : (f.bit || '');
+      var hu = lfDonemHtml(f.donem, gb, gs, attr, true).replace('<select ', '<select ' + (f.donem ? 'class="secili" ' : '')) + secim('tur', 'Makine', turler) + secim('cari', 'Ürün', cariler) + secim('durum', 'Vardiya', durumlar) + secim('op', 'Operatör', opler) +
+        '<select data-lf="fire"' + (f.fire ? ' class="secili"' : '') + '><option value="">Fire: tümü</option><option value="var"' + (f.fire === 'var' ? ' selected' : '') + '>Fireli kayıtlar</option><option value="yok"' + (f.fire === 'yok' ? ' selected' : '') + '>Firesiz kayıtlar</option></select>' +
+        (lfAktif(f) ? '<button class="btn secondary small" type="button" data-lf="temizle" title="Bütün filtreleri kaldır">✕ Filtreleri temizle</button>' : '');
+      kap.innerHTML = hu; kap.style.display = ''; return;
+    }
     var h = (donemVar ? lfDonemHtml(f.donem, f.bas, f.bit, attr).replace('<select ', '<select ' + (f.donem ? 'class="secili" ' : '')) : '') +
-      secim('durum', el.id === 'kayitTablo' ? 'Vardiya' : 'Durum', durumlar) + secim('tur', el.id === 'kayitTablo' ? 'Makine' : 'Tür', turler) + secim('cari', el.id === 'kayitTablo' ? 'Ürün' : 'Cari', cariler) +
+      secim('durum', 'Durum', durumlar) + secim('tur', 'Tür', turler) + secim('cari', 'Cari', cariler) +
       (lfAktif(f) ? '<button class="btn secondary small" type="button" data-lf="temizle" title="Dönem, durum, tür ve cari seçimlerini kaldır">✕ Filtreleri temizle</button>' : '');
     kap.innerHTML = h;
     kap.style.display = h ? '' : 'none';
