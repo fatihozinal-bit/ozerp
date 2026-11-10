@@ -1570,7 +1570,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r312</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r313</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1672,7 +1672,7 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
         <div class="block-body tablewrap" id="uSonGiris"></div>
       </div>
       <details class="block" id="m1Duzelt">
-        <summary class="block-head" style="cursor:pointer"><h3>M1 / boydan adet düzeltmesi <span class="info-ico" tabindex="0">!<span class="info-bubble">CNC sayacı her boyda M1 yüzünden fazla sayar. İyi adede sayaç yazılmış eski kayıtlar burada düzeltilir: yeni iyi adet = eski adet − tam boy (eski adet ÷ boydan adet) × M1 fazlası; fire değişmez. Boydan adet yanlış yazılmışsa (ör. 24 yerine 25): doğru değeri yazın, sayaçla girilmiş ya da düzeltilmiş kayıtlarda boy sayısı sayaçtan yeniden bulunur ve fark iyi adede eklenir / düşülür (sayaç 195: 24'le 8 boy, 25'le 7 boy → +1). Önce önizleme görünür, Uygula'ya basmadan hiçbir şey değişmez. Depoya giriş yapılmış kayıtta stok da fark kadar değişir. Aynı değerlerle düzeltilmiş kayıt listeye gelmez (iki kez düzeltilmez).</span></span></h3></summary>
+        <summary class="block-head" style="cursor:pointer"><h3>M1 / boydan adet düzeltmesi <span class="info-ico" tabindex="0">!<span class="info-bubble">CNC sayacı her boyda M1 yüzünden fazla sayar. İyi adede sayaç yazılmış eski kayıtlar burada düzeltilir: yeni iyi adet = sayaç − tam boy (sayaç ÷ boydan adet) × M1 fazlası − fire (fire parçalar sayaca dahildir). Fire düşülmemiş kayıtlar da listeye gelir. Boydan adet yanlış yazılmışsa (ör. 24 yerine 25): doğru değeri yazın, sayaçla girilmiş ya da düzeltilmiş kayıtlarda boy sayısı sayaçtan yeniden bulunur ve fark iyi adede eklenir / düşülür (sayaç 195: 24'le 8 boy, 25'le 7 boy → +1). Önce önizleme görünür, Uygula'ya basmadan hiçbir şey değişmez. Depoya giriş yapılmış kayıtta stok da fark kadar değişir. Aynı değerlerle düzeltilmiş kayıt listeye gelmez (iki kez düzeltilmez).</span></span></h3></summary>
         <div class="block-body">
           <div class="grid2 ug6">
             <div class="field ug-s2"><label>Ürün</label><select id="m1Urun"></select></div>
@@ -4418,20 +4418,19 @@ Dikkat edilmesi gereken 2 nokta:
     var ba = Number(byId('m1BoyAdet').value) || 0, m1 = Number(byId('m1Fazla').value) || 0;
     return state.uretim.filter(function(k){
       if (!urunEsit(k.urunId, uid) || (bas && (k.bitisTarih || k.tarih || '') < bas) || (bit && (k.tarih || '') > bit)) return false;
-      if (m1SayacliMi(k)) return ba > 0 && (Number(k.boySayacAdet) !== ba || (Number(k.m1Fazla) || 0) !== m1);
+      if (m1SayacliMi(k)) return ba > 0 && (Number(k.boySayacAdet) !== ba || (Number(k.m1Fazla) || 0) !== m1 || (m1 > 0 && m1Hesap(k, ba, m1).yeni !== Number(k.adet))); // r313: fire düşülmemiş kayıt da gelir
       return !k.m1Duzeltme && !(Number(k.sayacAdet) > 0) && Number(k.adet) > 0; })
       .sort(function(a, b){ return String(a.tarih || '').localeCompare(String(b.tarih || '')); });
   }
   // r303: listede sayaçlı kayıt varsa sayaçsız eski kayıtlar (M1 düzeltmesi hiç yapılmamış) varsayılan seçili gelmez: boydan adet düzeltirken yanlışlıkla düşülmesin
   function m1SeciliMi(k){ if (m1Secili.hasOwnProperty(k.id)) return m1Secili[k.id] !== false; return m1SayacliMi(k) || !state.uretim.some(function(x){ return m1SayacliMi(x) && urunEsit(x.urunId, k.urunId); }); }
   function m1SayacliMi(k){ return Number(k.sayacAdet) > 0 && Number(k.boySayacAdet) > 0; }
-  // Sayaçsız eski kayıt: yeni = eski − tam boy × M1. Sayaçlı kayıt (r303): boy sayısı sayaçtan yeniden bulunur,
-  // yeni = adet + eski boy × eski M1 − yeni boy × yeni M1 (fire ve önceki düşüşler korunur). Ör. sayaç 195: 24'le 8 boy, 25'le 7 boy → +1.
+  // r313: fire parçalar CNC sayacına dahil: iyi = sayaç − tam boy × M1 − fire (Üretim Girişi'ndeki hesapla aynı). Ör. sayaç 195, boydan 25, M1 1, fire 5 → 7 boy → 183.
   function m1Hesap(k, ba, m1){
-    var eski = Number(k.adet) || 0;
+    var eski = Number(k.adet) || 0, fire = Number(k.fireAdet) || 0;
     if (m1SayacliMi(k)){ var say = Number(k.sayacAdet), eBoy = Math.floor(say / Number(k.boySayacAdet)), eM1 = Number(k.m1Fazla) || 0, boy = Math.floor(say / ba);
-      return { eski: eski, say: say, eskiBa: Number(k.boySayacAdet), eskiBoy: eBoy, eskiM1: eM1, boy: boy, yeni: Math.max(0, eski + eBoy * eM1 - boy * m1), sayacli: true }; }
-    var b = Math.floor(eski / ba); return { eski: eski, say: eski, boy: b, yeni: Math.max(0, eski - b * m1) };
+      return { eski: eski, say: say, eskiBa: Number(k.boySayacAdet), eskiBoy: eBoy, eskiM1: eM1, boy: boy, fire: fire, yeni: Math.max(0, say - boy * m1 - fire), sayacli: true }; }
+    var b = Math.floor(eski / ba); return { eski: eski, say: eski, boy: b, fire: fire, yeni: Math.max(0, eski - b * m1 - fire) };
   }
   function m1Render(){
     var sel = byId('m1Urun'); if (!sel) return;
@@ -4441,15 +4440,15 @@ Dikkat edilmesi gereken 2 nokta:
     secenekDoldur(sel, '<option value="">— ürün seçin —</option>' + urunler.map(function(u){ return '<option value="' + escAttr(u.id) + '">' + esc(u.ad) + '</option>'; }).join(''), sel.value);
     var on = byId('m1Onizleme'), ba = Number(byId('m1BoyAdet').value) || 0, m1 = Number(byId('m1Fazla').value) || 0, l = m1Adaylar();
     if (!sel.value){ setHtmlIdle(on, '<div class="helper">Ürün seçin, boydan adeti yazın: düzeltilecek kayıtlar burada önizlenir.</div>'); return; }
-    if (!l.length){ setHtmlIdle(on, '<div class="helper">Bu ürün ve tarih aralığında düzeltilecek kayıt yok (sayaçlı kayıtlar yalnız boydan adet ya da M1 farklı yazılınca gelir).</div>'); return; }
+    if (!l.length){ setHtmlIdle(on, '<div class="helper">Bu ürün ve tarih aralığında düzeltilecek kayıt yok (sayaçlı kayıtlar boydan adet ya da M1 farklı yazılınca veya fire düşülmemişse gelir).</div>'); return; }
     if (!(ba > 0) || !(m1 > 0)){ setHtmlIdle(on, '<div class="helper">' + l.length + ' kayıt var. Boydan adeti ve M1 fazlasını yazın.</div>'); return; }
     var top = { eski: 0, yeni: 0, n: 0 }, isr = function(v){ return v > 0 ? '+' + fmt(v) : v < 0 ? '−' + fmt(-v) : '0'; };
     var satir = l.map(function(k){ var h = m1Hesap(k, ba, m1), sec = m1SeciliMi(k, l), f = h.yeni - h.eski; if (sec){ top.eski += h.eski; top.yeni += h.yeni; top.n++; }
       return '<tr><td><input type="checkbox" data-m1sec="' + k.id + '"' + (sec ? ' checked' : '') + '></td><td>' + esc(kvTarihTR(k.tarih || '')) + (k.bitisTarih ? ' – ' + esc(kvTarihTR(k.bitisTarih)) : '') + '</td><td>' + esc(makineAdiById(k.makineId)) + '</td><td>' + esc(operasyonAdi(k.operasyon)) + '</td><td>' + esc(k.vardiya || '') + '</td>' +
-        '<td class="num">' + fmt(h.say) + '</td><td class="num">' + fmt(h.eski) + '</td><td class="num"' + (h.sayacli ? ' title="Eski: boydan ' + fmt(h.eskiBa) + ', M1 ' + fmt(h.eskiM1) + '"' : '') + '>' + (h.sayacli && h.eskiBoy !== h.boy ? fmt(h.eskiBoy) + ' → ' : '') + fmt(h.boy) + (h.sayacli ? ' <span class="muted">(' + fmt(h.eskiBa) + ' → ' + fmt(ba) + ')</span>' : '') + '</td><td class="num"><b>' + fmt(h.yeni) + '</b></td><td class="num ' + (f < 0 ? 'neg' : f > 0 ? 'pos' : 'muted') + '">' + isr(f) + '</td><td>' + (Number(k.stokGiris) > 0 && f ? 'stok ' + isr(f) : '<span class="muted">—</span>') + '</td></tr>'; }).join('');
+        '<td class="num">' + fmt(h.say) + '</td><td class="num">' + fmt(h.eski) + '</td><td class="num"' + (h.sayacli ? ' title="Eski: boydan ' + fmt(h.eskiBa) + ', M1 ' + fmt(h.eskiM1) + '"' : '') + '>' + (h.sayacli && h.eskiBoy !== h.boy ? fmt(h.eskiBoy) + ' → ' : '') + fmt(h.boy) + (h.sayacli && h.eskiBa !== ba ? ' <span class="muted">(' + fmt(h.eskiBa) + ' → ' + fmt(ba) + ')</span>' : '') + '</td><td class="num">' + (h.fire ? fmt(h.fire) : '<span class="muted">0</span>') + '</td><td class="num"><b>' + fmt(h.yeni) + '</b></td><td class="num ' + (f < 0 ? 'neg' : f > 0 ? 'pos' : 'muted') + '">' + isr(f) + '</td><td>' + (Number(k.stokGiris) > 0 && f ? 'stok ' + isr(f) : '<span class="muted">—</span>') + '</td></tr>'; }).join('');
     var tf = top.yeni - top.eski, karisik = l.some(function(k){ return !m1SayacliMi(k) && !m1SeciliMi(k) && !m1Secili.hasOwnProperty(k.id); });
-    setHtmlIdle(on, (karisik ? '<div class="helper">Bu ürünün sayaçlı kayıtları olduğu için sayaçsız eski kayıtlar (hiç M1 düzeltmesi yapılmamış) seçili gelmez; onları da düzeltmek isterseniz kutusunu işaretleyin.</div>' : '') + '<div class="tablewrap"><table><thead><tr><th></th><th>Tarih</th><th>Makine</th><th>Operasyon</th><th>Vardiya</th><th class="num">Sayaç</th><th class="num">Şimdiki iyi adet</th><th class="num">Boy</th><th class="num">Yeni iyi adet</th><th class="num">Fark</th><th>Stok</th></tr></thead><tbody>' + satir + '</tbody>' +
-      '<tfoot><tr class="kv-toplam"><td></td><td colspan="5"><b>' + top.n + ' kayıt seçili</b></td><td class="num"><b>' + fmt(top.eski) + '</b></td><td></td><td class="num"><b>' + fmt(top.yeni) + '</b></td><td class="num ' + (tf < 0 ? 'neg' : tf > 0 ? 'pos' : '') + '"><b>' + isr(tf) + '</b></td><td></td></tr></tfoot></table></div>' +
+    setHtmlIdle(on, (karisik ? '<div class="helper">Bu ürünün sayaçlı kayıtları olduğu için sayaçsız eski kayıtlar (hiç M1 düzeltmesi yapılmamış) seçili gelmez; onları da düzeltmek isterseniz kutusunu işaretleyin.</div>' : '') + '<div class="tablewrap"><table><thead><tr><th></th><th>Tarih</th><th>Makine</th><th>Operasyon</th><th>Vardiya</th><th class="num">Sayaç</th><th class="num">Şimdiki iyi adet</th><th class="num">Boy</th><th class="num">Fire</th><th class="num">Yeni iyi adet</th><th class="num">Fark</th><th>Stok</th></tr></thead><tbody>' + satir + '</tbody>' +
+      '<tfoot><tr class="kv-toplam"><td></td><td colspan="5"><b>' + top.n + ' kayıt seçili</b></td><td class="num"><b>' + fmt(top.eski) + '</b></td><td></td><td></td><td class="num"><b>' + fmt(top.yeni) + '</b></td><td class="num ' + (tf < 0 ? 'neg' : tf > 0 ? 'pos' : '') + '"><b>' + isr(tf) + '</b></td><td></td></tr></tfoot></table></div>' +
       '<button class="btn" id="m1Uygula" style="margin-top:10px"' + (top.n ? '' : ' disabled') + '>Seçili ' + top.n + ' kaydı düzelt</button>');
   }
   function m1Uygula(){
@@ -4464,7 +4463,7 @@ Dikkat edilmesi gereken 2 nokta:
         else vals.m1Duzeltme = { eskiAdet: h.eski, boy: h.boy, tarih: nowISO(), kisi: aktifKullaniciAdi() || '' };
         var eskiStok = Number(k.stokGiris) || 0, p = Promise.resolve();
         if (eskiStok > 0 && h.yeni !== h.eski){ vals.stokGiris = Math.max(0, eskiStok - (h.eski - h.yeni)); var d = vals.stokGiris - eskiStok;
-          p = stokHareketi({ stokId: k.stokId || urunStokId(k.urunId), miktar: d, tur: 'Üretim düzeltme', kaynakTur: 'uretim', kaynakId: k.id, aciklama: h.sayacli ? 'Boydan adet düzeltmesi (' + h.eskiBa + ' → ' + ba + ')' : 'M1 düzeltmesi', tarih: k.bitisTarih || k.tarih }); }
+          p = stokHareketi({ stokId: k.stokId || urunStokId(k.urunId), miktar: d, tur: 'Üretim düzeltme', kaynakTur: 'uretim', kaynakId: k.id, aciklama: h.sayacli ? (h.eskiBa === ba && h.eskiM1 === m1 ? 'Fire sayaçtan düşüldü' : 'Boydan adet düzeltmesi (' + h.eskiBa + ' → ' + ba + ')') : 'M1 düzeltmesi', tarih: k.bitisTarih || k.tarih }); }
         return p.then(function(){ return kayitGuncelle('uretim', k.id, vals); }).then(function(){ n++; });
       }); });
       sira.then(function(){ toast('✓ ' + n + ' üretim kaydı düzeltildi'); })
