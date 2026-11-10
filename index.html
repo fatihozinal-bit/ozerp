@@ -1557,7 +1557,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-09-r310</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r311</div>
   </nav>
   <main>
     <div class="topbar">
@@ -9896,7 +9896,7 @@ Dikkat edilmesi gereken 2 nokta:
       baslangicSaat: byId('uBaslangic').value || '', bitisSaat: byId('uBitis').value || '',
       operatorId: byId('uOperator').value || '', giren: byId('uGiren').value || '',
       isEmriId: byId('uIsEmri').value || null, not_: byId('uNot').value || '', stokGirisYap: byId('uStokGiris').checked,
-      sayacAdet: Number(byId('uSayac').value) || 0, boySayacAdet: Number(byId('uBoyAdet').value) || 0, m1Fazla: Number(byId('uM1').value) || 0
+      sayacAdet: Number(byId('uSayac').value) || 0, boySayacAdet: Number(byId('uBoyAdet').value) || 0, m1Fazla: Number(byId('uM1').value) || 0, tekrarSor: true
     };
     uretimKaydetVeri(veri, function(hata){
       if (hata){ msg.textContent = hata; return; }
@@ -9904,6 +9904,22 @@ Dikkat edilmesi gereken 2 nokta:
       ['uAdet','uSayac','uNot','uBaslangic','uBitis','uBitisTarih'].forEach(function(id){ byId(id).value = ''; });
       byId('uFire').value = '0'; uSayacGuncelle();
       setTimeout(function(){ msg.textContent = ''; }, 2500);
+    });
+  }
+  // r311: Aynı üretim iki kez girilmesin. Aynı makine, ürün, operasyon ve vardiyada tarihleri çakışan kayıt varsa bulur (vardiya biri boşsa eşleşmiş sayılır).
+  // Tek günlük iki kayıtta ikisinde de başlangıç–bitiş saati varsa ve saatler çakışmıyorsa ayrı iş sayılır.
+  function uretimTekrarBul(v){
+    var dk = function(s){ var m = /^(\d{1,2}):(\d{2})/.exec(s || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+    var saat = function(x){ var a = dk(x.baslangicSaat), b = dk(x.bitisSaat); if (a === null || b === null) return null; return [a, b <= a ? b + 1440 : b]; };
+    var b1 = v.tarih, b2 = v.bitisTarih || v.tarih, ys = saat(v);
+    return (state.uretim || []).find(function(u){
+      if (u.makineId !== v.makineId || u.urunId !== v.urunId || (u.operasyon || '') !== (v.operasyon || '')) return false;
+      if (u.vardiya && v.vardiya && u.vardiya !== v.vardiya) return false;
+      var u1 = u.tarih, u2 = u.bitisTarih || u.tarih;
+      if (!u1 || u2 < b1 || u1 > b2) return false;
+      var us = saat(u);
+      if (u1 === u2 && b1 === b2 && u1 === b1 && us && ys && (us[1] <= ys[0] || ys[1] <= us[0])) return false;
+      return true;
     });
   }
   // Operatör ekranı ve üretim girişinin ortak kayıt fonksiyonu
@@ -9915,6 +9931,13 @@ Dikkat edilmesi gereken 2 nokta:
     if (v.bitisTarih && v.bitisTarih < v.tarih){ cb('Bitiş günü, tarihten önce olamaz.'); return; }
     if (v.bitisTarih === v.tarih) v.bitisTarih = '';
     if (v.fireAdet > 0 && (!v.fireNedeni || v.fireNedeni === '—')){ cb('Fire için neden seçin.'); return; }
+    if (v.tekrarSor && !v.tekrarOnayli){
+      var tekrar = uretimTekrarBul(v);
+      if (tekrar){
+        onayIste('Bu üretim zaten girilmiş olabilir:\n' + kvTarihTR(tekrar.tarih) + (tekrar.bitisTarih ? ' – ' + kvTarihTR(tekrar.bitisTarih) : '') + ' · ' + makineAdiById(tekrar.makineId) + ' · ' + urunAdiById(tekrar.urunId) + (tekrar.vardiya ? ' · ' + tekrar.vardiya : '') + ' · ' + fmt(Number(tekrar.adet) || 0) + ' adet' + (tekrar.giren ? ' (giren: ' + tekrar.giren + ')' : '') + '.\nÇift giriş stoğu ve Virgo karşılığını iki kez yazar. Yine de kaydedilsin mi?', 'Evet, yine de kaydet', function(){ uretimKaydetVeri(Object.assign({}, v, { tekrarOnayli: true }), cb); });
+        return;
+      }
+    }
     var ie = v.isEmriId ? isEmriBul(v.isEmriId) : null;
     // Operasyonlar takip ediliyorsa (önceki operasyona kayıt girilmişse): önceki operasyondan geçen iyi parçadan fazlası girilince sorulur
     if (ie && !v.onayli){
@@ -16482,6 +16505,7 @@ Dikkat edilmesi gereken 2 nokta:
         denetimSessiz = true;
         byId('arsivMsg').textContent = 'Arşiv belgeleri yazılıyor…';
         Promise.all(yazimlar).then(function(){
+          if (col === 'stokHareketleri') configWrite({ stokHareketArsivli: nowISO() }).catch(function(){}); // r311: toplam artık eksik, stok farkı uyarısı kapanır
           var i = 0;
           (function sil(){
             if (i >= adaylar.length){ denetimSessiz = false; byId('arsivMsg').textContent = '✓ '+adaylar.length+' kayıt arşivlendi.'; toast('✓ Arşivleme tamamlandı'); return; }
@@ -16850,6 +16874,21 @@ Dikkat edilmesi gereken 2 nokta:
   // Aynı çizim turunda (zil, Özet, uyarı merkezi) bir kez hesaplanır; her veri değişikliğinde (renderAllNow) sıfırlanır
   var _uyariOnbellek = null;
   function uyarilariHesapla(){ if (!_uyariOnbellek) _uyariOnbellek = uyarilariHesaplaHam(); return _uyariOnbellek; }
+  // r311: Stok kartındaki miktar, hareketlerin toplamına eşit olmalı. Eşit değilse bir yazım kaybolmuştur (bkz. r306); sessiz kalmasın diye uyarılır.
+  // Hareketler yüklenmeden, yazım sürerken, 24 aydan eski ay düşmüşken ya da hareketler arşivlenmişse bakılmaz (toplam eksik olur, yalancı uyarı verir).
+  function stokFarkUyarilari(ekle){
+    var d = kovaDocs.stokHareketleri;
+    if (!d || !state.stok || (state.config || {}).stokHareketArsivli || Object.keys(d).length >= 24) return;
+    if ([kovaBekleyen, kovaUcusta, kovaOnaysiz].some(function(x){ return Object.keys(x.stokHareketleri || {}).length; })) return;
+    var top = {};
+    (state.stokHareketleri || []).forEach(function(h){ top[h.stokId] = (top[h.stokId] || 0) + (Number(h.miktar) || 0); });
+    var farklar = state.stok.filter(function(s){ return Math.abs((Number(s.miktar) || 0) - (top[s.id] || 0)) > 0.01; });
+    farklar.slice(0, 5).forEach(function(s){
+      var kart = Number(s.miktar) || 0, har = top[s.id] || 0, f = kart - har;
+      ekle('uyari', 'Stok farkı: ' + (s.kod ? s.kod + ' · ' : '') + s.ad + ' · kart ' + fmt(kart) + ', hareketlerin toplamı ' + fmt(har) + ' (fark ' + (f > 0 ? '+' : '−') + fmt(Math.abs(f)) + ')', 'stok', s.id);
+    });
+    if (farklar.length > 5) ekle('uyari', 'Stok farkı olan ' + (farklar.length - 5) + ' kart daha var', 'stok', '');
+  }
   function uyarilariHesaplaHam(){
     var u = [], bugun = todayISO(), hafta = tarihEkle(bugun, 7);
     function ekle(sev, metin, tab, id){ u.push({ seviye: sev, metin: metin, tab: tab, id: id || '' }); }
@@ -16889,6 +16928,7 @@ Dikkat edilmesi gereken 2 nokta:
     (state.fasonSiparisleri||[]).filter(function(f){ return f.termin && f.termin < bugun && toplamla(f.gonderimler||[], function(x){ return x.adet; }) > toplamla(f.kabuller||[], function(x){ return x.adet + (Number(x.fire)||0); }); }).forEach(function(f){ ekle('uyari', 'Fasoncuda gecikme: '+f.no+' · '+cariAdi(f.fasoncuId), 'gidenfason', f.id); });
     try { gorusmeUyarilari(ekle); } catch(e){}
     try { virgoUyarilari(ekle); } catch(e){}
+    try { stokFarkUyarilari(ekle); } catch(e){}
     try { muhUyarilar(ekle); } catch(e){}
     try { vergiUyarilari(ekle); } catch(e){}
     try { kirilimUyarilari(ekle); } catch(e){}
