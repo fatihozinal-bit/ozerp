@@ -1570,7 +1570,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r315</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r316</div>
   </nav>
   <main>
     <div class="topbar">
@@ -4449,15 +4449,32 @@ Dikkat edilmesi gereken 2 nokta:
   function fireDuzeltUygula(btn){
     var l = fireDuzeltAdaylar(); if (!l.length) return; var fark = toplamla(l, function(k){ return k.fireAdet; });
     onayIste(l.length + ' üretim kaydının iyi adedi toplam ' + fmt(fark) + ' azalacak, depoya girmiş kayıtlarda stok da aynı kadar düşecek. Düzeltilsin mi?', 'Evet, düzelt', function(){
-      btn.disabled = true; var n = 0, sira = Promise.resolve();
-      l.forEach(function(k){ sira = sira.then(function(){
+      btn.disabled = true;
+      fireDuzeltYaz(l).then(function(n){ toast('✓ ' + n + ' üretim kaydı düzeltildi'); }).catch(function(e){ btn.disabled = false; toast('Durdu: ' + dbErrMsg(e) + '. Yeniden basınca kalanlar düzeltilir.', true); });
+    });
+  }
+  function fireDuzeltYaz(l){
+    var n = 0, sira = Promise.resolve();
+    l.forEach(function(k){ sira = sira.then(function(){
         var ba = Number(k.boySayacAdet), m1 = Number(k.m1Fazla) || 0, h = m1Hesap(k, ba, m1), vals = { adet: h.yeni, boyDuzeltme: (Array.isArray(k.boyDuzeltme) ? k.boyDuzeltme : []).concat([{ eskiAdet: h.eski, eskiBoyAdet: ba, eskiM1: m1, boyAdet: ba, m1: m1, fire: h.fire, tarih: nowISO(), kisi: aktifKullaniciAdi() || '' }]) };
         var eskiStok = Number(k.stokGiris) || 0, p = Promise.resolve();
         if (eskiStok > 0){ vals.stokGiris = Math.max(0, eskiStok - (h.eski - h.yeni)); p = stokHareketi({ stokId: k.stokId || urunStokId(k.urunId), miktar: vals.stokGiris - eskiStok, tur: 'Üretim düzeltme', kaynakTur: 'uretim', kaynakId: k.id, aciklama: 'Fire sayaçtan düşüldü', tarih: k.bitisTarih || k.tarih }); }
         return p.then(function(){ return kayitGuncelle('uretim', k.id, vals); }).then(function(){ n++; });
-      }); });
-      sira.then(function(){ toast('✓ ' + n + ' üretim kaydı düzeltildi'); }).catch(function(e){ btn.disabled = false; toast((n ? n + ' kayıt düzeltildi; ' : '') + 'Durdu: ' + dbErrMsg(e) + '. Yeniden basınca kalanlar düzeltilir.', true); });
-    });
+    }); });
+    return sira.then(function(){ return n; });
+  }
+  // r316: kullanıcı isteğiyle tek seferlik: 10.11.2026 öncesi firesi düşülmemiş kayıtlar, ilk açan Yönetici'nin oturumunda kendiliğinden düzeltilir (config.fireOtoR316 bir kez çalışmasını sağlar; sonrası kutudaki düğmeyle)
+  var fireOtoDenendi = false;
+  function fireOtoDuzelt(){
+    if (fireOtoDenendi || !db || !aktifKullanici() || aktifRol() !== 'Yönetici' || !state.config || !kovaDocs.stokHareketleri || !(state.uretim || []).length || !(state.stok || []).length) return;
+    fireOtoDenendi = true; if (state.config.fireOtoR316) return;
+    setTimeout(function(){
+      if ((state.config || {}).fireOtoR316) return;
+      var l = fireDuzeltAdaylar().filter(function(k){ return String(k.tarih || '') < '2026-11-10' && (!(Number(k.stokGiris) > 0) || stokKart(k.stokId || urunStokId(k.urunId))); });
+      if (!l.length) return;
+      configWrite({ fireOtoR316: { tarih: nowISO(), kisi: aktifKullaniciAdi() || '', adet: l.length } }).then(function(){ return fireDuzeltYaz(l); })
+        .then(function(n){ toast('✓ ' + n + ' üretim kaydı düzeltildi (fire düşüldü)'); }).catch(function(e){ toast('Fire düzeltmesi durdu: ' + dbErrMsg(e) + '. Üretim Kayıtları\'ndaki düğmeyle tamamlayın.', true); });
+    }, 4000);
   }
   (function(){ var k = byId('fireDuzeltKutu'); if (k) k.addEventListener('click', function(e){ if (e.target.id === 'fireDuzeltUygula') fireDuzeltUygula(e.target); }); })();
   function m1Render(){
@@ -17023,6 +17040,7 @@ Dikkat edilmesi gereken 2 nokta:
   // Zildeki sayı çizimden hemen sonra değil, kısa bir aradan sonra güncellenir (art arda gelen değişikliklerde bir kez)
   var _rozetZaman = null;
   EK_HER_ZAMAN.push(function uyarilar(){ clearTimeout(_rozetZaman); _rozetZaman = setTimeout(uyariRozetleri, 400); });
+  EK_HER_ZAMAN.push(fireOtoDuzelt);
 
   // ---------- Özet kartları: tıklayınca hesabın dökümü ----------
   function ozetDetayTablo(bas, satirlar, toplam){
