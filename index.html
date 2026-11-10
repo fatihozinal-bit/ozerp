@@ -1570,7 +1570,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r313</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r315</div>
   </nav>
   <main>
     <div class="topbar">
@@ -1691,6 +1691,7 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
         <h1>Üretim kayıtları</h1>
         <p>Girilen tüm vardiya kayıtları, en yeni üstte.</p>
       </div>
+      <div id="fireDuzeltKutu"></div>
       <div class="block">
         <div class="block-body tablewrap">
           <table id="kayitTablo"><thead><tr>
@@ -4432,6 +4433,33 @@ Dikkat edilmesi gereken 2 nokta:
       return { eski: eski, say: say, eskiBa: Number(k.boySayacAdet), eskiBoy: eBoy, eskiM1: eM1, boy: boy, fire: fire, yeni: Math.max(0, say - boy * m1 - fire), sayacli: true }; }
     var b = Math.floor(eski / ba); return { eski: eski, say: eski, boy: b, fire: fire, yeni: Math.max(0, eski - b * m1 - fire) };
   }
+  // r315: sayaçla girilip firesi iyi adetten düşülmemiş kayıtlar (iyi = sayaç − boy × M1 çıkıyor, fire var). Yönetici için Üretim Kayıtları'nda tek düğme; kayıt kalmayınca kutu kaybolur.
+  function fireDuzeltAdaylar(){
+    if (aktifRol() !== 'Yönetici') return [];
+    return (state.uretim || []).filter(function(k){ if (!m1SayacliMi(k) || !(Number(k.fireAdet) > 0)) return false; var say = Number(k.sayacAdet); return Number(k.adet) === say - Math.floor(say / Number(k.boySayacAdet)) * (Number(k.m1Fazla) || 0); })
+      .sort(function(a, b){ return String(a.tarih || '').localeCompare(String(b.tarih || '')); });
+  }
+  function fireDuzeltCiz(){
+    var el = byId('fireDuzeltKutu'); if (!el) return; var l = fireDuzeltAdaylar(), yeni = '';
+    if (l.length){ var fark = toplamla(l, function(k){ return k.fireAdet; });
+      yeni = '<div class="block"><div class="block-head"><h3>Firesi düşülmemiş kayıtlar ' + infoIco('Fire parçalar CNC sayacına dahildir: iyi adet = sayaç − boy × M1 − fire. Bu kayıtlarda fire iyi adetten düşülmemiş. Düzeltince iyi adet ve stok fire kadar azalır, Virgo karşılığı da ona göre iner.') + '</h3><div class="bh-actions"><button class="btn" type="button" id="fireDuzeltUygula">' + l.length + ' kaydı düzelt (−' + fmt(fark) + ' adet)</button></div></div><div class="block-body tablewrap"><table><thead><tr><th>Tarih</th><th>Makine</th><th>Ürün</th><th class="num">Sayaç</th><th class="num">Fire</th><th class="num">Şimdiki iyi</th><th class="num">Yeni iyi</th></tr></thead><tbody>' +
+        l.map(function(k){ return '<tr><td>' + kayitTarihHtml(k) + '</td><td>' + esc(makineAdiById(k.makineId)) + '</td><td>' + esc(urunAdiById(k.urunId)) + '</td><td class="num">' + fmt(k.sayacAdet) + '</td><td class="num neg">' + fmt(k.fireAdet) + '</td><td class="num">' + fmt(k.adet) + '</td><td class="num"><b>' + fmt(Number(k.adet) - Number(k.fireAdet)) + '</b></td></tr>'; }).join('') + '</tbody></table></div></div>'; }
+    if (el.__sonHtml !== yeni){ el.__sonHtml = yeni; el.innerHTML = yeni; }
+  }
+  function fireDuzeltUygula(btn){
+    var l = fireDuzeltAdaylar(); if (!l.length) return; var fark = toplamla(l, function(k){ return k.fireAdet; });
+    onayIste(l.length + ' üretim kaydının iyi adedi toplam ' + fmt(fark) + ' azalacak, depoya girmiş kayıtlarda stok da aynı kadar düşecek. Düzeltilsin mi?', 'Evet, düzelt', function(){
+      btn.disabled = true; var n = 0, sira = Promise.resolve();
+      l.forEach(function(k){ sira = sira.then(function(){
+        var ba = Number(k.boySayacAdet), m1 = Number(k.m1Fazla) || 0, h = m1Hesap(k, ba, m1), vals = { adet: h.yeni, boyDuzeltme: (Array.isArray(k.boyDuzeltme) ? k.boyDuzeltme : []).concat([{ eskiAdet: h.eski, eskiBoyAdet: ba, eskiM1: m1, boyAdet: ba, m1: m1, fire: h.fire, tarih: nowISO(), kisi: aktifKullaniciAdi() || '' }]) };
+        var eskiStok = Number(k.stokGiris) || 0, p = Promise.resolve();
+        if (eskiStok > 0){ vals.stokGiris = Math.max(0, eskiStok - (h.eski - h.yeni)); p = stokHareketi({ stokId: k.stokId || urunStokId(k.urunId), miktar: vals.stokGiris - eskiStok, tur: 'Üretim düzeltme', kaynakTur: 'uretim', kaynakId: k.id, aciklama: 'Fire sayaçtan düşüldü', tarih: k.bitisTarih || k.tarih }); }
+        return p.then(function(){ return kayitGuncelle('uretim', k.id, vals); }).then(function(){ n++; });
+      }); });
+      sira.then(function(){ toast('✓ ' + n + ' üretim kaydı düzeltildi'); }).catch(function(e){ btn.disabled = false; toast((n ? n + ' kayıt düzeltildi; ' : '') + 'Durdu: ' + dbErrMsg(e) + '. Yeniden basınca kalanlar düzeltilir.', true); });
+    });
+  }
+  (function(){ var k = byId('fireDuzeltKutu'); if (k) k.addEventListener('click', function(e){ if (e.target.id === 'fireDuzeltUygula') fireDuzeltUygula(e.target); }); })();
   function m1Render(){
     var sel = byId('m1Urun'); if (!sel) return;
     var gor = {}, urunler = [];
@@ -4473,7 +4501,7 @@ Dikkat edilmesi gereken 2 nokta:
   (function(){
     var kutu = byId('m1Duzelt'); if (!kutu) return;
     kutu.addEventListener('input', function(e){ if (e.target.dataset.m1sec){ m1Secili[e.target.dataset.m1sec] = e.target.checked; } byId('m1Onizleme').__sonHtml = null; var a = document.activeElement; if (a && a.blur && e.target.dataset.m1sec) a.blur(); m1RenderZorla(); });
-    kutu.addEventListener('change', function(e){ if (e.target.id === 'm1Urun'){ m1Secili = {}; var son = state.uretim.filter(function(k){ return Number(k.boySayacAdet) > 0 && urunEsit(k.urunId, e.target.value); }).sort(function(a, b){ return String(b.tarih || '').localeCompare(String(a.tarih || '')); })[0]; if (son && !byId('m1BoyAdet').value) byId('m1BoyAdet').value = son.boySayacAdet; m1RenderZorla(); } });
+    kutu.addEventListener('change', function(e){ if (e.target.id === 'm1Urun'){ m1Secili = {}; var son = state.uretim.filter(function(k){ return Number(k.boySayacAdet) > 0 && urunEsit(k.urunId, e.target.value); }).sort(function(a, b){ return String(b.tarih || '').localeCompare(String(a.tarih || '')); })[0]; byId('m1BoyAdet').value = son ? son.boySayacAdet : ''; if (son && Number(son.m1Fazla) > 0) byId('m1Fazla').value = son.m1Fazla; m1RenderZorla(); /* r314: ürün değişince önceki ürünün boydan adeti kalmasın */ } });
     kutu.addEventListener('click', function(e){ if (e.target.id === 'm1Uygula') m1Uygula(); });
   })();
   function m1RenderZorla(){ var on = byId('m1Onizleme'); if (on) on.__sonHtml = null; var a = document.activeElement, odak = a && on && on.contains(a); if (odak) a.blur(); m1Render(); }
@@ -4501,7 +4529,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   (function(){ var b = byId('uSonTumu'); if (b) b.addEventListener('click', function(){ gitSekme('kayitlar'); }); })();
   function renderKayitlar(){
-    m1Render(); uSonGirisRender();
+    m1Render(); uSonGirisRender(); fireDuzeltCiz();
     var tbody = document.querySelector('#kayitTablo tbody');
     var empty = document.getElementById('kayitEmpty');
     var ham = virgoUretimNormalSatirlar(), liste = ham.length ? state.uretim.concat(ham).sort(function(a, b){ return (b.tarih || '').localeCompare(a.tarih || ''); }) : state.uretim; // aralıklı kayıt bölünmeden, tek satır
@@ -16965,6 +16993,7 @@ Dikkat edilmesi gereken 2 nokta:
     try { gorusmeUyarilari(ekle); } catch(e){}
     try { virgoUyarilari(ekle); } catch(e){}
     try { stokFarkUyarilari(ekle); } catch(e){}
+    try { var _fd = fireDuzeltAdaylar(); if (_fd.length) ekle('uyari', 'Firesi iyi adetten düşülmemiş ' + _fd.length + ' üretim kaydı var — Üretim Kayıtları', 'kayitlar', ''); } catch(e){}
     try { muhUyarilar(ekle); } catch(e){}
     try { vergiUyarilari(ekle); } catch(e){}
     try { kirilimUyarilari(ekle); } catch(e){}
