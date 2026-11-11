@@ -1567,7 +1567,7 @@
     <button class="navbtn" data-grup="MALİYET & KÂRLILIK" data-tab="maliyethesap"><svg class="navicon" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01"/></svg>Ürün Maliyet Hesabı</button>
     <button class="navbtn" data-grup="MALİYET & KÂRLILIK" data-tab="kapasiteplan"><svg class="navicon" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Aylık Kapasite</button>
     <div class="navlabel" data-grup="PERSONEL"><span class="nl-ad"><svg class="navgicon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17c.8-2 2.2-3 4-3s3.2 1 4 3"/></svg>PERSONEL</span></div>
-    <button class="navbtn" data-grup="PERSONEL" data-tab="puantaj"><svg class="navicon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.8-3.5 3-5 6-5s5.2 1.5 6 5M15 15.5c2.6 0 4.4 1.3 5 4.5"/></svg>Puantaj &amp; İzin</button>
+    <button class="navbtn" data-grup="PERSONEL" data-tab="puantaj"><svg class="navicon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.8-3.5 3-5 6-5s5.2 1.5 6 5M15 15.5c2.6 0 4.4 1.3 5 4.5"/></svg>İK &amp; İzin</button>
     <button class="navbtn" data-grup="PERSONEL" data-tab="isg"><svg class="navicon" viewBox="0 0 24 24"><path d="M3 17h18M5 17a7 7 0 0 1 14 0M12 6v4"/></svg>İSG</button>
     <div class="navlabel" data-grup="PROJELER"><span class="nl-ad"><svg class="navgicon" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>PROJELER</span></div>
     <button class="navbtn" data-grup="PROJELER" data-tab="projeler"><svg class="navicon" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Projeler</button>
@@ -1586,7 +1586,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r320</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r321</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2227,7 +2227,7 @@ Dikkat edilmesi gereken 2 nokta:
     </section>
 
     <section class="panel" id="panel-puantaj">
-      <div class="pagehead"><h1>Puantaj &amp; izin</h1><p>Yalnız gelinmeyen günleri işaretleyin; işaretsiz iş günü çalışıldı sayılır. İzin talepleri ve yıllık izin hakları da burada.</p></div>
+      <div class="pagehead"><h1>İK &amp; İzin</h1><p>Yalnız gelinmeyen günleri işaretleyin; işaretsiz iş günü çalışıldı sayılır. İzin talepleri ve yıllık izin hakları da burada.</p></div>
       <div id="puantajIcerik"></div>
     </section>
 
@@ -8830,7 +8830,7 @@ Dikkat edilmesi gereken 2 nokta:
     stokhareket: 'stok hareketleri giriş çıkış', musterimali: 'müşteri malı', gidenfason: 'fason dış işlem kaplama ısıl işlem',
     uretimplani: 'üretim planı plan kapasite takvim makine sırası', isemirleri: 'iş emri', operator: 'operatör tablet atölye sayaç', uretim: 'üretim girişi adet giriş vardiya',
     kayitlar: 'üretim kayıtları', kapasitedoluluk: 'kapasite doluluk ortalama günlük adet kaç gün sürer makine doluluğu üretim hızı', duruslar: 'duruş arıza bekleme', vardiyadevir: 'vardiya devri', bakim: 'bakım arıza periyodik bakım',
-    kalitekontrol: 'kalite kontrol muayene ölçüm ilk parça final giriş kontrol', ncr: 'uygunsuzluk ncr hata ret', puantaj: 'puantaj izin devam mesai', isg: 'iş güvenliği isg kaza', projeler: 'proje görev',
+    kalitekontrol: 'kalite kontrol muayene ölçüm ilk parça final giriş kontrol', ncr: 'uygunsuzluk ncr hata ret', puantaj: 'ik insan kaynakları puantaj izin devam mesai maaş', isg: 'iş güvenliği isg kaza', projeler: 'proje görev',
     carihesap: 'cari hesap tahsilat alacak bakiye', kasabanka: 'kasa banka ödeme virman hesap kredi', ceksenet: 'çek senet', giderler: 'gider masraf harcama', bordro: 'bordro maaş sgk', virgo: 'virgo hidrolik hesap kadir bey borç euro geri ödeme', virgouretim: 'virgo üretim adet vardiya kadir bey',
     muhfis: 'muhasebe fişi yevmiye fiş mahsup', defterler: 'defter yevmiye defteri büyük defter kebir muavin', mizan: 'mizan', malitablolar: 'bilanço gelir tablosu mali tablolar',
     kdvbeyan: 'kdv beyanı kdv-1 kdv-2 beyanname', vergiodeme: 'vergi sgk ödemesi muhtasar', donemsonu: 'dönem sonu ay sonu kapanış',
@@ -13119,9 +13119,9 @@ Dikkat edilmesi gereken 2 nokta:
       }).join('');
       ic = '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th>'+kisiler.map(function(p){ return '<th class="num">'+esc(p.ad)+'</th>'; }).join('')+'<th class="num">Kesinti</th><th class="num">Mesai</th><th class="num">Toplam net</th><th class="num">İşveren maliyeti</th><th class="num">Girilen Maaş &amp; SGK</th></tr></thead><tbody>'+satir+
         '<tr class="kv-alt"><td><b>Toplam</b></td>'+kisiler.map(function(){ return '<td></td>'; }).join('')+'<td class="num">'+(T.kesinti > 0.004 ? virgoTl(-T.kesinti) : '-')+'</td><td class="num">'+(T.mesai > 0.004 ? virgoTl(T.mesai) : '-')+'</td><td class="num"><b>'+virgoTl(T.net)+'</b></td><td class="num"><b>'+virgoTl(T.maliyet)+'</b></td><td class="num"><b>'+virgoTl(T.girilen)+'</b></td></tr></tbody></table></div>'+
-        '<div class="helper" style="margin-top:6px"><b>Toplam net = net maaş − gelinmeyen günler + mesai.</b> Mesai ücreti: net maaş ÷ 225 × (1 + zam %) × saat; saatler ve zam oranları Puantaj › Aylık mesai\'den gelir. Net üzerinden yaklaşık hesaptır, kesin tutar bordroda vergi dilimine göre değişebilir. Tablo Virgo borcunu ve kazancı değiştirmez; ödediğiniz maaşı yine Hareketler\'den "Maaş &amp; SGK" harcaması olarak girin.</div>';
+        '<div class="helper" style="margin-top:6px"><b>Toplam net = net maaş − gelinmeyen günler + mesai.</b> Mesai ücreti: net maaş ÷ 225 × (1 + zam %) × saat; saatler ve zam oranları İK &amp; İzin › Aylık mesai\'den gelir. Net üzerinden yaklaşık hesaptır, kesin tutar bordroda vergi dilimine göre değişebilir. Tablo Virgo borcunu ve kazancı değiştirmez; ödediğiniz maaşı yine Hareketler\'den "Maaş &amp; SGK" harcaması olarak girin.</div>';
     }
-    return '<div class="block" data-vsekme="maas"><div class="block-head"><h3>Maaşlar ay ay '+infoIco('Tanımlar › Personel\'deki net maaştan Puantaj\'da işaretlenen gelmediği günler düşülür: her gün aylık maaşın 1/30\'u. Devamsız, Raporlu ve onaylı Ücretsiz izin düşer; İzinli, yıllık ve mazeret izni düşmez. İşe giriş ve çıkış ayında çalışılan gün kadar hesaplanır. Puantaj › Aylık mesai\'de girilen cumartesi, pazar, gece ve fazla mesai saatleri zamlı olarak eklenir.')+'</h3></div><div class="block-body">'+ic+'</div></div>';
+    return '<div class="block" data-vsekme="maas"><div class="block-head"><h3>Maaşlar ay ay '+infoIco('Tanımlar › Personel\'deki net maaştan İK & İzin\'de işaretlenen gelmediği günler düşülür: her gün aylık maaşın 1/30\'u. Devamsız, Raporlu ve onaylı Ücretsiz izin düşer; İzinli, yıllık ve mazeret izni düşmez. İşe giriş ve çıkış ayında çalışılan gün kadar hesaplanır. İK & İzin › Aylık mesai\'de girilen cumartesi, pazar, gece ve fazla mesai saatleri zamlı olarak eklenir.')+'</h3></div><div class="block-body">'+ic+'</div></div>';
   }
   // r301: Vergi & amortisman. Makineler / demirbaş Virgo'nun aktifinde (Virgo adına fatura): amortismanı Virgo ayırır, işin kârı Virgo'nun
   // kurumlar vergisi matrahına girer. Burada bu işin payına düşen tahmini vergi, amortisman ve Virgo'nun bu işten doğan KDV'si hesaplanır (₺).
@@ -14424,7 +14424,7 @@ Dikkat edilmesi gereken 2 nokta:
   // r236: çalışma düzeni (config.kapasitePlan.duzen). Boş saat alanları Tanımlar › Kapasite'deki günlük saatten gelir.
   // { gunduz (hafta içi sa / gün), cmt, pazar (sa / gün), gece (true / false), geceSaat, geceGun ('haftaici' | 'cmt'), geceVerim %, tatilCalis, verim % (duruş, ayar), fire % }
   // r253: makine (çalışan makine sayısı; boş: ürünlerdeki makinelerin toplamı), persKapali (çalıştırılmayan personel id'leri)
-  var KP_DUZEN_VARS = { gunduz: '', cmt: '', pazar: '', gece: false, geceSaat: 8, geceGun: 'haftaici', geceVerim: 90, tatilCalis: false, verim: 100, fire: 0, makine: '', persKapali: [] };
+  var KP_DUZEN_VARS = { gunduz: '', cmt: '', pazar: '', mesaiKisi: '', gece: false, geceSaat: 8, geceGun: 'haftaici', geceVerim: 90, tatilCalis: false, verim: 100, fire: 0, makine: '', persKapali: [] };
   var KP_VARSAYILAN_GIDER = [['Kira', 'ay'], ['Uç / takım', 'makine'], ['Yağlar / bor yağı', 'makine'], ['Bakım / onarım / yedek parça', 'ay'], ['Yemek', 'kisi'], ['Servis / yol', 'kisi'],
     ['İş elbisesi / KKD', 'kisi'], ['OSGB / İSG', 'ay'], ['Mali müşavir', 'ay'], ['Sigorta', 'ay'], ['Su', 'ay'], ['Doğalgaz / ısınma', 'ay'], ['Telefon / internet', 'ay'],
     ['Yazılım / e-belge', 'ay'], ['Ofis / kırtasiye / temizlik', 'ay'], ['Atölye sarfı (eldiven, bez…)', 'ay'], ['Kalibrasyon / ölçü', 'ay'], ['Sevkiyat / kargo', 'ay'],
@@ -14466,14 +14466,14 @@ Dikkat edilmesi gereken 2 nokta:
   // Ayın gün gün makine saati (1 makine): gündüz + gece. Tam gün tatilde çalışılmaz (seçilmediyse), arifede yarım gün gündüz, gece yok.
   function kpAySaat(ay, duzen){
     var dz = duzen || KP_DUZEN_VARS, son = new Date(Number(ay.slice(0, 4)), Number(ay.slice(5, 7)), 0).getDate();
-    var r = { gunduz: 0, gece: 0, saat: 0, gun: 0, cmt: 0, pazar: 0, geceGun: 0, tatil: [], gunler: [] }; // r273: gunler = çalışılan günler (Özet ay sonu tahmini)
+    var r = { gunduz: 0, gece: 0, saat: 0, gun: 0, cmt: 0, pazar: 0, cmtSaat: 0, pazarSaat: 0, geceGun: 0, tatil: [], gunler: [] }; // r273: gunler = çalışılan günler (Özet ay sonu tahmini); r321: cmtSaat / pazarSaat mesai gideri için
     var saat = [0, 1, 2, 3, 4].map(function(i){ return kpSayi(dz.gunduz, kpTanimSaat(i)); }).concat([kpSayi(dz.cmt, kpTanimSaat(5)), kpSayi(dz.pazar, kpTanimSaat(6))]);
     for (var d = 1; d <= son; d++){
       var dd = String(d).padStart(2, '0'), g = ay + '-' + dd, w = (new Date(g + 'T12:00:00').getDay() + 6) % 7, gs = Math.max(0, saat[w]); if (!gs) continue;
       var to = Math.max(dz.tatilCalis ? 0 : KV_MODEL.tatilOran(ay, dd), ekTatilOran(g)), tAd = kapaliAdi(g); // F-007: şirket kapalı günü 'tatil çalışılır'dan etkilenmez
       if (to >= 1){ r.tatil.push(kvTarihTR(g) + ' ' + tAd); continue; }
       if (to > 0){ r.tatil.push(kvTarihTR(g) + ' ' + tAd + ' (yarım gün)'); gs *= 1 - to; }
-      r.gunduz += gs; r.gunler.push(g); if (w < 5) r.gun += to > 0 ? 1 - to : 1; else if (w === 5) r.cmt++; else r.pazar++;
+      r.gunduz += gs; r.gunler.push(g); if (w < 5) r.gun += to > 0 ? 1 - to : 1; else if (w === 5){ r.cmt++; r.cmtSaat += gs; } else { r.pazar++; r.pazarSaat += gs; }
       if (dz.gece && !to && (w < 5 || (w === 5 && dz.geceGun === 'cmt'))){ r.gece += Math.max(0, kpSayi(dz.geceSaat, 0)); r.geceGun++; }
     }
     r.saat = r.gunduz + r.gece;
@@ -14522,9 +14522,21 @@ Dikkat edilmesi gereken 2 nokta:
     var top = { makine: 0, adet: 0, ciroTl: 0, degTl: 0 }; satir.forEach(function(x){ top.makine += x.makine; top.adet += x.adet; top.ciroTl += x.ciroTl; top.degTl += x.degTl; });
     // Elektrik ve makine başı giderler çalışan makineyle (seçildiyse o, yoksa ürünlerdeki toplam)
     var calisanMk = dzMk != null ? dzMk : top.makine;
-    var kapali = dz.persKapali || [], persHepsi = (state.personel || []).map(function(p){ var b = personelAyBordroTL(p, ay); return { id: p.id, ad: p.ad, rol: p.rol, tl: b.maliyet, bilgi: kpPersonelBilgi(p, ay, b), kapali: kapali.indexOf(p.id) >= 0 }; }).filter(function(x){ return x.tl > 0.5; });
+    var kapali = dz.persKapali || [], persHepsi = (state.personel || []).map(function(p){ var b = personelAyBordroTL(p, ay); return { id: p.id, p: p, b: b, ad: p.ad, rol: p.rol, tl: b.maliyet, bilgi: kpPersonelBilgi(p, ay, b), kapali: kapali.indexOf(p.id) >= 0 }; }).filter(function(x){ return x.tl > 0.5; });
     var pers = persHepsi.filter(function(x){ return !x.kapali; });
     var persTl = pers.reduce(function(a, x){ return a + x.tl; }, 0);
+    // r321: Mesai gideri (maaşlar sabit kalır, mesai ayrı gider). Bu ay İK & İzin › Aylık mesai'de (ya da günlük ayrıntıda) saat girilmişse o kullanılır (gerçekleşen);
+    // yoksa çalışma düzenindeki cumartesi / pazar saatlerinden tahmin: kişinin net maaşı ÷ 225 × (1 + zam) × saat × mesaiye kalan kişi oranı.
+    // İşveren maliyetine maaştaki maliyet / net oranıyla çevrilir. Zamlar İK & İzin'deki oranlar (config.mesaiZam).
+    var MH = aylikMesaiHarita(), zC = mesaiZam(MESAI_TURLERI[0]), zP = mesaiZam(MESAI_TURLERI[1]);
+    var mesai = { tl: 0, saat: 0, gercek: pers.some(function(x){ return personelAyMesai(x.p, ay, MH).toplamSaat > 0; }), kisi: Math.max(0, Math.min(pers.length, kpSayi(dz.mesaiKisi, pers.length))), zC: zC, zP: zP };
+    pers.forEach(function(x){
+      var b = x.b; if (!(b.net > 0)) return;
+      var oranM = b.maliyet / b.net;
+      if (mesai.gercek){ var m = personelAyMesai(x.p, ay, MH); mesai.tl += m.tutar * oranM; mesai.saat += m.toplamSaat; }
+      else mesai.tl += b.netAylik / 225 * (ks.cmtSaat * (1 + zC / 100) + ks.pazarSaat * (1 + zP / 100)) * oranM * (pers.length ? mesai.kisi / pers.length : 0);
+    });
+    if (!mesai.gercek) mesai.saat = (ks.cmtSaat + ks.pazarSaat) * mesai.kisi;
     var e = plan.elektrik, kwM = Number(e.kwMakine) || kpKartKw(), kwG = Number(e.kwGenel) || 0, kwh = (calisanMk * kwM + kwG) * ks.saat, elekTl = kwh * (Number(e.fiyat) || 0);
     var gid = plan.giderler.map(function(g){ var t = Number(g.tutar) || 0, k = g.tur === 'kisi' ? pers.length : g.tur === 'makine' ? calisanMk : g.tur === 'gece' ? (ks.gece > 0 ? 1 : 0) : 1;
       if (g.tur === 'stopaj'){ var brut = t / (1 - KP_STOPAJ); return { g: g, carpan: 1, tl: brut, net: t, stopaj: brut - t, kdvOran: 0, kdvTl: 0 }; }
@@ -14539,13 +14551,13 @@ Dikkat edilmesi gereken 2 nokta:
     // r257: bir kişinin kişi başı giderleri (yemek, servis…) — çalışmayan kişide bunlar da düşer, satırında gösterilir
     var kisiBasi = plan.giderler.reduce(function(a, g){ return a + (g.tur === 'kisi' ? Number(g.tutar) || 0 : 0); }, 0);
     var aktifMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length;
-    var katki = top.ciroTl - top.degTl, giderTop = persTl + elekTl + gidTl;
+    var katki = top.ciroTl - top.degTl, giderTop = persTl + mesai.tl + elekTl + gidTl;
     // r219: amortisman (makine kartı alış bedeli € ÷ süre ay, bugünkü kurla) ve kurumlar vergisi (Muhasebe ayarındaki oran, kârsa)
     var amortMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif' && makineAlisTl(m) > 0 && Number(m.amortismanAy) > 0; });
     var amortTl = amortMk.reduce(function(a, m){ return a + makineAlisTl(m) / Number(m.amortismanAy); }, 0);
     var faal = katki - giderTop, vOnce = faal - amortTl, kvOran = Number(muhAyar().kvOrani) || 25, vergi = Math.max(0, vOnce) * kvOran / 100, net = vOnce - vergi;
     var kurulus = (kvParam() || {}).kurulusTarihi || '';
-    return { ay: ay, ks: ks, dz: dz, etkin: etkin, verim: verim, fireO: fireO, kur: kur, satir: satir, top: top, calisanMk: calisanMk, dzMk: dzMk, kisiBasi: kisiBasi, isGun: isGun, pers: pers, persHepsi: persHepsi, persTl: persTl, kwh: kwh, kwM: kwM, kwG: kwG, elekTl: elekTl, gid: gid, gidTl: gidTl, giderTop: giderTop,
+    return { ay: ay, ks: ks, dz: dz, etkin: etkin, verim: verim, fireO: fireO, kur: kur, satir: satir, top: top, calisanMk: calisanMk, dzMk: dzMk, kisiBasi: kisiBasi, isGun: isGun, pers: pers, persHepsi: persHepsi, persTl: persTl, mesai: mesai, kwh: kwh, kwM: kwM, kwG: kwG, elekTl: elekTl, gid: gid, gidTl: gidTl, giderTop: giderTop,
       kdvOranlar: kdvOranlar, kdvInd: kdvInd, satisKdv: satisKdv, kdvHes: top.ciroTl * satisKdv / 100, kdvOde: top.ciroTl * satisKdv / 100 - kdvInd,
       katki: katki, kalan: faal, amortTl: amortTl, amortMk: amortMk.length, vOnce: vOnce, kvOran: kvOran, vergi: vergi, net: net, nakit: net + amortTl, kurulus: kurulus, aktifMk: aktifMk };
   }
@@ -14579,6 +14591,9 @@ Dikkat edilmesi gereken 2 nokta:
       h.persHepsi.map(function(p){ var ad = '<label class="kp-pers' + (p.kapali ? ' kapali' : '') + '"><input type="checkbox" data-kppers="' + escAttr(p.id) + '"' + (p.kapali ? '' : ' checked') + '> ' + esc(p.ad) + (p.rol ? ' <span class="muted">(' + esc(p.rol) + ')</span>' : '') + '</label> ' + infoIco(p.bilgi);
         var dus = p.tl + h.kisiBasi;
         return p.kapali ? '<tr class="kp-alt"><td>' + ad + '</td><td class="num muted kp-cok" colspan="3" title="Bu kişi çalışmadığı için giderden düşen: maaş (işveren maliyeti)' + (h.kisiBasi ? ' + kişi başı giderler (yemek, servis…)' : '') + '">çalışmıyor · −₺' + muhTutar(dus) + (h.kisiBasi ? ' (maaş ₺' + muhTutar(p.tl) + ' + kişi başı ₺' + muhTutar(h.kisiBasi) + ')' : '') + '</td></tr>' : satir(ad, p.tl, { alt: 1 }); }).join('') +
+      (h.mesai.tl > 0.004 ? satir('− Mesai', h.mesai.tl, { adetBasi: 1, not: h.mesai.gercek
+        ? fmt2(h.mesai.saat) + ' sa, İK &amp; İzin › Aylık mesai\'den (gerçekleşen) · işveren maliyetiyle'
+        : [h.ks.cmt ? h.ks.cmt + ' cumartesi ' + fmt2(h.ks.cmtSaat) + ' sa (%' + fmt2(h.mesai.zC) + ' zamlı)' : '', h.ks.pazar ? h.ks.pazar + ' pazar ' + fmt2(h.ks.pazarSaat) + ' sa (%' + fmt2(h.mesai.zP) + ' zamlı)' : ''].filter(Boolean).join(' + ') + ' × ' + h.mesai.kisi + ' kişi · tahmin; İK &amp; İzin › Aylık mesai girilince oradan gelir' }) : '') +
       satir('− Elektrik', h.elekTl, { not: fmt(Math.round(h.kwh)) + ' kWh = (' + fmt2(h.calisanMk) + ' makine × ' + fmt2(h.kwM) + ' kW + ' + fmt2(h.kwG) + ' kW genel) × ' + fmt2(h.ks.saat) + ' sa' + (h.ks.gece ? ' (gece dahil)' : ''), adetBasi: 1 }) +
       dolu.map(function(x){ if (x.g.tur === 'stopaj') return satir('− ' + esc(x.g.ad || 'Kalem'), x.tl, { not: 'brüt = net ÷ 0,80 (şahıstan, %20 stopaj)', adetBasi: 1 }) +
           satir('&nbsp;&nbsp;Net (ev sahibine)', x.net, { alt: 1 }) + satir('&nbsp;&nbsp;Stopaj %20 (vergi dairesine, muhtasar)', x.stopaj, { alt: 1 });
@@ -14779,7 +14794,7 @@ Dikkat edilmesi gereken 2 nokta:
     var dzK = function(alan, etiket, yazi, ipucu){ return '<label class="kp-dzc" title="' + escAttr(ipucu || '') + '">' + etiket + '<span class="kp-dzc-k"><input type="checkbox" data-kpd="' + alan + '"' + (dz[alan] ? ' checked' : '') + '> ' + yazi + '</span></label>'; };
     var aktifMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length;
     var duzenHtml = '<div class="block"><div class="block-head"><h3>Çalışma düzeni ' + infoIco('Ayın makine saati buradan hesaplanır (1 makine için). Saat kutusu boşsa Tanımlar › Kapasite\'deki günlük saat kullanılır (soluk yazılı). Resmî / dinî bayramlarda çalışılmaz (seçmediyseniz); arifede gündüz yarım gün, gece vardiyası yok. Gece vardiyası açıksa seçilen günlerde gece saati eklenir; gece verimi gece üretiminin gündüze oranıdır (yorgunluk, az gözetim; genelde %85–95). Genel verim: duruş, ayar / bağlama, bakım, malzeme bekleme payı (OEE; çevrim süresinden hesaplıyorsanız %75–85 gerçekçi, vardiya adedi ölçülmüş gerçek üretimse %100 bırakın). Fire: sağlam olmayan parça oranı. Elektrik gece dahil bütün makine saatiyle hesaplanır.') + '</h3></div><div class="block-body"><div class="kp-dz">' +
-      '<div class="kp-dz-r"><b>Çalışma</b>' + dzS('gunduz', 'Hafta içi sa / gün', fmt2(kpTanimSaat(0)), 'Hafta içi günlük çalışma saati (mola hariç)') + dzS('cmt', 'Cumartesi sa', fmt2(kpTanimSaat(5)), '0: cumartesi çalışılmaz') + dzS('pazar', 'Pazar sa', fmt2(kpTanimSaat(6)), '0: pazar çalışılmaz') +
+      '<div class="kp-dz-r"><b>Çalışma</b>' + dzS('gunduz', 'Hafta içi sa / gün', fmt2(kpTanimSaat(0)), 'Hafta içi günlük çalışma saati (mola hariç)') + dzS('cmt', 'Cumartesi sa', fmt2(kpTanimSaat(5)), '0: cumartesi çalışılmaz') + dzS('pazar', 'Pazar sa', fmt2(kpTanimSaat(6)), '0: pazar çalışılmaz') + dzS('mesaiKisi', 'Mesaiye kalan kişi', 'hepsi', 'Cumartesi / pazar çalışan kişi sayısı. Boş: çalışan bütün personel. Bu saatler fazla mesai sayılır; gideri sonuç tablosunda "− Mesai" satırındadır (İK & İzin › Aylık mesai girilmişse oradaki gerçek saatler kullanılır).') +
         dzK('tatilCalis', 'Resmî tatil', 'çalışılır', 'İşaretlenirse bayram ve arifeler normal gün sayılır') + dzK('gece', 'Gece vardiyası', 'var', 'Gece vardiyası ek makine saati getirir; personeli Tanımlar › Personel\'e, gece zammı gibi ek gideri aşağıda "Gece vardiyası varsa / ay" kalemiyle ekleyin') + dzS('geceSaat', 'Gece sa / gün', '8') +
         '<label class="kp-dzc">Gece günleri<select data-kpd="geceGun"><option value="haftaici"' + (dz.geceGun !== 'cmt' ? ' selected' : '') + '>Hafta içi</option><option value="cmt"' + (dz.geceGun === 'cmt' ? ' selected' : '') + '>Hafta içi + cumartesi</option></select></label>' + dzS('geceVerim', 'Gece verimi %', '90', 'Gece üretiminin gündüze oranı') + '</div>' +
       '<div class="kp-dz-r"><b>Üretim</b>' + dzS('makine', 'Çalışan makine', 'ürünler', aktifMk + ' makine aktif (Tanımlar). Bu ay kaç makine çalışıyor. Boş: ürün satırlarındaki makinelerin toplamı. Yazılırsa elektrik ve makine başı giderler bununla hesaplanır; ürün satırında makine kutusu boş olan işler kalan makineleri eşit paylaşır.') + dzS('verim', 'Genel verim %', '100', 'Duruş, ayar, bakım payı (OEE)') + dzS('fire', 'Fire %', '0', 'Sağlam çıkmayan parça oranı') +
@@ -17411,6 +17426,7 @@ Dikkat edilmesi gereken 2 nokta:
         git: 'virgo', gitAd: 'Virgo Hesabı' };
     } else if (k === 'tahmin'){
       var tc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), tt = ozetTahmin(tc), kh = tt.kh, ksat = kh.pers.map(function(p){ return [esc(p.ad), 'personel (bordro, bu ay)', tlEur(p.tl)]; });
+      if (kh.mesai && kh.mesai.tl > 0.5) ksat.push(['Mesai', fmt2(kh.mesai.saat) + ' sa' + (kh.mesai.gercek ? ' (İK &amp; İzin)' : ' (tahmin)'), tlEur(kh.mesai.tl)]);
       if (kh.elekTl > 0.5) ksat.push(['Elektrik', fmt(kh.kwh) + ' kWh', tlEur(kh.elekTl)]);
       kh.gid.forEach(function(x){ if (x.tl > 0.5) ksat.push([esc(x.g.ad), x.carpan !== 1 ? '× ' + fmt2(x.carpan) : '', tlEur(x.tl)]); });
       d = { t: 'Ay sonu tahmini', f: 'Bu hızla giderse ay sonunda ne olur: <b>tahmini karşılık</b> = bugüne kadarki karşılık ÷ geçen iş günü × ayın iş günü (iş günleri <b>Aylık Kapasite</b>\'deki çalışma düzeninden, tatiller hariç). <b>Gider</b> = Aylık Kapasite\'deki bu ayın toplam gideri (personel, elektrik, gider kalemleri; amortisman ve vergi hariç). Gider bir kez düşülür.',
@@ -21246,7 +21262,7 @@ Dikkat edilmesi gereken 2 nokta:
       { ad: 'Üretim', kolonlar: [[{ baslik: 'Planlama' }, { ad: 'Kapasite & Doluluk', tab: 'kapasitedoluluk' }, { ad: 'Üretim Planı', tab: 'uretimplani' }, { ad: 'İş Emirleri', tab: 'isemirleri' }],
         [{ baslik: 'Atölye' }, { ad: 'Operatör Ekranı', tab: 'operator' }, { ad: 'Üretim Girişi', tab: 'uretim' }, { ad: 'Üretim Kayıtları', tab: 'kayitlar' }, { ad: 'Duruş Kayıtları', tab: 'duruslar' }, { ad: 'Vardiya Devri', tab: 'vardiyadevir' }, { ad: 'Bakım', tab: 'bakim' }]] },
       { ad: 'Kalite', kolonlar: [[{ baslik: 'Kalite' }, { ad: 'Kalite Kontroller', tab: 'kalitekontrol' }, { ad: 'Uygunsuzluk (NCR)', tab: 'ncr' }, { ad: 'Ölçü Aletleri', tab: 'olcualetleri' }]] },
-      { ad: 'Personel & Proje', kolonlar: [[{ baslik: 'Personel' }, { ad: 'Puantaj & İzin', tab: 'puantaj' }, { ad: 'İSG', tab: 'isg' }], [{ baslik: 'Proje' }, { ad: 'Projeler', tab: 'projeler' }]] } ] },
+      { ad: 'Personel & Proje', kolonlar: [[{ baslik: 'Personel' }, { ad: 'İK & İzin', tab: 'puantaj' }, { ad: 'İSG', tab: 'isg' }], [{ baslik: 'Proje' }, { ad: 'Projeler', tab: 'projeler' }]] } ] },
     { alan: 'FİNANS & MUHASEBE', ikon: 'finans', ogeler: [
       { ad: 'Finans', kolonlar: [[{ baslik: 'Finans' }, { ad: 'Cari Hesap', tab: 'carihesap' }, { ad: 'Cari Ekstre', tab: 'cariekstre' }, { ad: 'Kasa & Banka', tab: 'kasabanka' }, { ad: 'Çek / Senet', tab: 'ceksenet' }, { ad: 'Giderler', tab: 'giderler' }, { ad: 'Bordro Özeti', tab: 'bordro' }]] },
       { ad: 'Muhasebe', kolonlar: [[{ baslik: 'Muhasebe' }, { ad: 'Muhasebe Fişleri', tab: 'muhfis' }, { ad: 'Hesap Planı', tab: 'hesapplani' }, { ad: 'Defterler', tab: 'defterler' }, { ad: 'Mizan', tab: 'mizan' }, { ad: 'Bilanço & Gelir Tablosu', tab: 'malitablolar' }]] },
