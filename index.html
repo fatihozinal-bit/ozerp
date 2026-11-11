@@ -1245,6 +1245,21 @@
   .kp-det-alan input[type=number] { width:64px !important; } .kp-det-sonuc { font-size:12px; } .kp-sil { border:0; background:none; color:var(--bad); font-size:17px; line-height:1; cursor:pointer; padding:2px 4px; } .kp-pers.kapali { color:var(--ink-soft); text-decoration:line-through; }
   .kp-sonuc tr.kp-alt td { font-size:11.5px; color:var(--ink-soft); padding-top:1px; padding-bottom:1px; } .kp-gider input[type=number] { max-width:130px; text-align:right; } .kp-gider td:first-child input { min-width:150px; width:100%; } .kp-gider select { max-width:150px; } .kp-gider td.kp-kdv input { max-width:58px; } .kp-sonuc tr.kp-kdv-bas td { padding-top:14px; border-top:2px solid var(--line, #ccc); font-size:12px; }
   .vg-ikili { display:flex; flex-wrap:wrap; gap:0 16px; align-items:flex-start; }
+  /* r319: Puantaj › Gelmediği günler (ay takvimi) */
+  .gy-tablo { border-collapse:collapse; width:auto; }
+  .gy-tablo th, .gy-tablo td { padding:2px 1px; text-align:center; font-size:11px; border:none; }
+  .gy-tablo .gy-ad { position:sticky; left:0; z-index:1; background:var(--surface); text-align:left; white-space:nowrap; padding:2px 10px 2px 2px; font-size:13px; }
+  .gy-tablo th.gy-hs { color:var(--ink-soft); font-weight:400; }
+  .gy-tablo .gy-metin { width:150px; padding:3px 6px; font-size:12.5px; }
+  .gy-g { width:25px; height:25px; padding:0; border:1px solid var(--border); border-radius:3px; background:transparent; color:var(--ink); font-size:11.5px; font-weight:600; cursor:pointer; }
+  .gy-g:hover:not(:disabled) { border-color:var(--steel); }
+  .gy-g:disabled { background:var(--surface-alt); border-color:transparent; cursor:default; }
+  .gy-g.gy-bugun { box-shadow:inset 0 0 0 1px var(--steel); }
+  .gy-g.gy-D { background:var(--bad); border-color:var(--bad); color:#fff; }
+  .gy-g.gy-R { background:var(--warn-strong); border-color:var(--warn-strong); color:#1a1a1a; }
+  .gy-g.gy-I, .gy-g.gy-izin { background:var(--steel-soft); border-color:var(--steel-soft); color:var(--steel); }
+  .gy-lejant { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:8px; font-size:12px; color:var(--ink-soft); align-items:center; }
+  .gy-lejant .gy-g { width:18px; height:18px; font-size:10px; cursor:default; vertical-align:middle; margin-right:3px; }
   /* r246: Virgo sayfa araç çubuğu, sekmeli ay ay tablolar, açılır Ayarlar */
   .vg-arac { display:flex; gap:6px; align-items:center; justify-content:flex-end; margin:-4px 0 8px; flex-wrap:wrap; }
   .vg-sekmeler { margin:4px 0 8px; }
@@ -1571,7 +1586,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-10-r318</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r319</div>
   </nav>
   <main>
     <div class="topbar">
@@ -2212,7 +2227,7 @@ Dikkat edilmesi gereken 2 nokta:
     </section>
 
     <section class="panel" id="panel-puantaj">
-      <div class="pagehead"><h1>Puantaj &amp; izin</h1><p>Günlük devam kaydı, fazla mesai ve izin talepleri.</p></div>
+      <div class="pagehead"><h1>Puantaj &amp; izin</h1><p>Yalnız gelinmeyen günleri işaretleyin; işaretsiz iş günü çalışıldı sayılır. İzin talepleri ve yıllık izin hakları da burada.</p></div>
       <div id="puantajIcerik"></div>
     </section>
 
@@ -8163,7 +8178,7 @@ Dikkat edilmesi gereken 2 nokta:
     return args;
   }
   function tumVeriGeldi(){ var k = Object.keys(VERI_ABONE); return k.length > 10 && k.every(function(x){ return VERI_ABONE[x]; }); }
-  var AYAR_ADLARI = { eurTryKuru:'€ kuru', kuruTarihi:'kur tarihi', karlilikPlanJson:'Kârlılık planı', karlilikPlan:'Kârlılık planı', kapasiteGunler:'kapasite günleri', ekTatiller:'kapalı günler (tatil)',
+  var AYAR_ADLARI = { mesaiZam:'mesai zam oranları', eurTryKuru:'€ kuru', kuruTarihi:'kur tarihi', karlilikPlanJson:'Kârlılık planı', karlilikPlan:'Kârlılık planı', kapasiteGunler:'kapasite günleri', ekTatiller:'kapalı günler (tatil)',
     kiraAylik:'aylık kira', digerGiderAylik:'diğer aylık gider', aylikMakineSaati:'aylık makine saati', paraBirimi:'para birimi', firmaAdi:'firma adı' };
   function kvAlanAdi(k){
     var ozel = { aylik:'ay ay plan', yapilacak:'yapılacaklar', personel:'personel listesi', urunler:'ürünler', rampa:'üretime geçiş (rampa)', varsayimSurumu:'' };
@@ -8219,7 +8234,7 @@ Dikkat edilmesi gereken 2 nokta:
     satinalmaTalepleri:1, satinalmaSiparisleri:1, bakimKayitlari:1, izinler:1, isgKayitlari:1, dokumanlar:1 };
   // Tanım kayıtlarında türe göre: kredi, bordro, vergi ödemesi, virman, sabit kıymet, şüpheli alacak muhasebe fişi doğurur
   var SILINEN_GUVENLI_TANIM = { fiyat:1, olcuAleti:1, hesap:1, teminat:1, bakimPlani:1, gorusme:1, muhHesap:1, virgo:1, virgoUretim:1 };
-  var TANIM_TUR_ADI = { fiyat:'Fiyat', olcuAleti:'Ölçü aleti', hesap:'Kasa / banka hesabı', kredi:'Kredi', teminat:'Teminat mektubu', bordro:'Bordro',
+  var TANIM_TUR_ADI = { aylikMesai:'Aylık mesai', fiyat:'Fiyat', olcuAleti:'Ölçü aleti', hesap:'Kasa / banka hesabı', kredi:'Kredi', teminat:'Teminat mektubu', bordro:'Bordro',
     vergiOdeme:'Vergi ödemesi', supheliAlacak:'Şüpheli alacak', bakimPlani:'Bakım planı', sabitKiymet:'Sabit kıymet', gorusme:'Görüşme', virman:'Virman', muhHesap:'Alt hesap', virgo:'Virgo hesabı hareketi', virgoUretim:'Virgo üretim girişi' };
   var _geriYuklenen = {}, _sonSilinenler = {}, _silinenSilindi = {}, _silinenTemizlendi = false;
   function silinenGuvenli(col, k){
@@ -13059,12 +13074,46 @@ Dikkat edilmesi gereken 2 nokta:
           '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Ortak</th><th>Kayıt</th><th>Açıklama</th><th class="num">Tutar</th><th>Nereye işlendi</th><th>Kendi parasıysa</th></tr></thead><tbody>' +
           d.map(function(x){ return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + esc(x.n.kisi) + '</td><td>' + esc(virgoTipAd(x.n)) + (x.n.tip === 'harcama' && x.v.kategori ? ' · ' + esc(x.v.kategori) : '') + '</td><td>' + esc(x.v.aciklama || '') + '</td><td class="num">' + virgoIki({ eur: x.n.eur, tl: x.n.tl }) + '</td><td>' + esc(x.yer) + '</td><td class="muted">' + esc(x.oneri) + '</td></tr>'; }).join('') +
           '</tbody></table></div>'; })() + '</div></div>';
+    html += virgoMaasHtml();
     html += virgoVergiHtml();
     // r246: ay ay tablolar tek blokta sekmeli; aynı anda biri görünür (seçim bu tarayıcıda hatırlanır)
-    var sekmeler = [['kazanc', 'Aylık kazanç'], ['ayay', 'Virgo hesabı ay ay'], ['harcama', 'Harcamalar'], ['alinan', 'Alınanlar'], ['ortak', 'Ortaklar'], ['vergi', 'Vergi & amortisman']].filter(function(x){ return html.indexOf('data-vsekme="' + x[0] + '"') > -1; });
+    var sekmeler = [['kazanc', 'Aylık kazanç'], ['ayay', 'Virgo hesabı ay ay'], ['maas', 'Maaşlar'], ['harcama', 'Harcamalar'], ['alinan', 'Alınanlar'], ['ortak', 'Ortaklar'], ['vergi', 'Vergi & amortisman']].filter(function(x){ return html.indexOf('data-vsekme="' + x[0] + '"') > -1; });
     var sec = virgoSekme(); if (!sekmeler.some(function(x){ return x[0] === sec; })) sec = sekmeler.length ? sekmeler[0][0] : '';
     sekmeler.forEach(function(x){ if (x[0] !== sec) html = html.replace('data-vsekme="' + x[0] + '"', 'data-vsekme="' + x[0] + '" style="display:none"'); });
     return '<div class="sekme-bar vg-sekmeler">' + sekmeler.map(function(x){ return '<button type="button" data-vsekmesec="' + x[0] + '"' + (x[0] === sec ? ' class="aktif"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>' + html;
+  }
+  // r319: Maaşlar sekmesi: kişi kişi, ay ay hesaplanan net maaş (Tanımlar › Personel − puantajdan gelmediği günler). Yalnız bilgi: borcu ve kazancı değiştirmez;
+  // ödenen maaş yine "Maaş & SGK" harcaması olarak girilir ve son sütunda yan yana görünür. Cumartesi / pazar / gece / fazla mesai Puantaj › Aylık mesai'deki saat ve zamla eklenir.
+  function virgoMaasHtml(){
+    var bu = thisMonthKey(), aylar = virgoAylar().map(function(a){ return a.ay; }).filter(function(a){ return a <= bu; }); if (aylar.indexOf(bu) < 0) aylar.push(bu);
+    var P = kvParam(), kisiler = (state.personel || []).filter(function(p){ return personelNetTL(p) > 0 || personelIsverenTL(p) > 0; });
+    var ic = '';
+    if (!kisiler.length) ic = '<div class="empty">Tanımlar › Personel\'de net maaş girilmemiş.</div>';
+    else {
+      var girilen = {};
+      virgoKayitlari().forEach(function(v){ if (v.kategori !== 'Maaş & SGK') return; var n = virgoNorm(v); if (n.tip !== 'harcama' || !n.odendi) return; var a = (v.tarih || '').slice(0, 7); girilen[a] = (girilen[a] || 0) + n.m.tl; });
+      var T = { net: 0, kesinti: 0, mesai: 0, maliyet: 0, girilen: 0 }, MH = aylikMesaiHarita();
+      var satir = aylar.map(function(ay){
+        var R = { net: 0, kesinti: 0, mesai: 0, maliyet: 0 };
+        var hucre = kisiler.map(function(p){
+          var net = personelNetTL(p), e = personelEksikHarita(p)[ay], gun = e ? e.gun : 0;
+          var tam = KV_MODEL.kistOran(ay, p.iseGiris, p.istenCikis, 0), oran = KV_MODEL.kistOran(ay, p.iseGiris, p.istenCikis, gun);
+          var m = tam > 0 ? personelAyMesai(p, ay, MH) : null, mt = m ? m.tutar : 0, maliyet = personelAyMaliyetTL(p, ay, P), netAy = net * oran;
+          // İşveren maliyeti, mesai için maaştaki maliyet / net oranıyla artar
+          R.net += netAy + mt; R.kesinti += net * (tam - oran); R.mesai += mt; R.maliyet += maliyet + mt * (netAy > 0 ? maliyet / netAy : 1);
+          if (!(tam > 0)) return '<td class="num muted">-</td>';
+          var detay = [eksikDetayMetni(e), mt ? mesaiDetayMetni(m) : ''].filter(Boolean).join(' · ') || 'Eksik gün ve mesai yok';
+          return '<td class="num" title="'+escAttr(detay)+'">'+virgoTl(netAy + mt)+(gun ? '<div class="neg" style="font-size:11px">−'+gun+' gün</div>' : '')+(mt ? '<div class="pos" style="font-size:11px">+'+virgoTl(mt)+' mesai</div>' : '')+'</td>';
+        }).join('');
+        var g = girilen[ay] || 0;
+        T.net += R.net; T.kesinti += R.kesinti; T.mesai += R.mesai; T.maliyet += R.maliyet; T.girilen += g;
+        return '<tr><td>'+esc(muhAyAdi(ay))+'</td>'+hucre+'<td class="num'+(R.kesinti > 0.004 ? ' neg' : '')+'">'+(R.kesinti > 0.004 ? virgoTl(-R.kesinti) : '-')+'</td><td class="num'+(R.mesai > 0.004 ? ' pos' : '')+'">'+(R.mesai > 0.004 ? virgoTl(R.mesai) : '-')+'</td><td class="num"><b>'+virgoTl(R.net)+'</b></td><td class="num">'+virgoTl(R.maliyet)+'</td><td class="num">'+(g ? virgoTl(g) : '<span class="muted">girilmedi</span>')+'</td></tr>';
+      }).join('');
+      ic = '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th>'+kisiler.map(function(p){ return '<th class="num">'+esc(p.ad)+'</th>'; }).join('')+'<th class="num">Kesinti</th><th class="num">Mesai</th><th class="num">Toplam net</th><th class="num">İşveren maliyeti</th><th class="num">Girilen Maaş &amp; SGK</th></tr></thead><tbody>'+satir+
+        '<tr class="kv-alt"><td><b>Toplam</b></td>'+kisiler.map(function(){ return '<td></td>'; }).join('')+'<td class="num">'+(T.kesinti > 0.004 ? virgoTl(-T.kesinti) : '-')+'</td><td class="num">'+(T.mesai > 0.004 ? virgoTl(T.mesai) : '-')+'</td><td class="num"><b>'+virgoTl(T.net)+'</b></td><td class="num"><b>'+virgoTl(T.maliyet)+'</b></td><td class="num"><b>'+virgoTl(T.girilen)+'</b></td></tr></tbody></table></div>'+
+        '<div class="helper" style="margin-top:6px"><b>Toplam net = net maaş − gelinmeyen günler + mesai.</b> Mesai ücreti: net maaş ÷ 225 × (1 + zam %) × saat; saatler ve zam oranları Puantaj › Aylık mesai\'den gelir. Net üzerinden yaklaşık hesaptır, kesin tutar bordroda vergi dilimine göre değişebilir. Tablo Virgo borcunu ve kazancı değiştirmez; ödediğiniz maaşı yine Hareketler\'den "Maaş &amp; SGK" harcaması olarak girin.</div>';
+    }
+    return '<div class="block" data-vsekme="maas"><div class="block-head"><h3>Maaşlar ay ay '+infoIco('Tanımlar › Personel\'deki net maaştan Puantaj\'da işaretlenen gelmediği günler düşülür: her gün aylık maaşın 1/30\'u. Devamsız, Raporlu ve onaylı Ücretsiz izin düşer; İzinli, yıllık ve mazeret izni düşmez. İşe giriş ve çıkış ayında çalışılan gün kadar hesaplanır. Puantaj › Aylık mesai\'de girilen cumartesi, pazar, gece ve fazla mesai saatleri zamlı olarak eklenir.')+'</h3></div><div class="block-body">'+ic+'</div></div>';
   }
   // r301: Vergi & amortisman. Makineler / demirbaş Virgo'nun aktifinde (Virgo adına fatura): amortismanı Virgo ayırır, işin kârı Virgo'nun
   // kurumlar vergisi matrahına girer. Burada bu işin payına düşen tahmini vergi, amortisman ve Virgo'nun bu işten doğan KDV'si hesaplanır (₺).
@@ -16088,17 +16137,147 @@ Dikkat edilmesi gereken 2 nokta:
     defaults: function(){ return { tarih: todayISO(), personelId:'', durum:'Çalıştı', giris:'08:00', cikis:'18:00', fazlaMesai:0, not_:'' }; },
     rowFn: function(p){ return { title: esc(p.tarih)+' · '+esc(personelAdi(p.personelId))+' · '+esc(p.durum), sub: (p.durum==='Çalıştı'?esc(p.giris||'')+'–'+esc(p.cikis||''):'')+(Number(p.fazlaMesai)?' · FM '+fmt2(p.fazlaMesai)+' sa':'')+(p.not_?' · '+esc(p.not_):'') }; }
   };
+  // r319: Puantaj yalnız gelinmeyen günlerle girilir. Kaydı olmayan iş günü çalışıldı sayılır (personelEksikHarita da böyle hesaplar).
+  // Takvim kutusu Devamsız → Raporlu → İzinli → boş döner; metin kutusu Devamsız günleri yazar. İş günü dışı ve kadro dışı günler seçilemez.
+  var GY_KISA = { 'Devamsız':'D', 'Raporlu':'R', 'İzinli':'İ' }, GY_DONGU = ['', 'Devamsız', 'Raporlu', 'İzinli'], GY_HAFTA = ['Pz','Pt','Sa','Ça','Pe','Cu','Ct'];
+  function gyAyGunleri(ay){ var n = KV_MODEL.ayGunSayisi(ay), l = []; for (var i = 1; i <= n; i++) l.push(ay + '-' + String(i).padStart(2, '0')); return l; }
+  function gyKayit(pid, t){ return (state.puantaj||[]).find(function(x){ return x.personelId === pid && x.tarih === t; }) || null; }
+  function gyIzinKaydi(pid, t){ return (state.izinler||[]).find(function(z){ return z.personelId === pid && z.durum === 'Onaylandı' && z.baslangic <= t && (z.bitis||z.baslangic) >= t; }) || null; }
+  function gyKadroda(p, t){ var g = String(p.iseGiris||'').slice(0, 10), c = String(p.istenCikis||'').slice(0, 10); return !(g && t < g) && !(c && t > c); }
+  // Sayı listesi → '3, 7, 12-14'
+  function gyGunYazi(l){
+    var r = [], i = 0;
+    while (i < l.length){ var j = i; while (j + 1 < l.length && l[j + 1] === l[j] + 1) j++; r.push(j > i ? l[i] + '-' + l[j] : String(l[i])); i = j + 1; }
+    return r.join(', ');
+  }
+  // Boş durum kaydı siler; kayıtta fazla mesai ya da not varsa bilgi kaybolmasın diye "Çalıştı" olur
+  function gyYaz(pid, t, durum){
+    var k = gyKayit(pid, t);
+    if (!durum){
+      if (!k) return Promise.resolve();
+      return (Number(k.fazlaMesai) || k.not_) ? kovaGuncelle('puantaj', k.id, { durum: 'Çalıştı' }) : kovaSil('puantaj', k.id);
+    }
+    if (k) return k.durum === durum ? Promise.resolve() : kovaGuncelle('puantaj', k.id, { durum: durum });
+    return kovaEkle('puantaj', { tarih: t, personelId: pid, durum: durum, fazlaMesai: 0, not_: '' }, t);
+  }
+  function gyDongu(pid, t){
+    var k = gyKayit(pid, t), i = k && GY_KISA[k.durum] ? GY_DONGU.indexOf(k.durum) : 0;
+    gyYaz(pid, t, GY_DONGU[(i + 1) % GY_DONGU.length]).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
+    EK_RENDER.puantaj();
+  }
+  function gyMetinKaydet(inp){
+    var pid = inp.dataset.gymetin, p = state.personel.find(function(x){ return x.id === pid; }), ay = byId('gyAy').value || thisMonthKey(); if (!p) return;
+    var n = KV_MODEL.ayGunSayisi(ay), gunler = {}, hata = '';
+    String(inp.value).replace(/\s*[-–]\s*/g, '-').split(/[\s,;.]+/).filter(Boolean).forEach(function(s){
+      var m = /^(\d{1,2})(?:-(\d{1,2}))?$/.exec(s), a = m ? Number(m[1]) : 0, b = m && m[2] ? Number(m[2]) : a;
+      if (!m || a < 1 || b > n || b < a){ hata = hata || s; return; }
+      for (var g = a; g <= b; g++) gunler[g] = 1;
+    });
+    inp.blur();
+    if (hata){ toast('"'+hata+'" anlaşılamadı. Örnek: 3, 7, 12-14', true); inp.value = inp.defaultValue; return; }
+    var islemler = [], atlanan = [];
+    gyAyGunleri(ay).forEach(function(t){
+      var g = Number(t.slice(8, 10)), k = gyKayit(pid, t), istendi = !!gunler[g];
+      if (k && k.durum === 'Devamsız'){ if (!istendi) islemler.push(gyYaz(pid, t, '')); return; }
+      if (!istendi || (k && GY_KISA[k.durum])) return;
+      if (!gyKadroda(p, t) || virgoIsGunu(t, t) < 1 || gyIzinKaydi(pid, t)){ atlanan.push(g); return; }
+      islemler.push(gyYaz(pid, t, 'Devamsız'));
+    });
+    Promise.all(islemler).then(function(){ if (atlanan.length) toast('İş günü olmadığı ya da izinli olduğu için atlandı: '+gyGunYazi(atlanan), true); else if (islemler.length) toast('✓ '+p.ad+': gelmediği günler kaydedildi'); }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
+    byId('gyIcerik').__sonHtml = null; EK_RENDER.puantaj();
+  }
+  function gyCalisilanGun(p, ay){
+    var bugun = todayISO(), n = 0;
+    gyAyGunleri(ay).forEach(function(t){
+      if (t > bugun || !gyKadroda(p, t)) return;
+      var k = gyKayit(p.id, t);
+      if (k){ if (k.durum === 'Çalıştı') n++; return; }
+      if (virgoIsGunu(t, t) > 0 && !gyIzinKaydi(p.id, t)) n++;
+    });
+    return n;
+  }
+  function gelmedigiGunHtml(ay){
+    var gunler = gyAyGunleri(ay), bugun = todayISO();
+    var bas = '<th class="gy-ad">Personel</th>' + gunler.map(function(t){ var w = new Date(t+'T12:00:00').getDay(), is = virgoIsGunu(t, t) > 0; return '<th class="'+(is ? '' : 'gy-hs')+'" title="'+escAttr(kvTarihTR(t))+'">'+Number(t.slice(8, 10))+'<br><span class="muted">'+GY_HAFTA[w]+'</span></th>'; }).join('') + '<th>Gelmediği günler</th><th class="num">Maaştan düşen</th>';
+    var satir = state.personel.map(function(p){
+      var devamsiz = [];
+      var hucre = gunler.map(function(t){
+        var k = gyKayit(p.id, t), iz = k ? null : gyIzinKaydi(p.id, t), gun = Number(t.slice(8, 10)), bg = t === bugun ? ' gy-bugun' : '';
+        if (k && k.durum === 'Devamsız') devamsiz.push(gun);
+        if (iz) return '<td><button type="button" class="gy-g gy-izin'+bg+'" disabled title="'+escAttr(kvTarihTR(t)+' · '+iz.tur+' izni. İzin talepleri listesinden değiştirilir.')+'">'+esc(iz.tur === 'Rapor' ? 'R' : iz.tur === 'Ücretsiz' ? 'Ü' : 'İ')+'</button></td>';
+        var kisa = k && GY_KISA[k.durum] || '', sinif = kisa ? ' gy-'+(kisa === 'İ' ? 'I' : kisa) : '';
+        var acik = !!k || (gyKadroda(p, t) && virgoIsGunu(t, t) > 0);
+        return '<td><button type="button" class="gy-g'+sinif+bg+'"'+(acik ? ' data-gyp="'+escAttr(p.id)+'" data-gyt="'+t+'"' : ' disabled')+' title="'+escAttr(kvTarihTR(t)+(kisa ? ' · '+k.durum : acik ? ' · geldi' : ' · iş günü değil'))+'" aria-label="'+escAttr(p.ad+' '+kvTarihTR(t)+' '+(kisa ? k.durum : 'geldi'))+'">'+esc(kisa)+'</button></td>';
+      }).join('');
+      var e = personelEksikHarita(p)[ay], yazi = gyGunYazi(devamsiz);
+      return '<tr><td class="gy-ad">'+esc(p.ad)+'</td>'+hucre+'<td><input type="text" class="gy-metin" data-gymetin="'+escAttr(p.id)+'" value="'+escAttr(yazi)+'" placeholder="örn. 3, 7, 12-14" aria-label="'+escAttr(p.ad+' gelmediği günler')+'"></td><td class="num'+(e && e.gun ? ' neg' : '')+'" title="'+escAttr(eksikDetayMetni(e) || 'Bu ay maaştan düşen gün yok')+'">'+(e && e.gun ? e.gun+' gün' : '-')+'</td></tr>';
+    }).join('');
+    return '<div class="tablewrap"><table class="gy-tablo"><thead><tr>'+bas+'</tr></thead><tbody>'+satir+'</tbody></table></div>'+
+      '<div class="gy-lejant"><span><span class="gy-g" style="display:inline-block"></span>Geldi</span><span><span class="gy-g gy-D" style="display:inline-block;text-align:center">D</span>Devamsız (maaştan düşer)</span><span><span class="gy-g gy-R" style="display:inline-block;text-align:center">R</span>Raporlu (maaştan düşer)</span><span><span class="gy-g gy-I" style="display:inline-block;text-align:center">İ</span>İzinli (düşmez)</span></div>';
+  }
+  // r319: Aylık mesai: kişi başına ayda bir toplam saat (tanimKayitlari, tur 'aylikMesai', id ay + personel olduğundan bir kişinin ayında tek kayıt olur).
+  // Ücret = net maaş ÷ 225 × (1 + zam %) × saat. Zamlar config.mesaiZam. "Diğer fazla mesai" boşsa Günlük ayrıntı'daki saatlerin toplamı kullanılır.
+  var MESAI_TURLERI = [{ k: 'cumartesi', ad: 'Cumartesi', zam: 50 }, { k: 'pazar', ad: 'Pazar / tatil', zam: 100 }, { k: 'gece', ad: 'Gece', zam: 50 }, { k: 'fazla', ad: 'Diğer fazla mesai', zam: 50 }];
+  function mesaiZam(t){ var z = state.config && state.config.mesaiZam, v = z ? z[t.k] : null; return v === '' || v == null || isNaN(Number(v)) ? t.zam : Number(v); }
+  function aylikMesaiHarita(){ var h = {}; (state.tanimKayitlari || []).forEach(function(t){ if (t.tur === 'aylikMesai') h[t.ay + '|' + t.personelId] = t; }); return h; }
+  function personelGunlukMesai(pid, ay){ return toplamla((state.puantaj || []).filter(function(x){ return x.personelId === pid && ayAnahtari(x.tarih) === ay; }), function(x){ return x.fazlaMesai; }); }
+  function mesaiHesap(net, saat){ var top = 0, tutar = 0; MESAI_TURLERI.forEach(function(t){ var s = Number(saat[t.k]) || 0; top += s; tutar += net / 225 * (1 + mesaiZam(t) / 100) * s; }); return { saat: saat, toplamSaat: top, tutar: tutar }; }
+  function personelAyMesai(p, ay, MH){
+    var k = MH[ay + '|' + p.id] || {}, saat = {};
+    MESAI_TURLERI.forEach(function(t){ saat[t.k] = Number(k[t.k]) || 0; });
+    if (k.fazla === '' || k.fazla == null) saat.fazla = personelGunlukMesai(p.id, ay);
+    return mesaiHesap(personelNetTL(p), saat);
+  }
+  function mesaiDetayMetni(m){ return MESAI_TURLERI.filter(function(t){ return m.saat[t.k] > 0; }).map(function(t){ return fmt2(m.saat[t.k]) + ' sa ' + t.ad.toLocaleLowerCase('tr'); }).join(', '); }
+  function gyMesaiKaydet(inp){
+    var pid = inp.dataset.gym, tr = inp.closest('tr'), ay = byId('gyAy').value || thisMonthKey(), mevcut = aylikMesaiHarita()[ay + '|' + pid] || {}, p = state.personel.find(function(x){ return x.id === pid; });
+    if (Number(inp.value) < 0) inp.value = 0;
+    var v = { tur: 'aylikMesai', ay: ay, personelId: pid, olusturma: mevcut.olusturma || nowISO(), olusturan: mevcut.olusturan || aktifKullaniciAdi() || '' }, saat = {};
+    tr.querySelectorAll('[data-gym]').forEach(function(i){ var f = i.dataset.gyf; v[f] = i.value === '' ? '' : Number(i.value) || 0; saat[f] = i.value === '' ? Number(i.placeholder) || 0 : v[f]; });
+    db.doc('tanimKayitlari/mesai-' + ay + '-' + pid).set(v).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+    var el = tr.querySelector('[data-gymtutar]'), t = p ? mesaiHesap(personelNetTL(p), saat).tutar : 0; if (el) el.textContent = t ? virgoTl(t) : '-';
+  }
+  function gyZamKaydet(inp){
+    var t = MESAI_TURLERI.find(function(x){ return x.k === inp.dataset.gyzam; }), n = Number(inp.value); inp.blur(); if (!t) return;
+    if (inp.value === '' || !(n >= 0)){ toast('Zam oranı 0 ya da daha büyük bir sayı olmalı.', true); inp.value = mesaiZam(t); return; }
+    var z = Object.assign({}, state.config && state.config.mesaiZam); z[t.k] = n;
+    configWrite({ mesaiZam: z }).then(function(){ toast('✓ ' + t.ad + ' zammı %' + n + ' olarak kaydedildi'); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+  }
+  function aylikMesaiHtml(ay){
+    var MH = aylikMesaiHarita();
+    return '<div class="helper" style="margin:0 0 8px"><b>' + esc(muhAyAdi(ay)) + '</b> için ayın toplam saatlerini yazın; ay, yukarıdaki takvimden seçilir.</div><div class="tablewrap"><table class="edit-tablo"><thead><tr><th>Personel</th>' + MESAI_TURLERI.map(function(t){ return '<th>' + esc(t.ad) + ' (sa)</th>'; }).join('') + '<th class="num">Mesai ücreti (net)</th></tr></thead><tbody>' +
+      '<tr class="kv-alt"><td>Zam oranı (%)</td>' + MESAI_TURLERI.map(function(t){ return '<td><input type="number" min="0" step="1" style="width:90px" data-gyzam="' + t.k + '" value="' + mesaiZam(t) + '" aria-label="' + escAttr(t.ad + ' zam oranı') + '"></td>'; }).join('') + '<td></td></tr>' +
+      state.personel.map(function(p){
+        var k = MH[ay + '|' + p.id] || {}, m = personelAyMesai(p, ay, MH), gunluk = personelGunlukMesai(p.id, ay);
+        return '<tr><td>' + esc(p.ad) + '</td>' + MESAI_TURLERI.map(function(t){ var v = k[t.k], ph = t.k === 'fazla' && gunluk ? gunluk : ''; return '<td><input type="number" min="0" step="0.5" style="width:90px" data-gym="' + escAttr(p.id) + '" data-gyf="' + t.k + '" value="' + (v === '' || v == null ? '' : escAttr(v)) + '" placeholder="' + ph + '" aria-label="' + escAttr(p.ad + ' ' + t.ad + ' saat') + '"></td>'; }).join('') +
+          '<td class="num" data-gymtutar="1" title="' + escAttr(personelNetTL(p) > 0 ? 'Net maaş ÷ 225 × (1 + zam %) × saat' : 'Tanımlar › Personel\'de net maaş girilmemiş') + '">' + (m.tutar ? virgoTl(m.tutar) : '-') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
   EK_RENDER.puantaj = function(){
     var host = byId('puantajIcerik'); if (!host) return;
     if (!_puantajTarih) _puantajTarih = todayISO();
     if (!host.dataset.kuruldu){
       host.dataset.kuruldu = '1';
-      host.innerHTML = '<div class="block"><div class="block-head"><h3>Günlük puantaj</h3><div class="bh-actions"><input type="date" id="gpTarih" value="'+_puantajTarih+'"><button class="btn small" id="gpKaydet">Kaydet</button></div></div><div class="block-body" id="gpIcerik"></div></div>'+
+      host.innerHTML = '<div class="block"><div class="block-head"><h3>Gelmediği günler '+infoIco('Her gün kayıt girmeniz gerekmez. İşaretsiz iş günü çalışıldı sayılır. Kutuya tıkladıkça Devamsız, Raporlu, İzinli ve boş arasında değişir, hemen kaydedilir. Sağdaki kutuya gün numaralarını da yazabilirsiniz (örn. 3, 7, 12-14); yazılanlar Devamsız olur.\n\nDevamsız ve Raporlu günler aylık maaştan 1/30 olarak düşer ve Virgo Hesabı › Maaşlar\'a yansır.')+'</h3><div class="bh-actions"><input type="month" id="gyAy" value="'+thisMonthKey()+'"></div></div><div class="block-body" id="gyIcerik"></div></div>'+
+        '<div class="block"><div class="block-head"><h3>Aylık mesai '+infoIco('Her kişi için ayın toplam mesai saatini yazın, yazınca kaydedilir ve Virgo Hesabı › Maaşlar\'a eklenir. Ücret: net maaş ÷ 225 × (1 + zam %) × saat. Yalnız normal maaşının üstüne çalışılan saatleri yazın: işi zaten gece vardiyası olan kişinin normal saatleri maaşına dahildir.\n\n"Diğer fazla mesai" boş bırakılırsa Günlük ayrıntı\'da girilen saatlerin toplamı kullanılır (kutuda soluk görünür).')+'</h3></div><div class="block-body" id="gyMesaiIcerik"></div></div>'+
         '<div class="block"><div class="block-head"><h3>Aylık özet</h3><div class="bh-actions"><input type="month" id="gpAy" value="'+thisMonthKey()+'"></div></div><div class="block-body tablewrap" id="gpOzet"></div></div>'+
         '<div class="block"><div class="block-head"><h3>Yıllık izin hakları '+infoIco('İş Kanunu md. 53: hizmet süresi 1–5 yıl (5 dahil) 14 gün, 5–15 yıl 20 gün, 15 yıl ve üstü 26 gün; 18 yaş ve altı ile 50 yaş ve üstü en az 20 gün. Doğum tarihi ve devreden izin personel kartından girilir.')+'</h3></div><div class="block-body tablewrap" id="gpIzinHak"></div></div>'+
-        '<div id="bolum-izin"></div><div id="bolum-puantajl"></div>';
+        '<div id="bolum-izin"></div>'+
+        '<details class="block vg-ayarlar"><summary class="block-head"><h3>Günlük ayrıntı (giriş-çıkış, fazla mesai)</h3></summary><div class="block-body"><div class="bh-actions" style="margin-bottom:8px"><input type="date" id="gpTarih" value="'+_puantajTarih+'"><button class="btn small" id="gpKaydet">Kaydet</button></div><div id="gpIcerik"></div></div></details>'+
+        '<div id="bolum-puantajl"></div>';
+      byId('gyAy').addEventListener('change', function(){ if (!this.value) this.value = thisMonthKey(); byId('gpAy').value = this.value; byId('gpOzet').__sonHtml = null; EK_RENDER.puantaj(); });
+      host.addEventListener('click', function(e){
+        var b = e.target.closest('[data-gyt]'); if (!b || b.disabled) return;
+        b.blur(); gyDongu(b.dataset.gyp, b.dataset.gyt);
+      });
+      host.addEventListener('change', function(e){
+        if (!e.target.matches) return;
+        if (e.target.matches('[data-gymetin]')) gyMetinKaydet(e.target);
+        else if (e.target.matches('[data-gym]')) gyMesaiKaydet(e.target);
+        else if (e.target.matches('[data-gyzam]')) gyZamKaydet(e.target);
+      });
       byId('gpTarih').addEventListener('change', function(){ _puantajTarih = this.value || todayISO(); byId('gpIcerik').__sonHtml = null; EK_RENDER.puantaj(); });
-      byId('gpAy').addEventListener('change', function(){ byId('gpOzet').__sonHtml = null; EK_RENDER.puantaj(); });
+      byId('gpAy').addEventListener('change', function(){ if (this.value) byId('gyAy').value = this.value; byId('gpOzet').__sonHtml = null; EK_RENDER.puantaj(); });
       byId('gpKaydet').addEventListener('click', function(){
         var islemler = [];
         document.querySelectorAll('#gpTablo [data-gp]').forEach(function(tr){
@@ -16111,14 +16290,16 @@ Dikkat edilmesi gereken 2 nokta:
       });
     }
     setHtmlIdle('gpIcerik', state.personel.length ? gunlukPuantajHtml(_puantajTarih) : '<div class="empty">Tanımlar\'dan personel ekleyin.</div>');
-    var ay = byId('gpAy').value || thisMonthKey();
+    setHtmlIdle('gyIcerik', state.personel.length ? gelmedigiGunHtml(byId('gyAy').value || thisMonthKey()) : '<div class="empty">Tanımlar\'dan personel ekleyin.</div>');
+    setHtmlIdle('gyMesaiIcerik', state.personel.length ? aylikMesaiHtml(byId('gyAy').value || thisMonthKey()) : '<div class="empty">Tanımlar\'dan personel ekleyin.</div>');
+    var ay = byId('gpAy').value || thisMonthKey(), MH = aylikMesaiHarita();
     var ozet = state.personel.map(function(p){
       var k = (state.puantaj||[]).filter(function(x){ return x.personelId === p.id && ayAnahtari(x.tarih) === ay; });
-      return '<tr><td>'+esc(p.ad)+'</td><td class="num">'+k.filter(function(x){ return x.durum === 'Çalıştı'; }).length+'</td><td class="num">'+fmt2(toplamla(k, function(x){ return x.fazlaMesai; }))+'</td>'+
+      return '<tr><td>'+esc(p.ad)+'</td><td class="num">'+gyCalisilanGun(p, ay)+'</td><td class="num">'+fmt2(personelAyMesai(p, ay, MH).toplamSaat)+'</td>'+
         '<td class="num">'+k.filter(function(x){ return x.durum === 'İzinli'; }).length+'</td><td class="num">'+k.filter(function(x){ return x.durum === 'Raporlu'; }).length+'</td><td class="num '+(k.some(function(x){ return x.durum === 'Devamsız'; })?'neg':'')+'">'+k.filter(function(x){ return x.durum === 'Devamsız'; }).length+'</td>'+
         (function(){ var e = personelEksikHarita(p)[ay]; return '<td class="num'+(e && e.gun ? ' neg' : '')+'" title="'+escAttr(eksikDetayMetni(e) || 'Bu ay maaştan düşülen gün yok')+'">'+(e && e.gun ? e.gun : 0)+'</td>'; })()+'</tr>';
     }).join('');
-    setHtmlIdle('gpOzet', ozet ? '<table><thead><tr><th>Personel</th><th class="num">Çalışılan gün</th><th class="num">Fazla mesai (sa)</th><th class="num">İzinli</th><th class="num">Raporlu</th><th class="num">Devamsız</th><th class="num">Maaştan düşülen gün '+infoIco('Onaylı "Ücretsiz" ve "Rapor" izinleri (takvim günü, hafta sonu dahil) ile puantajda "Devamsız" / "Raporlu" girilen günler. Her gün aylık maaşın 1/30\'u düşülür. Yıllık, mazeret ve diğer izinler ücretlidir.\n\nBu sayı Finans Raporları\'ndaki personel maliyetine kendiliğinden geçer.')+'</th></tr></thead><tbody>'+ozet+'</tbody></table>' : '<div class="empty">Personel yok.</div>');
+    setHtmlIdle('gpOzet', ozet ? '<table><thead><tr><th>Personel</th><th class="num">Çalışılan gün '+infoIco('Ayın bugüne kadarki iş günlerinden gelinmeyen ve izinli günler çıkarılır. İş günü dışında "Çalıştı" girilen gün eklenir.')+'</th><th class="num">Mesai (sa)</th><th class="num">İzinli</th><th class="num">Raporlu</th><th class="num">Devamsız</th><th class="num">Maaştan düşülen gün '+infoIco('Onaylı "Ücretsiz" ve "Rapor" izinleri (takvim günü, hafta sonu dahil) ile puantajda "Devamsız" / "Raporlu" girilen günler. Her gün aylık maaşın 1/30\'u düşülür. Yıllık, mazeret ve diğer izinler ücretlidir.\n\nBu sayı Finans Raporları\'ndaki personel maliyetine kendiliğinden geçer.')+'</th></tr></thead><tbody>'+ozet+'</tbody></table>' : '<div class="empty">Personel yok.</div>');
     setHtmlIdle('gpIzinHak', yillikIzinTabloHtml());
     crudRender(IZIN_TANIM, byId('bolum-izin'));
     crudRender(PUANTAJ_TANIM, byId('bolum-puantajl'));
