@@ -1586,7 +1586,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r319</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r320</div>
   </nav>
   <main>
     <div class="topbar">
@@ -3986,15 +3986,23 @@ Dikkat edilmesi gereken 2 nokta:
   // işe giriş ayından önce ve işten çıkış ayından sonra 0; giriş / çıkış ayında çalıştığı gün kadar (30 gün üzerinden).
   // İşveren maliyeti girilmişse o; yoksa net maaştan o ayın bordrosu — gelir vergisi matrahı yılbaşından (ya da işe giriş ayından)
   // birikir.
-  function personelAyMaliyetTL(p, ay, P){
+  function personelAyMaliyetTL(p, ay, P){ return personelAyBordroTL(p, ay, P).maliyet; }
+  // r320: o ayın bordrosu (₺): net, brüt, işveren maliyeti — gelmediği günler ve giriş / çıkış ayı düşülmüş. oran: 30 günün çalışılan payı, tam: yalnız giriş / çıkışa göre.
+  // brut null: net maaş girilmemiş. maliyetGirilen: işveren maliyeti Tanımlar'da elle girilmiş (bordro hesabının önüne geçer).
+  function personelAyBordroTL(p, ay, P){
     var eh = personelEksikHarita(p), kist = function(a){ return KV_MODEL.kistOran(a, p.iseGiris, p.istenCikis, eh[a] ? eh[a].gun : 0); }, oran = kist(ay);
-    if (!(oran > 0)) return 0;
-    var girilen = personelIsverenTL(p); if (girilen) return girilen * oran;
-    var net = personelNetTL(p); if (!net) return 0;
-    P = P || kvParam();
-    var yil = Number(ay.slice(0, 4)), ayNo = Number(ay.slice(5, 7)), yp = KV_MODEL.yilParam(P, yil), kum = 0;
-    for (var m = 1; m < ayNo; m++){ var o = kist(yil + '-' + String(m).padStart(2, '0')); if (o > 0) kum += KV_MODEL.bordro(net, kum, m, yp, P.imalatTesvik).matrah * o; }
-    return KV_MODEL.bordro(net, kum, ayNo, yp, P.imalatTesvik).maliyet * oran;
+    var net = personelNetTL(p), girilen = personelIsverenTL(p);
+    var r = { oran: oran, tam: KV_MODEL.kistOran(ay, p.iseGiris, p.istenCikis, 0), eksik: eh[ay] || null, netAylik: net, net: 0, brut: null, maliyet: 0, maliyetGirilen: !!girilen };
+    if (!(oran > 0)) return r;
+    if (net){
+      P = P || kvParam();
+      var yil = Number(ay.slice(0, 4)), ayNo = Number(ay.slice(5, 7)), yp = KV_MODEL.yilParam(P, yil), kum = 0;
+      for (var m = 1; m < ayNo; m++){ var o = kist(yil + '-' + String(m).padStart(2, '0')); if (o > 0) kum += KV_MODEL.bordro(net, kum, m, yp, P.imalatTesvik).matrah * o; }
+      var b = KV_MODEL.bordro(net, kum, ayNo, yp, P.imalatTesvik);
+      r.net = net * oran; r.brut = b.brut * oran; r.maliyet = b.maliyet * oran;
+    }
+    if (girilen) r.maliyet = girilen * oran;
+    return r;
   }
   // Aylık sabit gider tahmini (€): çalışan personel (ayrılanlar hariç; henüz başlamayan dahil — saat maliyeti tam kadroyla).
   // Kira ve diğer genel giderler elle yazılmaz (r189): gerçekleşeni belgelerden Finans Raporları'nda, saat ücretine etkisi Tanımlar › Standart maliyet oranları'nda.
@@ -14472,6 +14480,28 @@ Dikkat edilmesi gereken 2 nokta:
     return r;
   }
   function kpKartKw(){ var l = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif' && Number(m.gucKw) > 0; }); return l.length ? l.reduce(function(a, m){ return a + Number(m.gucKw); }, 0) / l.length : 0; }
+  // r320: personel satırındaki "!" balonu: o ay geldiği / gelmediği gün (Puantaj'dan) ve bordro (net, brüt, işveren maliyeti)
+  function kpPersonelBilgi(p, ay, b){
+    var bu = thisMonthKey(), l = [muhAyAdi(ay)], tl = function(x){ return '₺' + muhTutar(x); }, e = b.eksik, izinli = 0;
+    gyAyGunleri(ay).forEach(function(t){
+      if (!gyKadroda(p, t)) return;
+      var k = gyKayit(p.id, t), z = k ? null : gyIzinKaydi(p.id, t);
+      if ((k && k.durum === 'İzinli') || (z && z.tur !== 'Ücretsiz' && z.tur !== 'Rapor' && virgoIsGunu(t, t) > 0)) izinli++;
+    });
+    if (!(b.tam > 0)) l.push(ay < String(p.iseGiris || '').slice(0, 7) ? 'Bu ay işe başlamadı.' : 'Bu ay kadroda değil (ayrıldı).');
+    else {
+      l.push(ay > bu ? 'Geldiği gün: ay henüz başlamadı' : 'Geldiği gün: ' + gyCalisilanGun(p, ay) + (ay === bu ? ' (bugüne kadar)' : ''));
+      l.push('Gelmediği gün: ' + (e && e.gun ? e.gun + ' (' + eksikDetayMetni(e) + ') · maaştan düşer' : '0'));
+      if (izinli) l.push('İzinli: ' + izinli + ' gün (ücretli, maaştan düşmez)');
+      if (b.tam < 1) l.push('İşe giriş / çıkış ayı: 30 günün ' + fmt2(b.tam * 30) + ' günü');
+    }
+    l.push('');
+    if (!b.netAylik && !b.maliyetGirilen){ l.push('Tanımlar › Personel\'de net maaş girilmemiş.'); return l.join('\n'); }
+    if (b.netAylik) l.push('Net maaş: ' + tl(b.net) + (b.oran < 1 ? ' (aylık ' + tl(b.netAylik) + ')' : ''));
+    if (b.brut != null) l.push('Brüt maaş: ' + tl(b.brut));
+    l.push('İşveren maliyeti: ' + tl(b.maliyet) + (b.maliyetGirilen ? ' (Tanımlar\'da girilen)' : ''));
+    return l.join('\n');
+  }
   function kpHesap(ay, plan){
     var dz = plan.duzen || KP_DUZEN_VARS, ks = kpAySaat(ay, dz), kur = virgoGunKuru(todayISO()) || 0, tl = function(v, pb){ return pb === '€' ? v * kur : v; };
     // Verimli saat: gündüz + gece × gece verimi; adet = makine × verimli saat × saatlik adet × genel verim × (1 − fire)
@@ -14492,7 +14522,7 @@ Dikkat edilmesi gereken 2 nokta:
     var top = { makine: 0, adet: 0, ciroTl: 0, degTl: 0 }; satir.forEach(function(x){ top.makine += x.makine; top.adet += x.adet; top.ciroTl += x.ciroTl; top.degTl += x.degTl; });
     // Elektrik ve makine başı giderler çalışan makineyle (seçildiyse o, yoksa ürünlerdeki toplam)
     var calisanMk = dzMk != null ? dzMk : top.makine;
-    var kapali = dz.persKapali || [], persHepsi = (state.personel || []).map(function(p){ return { id: p.id, ad: p.ad, rol: p.rol, tl: personelAyMaliyetTL(p, ay), kapali: kapali.indexOf(p.id) >= 0 }; }).filter(function(x){ return x.tl > 0.5; });
+    var kapali = dz.persKapali || [], persHepsi = (state.personel || []).map(function(p){ var b = personelAyBordroTL(p, ay); return { id: p.id, ad: p.ad, rol: p.rol, tl: b.maliyet, bilgi: kpPersonelBilgi(p, ay, b), kapali: kapali.indexOf(p.id) >= 0 }; }).filter(function(x){ return x.tl > 0.5; });
     var pers = persHepsi.filter(function(x){ return !x.kapali; });
     var persTl = pers.reduce(function(a, x){ return a + x.tl; }, 0);
     var e = plan.elektrik, kwM = Number(e.kwMakine) || kpKartKw(), kwG = Number(e.kwGenel) || 0, kwh = (calisanMk * kwM + kwG) * ks.saat, elekTl = kwh * (Number(e.fiyat) || 0);
@@ -14546,7 +14576,7 @@ Dikkat edilmesi gereken 2 nokta:
       '<table class="vg-tablo kp-sonuc"><thead><tr><th>' + esc(muhAyAdi(h.ay)) + '</th><th class="num">₺</th><th class="num">€ <span class="muted">(bugünkü kur)</span></th><th class="num">Adet başı</th></tr></thead><tbody>' +
       satir('Ciro', h.top.ciroTl, { adetBasi: 1, not: 'KDV hariç' }) + satir('− Adet başı gider', h.top.degTl, { adetBasi: 1, not: 'malzeme, kaplama…' }) + satir('= Katkı', h.katki, { kalin: 1, adetBasi: 1 }) +
       satir('− Personel', h.persTl, { not: h.pers.length + ' kişi, Tanımlar · bordro kurallarıyla işveren maliyeti · kutuyu kaldırınca o kişi bu hesapta çalışmaz', adetBasi: 1 }) +
-      h.persHepsi.map(function(p){ var ad = '<label class="kp-pers' + (p.kapali ? ' kapali' : '') + '"><input type="checkbox" data-kppers="' + escAttr(p.id) + '"' + (p.kapali ? '' : ' checked') + '> ' + esc(p.ad) + (p.rol ? ' <span class="muted">(' + esc(p.rol) + ')</span>' : '') + '</label>';
+      h.persHepsi.map(function(p){ var ad = '<label class="kp-pers' + (p.kapali ? ' kapali' : '') + '"><input type="checkbox" data-kppers="' + escAttr(p.id) + '"' + (p.kapali ? '' : ' checked') + '> ' + esc(p.ad) + (p.rol ? ' <span class="muted">(' + esc(p.rol) + ')</span>' : '') + '</label> ' + infoIco(p.bilgi);
         var dus = p.tl + h.kisiBasi;
         return p.kapali ? '<tr class="kp-alt"><td>' + ad + '</td><td class="num muted kp-cok" colspan="3" title="Bu kişi çalışmadığı için giderden düşen: maaş (işveren maliyeti)' + (h.kisiBasi ? ' + kişi başı giderler (yemek, servis…)' : '') + '">çalışmıyor · −₺' + muhTutar(dus) + (h.kisiBasi ? ' (maaş ₺' + muhTutar(p.tl) + ' + kişi başı ₺' + muhTutar(h.kisiBasi) + ')' : '') + '</td></tr>' : satir(ad, p.tl, { alt: 1 }); }).join('') +
       satir('− Elektrik', h.elekTl, { not: fmt(Math.round(h.kwh)) + ' kWh = (' + fmt2(h.calisanMk) + ' makine × ' + fmt2(h.kwM) + ' kW + ' + fmt2(h.kwG) + ' kW genel) × ' + fmt2(h.ks.saat) + ' sa' + (h.ks.gece ? ' (gece dahil)' : ''), adetBasi: 1 }) +
