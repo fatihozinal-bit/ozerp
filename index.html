@@ -1614,7 +1614,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r331</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r332</div>
   </nav>
   <main>
     <div class="topbar">
@@ -13188,11 +13188,21 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function virgoAmortYilSonu(x, yil){ var t = 0; x.plan.forEach(function(a, i){ if (Number(x.v.tarih.slice(0, 4)) + i <= yil) t += a; }); return muhR2(t); }
   // Ay ay: üretim, vergide düşülen gider, kabul edilmeyen gider (fişsiz / bizim adımıza), amortisman, matrah, vergi (yıl içinde birikimli, geçmiş yıl zararı düşülür), KDV
+  // r332: bir ayın indirilecek KDV'si fatura fatura (ⓘ balonu): önce yatırımlar (makine, demirbaş), sonra diğer giderler (en büyük 6'sı, kalanı tek satır)
+  function virgoKdvDokum(l){
+    var top = function(x){ return x.reduce(function(a, f){ return a + f.kdv; }, 0); }, sat = function(f){ return '• ' + f.ad + ' (' + kisaTarihTR(f.tarih) + '): ₺' + muhTutar(f.kdv); };
+    var yat = l.filter(function(f){ return f.yat; }).sort(function(a, b){ return b.kdv - a.kdv; }), dig = l.filter(function(f){ return !f.yat; }).sort(function(a, b){ return b.kdv - a.kdv; }), s = [];
+    if (yat.length){ s.push('Yatırım (makine, demirbaş): ₺' + muhTutar(top(yat))); yat.forEach(function(f){ s.push(sat(f)); }); }
+    if (dig.length){ if (s.length) s.push(''); s.push('Diğer giderler: ₺' + muhTutar(top(dig)) + ' (' + dig.length + ' fatura)'); dig.slice(0, 6).forEach(function(f){ s.push(sat(f)); }); if (dig.length > 6) s.push('• diğer ' + (dig.length - 6) + ' fatura: ₺' + muhTutar(top(dig.slice(6)))); }
+    return infoIco(s.join('\n'));
+  }
   function virgoVergiHesap(){
-    var A = virgoVergiAyar(), m = {}, al = function(ay){ return m[ay] || (m[ay] = { ay: ay, gelir: 0, gider: 0, kkeg: 0, kazancDus: 0, amort: 0, kdvInd: 0 }); };
+    var A = virgoVergiAyar(), m = {}, al = function(ay){ return m[ay] || (m[ay] = { ay: ay, gelir: 0, gider: 0, kkeg: 0, kazancDus: 0, amort: 0, kdvInd: 0, kdvL: [] }); };
     virgoAylar().forEach(function(a){ al(a.ay).gelir = a.gelir.tl; });
     virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.tip !== 'harcama' || !n.odendi || !/^\d{4}-\d{2}/.test(v.tarih || '')) return; var x = al(v.tarih.slice(0, 7));
-      if (n.fatura === 'virgo') x.kdvInd += n.kdv.tl;
+      if (n.fatura === 'virgo'){ x.kdvInd += n.kdv.tl;
+        // r332: indirilecek KDV fatura fatura (KDV tablosundaki ⓘ için): satıcı ya da açıklama, tarih, KDV, yatırım mı
+        if (n.kdv.tl > 0.004){ var sat = v.saticiId ? (virgoSaticilar().find(function(s){ return s.id === v.saticiId; }) || {}).ad : ''; x.kdvL.push({ ad: String(sat || v.aciklama || v.kategori || 'Fatura').trim(), tarih: v.tarih, kdv: n.kdv.tl, yat: n.yatirim }); } }
       if (n.yatirim){ if (n.kazancDus) x.kazancDus += n.m.tl; return; } if (n.fatura === 'virgo') x.gider += n.haric.tl; else x.kkeg += n.tl; });
     var anahtar = Object.keys(m).sort(), varl = virgoVarliklar(); if (!anahtar.length && !varl.length) return { A: A, aylar: [], varl: varl };
     var bas = anahtar.concat(varl.map(function(x){ return x.v.tarih.slice(0, 7); })).sort()[0], son = anahtar.concat([todayISO().slice(0, 7)]).sort().pop();
@@ -13258,7 +13268,7 @@ Dikkat edilmesi gereken 2 nokta:
     html += '<h4 style="margin:14px 0 6px">KDV (Virgo\'nun beyannamesinde) ' + infoIco('Hesaplanan KDV: üretim karşılığı × satış KDV oranı (Virgo müşteriye faturada keser, müşteriden tahsil eder). İndirilecek KDV: Virgo adına faturaların KDV\'si (makine dahil). Ödenecek = hesaplanan − indirilecek − önceki aydan devreden; eksiyse sonraki aya devreder. Bu KDV\'yi Virgo öder ve müşteriden tahsil ettiği için kazancınızı değiştirmez; Virgo adına faturalarda sizin ödediğiniz KDV zaten borçtan düşüldü. Fişsiz / bizim adımıza giderlerin KDV\'si indirilemez, gider olarak kalır.') + '</h4>' +
       '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Hesaplanan (satış)</th><th class="num">İndirilecek (alış)</th><th class="num">Ödenecek</th><th class="num">Devreden</th></tr></thead><tbody>' +
       l.filter(function(a){ return a.kdvHes > 0.5 || a.kdvInd > 0.5 || a.kdvDev > 0.5; }).map(function(a){ kt.hes += a.kdvHes; kt.ind += a.kdvInd; kt.ode += a.kdvOde;
-        return '<tr><td>' + esc(muhAyAdi(a.ay)) + '</td>' + T(a.kdvHes) + T(a.kdvInd) + T(a.kdvOde, true) + T(a.kdvDev) + '</tr>'; }).join('') +
+        return '<tr><td>' + esc(muhAyAdi(a.ay)) + '</td>' + T(a.kdvHes) + (a.kdvInd > 0.5 && a.kdvL.length ? '<td class="num">' + virgoTl(a.kdvInd) + virgoKdvDokum(a.kdvL) + '</td>' : T(a.kdvInd)) + T(a.kdvOde, true) + T(a.kdvDev) + '</tr>'; }).join('') +
       '<tr class="kv-alt"><td><b>Toplam</b></td>' + T(kt.hes, true) + T(kt.ind, true) + T(kt.ode, true) + T(l.length ? l[l.length - 1].kdvDev : 0, true) + '</tr></tbody></table></div>';
     var k = virgoKdvKontrol();
     html += '<h4 style="margin:14px 0 6px">Kontrol ' + infoIco('KDV indirimi, amortisman ve stopaj için eksik görünen kayıtlar. Satıra tıklayınca kayıt açılır.') + '</h4>' +
