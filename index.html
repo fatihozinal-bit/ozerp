@@ -1240,9 +1240,9 @@
   @media (max-width: 600px){ .kp-dz { grid-template-columns:minmax(0, 1fr); } }
   .kp-iki { display:grid; grid-template-columns:minmax(0, 1fr); gap:0 14px; align-items:start; } .kp-iki > div { min-width:0; }
   @media (min-width: 1180px){ .kp-iki { grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); } }
-  /* r255: sonuç tablosunda kalem ve açıklaması tek satır; açıklama sığmazsa … ile kesilir, tamamı üzerine gelince */ .kp-sonuc { width:100%; table-layout:fixed; } .kp-sonuc th:nth-child(2), .kp-sonuc th:nth-child(3) { width:118px; } .kp-sonuc th:nth-child(4) { width:72px; } .kp-sonuc td { white-space:nowrap; } .kp-sonuc td:first-child { overflow:hidden; text-overflow:ellipsis; } .kp-sonuc td:first-child .muted { font-size:11px; margin-left:4px; } .kp-sonuc td.kp-cok { white-space:normal; } .kp-tablo { table-layout:fixed; width:auto; } .kp-tablo input, .kp-tablo select { width:100%; min-width:0; box-sizing:border-box; } .kp-tablo input[type=number] { text-align:right; } .kp-tablo td.num, .kp-tablo th.num { white-space:nowrap; overflow:hidden; }
+  /* r255: sonuç tablosunda kalem ve açıklaması tek satır; açıklama sığmazsa … ile kesilir, tamamı üzerine gelince */ .kp-sonuc { width:100%; table-layout:fixed; } .kp-sonuc { min-width:760px; } .kp-sonuc th:nth-child(2), .kp-sonuc th:nth-child(3), .kp-sonuc th:nth-child(4) { width:124px; } .kp-sonuc th:nth-child(5) { width:118px; } .kp-sonuc th:nth-child(6) { width:96px; } .kp-sonuc td { white-space:nowrap; } .kp-sonuc td:first-child { overflow:hidden; text-overflow:ellipsis; } .kp-sonuc td:first-child .muted { font-size:11px; margin-left:4px; } .kp-sonuc td.kp-cok { white-space:normal; } .kp-tablo { table-layout:fixed; width:auto; } .kp-tablo input, .kp-tablo select { width:100%; min-width:0; box-sizing:border-box; } .kp-tablo input[type=number] { text-align:right; } .kp-tablo td.num, .kp-tablo th.num { white-space:nowrap; overflow:hidden; }
   .kp-tablo td.num .muted, .kp-tablo td.num .vg-tl { font-size:10.5px; } .kp-tablo th { font-size:11.5px; line-height:1.25; white-space:normal; vertical-align:bottom; } .kp-fiyat { display:flex; gap:3px; } .kp-fiyat select { width:42px; flex:none; padding-left:3px; padding-right:0; }
-  /* r324: plan / gerçekleşen tablosu */ .kp-kars { width:100%; table-layout:fixed; font-variant-numeric:tabular-nums; } .kp-kars th:nth-child(n+2) { width:112px; } .kp-kars td { white-space:nowrap; } .kp-kars td:first-child { overflow:hidden; text-overflow:ellipsis; } .kp-kars td:first-child .muted { font-size:11px; margin-left:6px; }
+  /* r325: tek tablo (gerçekleşen + plan): kategori satırı hafif zeminli, altındaki plan kalemleri / faturalar girintili */ .kp-sonuc tr.kp-kat td { background:var(--surface-alt); } .kp-sonuc td.kp-i1 { padding-left:22px; } .kp-sonuc td.kp-i2 { padding-left:40px; }
   .kp-sonuc, .kp-tablo, .kp-gider, .kp-ozet { font-variant-numeric:tabular-nums; } .kp-pers { display:inline-flex; align-items:center; gap:5px; font-weight:400; cursor:pointer; } .kp-pers input { margin:0; } .kp-gider tr.kp-bos { display:none; }
   .kp-tablo .kp-son { background:var(--surface-alt); } .kp-tablo td.kp-son { font-size:13px; } .kp-tablo tr.kp-detay td { border-top:0; padding-top:0; background:var(--surface-alt); }
   .kp-det-btn { width:100%; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .kp-det-oz { font-size:11px; color:var(--ink-soft); }
@@ -1591,7 +1591,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r324</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r325</div>
   </nav>
   <main>
     <div class="topbar">
@@ -14568,22 +14568,22 @@ Dikkat edilmesi gereken 2 nokta:
       kdvOranlar: kdvOranlar, kdvInd: kdvInd, satisKdv: satisKdv, kdvHes: top.ciroTl * satisKdv / 100, kdvOde: top.ciroTl * satisKdv / 100 - kdvInd,
       katki: katki, kalan: faal, amortTl: amortTl, amortMk: amortMk.length, vOnce: vOnce, kvOran: kvOran, vergi: vergi, net: net, nakit: net + amortTl, kurulus: kurulus, aktifMk: aktifMk };
   }
-  // r295: KDV bölümü (Ay tablosunun sonunda): kâra ve kurumlar vergisine girmez. Hesaplanan KDV ürün ürün, indirilecek KDV kalem kalem,
-  // KDV'siz kalemler (şahıstan stopajlı kira, sigorta, banka masrafı, personel) ayrıca; ödenecek / devreden KDV.
+  // r325: KDV bölümü (Ay tablosunun sonunda) yalnız plan: kâra ve kurumlar vergisine girmez. Hesaplanan KDV ürün ürün, indirilecek KDV kalem kalem,
+  // KDV'siz kalemler (şahıstan stopajlı kira, sigorta, banka masrafı, personel) ayrıca; ödenecek / devreden KDV. satir(ad, gerçekleşen, plan, o)
   function kpKdvSatirlar(h, satir){
     var kalemler = h.gid.filter(function(x){ return x.tl > 0.004; }).map(function(x){ return { ad: x.g.ad || 'Kalem', tur: x.g.tur, matrah: x.tl, oran: x.kdvOran, kdv: x.kdvTl }; });
     if (h.elekTl > 0.004) kalemler.push({ ad: 'Elektrik', matrah: h.elekTl, oran: KP_ELEKTRIK_KDV, kdv: h.elekTl * KP_ELEKTRIK_KDV / 100 });
     var kdvli = kalemler.filter(function(k){ return k.kdv > 0.004; }).sort(function(a, b){ return b.kdv - a.kdv; }), kdvsiz = kalemler.filter(function(k){ return !(k.kdv > 0.004); });
-    var devir = h.kdvOde < -0.004, ic = '&nbsp;&nbsp;&nbsp;&nbsp;';
-    return '<tr class="kp-kdv-bas"><td colspan="4"><b>KDV</b> <span class="muted">kâra ve kurumlar vergisine girmez: müşteriden alınan KDV\'den giderlerde ödenen KDV düşülür, fark ertesi ay beyannameyle ödenir</span></td></tr>' +
-      satir('Hesaplanan KDV <span class="muted">(satış)</span>', h.kdvHes, { not: 'ciro ₺' + muhTutar(h.top.ciroTl) + ' × %' + fmt2(h.satisKdv) }) +
-      h.satir.filter(function(x){ return x.ciroTl > 0.004; }).map(function(x){ return satir(ic + esc(x.u.ad || 'Ürün') + ' <span class="muted">' + fmt(x.adet) + ' adet · matrah ₺' + muhTutar(x.ciroTl) + ' × %' + fmt2(h.satisKdv) + '</span>', x.ciroTl * h.satisKdv / 100, { alt: 1 }); }).join('') +
-      satir('− İndirilecek KDV <span class="muted">(giderler)</span>', h.kdvInd, { not: Object.keys(h.kdvOranlar).map(Number).sort(function(a, b){ return b - a; }).map(function(o){ return '%' + fmt2(o) + ' ₺' + muhTutar(h.kdvOranlar[o]); }).join(' + ') }) +
-      kdvli.map(function(k){ return satir(ic + esc(k.ad) + ' <span class="muted">matrah ₺' + muhTutar(k.matrah) + ' × %' + fmt2(k.oran) + '</span>', k.kdv, { alt: 1 }); }).join('') +
-      (kdvsiz.length ? '<tr class="kp-alt"><td colspan="4" class="muted">' + ic + 'KDV\'siz: ' + kdvsiz.map(function(k){ return esc(k.ad) + (k.tur === 'stopaj' ? ' (şahıstan kira: KDV yok, %20 stopaj)' : ''); }).join(' · ') + (h.pers.length ? ' · personel' : '') + '</td></tr>' : '') +
-      satir(devir ? '= Devreden KDV' : '= Ödenecek KDV', Math.abs(h.kdvOde), { kalin: 1, cls: devir ? 'pos' : '', not: devir ? 'ödeme yok, sonraki ayın KDV\'sinden düşülür' : 'ertesi ayın 28\'ine kadar KDV beyannamesiyle' });
+    var devir = h.kdvOde < -0.004;
+    return '<tr class="kp-kdv-bas"><td colspan="6"><b>KDV</b> <span class="muted">(plan) kâra ve kurumlar vergisine girmez: müşteriden alınan KDV\'den giderlerde ödenen KDV düşülür, fark ertesi ay beyannameyle ödenir</span></td></tr>' +
+      satir('Hesaplanan KDV <span class="muted">(satış)</span>', null, h.kdvHes, { not: 'ciro ₺' + muhTutar(h.top.ciroTl) + ' × %' + fmt2(h.satisKdv) }) +
+      h.satir.filter(function(x){ return x.ciroTl > 0.004; }).map(function(x){ return satir(esc(x.u.ad || 'Ürün') + ' <span class="muted">' + fmt(x.adet) + ' adet · matrah ₺' + muhTutar(x.ciroTl) + ' × %' + fmt2(h.satisKdv) + '</span>', null, x.ciroTl * h.satisKdv / 100, { alt: 1, ic: 1 }); }).join('') +
+      satir('− İndirilecek KDV <span class="muted">(giderler)</span>', null, h.kdvInd, { not: Object.keys(h.kdvOranlar).map(Number).sort(function(a, b){ return b - a; }).map(function(o){ return '%' + fmt2(o) + ' ₺' + muhTutar(h.kdvOranlar[o]); }).join(' + ') }) +
+      kdvli.map(function(k){ return satir(esc(k.ad) + ' <span class="muted">matrah ₺' + muhTutar(k.matrah) + ' × %' + fmt2(k.oran) + '</span>', null, k.kdv, { alt: 1, ic: 1 }); }).join('') +
+      (kdvsiz.length ? '<tr class="kp-alt"><td colspan="6" class="muted kp-i1">KDV\'siz: ' + kdvsiz.map(function(k){ return esc(k.ad) + (k.tur === 'stopaj' ? ' (şahıstan kira: KDV yok, %20 stopaj)' : ''); }).join(' · ') + (h.pers.length ? ' · personel' : '') + '</td></tr>' : '') +
+      satir(devir ? '= Devreden KDV' : '= Ödenecek KDV', null, Math.abs(h.kdvOde), { kalin: 1, cls: devir ? 'pos' : '', not: devir ? 'ödeme yok, sonraki ayın KDV\'sinden düşülür' : 'ertesi ayın 28\'ine kadar KDV beyannamesiyle' });
   }
-  // r324: Plan / gerçekleşen. Plan gider kalemleri Virgo Hesabı'nın kategorilerine eşlenir (ad içindeki kelimeye göre; eşleşmeyen Diğer).
+  // r324: plan gider kalemleri Virgo Hesabı'nın kategorilerine eşlenir (ad içindeki kelimeye göre; eşleşmeyen Diğer).
   function kpPlanKat(ad){
     var s = String(ad || '').toLocaleLowerCase('tr');
     var l = [[/kira/, 'Kira'], [/maaş|sgk|prim|avans/, 'Maaş & SGK'], [/atık|bertaraf/, 'Diğer'], [/bakım|onarım|yedek parça|kalibrasyon|ölçü/, 'Bakım & onarım'],
@@ -14594,86 +14594,82 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // Gerçekleşen: Virgo Hesabı'na o ayın tarihiyle girilen harcama faturaları (ödenmiş + ödenecek), kategoriye göre; Virgo adına faturada KDV hariç,
   // bizim adımıza / fişsizde KDV dahil (Virgo Hesabı'yla aynı). Yatırım (makine, kuruluş, demirbaş) gider değil, ayrı; 'kazançtan düş' seçilmişse gider.
-  // Ciro: o ayın üretimi × Virgo fiyat listesi (Virgo Hesabı'ndaki üretim karşılığı).
+  // Ciro: o ayın üretimi × Virgo fiyat listesi (Virgo Hesabı'ndaki üretim karşılığı). r325: liste = kategori kategori faturalar (tablonun içinde satır satır)
   function kpGercek(ay){
-    var g = { ciro: 0, adet: 0, kat: {}, adetKat: {}, odenecek: 0, yatirim: 0, fatura: 0 };
+    var g = { ciro: 0, adet: 0, kat: {}, liste: {}, odenecek: 0, yatirim: 0, yatListe: [], fatura: 0 };
     virgoKayitlari().forEach(function(v){
       if (String(v.tarih || '').slice(0, 7) !== ay) return; var n = virgoNorm(v); if (n.tip !== 'harcama') return;
       g.fatura++; if (!n.odendi) g.odenecek += n.m.tl;
-      if (n.yatirim && !n.kazancDus){ g.yatirim += n.m.tl; return; }
-      var k = VIRGO_KATEGORI.indexOf(v.kategori) > -1 ? v.kategori : 'Diğer'; g.kat[k] = (g.kat[k] || 0) + n.m.tl; g.adetKat[k] = (g.adetKat[k] || 0) + 1;
+      var f = { tarih: v.tarih || '', ad: v.aciklama || v.belgeNo || v.kategori || 'Fatura', tl: n.m.tl, odenecek: !n.odendi };
+      if (n.yatirim && !n.kazancDus){ g.yatirim += n.m.tl; g.yatListe.push(f); return; }
+      var k = VIRGO_KATEGORI.indexOf(v.kategori) > -1 ? v.kategori : 'Diğer'; g.kat[k] = (g.kat[k] || 0) + n.m.tl; (g.liste[k] = g.liste[k] || []).push(f);
     });
+    Object.keys(g.liste).forEach(function(k){ g.liste[k].sort(function(a, b){ return a.tarih.localeCompare(b.tarih); }); });
     virgoUretimKayitlari().forEach(function(u){ var tl = virgoUretimTl(u);
       virgoUretimParcalar(u).forEach(function(p){ if (p.ay !== ay) return; g.ciro += tl * p.oran; if (!u.araOp) g.adet += (Number(u.adet) || 0) * p.oran; }); });
     return g;
   }
-  function kpKarsilastirHtml(h){
-    var g = kpGercek(h.ay), bu = thisMonthKey();
-    if (h.ay > bu) return '<div class="helper" style="margin:0 0 8px">Gelecek ay: gerçekleşen yok, aşağıda yalnız plan.</div>';
-    if (!g.fatura && !g.ciro) return '<div class="helper" style="margin:0 0 8px">Bu ay için Virgo Hesabı\'nda fatura, Üretim Girişi\'nde üretim yok: karşılaştırma boş, aşağıda yalnız plan.</div>';
-    // plan, kategori kategori (kalem adlarıyla, ipucu için)
-    var pk = {}, pAd = {}, pEkle = function(k, v, ad){ if (!(Math.abs(v) > 0.004)) return; pk[k] = (pk[k] || 0) + v; (pAd[k] = pAd[k] || []).push(ad + ' ₺' + muhTutar(v)); };
-    pEkle('Maaş & SGK', h.persTl, 'Personel'); pEkle('Maaş & SGK', h.mesai.tl, 'Mesai'); pEkle('Elektrik & enerji', h.elekTl, 'Elektrik'); pEkle('Malzeme & takım', h.top.degTl, 'Adet başı gider');
-    h.gid.forEach(function(x){ pEkle(kpPlanKat(x.g.ad), x.tl, x.g.ad || 'Kalem'); });
+  // r325: tek tablo: solda gerçekleşen (Virgo Hesabı), sağda plan, Fark; her gider kategorisinin altında planın kalemleri (sağda) ve o ayın faturaları (solda)
+  function kpSonucHtml(h){
+    var kur = h.kur, bu = thisMonthKey(), gelecek = h.ay > bu, g = kpGercek(h.ay), gerVar = !gelecek && (g.fatura > 0 || g.ciro > 0.004);
+    // satir(ad, gerçekleşen | null, plan | null, o): o.kalin, o.alt (alt satır), o.ic (girinti 1 / 2), o.kat (kategori satırı), o.fark (+ o.gider: fazlası kötü),
+    // o.adetBasi, o.not, o.isaret (eksi kırmızı), o.renkli (artı yeşil, eksi kırmızı), o.cls (plan hücresine ek sınıf)
+    var satir = function(ad, gv, pv, o){ o = o || {}; var b = o.kalin ? ['<b>', '</b>'] : ['', ''], renk = function(v){ return o.renkli ? (v < -0.004 ? ' neg' : ' pos') : o.isaret && v < -0.004 ? ' neg' : ''; };
+      var fk = ''; if (o.fark && gerVar && gv != null && pv != null){ var f = gv - pv, iyi = o.gider ? f <= 0 : f >= 0; fk = Math.abs(f) < 0.5 ? '<span class="muted">—</span>' : '<span class="' + (iyi ? 'pos' : 'neg') + '">' + (f > 0 ? '+' : '−') + '₺' + muhTutar(Math.abs(f)) + '</span>'; }
+      var gh = gv == null ? '' : !gerVar ? '<span class="muted">—</span>' : b[0] + virgoTl(gv) + b[1];
+      var cl = [o.kalin ? 'kv-alt' : '', o.alt ? 'kp-alt' : '', o.kat ? 'kp-kat' : ''].filter(Boolean).join(' ');
+      return '<tr' + (cl ? ' class="' + cl + '"' : '') + '><td' + (o.ic ? ' class="kp-i' + o.ic + '"' : '') + (o.not ? ' title="' + escAttr(String(o.not).replace(/<[^>]*>/g, '')) + '"' : '') + '>' + b[0] + ad + b[1] + (o.not ? '<span class="muted">' + o.not + '</span>' : '') + '</td>' +
+        '<td class="num' + (gv != null && gerVar ? renk(gv) : '') + '">' + gh + '</td><td class="num' + (pv != null ? renk(pv) : '') + (o.cls ? ' ' + o.cls : '') + '">' + (pv == null ? '' : b[0] + virgoTl(pv) + b[1]) + '</td><td class="num">' + fk + '</td>' +
+        '<td class="num muted">' + (pv != null && kur && !o.alt ? virgoEur(pv / kur) : '') + '</td><td class="num muted">' + (o.adetBasi && h.top.adet && pv != null ? virgoTl(pv / h.top.adet) : '') + '</td></tr>'; };
+    var mesaj = function(ad, yazi, ipucu, ic){ return '<tr class="kp-alt"><td class="kp-i' + (ic || 1) + '">' + ad + '</td><td></td><td class="num muted kp-cok" colspan="4"' + (ipucu ? ' title="' + escAttr(ipucu) + '"' : '') + '>' + yazi + '</td></tr>'; };
+    var dolu = h.gid.filter(function(x){ return x.tl > 0.004; }), bos = h.gid.length - dolu.length;
+    // plan, kategori kategori: tutar ve alt satırlar
+    var pk = {}, ph = {}, pEkle = function(k, v, html){ pk[k] = (pk[k] || 0) + v; ph[k] = (ph[k] || '') + html; };
+    if (h.persHepsi.length) pEkle('Maaş & SGK', h.persTl, satir('Personel', null, h.persTl, { alt: 1, ic: 1, not: h.pers.length + ' kişi, Tanımlar · bordro kurallarıyla işveren maliyeti · kutuyu kaldırınca o kişi bu hesapta çalışmaz' }) +
+      h.persHepsi.map(function(p){ var ad = '<label class="kp-pers' + (p.kapali ? ' kapali' : '') + '"><input type="checkbox" data-kppers="' + escAttr(p.id) + '"' + (p.kapali ? '' : ' checked') + '> ' + esc(p.ad) + (p.rol ? ' <span class="muted">(' + esc(p.rol) + ')</span>' : '') + '</label> ' + infoIco(p.bilgi);
+        var dus = p.tl + h.kisiBasi;
+        return p.kapali ? mesaj(ad, 'çalışmıyor · −₺' + muhTutar(dus) + (h.kisiBasi ? ' (maaş ₺' + muhTutar(p.tl) + ' + kişi başı ₺' + muhTutar(h.kisiBasi) + ')' : ''), 'Bu kişi çalışmadığı için giderden düşen: maaş (işveren maliyeti)' + (h.kisiBasi ? ' + kişi başı giderler (yemek, servis…)' : ''), 2) : satir(ad, null, p.tl, { alt: 1, ic: 2 }); }).join(''));
+    // r322: Mesai ve altında kişi kişi tutar. Tahminde kutuyla mesaiye kalanlar seçilir; İK & İzin'de saat girilmişse kutu yok, gerçekleşen saatler yazılır.
+    if (h.mesai.gercek || (h.mesai.plan && h.pers.length)) pEkle('Maaş & SGK', h.mesai.tl, satir('Mesai', null, h.mesai.tl, { alt: 1, ic: 1, not: h.mesai.gercek
+        ? fmt2(h.mesai.saat) + ' sa, İK &amp; İzin › Aylık mesai\'den (gerçekleşen) · işveren maliyetiyle'
+        : [h.ks.cmt ? h.ks.cmt + ' cumartesi ' + fmt2(h.ks.cmtSaat) + ' sa (%' + fmt2(h.mesai.zC) + ' zamlı)' : '', h.ks.pazar ? h.ks.pazar + ' pazar ' + fmt2(h.ks.pazarSaat) + ' sa (%' + fmt2(h.mesai.zP) + ' zamlı)' : ''].filter(Boolean).join(' + ') + ' × ' + h.mesai.kisi + ' kişi · tahmin; kutuyu kaldırınca o kişi mesaiye kalmaz; İK &amp; İzin › Aylık mesai girilince oradan gelir' }) +
+      h.pers.map(function(p){
+        var ad = esc(p.ad) + (p.rol ? ' <span class="muted">(' + esc(p.rol) + ')</span>' : '');
+        if (h.mesai.gercek) return p.mesaiSaat > 0 ? satir(ad + ' <span class="muted">' + fmt2(p.mesaiSaat) + ' sa</span>', null, p.mesaiTl, { alt: 1, ic: 2 }) : mesaj(ad, 'mesai girilmedi', '', 2);
+        var kutu = '<label class="kp-pers' + (p.mesaide ? '' : ' kapali') + '"><input type="checkbox" data-kpmesai="' + escAttr(p.id) + '"' + (p.mesaide ? ' checked' : '') + '> ' + ad + '</label>';
+        return p.mesaide ? satir(kutu, null, p.mesaiTl, { alt: 1, ic: 2 }) : mesaj(kutu, 'mesaiye kalmıyor', '', 2);
+      }).join(''));
+    if (h.elekTl > 0.004 || h.kwh > 0) pEkle('Elektrik & enerji', h.elekTl, satir('Elektrik', null, h.elekTl, { alt: 1, ic: 1, not: fmt(Math.round(h.kwh)) + ' kWh = (' + fmt2(h.calisanMk) + ' makine × ' + fmt2(h.kwM) + ' kW + ' + fmt2(h.kwG) + ' kW genel) × ' + fmt2(h.ks.saat) + ' sa' + (h.ks.gece ? ' (gece dahil)' : '') }));
+    if (h.top.degTl > 0.004) pEkle('Malzeme & takım', h.top.degTl, satir('Adet başı gider', null, h.top.degTl, { alt: 1, ic: 1, not: 'ürün satırlarındaki adet başı gider (malzeme, kaplama…)' }));
+    dolu.forEach(function(x){ var k = kpPlanKat(x.g.ad), ad = esc(x.g.ad || 'Kalem');
+      if (x.g.tur === 'stopaj') return pEkle(k, x.tl, satir(ad, null, x.tl, { alt: 1, ic: 1, not: 'brüt = net ÷ 0,80 (şahıstan, %20 stopaj)' }) +
+        satir('Net (ev sahibine)', null, x.net, { alt: 1, ic: 2 }) + satir('Stopaj %20 (vergi dairesine, muhtasar)', null, x.stopaj, { alt: 1, ic: 2 }));
+      pEkle(k, x.tl, satir(ad, null, x.tl, { alt: 1, ic: 1, not: x.g.tur === 'kisi' ? fmt(x.carpan) + ' kişi × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'makine' ? fmt2(x.carpan) + ' makine × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'gece' ? 'gece vardiyası çalışıyor' : '' })); });
+    var fat = function(f){ return satir(esc(f.ad), f.tl, null, { alt: 1, ic: 1, not: 'fatura ' + kvTarihTR(f.tarih) + (f.odenecek ? ' · ödenecek' : '') }); };
+    var katlar = VIRGO_KATEGORI.filter(function(k){ return pk[k] != null || g.kat[k] != null; });
     var gGid = Object.keys(g.kat).reduce(function(a, k){ return a + g.kat[k]; }, 0), pGid = h.giderTop + h.top.degTl;
     var gFaal = g.ciro - gGid, gVOnce = gFaal - h.amortTl, gVergi = Math.max(0, gVOnce) * h.kvOran / 100, gNet = gVOnce - gVergi;
-    var r = function(ad, gv, pv, o){ o = o || {}; var f = gv - pv, iyi = o.gider ? f <= 0 : f >= 0, b = o.kalin ? ['<b>', '</b>'] : ['', ''];
-      var fs = Math.abs(f) < 0.5 ? '<span class="muted">—</span>' : '<span class="' + (iyi ? 'pos' : 'neg') + '">' + (f > 0 ? '+' : '−') + '₺' + muhTutar(Math.abs(f)) + '</span>';
-      return '<tr class="' + (o.kalin ? 'kv-alt' : '') + '"><td' + (o.ipucu ? ' title="' + escAttr(o.ipucu) + '"' : '') + '>' + b[0] + ad + b[1] + (o.not ? '<span class="muted">' + o.not + '</span>' : '') + '</td><td class="num' + (o.cls && gv < 0 ? ' neg' : '') + '">' + b[0] + virgoTl(gv) + b[1] + '</td><td class="num">' + b[0] + virgoTl(pv) + b[1] + '</td><td class="num">' + fs + '</td></tr>'; };
-    var katlar = VIRGO_KATEGORI.filter(function(k){ return Math.abs(g.kat[k] || 0) > 0.004 || Math.abs(pk[k] || 0) > 0.004; });
-    return '<table class="vg-tablo kp-kars"><thead><tr><th>' + esc(muhAyAdi(h.ay)) + (h.ay === bu ? ' <span class="muted">(ay sürüyor)</span>' : '') + '</th><th class="num">Gerçekleşen</th><th class="num">Plan</th><th class="num">Fark</th></tr></thead><tbody>' +
-      r('Ciro', g.ciro, h.top.ciroTl, { not: fmt(Math.round(g.adet)) + ' / ' + fmt(h.top.adet) + ' adet', ipucu: 'Gerçekleşen: Üretim Girişi × Virgo fiyat listesi (' + fmt(Math.round(g.adet)) + ' adet). Plan: ' + fmt(h.top.adet) + ' adet, KDV hariç.' }) +
-      katlar.map(function(k){ return r('− ' + esc(k), g.kat[k] || 0, pk[k] || 0, { gider: 1, not: g.adetKat[k] ? g.adetKat[k] + ' fatura' : '',
-        ipucu: 'Gerçekleşen: Virgo Hesabı\'nda bu ay "' + k + '" kategorili ' + (g.adetKat[k] || 0) + ' fatura.\nPlan: ' + (pAd[k] ? pAd[k].join(' + ') : 'yok') }); }).join('') +
-      r('Toplam gider', gGid, pGid, { kalin: 1, gider: 1 }) +
-      r('= Faaliyet kârı', gFaal, h.kalan, { kalin: 1, cls: 1 }) +
-      r('− Amortisman', h.amortTl, h.amortTl, { gider: 1 }) +
-      r('− Kurumlar vergisi %' + fmt2(h.kvOran), gVergi, h.vergi, { gider: 1 }) +
-      r('= Net kâr', gNet, h.net, { kalin: 1, cls: 1 }) +
-      '</tbody></table>' +
-      '<div class="muted" style="font-size:11px;margin:4px 0 12px">Gerçekleşen: Virgo Hesabı\'na bu ay tarihiyle girilen ' + g.fatura + ' fatura' + (g.odenecek > 0.004 ? ' (henüz ödenmemiş ₺' + muhTutar(g.odenecek) + ' dahil)' : '') + ', kategorisine göre; Virgo adına faturada KDV hariç, bizim adımıza / fişsizde KDV dahil. Ciro: Üretim Girişi × Virgo fiyatı.' +
-      (g.yatirim > 0.004 ? ' Yatırım ₺' + muhTutar(g.yatirim) + ' (makine, demirbaş…) gider değil.' : '') + (h.ay === bu ? ' Ay bitmedi: gerçekleşen bugüne kadar, plan bütün ay.' : '') + ' Fark: yeşil iyi, kırmızı kötü. Satırın üzerine gelince hangi plan kalemlerinin toplandığı görünür.</div>';
-  }
-  function kpSonucHtml(h){
-    var kur = h.kur;
-    var satir = function(ad, v, o){ o = o || {}; var b = o.kalin ? ['<b>', '</b>'] : ['', ''];
-      return '<tr class="' + (o.kalin ? 'kv-alt' : '') + (o.alt ? ' kp-alt' : '') + '"><td' + (o.not ? ' title="' + escAttr(String(o.not).replace(/<[^>]*>/g, '')) + '"' : '') + '>' + b[0] + ad + b[1] + (o.not ? '<span class="muted">' + o.not + '</span>' : '') + '</td><td class="num' + (o.cls ? ' ' + o.cls : '') + '">' + b[0] + virgoTl(v) + b[1] + '</td><td class="num">' + (kur ? virgoEur(v / kur) : '') + '</td><td class="num muted">' + (h.top.adet && !o.alt && o.adetBasi ? virgoTl(v / h.top.adet) : '') + '</td></tr>'; };
-    var dolu = h.gid.filter(function(x){ return x.tl > 0.004; }), bos = h.gid.length - dolu.length;
     return '<div class="kp-ozet"><span>İş günü <b>' + fmt2(h.ks.gun) + '</b>' + (h.ks.cmt ? ' + ' + h.ks.cmt + ' cumartesi' : '') + (h.ks.pazar ? ' + ' + h.ks.pazar + ' pazar' : '') + '</span><span>Makine saati <b>' + fmt2(h.ks.saat) + '</b> <span class="muted">(1 makine' + (h.ks.gece ? ': gündüz ' + fmt2(h.ks.gunduz) + ' + gece ' + fmt2(h.ks.gece) + ', ' + h.ks.geceGun + ' gece' : '') + ')</span></span>' +
       (h.verim < 1 || h.fireO > 0 || h.ks.gece ? '<span>Verimli saat <b>' + fmt2(h.etkin * h.verim * (1 - h.fireO)) + '</b> <span class="muted">(' + [h.ks.gece ? 'gece %' + fmt2(kpSayi(h.dz.geceVerim, 100)) : '', h.verim < 1 ? 'verim %' + fmt2(h.verim * 100) : '', h.fireO ? 'fire %' + fmt2(h.fireO * 100) : ''].filter(Boolean).join(', ') + ')</span></span>' : '') + '<span>Çalışan makine <b>' + fmt2(h.calisanMk) + '</b> <span class="muted">/ Tanımlar\'da aktif ' + h.aktifMk + '</span>' + (h.dzMk != null && h.top.makine > h.calisanMk + 0.001 ? ' <span class="neg" title="Ürün satırlarındaki makinelerin toplamı çalışan makine sayısından fazla">(ürünlerde ' + fmt2(h.top.makine) + '!)</span>' : '') + '</span><span>Personel <b>' + h.pers.length + '</b>' + (h.persHepsi.length > h.pers.length ? ' <span class="muted">/ ' + h.persHepsi.length + '</span>' : '') + '</span><span>Üretilebilir <b>' + fmt(h.top.adet) + ' adet</b></span>' +
       '</div>' +
       (h.ks.tatil.length ? '<div class="helper" style="margin:0 0 6px">Tatil: ' + h.ks.tatil.map(esc).join(' · ') + '</div>' : '') +
-      kpKarsilastirHtml(h) +
-      '<table class="vg-tablo kp-sonuc"><thead><tr><th>Plan ayrıntısı · ' + esc(muhAyAdi(h.ay)) + '</th><th class="num">₺</th><th class="num">€ <span class="muted">(bugünkü kur)</span></th><th class="num">Adet başı</th></tr></thead><tbody>' +
-      satir('Ciro', h.top.ciroTl, { adetBasi: 1, not: 'KDV hariç' }) + satir('− Adet başı gider', h.top.degTl, { adetBasi: 1, not: 'malzeme, kaplama…' }) + satir('= Katkı', h.katki, { kalin: 1, adetBasi: 1 }) +
-      satir('− Personel', h.persTl, { not: h.pers.length + ' kişi, Tanımlar · bordro kurallarıyla işveren maliyeti · kutuyu kaldırınca o kişi bu hesapta çalışmaz', adetBasi: 1 }) +
-      h.persHepsi.map(function(p){ var ad = '<label class="kp-pers' + (p.kapali ? ' kapali' : '') + '"><input type="checkbox" data-kppers="' + escAttr(p.id) + '"' + (p.kapali ? '' : ' checked') + '> ' + esc(p.ad) + (p.rol ? ' <span class="muted">(' + esc(p.rol) + ')</span>' : '') + '</label> ' + infoIco(p.bilgi);
-        var dus = p.tl + h.kisiBasi;
-        return p.kapali ? '<tr class="kp-alt"><td>' + ad + '</td><td class="num muted kp-cok" colspan="3" title="Bu kişi çalışmadığı için giderden düşen: maaş (işveren maliyeti)' + (h.kisiBasi ? ' + kişi başı giderler (yemek, servis…)' : '') + '">çalışmıyor · −₺' + muhTutar(dus) + (h.kisiBasi ? ' (maaş ₺' + muhTutar(p.tl) + ' + kişi başı ₺' + muhTutar(h.kisiBasi) + ')' : '') + '</td></tr>' : satir(ad, p.tl, { alt: 1 }); }).join('') +
-      // r322: Mesai satırı ve altında kişi kişi tutar. Tahminde kutuyla mesaiye kalanlar seçilir; İK & İzin'de saat girilmişse kutu yok, gerçekleşen saatler yazılır.
-      ((h.mesai.gercek || (h.mesai.plan && h.pers.length)) ? satir('− Mesai', h.mesai.tl, { adetBasi: 1, not: h.mesai.gercek
-        ? fmt2(h.mesai.saat) + ' sa, İK &amp; İzin › Aylık mesai\'den (gerçekleşen) · işveren maliyetiyle'
-        : [h.ks.cmt ? h.ks.cmt + ' cumartesi ' + fmt2(h.ks.cmtSaat) + ' sa (%' + fmt2(h.mesai.zC) + ' zamlı)' : '', h.ks.pazar ? h.ks.pazar + ' pazar ' + fmt2(h.ks.pazarSaat) + ' sa (%' + fmt2(h.mesai.zP) + ' zamlı)' : ''].filter(Boolean).join(' + ') + ' × ' + h.mesai.kisi + ' kişi · tahmin; kutuyu kaldırınca o kişi mesaiye kalmaz; İK &amp; İzin › Aylık mesai girilince oradan gelir' }) +
-        h.pers.map(function(p){
-          var ad = esc(p.ad) + (p.rol ? ' <span class="muted">(' + esc(p.rol) + ')</span>' : '');
-          if (h.mesai.gercek) return p.mesaiSaat > 0 ? satir(ad + ' <span class="muted">' + fmt2(p.mesaiSaat) + ' sa</span>', p.mesaiTl, { alt: 1 }) : '<tr class="kp-alt"><td>' + ad + '</td><td class="num muted" colspan="3">mesai girilmedi</td></tr>';
-          var kutu = '<label class="kp-pers' + (p.mesaide ? '' : ' kapali') + '"><input type="checkbox" data-kpmesai="' + escAttr(p.id) + '"' + (p.mesaide ? ' checked' : '') + '> ' + ad + '</label>';
-          return p.mesaide ? satir(kutu, p.mesaiTl, { alt: 1 }) : '<tr class="kp-alt"><td>' + kutu + '</td><td class="num muted" colspan="3">mesaiye kalmıyor</td></tr>';
-        }).join('') : '') +
-      satir('− Elektrik', h.elekTl, { not: fmt(Math.round(h.kwh)) + ' kWh = (' + fmt2(h.calisanMk) + ' makine × ' + fmt2(h.kwM) + ' kW + ' + fmt2(h.kwG) + ' kW genel) × ' + fmt2(h.ks.saat) + ' sa' + (h.ks.gece ? ' (gece dahil)' : ''), adetBasi: 1 }) +
-      dolu.map(function(x){ if (x.g.tur === 'stopaj') return satir('− ' + esc(x.g.ad || 'Kalem'), x.tl, { not: 'brüt = net ÷ 0,80 (şahıstan, %20 stopaj)', adetBasi: 1 }) +
-          satir('&nbsp;&nbsp;Net (ev sahibine)', x.net, { alt: 1 }) + satir('&nbsp;&nbsp;Stopaj %20 (vergi dairesine, muhtasar)', x.stopaj, { alt: 1 });
-        return satir('− ' + esc(x.g.ad || 'Kalem'), x.tl, { not: x.g.tur === 'kisi' ? fmt(x.carpan) + ' kişi × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'makine' ? fmt2(x.carpan) + ' makine × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'gece' ? 'gece vardiyası çalışıyor' : '', adetBasi: 1 }); }).join('') +
-      satir('Toplam gider', h.giderTop, { kalin: 1, adetBasi: 1 }) +
-      satir('= Faaliyet kârı', h.kalan, { not: 'amortisman ve vergi öncesi', kalin: 1, cls: h.kalan < 0 ? 'neg' : '', adetBasi: 1 }) +
-      satir('− Amortisman', h.amortTl, { not: h.amortMk ? h.amortMk + ' makine · kart alış bedeli ÷ amortisman süresi (nakit çıkmaz, vergiden düşer)' : 'makine kartlarında alış bedeli / süre yok', adetBasi: 1 }) +
-      satir('= Vergi öncesi kâr', h.vOnce, { kalin: 1, cls: h.vOnce < 0 ? 'neg' : '', adetBasi: 1 }) +
-      satir('− Kurumlar vergisi %' + fmt2(h.kvOran), h.vergi, { not: h.vOnce > 0 ? 'vergi öncesi kârın %' + fmt2(h.kvOran) + '\'i · geçici vergiyle 3 ayda bir ödenir' : 'zarar: vergi yok', adetBasi: 1 }) +
-      satir('= Net kâr', h.net, { kalin: 1, cls: h.net < 0 ? 'neg' : 'pos', adetBasi: 1, not: h.top.ciroTl ? 'cironun %' + fmt2(Math.round(h.net / h.top.ciroTl * 1000) / 10) + '\'i' : '' }) +
-      satir('Kasaya kalan nakit', h.nakit, { not: 'net kâr + amortisman', cls: h.nakit < 0 ? 'neg' : '' }) +
+      '<div class="tablewrap"><table class="vg-tablo kp-sonuc"><thead><tr><th>' + esc(muhAyAdi(h.ay)) + (h.ay === bu ? ' <span class="muted">(ay sürüyor)</span>' : '') + '</th><th class="num">Gerçekleşen ₺</th><th class="num">Plan ₺</th><th class="num">Fark</th><th class="num">Plan € <span class="muted">(bugünkü kur)</span></th><th class="num">Plan adet başı</th></tr></thead><tbody>' +
+      satir('Ciro', g.ciro, h.top.ciroTl, { fark: 1, adetBasi: 1, not: (gerVar ? fmt(Math.round(g.adet)) + ' / ' : '') + fmt(h.top.adet) + ' adet · KDV hariç' + (gerVar ? ' · gerçekleşen: Üretim Girişi × Virgo fiyatı' : '') }) +
+      katlar.map(function(k){ var l = g.liste[k] || [];
+        return satir('− ' + esc(k), g.kat[k] || 0, pk[k] || 0, { kat: 1, fark: 1, gider: 1, adetBasi: 1, not: l.length ? l.length + ' fatura' : '' }) + (ph[k] || '') + (gerVar ? l.map(fat).join('') : ''); }).join('') +
+      satir('Toplam gider', gGid, pGid, { kalin: 1, fark: 1, gider: 1, adetBasi: 1 }) +
+      satir('= Faaliyet kârı', gFaal, h.kalan, { kalin: 1, fark: 1, isaret: 1, adetBasi: 1, not: 'amortisman ve vergi öncesi' }) +
+      satir('− Amortisman', h.amortTl, h.amortTl, { fark: 1, gider: 1, adetBasi: 1, not: h.amortMk ? h.amortMk + ' makine · kart alış bedeli ÷ amortisman süresi (nakit çıkmaz, vergiden düşer)' : 'makine kartlarında alış bedeli / süre yok' }) +
+      satir('= Vergi öncesi kâr', gVOnce, h.vOnce, { kalin: 1, fark: 1, isaret: 1, adetBasi: 1 }) +
+      satir('− Kurumlar vergisi %' + fmt2(h.kvOran), gVergi, h.vergi, { fark: 1, gider: 1, adetBasi: 1, not: h.vOnce > 0 ? 'vergi öncesi kârın %' + fmt2(h.kvOran) + '\'i · geçici vergiyle 3 ayda bir ödenir' : 'zarar: vergi yok' }) +
+      satir('= Net kâr', gNet, h.net, { kalin: 1, fark: 1, renkli: 1, adetBasi: 1, not: h.top.ciroTl ? 'plan cironun %' + fmt2(Math.round(h.net / h.top.ciroTl * 1000) / 10) + '\'i' : '' }) +
+      satir('Kasaya kalan nakit', gNet + h.amortTl, h.nakit, { fark: 1, isaret: 1, not: 'net kâr + amortisman' }) +
+      (gerVar && g.yatListe.length ? satir('Yatırım <span class="muted">(gider değil: makine, kuruluş, demirbaş; amortismanla düşer)</span>', g.yatirim, null, { alt: 1 }) + g.yatListe.map(fat).join('') : '') +
       kpKdvSatirlar(h, satir) +
-      '</tbody></table>' +
-      '<div class="muted" style="font-size:11.5px;margin-top:6px">' + (bos ? bos + ' gider kalemine tutar yazılmadı (aşağıdaki Aylık giderler). ' : '') + '€ fiyatlı ürünler ve € makine bedelleri ₺\'ye bugünkü kurla (1 € = ₺' + kurYazi(kur) + ') çevrilir. Giderler ve kâr KDV hariç; kurumlar vergisi vergi öncesi kârdan. KDV tablonun sonunda ayrı: kâra girmez, giderlerin KDV\'si satış KDV\'sinden düşülür. Makine alımı (yatırım) gider değil, amortismanla girer. Kurumlar vergisi oranı Muhasebe ayarlarından.' +
+      '</tbody></table></div>' +
+      '<div class="muted" style="font-size:11.5px;margin-top:6px">' + (gelecek ? 'Gelecek ay: gerçekleşen yok. ' : !gerVar ? 'Bu ay Virgo Hesabı\'nda fatura, Üretim Girişi\'nde üretim yok: gerçekleşen boş. ' :
+        'Gerçekleşen: Virgo Hesabı\'na bu ay tarihiyle girilen ' + g.fatura + ' fatura' + (g.odenecek > 0.004 ? ' (henüz ödenmemiş ₺' + muhTutar(g.odenecek) + ' dahil)' : '') + ', kategorisine göre; Virgo adına faturada KDV hariç, bizim adımıza / fişsizde KDV dahil. Ciro: Üretim Girişi × Virgo fiyatı.' + (h.ay === bu ? ' Ay bitmedi: gerçekleşen bugüne kadar, plan bütün ay.' : '') + ' Fark: yeşil iyi, kırmızı kötü. ') +
+      'Plan kalemleri adlarına göre Virgo kategorisine yerleşir (ör. su, doğalgaz → Elektrik &amp; enerji). ' + (bos ? bos + ' gider kalemine tutar yazılmadı (aşağıdaki Aylık giderler). ' : '') + '€ fiyatlı ürünler ve € makine bedelleri ₺\'ye bugünkü kurla (1 € = ₺' + kurYazi(kur) + ') çevrilir. Giderler ve kâr KDV hariç; kurumlar vergisi vergi öncesi kârdan. KDV tablonun sonunda ayrı: kâra girmez. Makine alımı (yatırım) gider değil, amortismanla girer. Kurumlar vergisi oranı Muhasebe ayarlarından.' +
       (h.kurulus && h.ay < h.kurulus.slice(0, 7) ? ' <b>Şirket kuruluşundan (' + esc(kvTarihTR(h.kurulus)) + ') önceki ay:</b> bu dönemde iş Virgo\'da, vergi Virgo\'nun beyannamesinde; burada şirket kurulmuş gibi gösterilir.' : '') + '</div>';
   }
   function kpHucreGuncelle(host, h){
@@ -14875,7 +14871,7 @@ Dikkat edilmesi gereken 2 nokta:
     var giderHtml = '<div class="block"><div class="block-head"><h3>Aylık giderler ' + infoIco('Her ay için aynı liste (ay ay plan yok). Tutar ₺, KDV hariç; KDV % sütunu faturadaki oran (boş: kalemin varsayılanı; yemek %10, sigorta ve banka masrafı %0, diğerleri %20). KDV gider değildir: Ay tablosunun sonundaki KDV bölümünde indirilecek KDV olarak satış KDV\'sinden düşülür. Şahıstan kirada KDV yok, Hesap\'ta \'Şahıstan (stopajlı)\' seçin. Aylık sabit: o tutar. Kişi başı / ay: tutar × o ayki personel sayısı (yemek, servis, iş elbisesi). Makine başı / ay: tutar × çalışan makine (uç, yağ). Şahıstan (stopajlı): şahıstan kiralanan işyeri; ev sahibiyle anlaşılan net kira yazılır, gider brüt = net ÷ 0,80, aradaki %20 stopaj muhtasar beyanla vergi dairesine ödenir. Şirketten / faturalı kirada Aylık sabit seçip KDV hariç tutarı yazın. Elektrik hesaplanır: (çalışan makine × makine başı kW + genel kW) × ayın makine saati × ₺/kWh; makine başı kW boşsa makine kartlarındaki güç ortalaması. Personel maliyeti Tanımlar\'dan gelir, burada yazılmaz. Boş kalem 0 sayılır.') + '</h3><div class="bh-actions"><button class="btn small" data-kpgekle="1">+ Kalem ekle</button></div></div><div class="block-body">' +
       '<div class="tablewrap"><table class="edit-tablo kp-gider"><thead><tr><th>Kalem</th><th>Hesap</th><th>Tutar</th><th title="Faturadaki KDV oranı; KDV giderden ayrı, indirilecek KDV olarak düşülür">KDV %</th><th class="num">Bu ay</th><th></th></tr></thead><tbody>' + gidSatir + '</tbody><tfoot>' + (bosSay || host.__bosGoster ? '<tr><td colspan="6"><button class="btn secondary small" data-kpbos="1">' + (host.__bosGoster ? 'Boş kalemleri gizle' : 'Tutarı yazılmamış ' + bosSay + ' kalemi göster') + '</button></td></tr>' : '') + '<tr class="kv-toplam"><td colspan="4"><b>Toplam (personel hariç)</b> <span class="muted" style="font-size:11px">KDV hariç</span></td><td class="num" data-kpgtop></td><td></td></tr></tfoot></table></div></div></div>';
     // r256: ürünler en üstte, sonra çalışma düzeni; sonuç ile giderler yan yana (ekran darsa alt alta)
-    host.innerHTML = urunHtml + duzenHtml + '<div class="kp-iki"><div>' + ayHtml + '</div><div>' + giderHtml + '</div></div>';
+    host.innerHTML = urunHtml + duzenHtml + ayHtml + giderHtml; // r325: Ay tablosu tam genişlik (gerçekleşen + plan), giderler altında
     kpHucreGuncelle(host, kpHesap(kpAy, plan));
     if (host.__bagli) return; host.__bagli = 1;
     var bul = function(el){ var p = host.__plan; return el.dataset.kpd ? p.duzen : el.dataset.kpu ? p.urunler.find(function(x){ return x.id === el.dataset.kpu; }) : el.dataset.kpg ? p.giderler.find(function(x){ return x.id === el.dataset.kpg; }) : el.dataset.kpe ? p.elektrik : null; };
