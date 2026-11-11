@@ -1614,7 +1614,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r329</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-11-r331</div>
   </nav>
   <main>
     <div class="topbar">
@@ -7479,7 +7479,7 @@ Dikkat edilmesi gereken 2 nokta:
     openNewRecordForm('personel', 'Yeni personel', PERSONEL_FIELDS, {ad:'', rol:'Operatör', netMaasTL:0, isverenMaliyetTL:0, vardiya:'1. Vardiya', iseGiris: todayISO()}, 'Personel eklendi');
   });
   document.getElementById('mEkleBtn').addEventListener('click', function(){
-    openNewRecordForm('makineler', 'Yeni makine', MAKINE_FIELDS, {ad:'', model:'', durum:'Çalışıyor', saatUcreti:'', amortismanAy:60, alisBedeliTl:0}, 'Makine eklendi');
+    openNewRecordForm('makineler', 'Yeni makine', MAKINE_FIELDS, {ad:'', model:'', durum:'Çalışıyor', saatUcreti:'', amortismanAy:120, alisBedeliTl:0}, 'Makine eklendi');
   });
   document.getElementById('urBirlestirBtn').addEventListener('click', function(){ urunleriStokaBirlestir(); });
   document.getElementById('urEkleBtn').addEventListener('click', function(){
@@ -9658,7 +9658,7 @@ Dikkat edilmesi gereken 2 nokta:
     {key:'saatUcreti', label:'Saat ücreti (€/sa)', type:'number', hint:'Teklif ve ürün maliyeti bu ücretle hesaplanır (IFS / Canias\'taki iş merkezi saat ücreti). Boş: amortisman + genel gider önerisi.'},
     {key:'alisBedeliTl', label:'Alış bedeli (₺)', type:'number', kurTarih:'alisTarihi', hint:'Faturadaki ₺ tutar (KDV hariç). Altında alış tarihindeki kurla € karşılığı görünür (tarih boşsa güncel kur). Amortisman payı ve sabit kıymet için.'},
     {key:'alisTarihi', label:'Alış tarihi', type:'date'},
-    {key:'amortismanAy', label:'Amortisman süresi (ay)', type:'number'}
+    {key:'amortismanAy', label:'Amortisman süresi (ay)', type:'number', hint:'Makineler 120 ay (10 yıl), diğer demirbaş 60 ay (5 yıl). Amortisman alış ayından başlar, süre dolunca biter.'}
   ];
   // r302: alış bedeli ₺ saklanır (alisBedeliTl); eski kayıtlarda € (alisBedeli) alış tarihinin kuruyla ₺'ye çevrilir
   function makineAlisKur(m){ var t = m && m.alisTarihi, k = t ? muhKur(t) : 0; return k > 0 ? k : Number((state.config || {}).eurTryKuru) || 0; }
@@ -13174,8 +13174,10 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoVarliklar(){
     var A = virgoVergiAyar(), l = [];
     virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.tip !== 'harcama' || !n.odendi || !n.yatirim || !/^\d{4}-\d{2}/.test(v.tarih || '')) return;
-      var uygun = n.fatura === 'virgo', omur = A.omur[v.kategori] || 5, maliyet = uygun ? n.haric.tl : n.tl;
-      l.push({ v: v, n: n, uygun: uygun, maliyet: muhR2(maliyet), omur: omur, plan: uygun ? virgoAmortPlan(maliyet, omur, A.yontem) : [] }); });
+      // r331: faturada süre yazılıysa o (ör. kompresör 15 yıl), yoksa kategorinin süresi
+      var oy = Math.round(Number(String(v.omurYil == null ? '' : v.omurYil).replace(',', '.')) || 0), ozel = oy >= 1 && oy <= 50;
+      var uygun = n.fatura === 'virgo', omur = ozel ? oy : A.omur[v.kategori] || 5, maliyet = uygun ? n.haric.tl : n.tl;
+      l.push({ v: v, n: n, uygun: uygun, maliyet: muhR2(maliyet), omur: omur, omurOzel: ozel, plan: uygun ? virgoAmortPlan(maliyet, omur, A.yontem) : [] }); });
     return l.sort(function(a, b){ return (a.v.tarih || '').localeCompare(b.v.tarih || ''); });
   }
   // Varlığın o aya düşen amortismanı
@@ -13248,7 +13250,7 @@ Dikkat edilmesi gereken 2 nokta:
         h.varl.map(function(x){ var i = bu - Number(x.v.tarih.slice(0, 4)), by = x.uygun && i >= 0 && i < x.plan.length ? x.plan[i] : 0, bk = x.uygun ? virgoAmortYilSonu(x, bu) : 0;
           if (x.uygun){ vt.m += x.maliyet; vt.b += bk; vt.y += by; }
           return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + esc(x.v.kategori || '') + '</td><td>' + esc((x.v.saticiId ? cariAdi(x.v.saticiId) + ' · ' : '') + (x.v.aciklama || '')) + '</td><td>' + (x.uygun ? 'Virgo adına' : '<span class="neg">fişsiz / bizim adımıza — amortisman yok</span>') + '</td>' + T(x.maliyet) +
-            '<td class="num">' + (x.uygun ? x.omur + ' yıl' : '—') + '</td>' + T(by) + T(bk) + T(x.uygun ? x.maliyet - bk : 0) + '</tr>'; }).join('') +
+            '<td class="num"' + (x.omurOzel ? ' title="Faturada yazılan süre"' : '') + '>' + (x.uygun ? x.omur + ' yıl' + (x.omurOzel ? ' <span class="muted">(faturada)</span>' : '') : '—') + '</td>' + T(by) + T(bk) + T(x.uygun ? x.maliyet - bk : 0) + '</tr>'; }).join('') +
         '<tr class="kv-alt"><td colspan="4"><b>Toplam (Virgo adına)</b></td>' + T(vt.m, true) + '<td></td>' + T(vt.y, true) + T(vt.b, true) + T(vt.m - vt.b, true) + '</tr></tbody></table></div>';
     }
     // KDV: Virgo'nun bu işten beyannamesine giren KDV
@@ -13796,6 +13798,7 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'kaynak', label:'Paranın kaynağı', type:'select', options: VIRGO_KAYNAK, hint:'Otomatik: Virgo ödediyse onun parası (borca eklenir); ortak ödediyse kendi cebimizden (ortaklar hesabına; Virgo hesabına girmez). Virgo\'nun size verdiği paradan harcadıysanız onu seçin.'},
       {key:'kategori', label:'Kategori', type:'select', options: [{ value: '', label: '— seçin —' }].concat(VIRGO_KATEGORI), hint:'Harcamada zorunlu. Yatırım: Makine (nakliye, montaj dahil), Kuruluş & tesisat, Demirbaş & ekipman (ölçü aleti, bilgisayar). Sarf malzeme: yağ, eldiven, temizlik, kırtasiye, çay-şeker gibi tüketilen küçük alımlar. Malzeme & takım: hammadde, kesici uç. Resmî & finans: vergi, harç, sigorta, banka, muhasebe.'},
       {key:'kazancDus', label:'İşin kazancından düşsün', type:'select', options: ['Hayır', 'Evet'], hint:'Evet: yatırım olarak kalır, amortismanı sürer, vergi hesabı değişmez; tutar İşin kazancı\'ndan düşer. Sonradan alınan, kazançtan karşılanan demirbaşlar için.'},
+      {key:'omurYil', label:'Amortisman süresi (yıl)', type:'number', para:false, placeholder:'kategorinin süresi', hint:'Boş: kategorinin süresi (Vergi & amortisman ayarı; ör. Makine 10, Demirbaş 5). Bu faturanın süresi farklıysa yazın; ör. kompresör 15.'},
       {key:'saticiId', label:'Satıcı firma', type:'select', options: [{ value: '', label: '— seçin —' }].concat(virgoSaticilar().map(function(m){ return { value: m.id, label: m.ad }; })).concat([{ value: '__yeni', label: '+ Yeni firma…' }]), hint:'Faturayı kesen firma; Cari Kartları\'ndaki tedarikçiler. Yoksa "+ Yeni firma…" ile buradan açılır.'},
       {key:'belgeNo', label:'Belge / fatura / dekont no', type:'text'},
       {key:'ettn', label:'ETTN', type:'text'},
@@ -13996,7 +13999,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (/^Ortaklar arası/.test(h)) return { ana: ['tarih', 'hareket', 'odeyen', 'alici', 'paraBirimi', 'tutar', 'aciklama'], ayr: durum.concat(['odemeSekli', 'belgeNo', 'kur']), kisi: 'Veren ortak' };
     if (/^Mutabakat/.test(h)) return { ana: ['tarih', 'hareket', 'paraBirimi', 'tutar', 'aciklama'], ayr: ['kur'], tutar: 'Virgo ile anlaşılan borç' };
     if (/^Bilgi/.test(h)) return { ana: ['tarih', 'hareket', 'odeyen', 'paraBirimi', 'tutar', 'aciklama'], ayr: ['belgeNo', 'kur'], kisi: 'Kişi' };
-    var kdus = VIRGO_YATIRIM.indexOf(v.kategori) > -1 ? ['kazancDus'] : [];
+    var kdus = VIRGO_YATIRIM.indexOf(v.kategori) > -1 ? ['kazancDus', 'omurYil'] : []; // r331: yatırımda süre (yıl) faturaya özel yazılabilir
     if (virgoSahsi(v)) return { ana: ['tarih', 'hareket', 'odeyen', 'kategori', 'saticiId', 'belgeNo', 'aciklama', 'kalemler', 'yuvarlama', 'paraBirimi', 'tutar'].concat(kdus), ayr: ['kaynak'].concat(durum, ['odemeSekli', 'kur']), kisi: 'Ödeyen (harcamayı yapan)', tutar: 'Ödenen tutar' };
     return { ana: ['tarih', 'hareket', 'odeyen', 'kategori', 'saticiId', 'belgeNo', 'aciklama', 'kalemler', 'yuvarlama', 'paraBirimi', 'tutarTuru', 'tutar', 'kdvOrani'].concat(kdus),
       ayr: (vg ? ['borcPb'] : ['kaynak', 'fatura']).concat(durum, ['odemeSekli', 'kur']), kisi: 'Ödeyen (harcamayı yapan)' };
@@ -14584,7 +14587,10 @@ Dikkat edilmesi gereken 2 nokta:
     var aktifMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length;
     var katki = top.ciroTl - top.degTl, giderTop = persTl + mesai.tl + elekTl + gidTl;
     // r219: amortisman (makine kartı alış bedeli € ÷ süre ay, bugünkü kurla) ve kurumlar vergisi (Muhasebe ayarındaki oran, kârsa)
-    var amortMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif' && makineAlisTl(m) > 0 && Number(m.amortismanAy) > 0; });
+    // r330: amortisman alış ayından başlar, süre (ay) dolunca biter; alış tarihi boşsa her ay
+    var ayFark = function(a, b){ return (Number(a.slice(0, 4)) - Number(b.slice(0, 4))) * 12 + Number(a.slice(5, 7)) - Number(b.slice(5, 7)); };
+    var amortMk = (state.makineler || []).filter(function(m){ if (m.durum === 'Pasif' || !(makineAlisTl(m) > 0) || !(Number(m.amortismanAy) > 0)) return false;
+      var t = String(m.alisTarihi || '').slice(0, 7); if (!/^\d{4}-\d{2}$/.test(t)) return true; var i = ayFark(ay, t); return i >= 0 && i < Number(m.amortismanAy); });
     var amortTl = amortMk.reduce(function(a, m){ return a + makineAlisTl(m) / Number(m.amortismanAy); }, 0);
     var faal = katki - giderTop, vOnce = faal - amortTl, kvOran = Number(muhAyar().kvOrani) || 25, vergi = Math.max(0, vOnce) * kvOran / 100, net = vOnce - vergi;
     var kurulus = (kvParam() || {}).kurulusTarihi || '';
@@ -14646,7 +14652,7 @@ Dikkat edilmesi gereken 2 nokta:
         return satir(ad, x.tl, { adetBasi: 1, not: x.g.tur === 'kisi' ? fmt(x.carpan) + ' kişi × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'makine' ? fmt2(x.carpan) + ' makine × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'gece' ? 'gece vardiyası çalışıyor' : '' }); }).join('') +
       satir('Toplam gider', h.giderTop, { ara: 1, adetBasi: 1 }) +
       satir('Faaliyet kârı', h.kalan, { ara: 1, isaret: 1, adetBasi: 1, bilgi: 'Katkı − toplam gider (amortisman ve vergi öncesi).' }) +
-      satir('− Amortisman', h.amortTl, { adetBasi: 1, bilgi: h.amortMk ? h.amortMk + ' makine: kart alış bedeli ÷ amortisman süresi. Nakit çıkmaz, vergiden düşer.' : 'Makine kartlarında alış bedeli / amortisman süresi yok.' }) +
+      satir('− Amortisman', h.amortTl, { adetBasi: 1, bilgi: h.amortMk ? h.amortMk + ' makine: kart alış bedeli ÷ amortisman süresi (ay). Alış ayından başlar, süre dolunca biter. Nakit çıkmaz, vergiden düşer.' : 'Bu ay amortismanı süren makine yok (kartta alış bedeli / süre yok, alıştan önceki ay ya da süre dolmuş).' }) +
       satir('Vergi öncesi kâr', h.vOnce, { ara: 1, isaret: 1, adetBasi: 1 }) +
       satir('− Kurumlar vergisi %' + fmt2(h.kvOran), h.vergi, { adetBasi: 1, bilgi: 'Vergi öncesi kârın %' + fmt2(h.kvOran) + '\'i (zararda yok). Geçici vergiyle 3 ayda bir ödenir. Oran Muhasebe ayarlarından.' }) +
       satir('Net kâr', h.net, { kalin: 1, renkli: 1, adetBasi: 1, not: h.top.ciroTl ? 'cironun %' + fmt2(Math.round(h.net / h.top.ciroTl * 1000) / 10) + '\'i' : '' }) +
