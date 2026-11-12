@@ -1148,6 +1148,19 @@
   .tg-pop { position:absolute; z-index:60; background:var(--surface); border:1px solid var(--border); box-shadow:0 6px 24px rgba(21,32,43,.18); padding:10px 12px; min-width:200px; max-height:60vh; overflow:auto; }
   .tg-pop label { display:flex; gap:6px; align-items:center; font-size:12.5px; padding:3px 0; cursor:pointer; }
   th.tg-sirala { cursor:pointer; user-select:none; }
+  .tg-tablo thead th .tg-ef { margin-left:4px; padding:0 4px; border:1px solid transparent; border-radius:3px; background:none; color:var(--ink-soft); font-size:11px; line-height:16px; cursor:pointer; vertical-align:middle; }
+  .tg-tablo thead th .tg-ef:hover { border-color:var(--border); background:var(--surface); color:var(--ink); }
+  .tg-tablo thead th .tg-ef.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .tg-efpop { z-index:700; width:270px; padding:10px; }
+  .tg-ef-bas { font-weight:700; margin-bottom:6px; }
+  .tg-ef-sira { display:flex; gap:4px; margin-bottom:8px; }
+  .tg-ef-sira .btn { flex:1; }
+  .tg-ef-ara { width:100%; box-sizing:border-box; margin-bottom:6px; font-size:12px; padding:4px 6px; }
+  .tg-efpop .tg-ef-hepsi { border-bottom:1px solid var(--border); padding-bottom:5px; margin-bottom:3px; }
+  .tg-ef-liste { max-height:260px; overflow:auto; }
+  .tg-ef-liste label { display:flex; gap:6px; align-items:center; }
+  .tg-ef-liste label span:first-of-type { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tg-ef-alt { display:flex; justify-content:space-between; gap:6px; margin-top:8px; border-top:1px solid var(--border); padding-top:8px; }
   th.tg-sirala.tg-asc::after { content:' ▲'; color:var(--accent); }
   th.tg-sirala.tg-desc::after { content:' ▼'; color:var(--accent); }
   @media (max-width: 860px) { .tg-arac .tg-ipucu { display:none; } .tg-kutu { max-height:none; } }
@@ -1679,7 +1692,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r338</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r339</div>
     </div>
   </nav>
   <main>
@@ -22509,12 +22522,33 @@ Dikkat edilmesi gereken 2 nokta:
   function tgFiltreAciklama(k){ return k.t === 'tarih' ? 'Tarih filtresi: 10.2026 (ay) · 05.10.2026 (gün) · >01.10.2026 · <=31.10.2026 · 01.09.2026..30.09.2026' : tgSayisalMi(k) ? 'Sayı filtresi: >100 · <50 · >=0 · =0 · 10..50 (aralık)' : 'Metin filtresi: yazılanı içerenler · !kelime içermeyenler · =tam eşleşme'; }
   function tgFiltreIpucu(k){ return k.t === 'tarih' ? '10.2026 · >01.10.2026' : tgSayisalMi(k) ? '>100 · 10..50' : 'içerir · !içermez'; }
 
+  // r339: Excel tarzı sütun filtresi — başlıktaki ▾: sütunun değerleri onay kutularıyla (tarih sütununda ay ay), arama, tümünü seç, sıralama.
+  // Seçim a.secim[sütun] = izin verilen anahtarlar; yoksa süzülmez. Yazılı sütun filtresiyle (a.filtre) birlikte çalışır.
+  var TG_BOS = '(Boş)';
+  function tgSecimAnahtar(k, x){
+    var v = tgDeger(k, x); if (v === '' || v == null) return TG_BOS;
+    if (k.t === 'tarih') return String(v).slice(0, 7);
+    if (tgSayisalMi(k)){ var n = Number(v); return isNaN(n) ? String(v) : (Math.round(n * 100) / 100).toFixed(2) + (k.t === 'para' ? '|' + tgPb(k, x) : ''); }
+    return String(v).trim();
+  }
+  function tgSecimEtiket(k, a){
+    if (a === TG_BOS) return TG_BOS;
+    if (k.t === 'tarih') return /^\d{4}-\d{2}$/.test(a) ? muhAyAdi(a) : a;
+    if (tgSayisalMi(k)){ var p = a.split('|'); return k.t === 'para' ? pbFmt(Number(p[0]), p[1] || 'EUR') : k.t === 'eur' ? pbFmt(Number(p[0]), 'EUR') : fmt2(Number(p[0])); }
+    return a;
+  }
+  function tgSecimUyar(el, x, kolonlar, haric){
+    var sc = tgAyar(el.id).secim || {};
+    return kolonlar.every(function(k){ var l = sc[k.k]; if (!l || k.k === haric) return true; return l.indexOf(tgSecimAnahtar(k, x)) > -1; });
+  }
+  function tgSecimVar(a){ var sc = a.secim || {}; return Object.keys(sc).some(function(k){ return Array.isArray(sc[k]); }); }
   // Filtrelenmiş + sıralanmış satırlar
   function tgSuz(el, satirlar, kolonlar){
     var a = tgAyar(el.id), filtre = a.filtre || {}, q = (LISTE_FILTRE[el.id] || '').toLocaleLowerCase('tr').trim(), uy = lfUyar(el);
     var l = satirlar.filter(function(x){
       if (uy && !uy(x.o)) return false;
       if (q && x.metin.indexOf(q) < 0 && !kolonlar.some(function(k){ return String(tgDeger(k, x)).toLocaleLowerCase('tr').indexOf(q) > -1; })) return false;
+      if (!tgSecimUyar(el, x, kolonlar)) return false;
       return kolonlar.every(function(k){ return !filtre[k.k] || tgFiltreUyar(tgDeger(k, x), filtre[k.k], k); });
     });
     var s = a.sira, k = s && kolonlar.find(function(c){ return c.k === s.k; });
@@ -22614,7 +22648,7 @@ Dikkat edilmesi gereken 2 nokta:
       '<div class="tg-secim" style="display:none"></div>' +
       '<div class="tablewrap tg-kutu"><table class="tg-tablo"><thead><tr>' +
         '<th class="tg-sec"><input type="checkbox" class="tg-hepsi" title="Görünen tümünü seç"></th>' +
-        gor.map(function(k){ var s = sira.k === k.k ? (sira.yon === -1 ? ' ▼' : ' ▲') : ''; return '<th data-k="' + k.k + '" class="' + (tgSayisalMi(k) ? 'num ' : '') + (s ? 'tg-sirali' : '') + '" title="Sıralamak için tıklayın · genişlik: sağ kenarı sürükleyin (çift tık: eski haline)"><div class="tg-g" data-gk="' + k.k + '">' + esc(k.b) + s + '</div><span class="tg-boy" data-boy="' + k.k + '"></span></th>'; }).join('') +
+        gor.map(function(k){ var s = sira.k === k.k ? (sira.yon === -1 ? ' ▼' : ' ▲') : ''; var ef = Array.isArray((a.secim || {})[k.k]); return '<th data-k="' + k.k + '" class="' + (tgSayisalMi(k) ? 'num ' : '') + (s ? 'tg-sirali' : '') + '" title="Sıralamak için tıklayın · ▾: değerlere göre filtrele · genişlik: sağ kenarı sürükleyin (çift tık: eski haline)"><div class="tg-g" data-gk="' + k.k + '">' + esc(k.b) + s + '<button type="button" class="tg-ef' + (ef ? ' on' : '') + '" data-ef="' + k.k + '" title="' + (ef ? 'Filtreli — değerleri değiştir' : 'Değerlere göre filtrele (Excel gibi)') + '">' + (ef ? '⧩' : '▾') + '</button></div><span class="tg-boy" data-boy="' + k.k + '"></span></th>'; }).join('') +
       '</tr>' +
       (filtreAcik ? '<tr class="tg-filtre"><th></th>' + gor.map(function(k){ return '<th><input type="search" data-fk="' + k.k + '" value="' + escAttr(filtre[k.k] || '') + '" placeholder="' + escAttr(tgFiltreIpucu(k)) + '" title="' + escAttr(tgFiltreAciklama(k)) + '"></th>'; }).join('') + '</tr>' : '') +
       '</thead><tbody></tbody><tfoot></tfoot></table></div><style class="tg-gstil"></style>';
@@ -22653,7 +22687,7 @@ Dikkat edilmesi gereken 2 nokta:
     var hepsi = el._tg.querySelector('.tg-hepsi');
     if (hepsi){ var sec = l.filter(function(x){ return d.secili[x.rid]; }).length; hepsi.checked = !!l.length && sec === l.length; hepsi.indeterminate = sec > 0 && sec < l.length; }
     var temizle = el._tg.querySelector('.tg-temizle'), f = a.filtre || {};
-    if (temizle) temizle.style.display = Object.keys(f).some(function(k){ return f[k]; }) ? '' : 'none';
+    if (temizle) temizle.style.display = Object.keys(f).some(function(k){ return f[k]; }) || tgSecimVar(a) ? '' : 'none';
     tgSecimCubugu(el);
     tgSayacYaz(el);
   }
@@ -22715,6 +22749,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function tgBagla(el, tg){
     var d = tgDurum(el.id);
+    tg.querySelectorAll('[data-ef]').forEach(function(b){ b.addEventListener('click', function(ev){ ev.stopPropagation(); ev.preventDefault(); tgExcelFiltre(el, b.dataset.ef, b); }); });
     tg.querySelectorAll('thead th[data-k]').forEach(function(th){
       th.addEventListener('click', function(){
         tgAyarDegistir(el, function(a){ var s = a.sira || {}; a.sira = s.k !== th.dataset.k ? { k: th.dataset.k, yon: 1 } : s.yon === 1 ? { k: th.dataset.k, yon: -1 } : null; });
@@ -22734,7 +22769,7 @@ Dikkat edilmesi gereken 2 nokta:
       tgAyarYaz(el.id, a); tgCizTam(el, tg);
       if (a.filtreSatiri){ var ilk = tg.querySelector('[data-fk]'); if (ilk) ilk.focus(); }
     });
-    tg.querySelector('.tg-temizle').addEventListener('click', function(){ tgAyarDegistir(el, function(a){ a.filtre = {}; }); LISTE_FILTRE[el.id] = ''; var ara = el._tgArac && el._tgArac.querySelector('input'); if (ara) ara.value = ''; tgCizTam(el, tg); });
+    tg.querySelector('.tg-temizle').addEventListener('click', function(){ tgAyarDegistir(el, function(a){ a.filtre = {}; a.secim = {}; }); LISTE_FILTRE[el.id] = ''; var ara = el._tgArac && el._tgArac.querySelector('input'); if (ara) ara.value = ''; tgCizTam(el, tg); });
     tg.querySelector('.tg-excel').addEventListener('click', function(){ tgExcel(el, el._tgSuzulmus || []); });
     tg.querySelector('.tg-sutun').addEventListener('click', function(ev){ ev.stopPropagation(); tgSutunSecici(el, this); });
     tg.querySelector('.tg-gorunum').addEventListener('change', function(){ tgGorunumSec(el, this.value); });
@@ -22783,6 +22818,62 @@ Dikkat edilmesi gereken 2 nokta:
     if (b){ b.click(); return; }
     var d = tgDurum(el.id); if (!d.acik[rid]) tgSatirAcKapa(el, rid);
   }
+  function tgExcelFiltre(el, kk, dugme){
+    var eski = document.querySelector('.tg-pop'); if (eski){ eski.remove(); if (eski._sahip === dugme) return; }
+    var k = (el._tgKolonlar || []).find(function(c){ return c.k === kk; }); if (!k) return;
+    var a = tgAyar(el.id), secili = Array.isArray((a.secim || {})[kk]) ? a.secim[kk].slice() : null;
+    // değerler: diğer sütunların filtrelerine uyan satırlardan (Excel gibi); seçili olup artık görünmeyenler de listede kalır
+    var filtre = a.filtre || {}, q = (LISTE_FILTRE[el.id] || '').toLocaleLowerCase('tr').trim(), uy = lfUyar(el), say = {};
+    (el._tgSatirlar || []).forEach(function(x){
+      if (uy && !uy(x.o)) return;
+      if (q && x.metin.indexOf(q) < 0 && !el._tgKolonlar.some(function(c){ return String(tgDeger(c, x)).toLocaleLowerCase('tr').indexOf(q) > -1; })) return;
+      if (!tgSecimUyar(el, x, el._tgKolonlar, kk)) return;
+      if (!el._tgKolonlar.every(function(c){ return !filtre[c.k] || tgFiltreUyar(tgDeger(c, x), filtre[c.k], c); })) return;
+      var an = tgSecimAnahtar(k, x); say[an] = (say[an] || 0) + 1;
+    });
+    if (secili) secili.forEach(function(an){ if (!(an in say)) say[an] = 0; });
+    var anahtarlar = Object.keys(say).sort(function(p, r){
+      if (p === TG_BOS) return 1; if (r === TG_BOS) return -1;
+      if (k.t === 'tarih') return r.localeCompare(p); // yeni ay üstte
+      if (tgSayisalMi(k)) return (parseFloat(p) || 0) - (parseFloat(r) || 0);
+      return p.localeCompare(r, 'tr', { numeric: true });
+    });
+    var sec = {}; anahtarlar.forEach(function(an){ sec[an] = !secili || secili.indexOf(an) > -1; });
+    var pop = document.createElement('div'); pop.className = 'tg-pop tg-efpop'; pop._sahip = dugme;
+    pop.innerHTML = '<div class="tg-ef-bas">' + esc(k.b) + '</div>' +
+      '<div class="tg-ef-sira"><button type="button" class="btn secondary small" data-efs="1">' + (k.t === 'tarih' ? 'Eskiden yeniye' : tgSayisalMi(k) ? 'Küçükten büyüğe' : 'A → Z') + '</button><button type="button" class="btn secondary small" data-efs="-1">' + (k.t === 'tarih' ? 'Yeniden eskiye' : tgSayisalMi(k) ? 'Büyükten küçüğe' : 'Z → A') + '</button></div>' +
+      '<input type="search" class="tg-ef-ara" placeholder="Ara…">' +
+      '<label class="tg-ef-hepsi"><input type="checkbox" data-efh> <b>(Tümünü seç)</b></label>' +
+      '<div class="tg-ef-liste">' + anahtarlar.map(function(an, i){ return '<label data-efi="' + i + '"><input type="checkbox" data-efv="' + i + '"' + (sec[an] ? ' checked' : '') + '> <span>' + esc(tgSecimEtiket(k, an)) + '</span><span class="muted">' + say[an] + '</span></label>'; }).join('') + '</div>' +
+      '<div class="tg-ef-alt"><button type="button" class="btn secondary small" data-eft>Filtreyi kaldır</button><button type="button" class="btn small" data-efo>Tamam</button></div>';
+    document.body.appendChild(pop);
+    var r = dugme.getBoundingClientRect();
+    pop.style.top = (window.scrollY + r.bottom + 4) + 'px';
+    pop.style.left = Math.max(8, Math.min(window.scrollX + r.right - pop.offsetWidth, window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 8)) + 'px';
+    var ara = pop.querySelector('.tg-ef-ara'), hepsi = pop.querySelector('[data-efh]');
+    var gorunen = function(){ return anahtarlar.map(function(an, i){ return i; }).filter(function(i){ return pop.querySelector('[data-efi="' + i + '"]').style.display !== 'none'; }); };
+    var hepsiYaz = function(){ var g = gorunen(), n = g.filter(function(i){ return sec[anahtarlar[i]]; }).length; hepsi.checked = !!g.length && n === g.length; hepsi.indeterminate = n > 0 && n < g.length; };
+    hepsiYaz();
+    ara.addEventListener('input', function(){ var t = ara.value.toLocaleLowerCase('tr').trim(); anahtarlar.forEach(function(an, i){ pop.querySelector('[data-efi="' + i + '"]').style.display = !t || tgSecimEtiket(k, an).toLocaleLowerCase('tr').indexOf(t) > -1 ? '' : 'none'; }); hepsiYaz(); });
+    pop.addEventListener('click', function(ev){ ev.stopPropagation(); });
+    pop.addEventListener('change', function(ev){
+      if (ev.target === hepsi){ var on = hepsi.checked, g = gorunen(); if (ara.value.trim()) anahtarlar.forEach(function(an, i){ if (g.indexOf(i) < 0) sec[an] = false; }); g.forEach(function(i){ sec[anahtarlar[i]] = on; pop.querySelector('[data-efv="' + i + '"]').checked = on; }); return; }
+      var cb = ev.target.closest('[data-efv]'); if (cb){ sec[anahtarlar[+cb.dataset.efv]] = cb.checked; hepsiYaz(); }
+    });
+    var kapat = function(){ pop.remove(); document.removeEventListener('click', disari); document.removeEventListener('keydown', tus); };
+    var uygula = function(){
+      var l = anahtarlar.filter(function(an){ return sec[an]; }), hepsiSecili = l.length === anahtarlar.length && !ara.value.trim();
+      if (!l.length){ toast('En az bir değer seçin (ya da "Filtreyi kaldır").', true); return; }
+      tgAyarDegistir(el, function(x){ x.secim = x.secim || {}; if (hepsiSecili) delete x.secim[kk]; else x.secim[kk] = l; });
+      kapat(); tgDurum(el.id).limit = TG_LIMIT; if (el._tg) tgCizTam(el, el._tg);
+    };
+    pop.querySelector('[data-efo]').addEventListener('click', uygula);
+    pop.querySelector('[data-eft]').addEventListener('click', function(){ tgAyarDegistir(el, function(x){ if (x.secim) delete x.secim[kk]; }); kapat(); if (el._tg) tgCizTam(el, el._tg); });
+    pop.querySelectorAll('[data-efs]').forEach(function(b){ b.addEventListener('click', function(){ tgAyarDegistir(el, function(x){ x.sira = { k: kk, yon: Number(b.dataset.efs) }; }); kapat(); if (el._tg) tgCizTam(el, el._tg); }); });
+    var tus = function(ev){ if (ev.key === 'Escape') kapat(); else if (ev.key === 'Enter' && pop.contains(document.activeElement)) uygula(); };
+    var disari = function(){ kapat(); };
+    setTimeout(function(){ document.addEventListener('click', disari); document.addEventListener('keydown', tus); ara.focus(); }, 0);
+  }
   function tgSutunSecici(el, dugme){
     var eski = document.querySelector('.tg-pop'); if (eski){ eski.remove(); if (eski._sahip === dugme) return; }
     var a = tgAyar(el.id), gizli = a.gizli || {}, goster = a.goster || {};
@@ -22812,7 +22903,7 @@ Dikkat edilmesi gereken 2 nokta:
         onSave: function(){
           var ad = (byId('tgGAd').value || '').trim(); if (!ad){ toast('Bir ad yazın.', true); return false; }
           var x = tgAyar(el.id); x.gorunumler = x.gorunumler || {};
-          x.gorunumler[ad] = { gizli: x.gizli || {}, goster: x.goster || {}, sira: x.sira || null, filtre: x.filtre || {}, arama: LISTE_FILTRE[el.id] || '' };
+          x.gorunumler[ad] = { gizli: x.gizli || {}, goster: x.goster || {}, sira: x.sira || null, filtre: x.filtre || {}, secim: x.secim || {}, arama: LISTE_FILTRE[el.id] || '' };
           x.gorunum = ad; tgAyarYaz(el.id, x); toast('✓ "' + ad + '" görünümü kaydedildi'); if (el._tg) tgCizTam(el, el._tg);
         },
         onClose: function(){ if (el._tg) tgCizTam(el, el._tg); } });
@@ -22822,9 +22913,9 @@ Dikkat edilmesi gereken 2 nokta:
     if (v === '-'){ delete g[a.gorunum]; a.gorunumler = g; a.gorunum = ''; tgAyarYaz(el.id, a); if (el._tg) tgCizTam(el, el._tg); return; }
     if (v.indexOf('g:') === 0 && g[v.slice(2)]){
       var s = g[v.slice(2)];
-      a.gizli = s.gizli || {}; a.goster = s.goster || {}; a.sira = s.sira || null; a.filtre = s.filtre || {}; a.gorunum = v.slice(2);
+      a.gizli = s.gizli || {}; a.goster = s.goster || {}; a.sira = s.sira || null; a.filtre = s.filtre || {}; a.secim = s.secim || {}; a.gorunum = v.slice(2);
       LISTE_FILTRE[el.id] = s.arama || '';
-    } else { a.gorunum = ''; a.gizli = {}; a.goster = {}; a.sira = null; a.filtre = {}; LISTE_FILTRE[el.id] = ''; }
+    } else { a.gorunum = ''; a.gizli = {}; a.goster = {}; a.sira = null; a.filtre = {}; a.secim = {}; LISTE_FILTRE[el.id] = ''; }
     tgAyarYaz(el.id, a);
     var ara = el._tgArac && el._tgArac.querySelector('input'); if (ara) ara.value = LISTE_FILTRE[el.id] || '';
     tgDurum(el.id).limit = TG_LIMIT;
