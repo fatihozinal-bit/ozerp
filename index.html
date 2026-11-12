@@ -1123,6 +1123,10 @@
   .tg-arac { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
   .tg-arac select { font-size:12px; padding:4px 6px; max-width:240px; }
   .tg-arac .tg-ipucu { margin-left:auto; font-size:10.5px; }
+  .tg-arac .tg-ayirim { display:inline-flex; gap:0; margin-right:4px; }
+  .tg-arac .tg-ayirim .btn { border-radius:0; margin:0; }
+  .tg-arac .tg-ayirim .btn:first-child { border-radius:3px 0 0 3px; }
+  .tg-arac .tg-ayirim .btn:last-child { border-radius:0 3px 3px 0; }
   .tg-secim { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:6px 10px; margin-bottom:6px; background:var(--accent-soft); border:1px solid var(--border); font-size:12px; }
   .tg-kutu { max-height:70vh; overflow:auto; border:1px solid var(--border); background:var(--surface); }
   .tg-tablo { font-size:12.5px; }
@@ -1694,7 +1698,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r340</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r342</div>
     </div>
   </nav>
   <main>
@@ -14380,6 +14384,8 @@ Dikkat edilmesi gereken 2 nokta:
       return { islem: 'Tahsilat ← ' + kisiAd, kayitlar: [{ col: 'tahsilatlar', kisi: kisiAd, veri: Object.assign(ortak, { musteriId: '', faturaId: '', not_: not('Virgo\'ya geri ödeme') }) }] };
     }
     if (n.tip !== 'harcama') return atla('aktarılmaz');
+    // r341: kendi cebinizden ödenen harcama Virgo'nun defterine (gider) girmez; Hesap Defteri › Ortaklar'da izlenir
+    if (n.kaynak === 'cep') return atla('kendi cebinizden ödendi: şirket gideri değil (Hesap Defteri › Ortaklar\'da)');
     if (n.yatirim && n.fatura !== 'virgo') return atla('yatırım Virgo adına faturalı değil: Virgo\'nun demirbaşı olamaz');
     // Kimin borcu: Virgo ödediyse kasa / banka; Virgo'nun verdiği paradan ya da cepten → kişinin carisi; ödenecekse satıcı (yoksa 336)
     var odeme = { odemeDurumu: 'Ödenmedi', hesapId: '', cariId: v.saticiId || '' }, kisi = '';
@@ -14467,6 +14473,7 @@ Dikkat edilmesi gereken 2 nokta:
     return virgoKayitlari().slice().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || '') || String(a.olusturma || '').localeCompare(String(b.olusturma || '')); })
       .map(function(v){
         var n = virgoNorm(v), p = Object.assign({ v: v, n: n }, virgoErpPlanla(v, h, ak));
+        if (ak[v.id] && n.tip === 'harcama' && n.kaynak === 'cep'){ var oc = virgoErpOlusanlar(v.id); if (oc.length) p.cep = { sil: oc }; return p; }
         if (ak[v.id]){
           // daha önce aktarıldı: elle girilmiş karşılığı da varsa çift kayıt (aktarımla oluşan gider / ödeme / tahsilat silinebilir)
           var ol = virgoErpOlusanlar(v.id), m = ol.some(function(o){ return o.col !== 'tanimKayitlari'; }) ? virgoErpManuel(v, n, kul, cache) : null;
@@ -14485,30 +14492,34 @@ Dikkat edilmesi gereken 2 nokta:
         return p;
       });
   }
-  function virgoErpBekleyen(){ var pl = virgoErpPlan({ banka: '-', nakit: '-' }); return { yeni: pl.filter(function(p){ return p.kayitlar.length; }).length, cift: pl.filter(function(p){ return p.cift; }).length }; }
+  function virgoErpBekleyen(){ var pl = virgoErpPlan({ banka: '-', nakit: '-' }); return { yeni: pl.filter(function(p){ return p.kayitlar.length; }).length, cift: pl.filter(function(p){ return p.cift; }).length, cep: pl.filter(function(p){ return p.cep; }).length }; }
   function virgoErpAktarHtml(){
     if (!virgoKayitlari().length || !izinVar('ekle')) return '';
     var b = virgoErpBekleyen();
-    return '<div class="vg-eski"><b>ERP\'ye aktarım:</b> ' + (b.yeni ? b.yeni + ' hareket aktarılmayı bekliyor' : 'aktarılacak hareket yok') + (b.cift ? ' · <b class="neg">' + b.cift + ' çift kayıt</b> (hem elle girilmiş hem aktarılmış)' : '') + (virgoErpEskiKalanlar().length ? ' · <b class="neg">eski aktarımdan kalan ' + virgoErpEskiKalanlar().length + ' kayıt</b>' : '') +
+    return '<div class="vg-eski"><b>ERP\'ye aktarım:</b> ' + (b.yeni ? b.yeni + ' hareket aktarılmayı bekliyor' : 'aktarılacak hareket yok') + (b.cift ? ' · <b class="neg">' + b.cift + ' çift kayıt</b> (hem elle girilmiş hem aktarılmış)' : '') + (b.cep ? ' · <b class="neg">cepten ödenmiş ' + b.cep + ' harcama gider olarak aktarılmış</b>' : '') + (virgoErpEskiKalanlar().length ? ' · <b class="neg">eski aktarımdan kalan ' + virgoErpEskiKalanlar().length + ' kayıt</b>' : '') +
       ' — harcamalar Giderler\'e (yatırımlar ayrıca Sabit Kıymetler\'e), Virgo\'dan alınan / geri ödemeler kişinin carisine ödeme / tahsilat olarak geçer. Virgo kayıtları silinmez. ' +
       '<button class="btn small" data-verpaktar="1"' + (virgoErpSurer ? ' disabled' : '') + '>' + (virgoErpSurer ? 'Aktarılıyor…' : 'Önizle ve aktar…') + '</button></div>';
   }
   function virgoErpOnizlemeHtml(plan, zorla){
     zorla = zorla || {};
-    var tl = function(x){ return '₺' + muhTutar(x); }, gid = plan.filter(function(p){ return p.kayitlar.length; }), atl = plan.filter(function(p){ return !p.kayitlar.length && !p.cift; });
+    var tl = function(x){ return '₺' + muhTutar(x); }, gid = plan.filter(function(p){ return p.kayitlar.length; }), atl = plan.filter(function(p){ return !p.kayitlar.length && !p.cift && !p.cep; });
     var es = plan.filter(function(p){ return p.esles && !zorla[p.v.id]; }), cift = plan.filter(function(p){ return p.cift; });
     var silN = cift.reduce(function(a, p){ return a + p.cift.sil.length; }, 0);
     var kisiler = {}; gid.forEach(function(p){ p.kayitlar.forEach(function(k){ if (k.kisi && !virgoErpKisiCari(k.kisi)) kisiler[k.kisi] = 1; }); });
     var say = { giderler: 0, tanimKayitlari: 0, odemeler: 0, tahsilatlar: 0 }; gid.forEach(function(p){ p.kayitlar.forEach(function(k){ say[k.col]++; }); });
     var erp = function(p){
+      if (p.cep) return '<b class="neg">cepten ödenmiş, gider olarak aktarılmış</b><br><span class="muted">silinecek: ' + esc(p.cep.sil.map(function(o){ return o.ad; }).join(', ')) + '</span>';
       if (p.cift) return '<b class="neg">çift kayıt</b> — elle girilen: ' + esc(p.cift.m.etiket) + (p.cift.m.kesin ? '' : ' <span class="muted">(muhtemelen)</span>') + '<br><span class="muted">aktarımla oluşan, silinecek: ' + esc(p.cift.sil.map(function(o){ return o.ad; }).join(', ') || '—') + '</span>';
       var z = p.esles ? ' <label class="muted" style="white-space:nowrap;font-size:11px"><input type="checkbox" data-vzorla="' + escAttr(p.v.id) + '"' + (zorla[p.v.id] ? ' checked' : '') + '> yine de aktar</label>' : '';
       if (p.kayitlar.length) return esc(p.islem) + (p.esles && zorla[p.v.id] ? '<br><span class="neg" style="font-size:11px">ERP\'de benzeri var: ' + esc(p.esles.etiket) + '</span>' : '') + z;
       return '<span class="muted">atlanır: ' + esc(p.neden) + '</span>' + z;
     };
-    var satir = function(p){ return '<tr' + (p.cift ? ' style="background:var(--bad-soft, #fdecec)"' : p.kayitlar.length ? '' : ' class="muted"') + '><td>' + esc(kvTarihTR(p.v.tarih)) + '</td><td>' + esc(virgoTipAd(p.n)) + (p.v.kategori ? ' <span class="muted">· ' + esc(p.v.kategori) + '</span>' : '') + '</td><td>' + esc(p.v.aciklama || '') + (p.v.belgeNo ? ' <span class="muted">· ' + esc(p.v.belgeNo) + '</span>' : '') + '</td><td class="num">' + tl(p.n.tl) + '</td><td>' + erp(p) + '</td></tr>'; };
+    var satir = function(p){ return '<tr' + (p.cift || p.cep ? ' style="background:var(--bad-soft, #fdecec)"' : p.kayitlar.length ? '' : ' class="muted"') + '><td>' + esc(kvTarihTR(p.v.tarih)) + '</td><td>' + esc(virgoTipAd(p.n)) + (p.v.kategori ? ' <span class="muted">· ' + esc(p.v.kategori) + '</span>' : '') + '</td><td>' + esc(p.v.aciklama || '') + (p.v.belgeNo ? ' <span class="muted">· ' + esc(p.v.belgeNo) + '</span>' : '') + '</td><td class="num">' + tl(p.n.tl) + '</td><td>' + erp(p) + '</td></tr>'; };
+    var cepL = plan.filter(function(p){ return p.cep; }), cepN = cepL.reduce(function(a, p){ return a + p.cep.sil.length; }, 0);
     var eski = virgoErpEskiKalanlar(), eskiSay = {}; eski.forEach(function(o){ eskiSay[o.ad] = (eskiSay[o.ad] || 0) + 1; });
-    return (eski.length ? '<div class="helper neg" style="margin:0 0 8px"><b>Eski Virgo aktarımından kalan ' + eski.length + ' kayıt</b> (' + Object.keys(eskiSay).map(function(k){ return eskiSay[k] + ' ' + k; }).join(', ') + '; açıklamaları "[Virgo]" ile başlıyor). ' +
+    return (cepL.length ? '<div class="helper neg" style="margin:0 0 8px"><b>Kendi cebinizden ödenmiş ' + cepL.length + ' harcama daha önce ERP\'ye gider olarak aktarılmış</b> (' + cepN + ' kayıt: gider' + (cepL.some(function(p){ return p.cep.sil.some(function(o){ return o.col === 'tanimKayitlari'; }); }) ? ', sabit kıymet' : '') + '). ' +
+        'Cepten ödenen şirket gideri sayılmaz; silinirse Hesap Defteri › Ortaklar\'da kalır. Bu aktarımın kişi adına açtığı cari kart boş kalırsa Cari Kartları\'ndan silebilirsiniz. <button type="button" class="btn danger small" data-vcep-sil="1">Cepten ödenenlerin ' + cepN + ' ERP kaydını sil</button></div>' : '') +
+      (eski.length ? '<div class="helper neg" style="margin:0 0 8px"><b>Eski Virgo aktarımından kalan ' + eski.length + ' kayıt</b> (' + Object.keys(eskiSay).map(function(k){ return eskiSay[k] + ' ' + k; }).join(', ') + '; açıklamaları "[Virgo]" ile başlıyor). ' +
         'O aktarım (r289) geri alınmıştı ve Özkaf\'ın gözünden yazılmıştı (Virgo Hidrolik carisine borç, Virgo avansı kasası, ortakların şahsi hesapları): Virgo\'nun defterinde yanlış ve buradaki aktarımla iki kez sayılır. ' +
         'Silinirse bu hareketler aşağıda yeniden, doğru biçimde aktarılabilir. <button type="button" class="btn danger small" data-veski-sil="1">Eski aktarımdan kalan ' + eski.length + ' kaydı sil</button></div>' : '') +
       (cift.length ? '<div class="helper neg" style="margin:0 0 8px"><b>' + cift.length + ' çift kayıt:</b> bu hareketler hem elle girilmiş hem aktarımla ERP\'ye yazılmış — gider / KDV iki kez sayılıyor. ' +
@@ -14556,6 +14567,8 @@ Dikkat edilmesi gereken 2 nokta:
         });
         var silBitti = function(){ ciz(); var vh = byId('virgoIcerik'); if (vh) vh.__sonHtml = null; EK_RENDER.virgo(); };
         el.addEventListener('click', function(e){
+          var cs = e.target.closest('[data-vcep-sil]');
+          if (cs && !cs.disabled){ cs.disabled = true; var lc = []; virgoErpPlan(h).forEach(function(p){ if (p.cep) lc = lc.concat(p.cep.sil); }); virgoErpSil(lc, 'Kendi cebinizden ödenmiş harcamaların aktarımla oluşan ERP kayıtları (gider / sabit kıymet). Hesap Defteri\'ndeki kayıtlar değişmez.', silBitti); return; }
           var b = e.target.closest('[data-vcift-sil]'), es = e.target.closest('[data-veski-sil]');
           if (b && !b.disabled){ b.disabled = true; var l = []; virgoErpPlan(h).forEach(function(p){ if (p.cift) l = l.concat(p.cift.sil); }); virgoErpSil(l, 'Virgo aktarımının oluşturduğu kopyalar; elle girdiğiniz faturalar / giderler / ödemeler kalır.', silBitti); }
           if (es && !es.disabled){ es.disabled = true; virgoErpSil(virgoErpEskiKalanlar(), 'Eski (r289, geri alınan) Virgo aktarımından kalan kayıtlar; açıklamaları "[Virgo]" ile başlar. Elle girdikleriniz ve yeni aktarımın kayıtları kalır.', silBitti); }
@@ -22177,6 +22190,18 @@ Dikkat edilmesi gereken 2 nokta:
   // Sütunlar TABLO_TANIM'da tanımlı listeler için özel, diğer listelerde kayıttaki alanlardan otomatik çıkarılır.
   // Görünüm ayarları (mod, gizli sütun, sıralama, filtre, kayıtlı görünümler) kullanıcıya özel, bu tarayıcıda saklanır.
   var TG_KEY = 'ozerp_tablo_v1', TG_DURUM = {}, TG_LIMIT = 300;
+  // r342: tabloya özel ek süzgeç (satır → true/false) ve araç çubuğunun başına düğme grubu: TG_EK[id] = { uyar(o), aracHtml(el), bagla(el, tg) }
+  var TG_EK = {};
+  // Hesap Defteri hareketleri: Tümü · Şirket (Virgo'nun parası) · Kendi cebimiz (cepten harcama, ortaklar arası ödeme); seçim bu tarayıcıda saklanır
+  var VG_AYIRIM_KEY = 'ozerp_vg_ayirim_v1';
+  function vgAyirim(){ try { var v = localStorage.getItem(VG_AYIRIM_KEY); return v === 'sirket' || v === 'cep' ? v : ''; } catch(e){ return ''; } }
+  function vgAyirimTur(v){ var n = virgoNorm(v); return (n.tip === 'harcama' && n.kaynak === 'cep') || n.tip === 'ortak' ? 'cep' : 'sirket'; }
+  TG_EK.virgoListe = {
+    uyar: function(o){ var a = vgAyirim(); return !a || !o || o.tur !== 'virgo' || vgAyirimTur(o) === a; },
+    aracHtml: function(){ var a = vgAyirim(); return '<span class="sekme-bar tg-ayirim" title="Şirket: Virgo\'nun parasıyla yapılanlar (Virgo ödedi, Virgo\'nun verdiği paradan, Virgo\'dan alınan / geri ödeme, sevk). Kendi cebimiz: ortakların kendi parasıyla yaptığı harcamalar ve ortaklar arası ödemeler.">' +
+      [['', 'Tümü'], ['sirket', 'Şirket'], ['cep', 'Kendi cebimiz']].map(function(x){ return '<button type="button" class="btn small' + (a === x[0] ? '' : ' secondary') + '" data-vgayir="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</span>'; },
+    bagla: function(el, tg){ tg.querySelectorAll('[data-vgayir]').forEach(function(b){ b.addEventListener('click', function(){ try { localStorage.setItem(VG_AYIRIM_KEY, b.dataset.vgayir); } catch(e){} tgDurum(el.id).limit = TG_LIMIT; tgCizTam(el, tg); }); }); }
+  };
   function tgAnahtar(){ return TG_KEY + '_' + (aktifKullaniciId() || ''); }
   function tgTumAyar(){ try { return JSON.parse(localStorage.getItem(tgAnahtar()) || '{}') || {}; } catch(e){ return {}; } }
   function tgAyar(id){ var a = tgTumAyar()[id]; return a && typeof a === 'object' ? a : {}; }
@@ -22549,6 +22574,7 @@ Dikkat edilmesi gereken 2 nokta:
     var a = tgAyar(el.id), filtre = a.filtre || {}, q = (LISTE_FILTRE[el.id] || '').toLocaleLowerCase('tr').trim(), uy = lfUyar(el);
     var l = satirlar.filter(function(x){
       if (uy && !uy(x.o)) return false;
+      if (TG_EK[el.id] && TG_EK[el.id].uyar && !TG_EK[el.id].uyar(x.o)) return false;
       if (q && x.metin.indexOf(q) < 0 && !kolonlar.some(function(k){ return String(tgDeger(k, x)).toLocaleLowerCase('tr').indexOf(q) > -1; })) return false;
       if (!tgSecimUyar(el, x, kolonlar)) return false;
       return kolonlar.every(function(k){ return !filtre[k.k] || tgFiltreUyar(tgDeger(k, x), filtre[k.k], k); });
@@ -22636,7 +22662,7 @@ Dikkat edilmesi gereken 2 nokta:
     var gorunumler = a.gorunumler || {}, gAdlar = Object.keys(gorunumler).sort(function(x, y){ return x.localeCompare(y, 'tr'); });
     var sira = a.sira || {};
     tg.innerHTML =
-      '<div class="tg-arac">' +
+      '<div class="tg-arac">' + (TG_EK[el.id] && TG_EK[el.id].aracHtml ? TG_EK[el.id].aracHtml(el) : '') +
         '<select class="tg-gorunum" title="Kayıtlı görünüm: sütunlar, sıralama ve filtreler"><option value="">Görünüm: varsayılan</option>' +
           gAdlar.map(function(g){ return '<option value="g:' + escAttr(g) + '"' + (a.gorunum === g ? ' selected' : '') + '>Görünüm: ' + esc(g) + '</option>'; }).join('') +
           '<option value="+">＋ Bu görünümü kaydet…</option>' + (a.gorunum && gorunumler[a.gorunum] ? '<option value="-">✕ "' + esc(a.gorunum) + '" görünümünü sil</option>' : '') +
@@ -22657,6 +22683,7 @@ Dikkat edilmesi gereken 2 nokta:
     tg.dataset.tgid = el.id;
     tgGenislikStil(el, tg);
     tgBagla(el, tg);
+    if (TG_EK[el.id] && TG_EK[el.id].bagla) TG_EK[el.id].bagla(el, tg);
     tgBoyBagla(el, tg);
     tgGovde(el);
   }
@@ -22828,6 +22855,7 @@ Dikkat edilmesi gereken 2 nokta:
     var filtre = a.filtre || {}, q = (LISTE_FILTRE[el.id] || '').toLocaleLowerCase('tr').trim(), uy = lfUyar(el), say = {};
     (el._tgSatirlar || []).forEach(function(x){
       if (uy && !uy(x.o)) return;
+      if (TG_EK[el.id] && TG_EK[el.id].uyar && !TG_EK[el.id].uyar(x.o)) return;
       if (q && x.metin.indexOf(q) < 0 && !el._tgKolonlar.some(function(c){ return String(tgDeger(c, x)).toLocaleLowerCase('tr').indexOf(q) > -1; })) return;
       if (!tgSecimUyar(el, x, el._tgKolonlar, kk)) return;
       if (!el._tgKolonlar.every(function(c){ return !filtre[c.k] || tgFiltreUyar(tgDeger(c, x), filtre[c.k], c); })) return;
