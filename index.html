@@ -1630,7 +1630,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r335</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r336</div>
   </nav>
   <main>
     <div class="topbar">
@@ -14369,17 +14369,46 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function virgoErpAktarFormu(){
     if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
-    var hl = hesaplar(), opt = function(tur, sec){ return '<option value="">— seçin —</option>' + hl.map(function(x){ return '<option value="' + escAttr(x.id) + '"' + (x.id === sec ? ' selected' : '') + '>' + esc(x.ad) + ' (' + esc(x.hesapTuru || '') + ')</option>'; }).join(''); };
+    var opt = function(sec){ return '<option value="">— seçin —</option>' + hesaplar().map(function(x){ return '<option value="' + escAttr(x.id) + '"' + (x.id === sec ? ' selected' : '') + '>' + esc(x.ad) + ' (' + esc(x.hesapTuru || '') + ' · ' + esc(x.paraBirimi || 'EUR') + ')</option>'; }).join(''); };
     // varsayılan: o türün ₺ hesabı (tutarlar ₺); yoksa o türün ilki
-    var ilk = function(t){ var x = hl.find(function(y){ return y.hesapTuru === t && (y.paraBirimi || 'EUR') === 'TRY'; }) || hl.find(function(y){ return y.hesapTuru === t; }); return x ? x.id : ''; };
+    var ilk = function(t){ var hl = hesaplar(), x = hl.find(function(y){ return y.hesapTuru === t && (y.paraBirimi || 'EUR') === 'TRY'; }) || hl.find(function(y){ return y.hesapTuru === t; }); return x ? x.id : ''; };
     var h = { banka: ilk('Banka'), nakit: ilk('Kasa') };
+    // r336: hesap yoksa pencereden çıkmadan açılır (₺; açılış tarihi varsayılanı ilk Virgo hareketinden bir gün önce)
+    var ilkTarih = virgoKayitlari().map(function(v){ return v.tarih || ''; }).filter(function(t){ return /^\d{4}-\d{2}-\d{2}$/.test(t); }).sort()[0] || todayISO(), acTarih = tarihEkle(ilkTarih, -1);
+    var mini = function(tur){ return '<div class="vg-erp-yeni" data-tur="' + tur + '" style="display:none;margin-top:6px;padding:8px;border:1px dashed var(--border);background:var(--surface-alt)">' +
+      '<div class="form-grid"><div class="field"><label>Hesap adı</label><input type="text" data-vh="ad" placeholder="' + (tur === 'Banka' ? 'ör. Virgo · Ziraat TL' : 'ör. Virgo kasa') + '"></div>' +
+      (tur === 'Banka' ? '<div class="field"><label>Banka</label><input type="text" data-vh="banka"></div><div class="field"><label>IBAN</label><input type="text" data-vh="iban"></div>' : '') +
+      '<div class="field"><label>Açılış bakiyesi (₺)</label><input type="number" step="0.01" data-vh="acilis" value="0"></div><div class="field"><label>Açılış tarihi</label><input type="date" data-vh="acilisTarihi" value="' + escAttr(acTarih) + '"></div></div>' +
+      '<div class="muted" style="font-size:11px;margin:4px 0 6px">Para birimi ₺. Açılış bakiyesi: hesabın açılış tarihindeki gerçek bakiyesi (bilinmiyorsa 0; sonra Kasa & Banka\'dan düzeltilir).</div>' +
+      '<button type="button" class="btn small" data-vh-ac="' + tur + '">Hesabı aç</button> <button type="button" class="btn secondary small" data-vh-vazgec="1">Vazgeç</button></div>'; };
+    var secimHtml = function(){ return '<div class="form-grid" style="margin-bottom:4px"><div class="field"><label>Banka / EFT, kart, çek</label><select id="vErpBanka">' + opt(h.banka) + '</select><button type="button" class="btn secondary small" data-vh-yeni="Banka" style="margin-top:4px">+ Yeni banka hesabı</button>' + mini('Banka') + '</div>' +
+      '<div class="field"><label>Nakit</label><select id="vErpNakit">' + opt(h.nakit) + '</select><button type="button" class="btn secondary small" data-vh-yeni="Kasa" style="margin-top:4px">+ Yeni kasa</button>' + mini('Kasa') + '</div></div>'; };
     modalAc({ title: 'Virgo Hesabı → ERP aktarımı', genislik: 'genis', kaydetEtiket: 'Aktar',
-      html: '<p class="muted" style="margin-top:0">Virgo\'nun ödediği hareketler hangi hesaptan çıktı? (Virgo kaydındaki ödeme şekline göre: Nakit → kasa, diğerleri → banka)' + (hl.length ? '' : ' <b class="neg">Kasa / banka hesabı yok: önce Finans › Kasa & Banka\'dan hesap açın.</b>') + '</p>' +
-        '<div class="form-grid" style="margin-bottom:10px"><div class="field"><label>Banka / EFT, kart, çek</label><select id="vErpBanka">' + opt('Banka', h.banka) + '</select></div><div class="field"><label>Nakit</label><select id="vErpNakit">' + opt('Kasa', h.nakit) + '</select></div></div>' +
-        '<div id="vErpOnizleme"></div>',
+      html: '<p class="muted" style="margin-top:0">Virgo\'nun ödediği hareketler hangi hesaptan çıktı? (Virgo kaydındaki ödeme şekline göre: Nakit → kasa, diğerleri → banka). Hesap yoksa buradan açın.</p>' +
+        '<div id="vErpSecim">' + secimHtml() + '</div><div id="vErpOnizleme" style="margin-top:8px"></div>',
       onOpen: function(el){
         var ciz = function(){ h = { banka: byId('vErpBanka').value, nakit: byId('vErpNakit').value }; byId('vErpOnizleme').innerHTML = virgoErpOnizlemeHtml(virgoErpPlan(h)); };
-        el.addEventListener('change', function(e){ if (e.target.id === 'vErpBanka' || e.target.id === 'vErpNakit') ciz(); }); ciz();
+        el.addEventListener('change', function(e){ if (e.target.id === 'vErpBanka' || e.target.id === 'vErpNakit') ciz(); });
+        el.addEventListener('click', function(e){
+          var y = e.target.closest('[data-vh-yeni]'), vz = e.target.closest('[data-vh-vazgec]'), ac = e.target.closest('[data-vh-ac]');
+          if (y){ var m = el.querySelector('.vg-erp-yeni[data-tur="' + y.dataset.vhYeni + '"]'); m.style.display = m.style.display === 'none' ? '' : 'none'; if (m.style.display === '') m.querySelector('[data-vh="ad"]').focus(); return; }
+          if (vz){ vz.closest('.vg-erp-yeni').style.display = 'none'; return; }
+          if (!ac || ac.disabled) return;
+          var kutu = ac.closest('.vg-erp-yeni'), d = {}; kutu.querySelectorAll('[data-vh]').forEach(function(x){ d[x.dataset.vh] = String(x.value || '').trim(); });
+          if (!d.ad){ toast('Hesap adını yazın.', true); return; }
+          if (hesaplar().some(function(x){ return virgoErpAnahtar(x.ad) === virgoErpAnahtar(d.ad); })){ toast('Bu adla hesap zaten var: listeden seçin.', true); return; }
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(d.acilisTarihi || '')){ toast('Açılış tarihini girin.', true); return; }
+          var tur = ac.dataset.vhAc, kayit = { tur: 'hesap', ad: d.ad, hesapTuru: tur, banka: d.banka || '', iban: d.iban || '', paraBirimi: 'TRY', acilis: Number(String(d.acilis || '0').replace(',', '.')) || 0, acilisTarihi: d.acilisTarihi };
+          ac.disabled = true;
+          kayitEkle('tanimKayitlari', kayit).then(function(res){
+            var id = res && res.id; if (!id) throw { message: 'hesap açılamadı' };
+            if (!state.tanimKayitlari.some(function(x){ return x.id === id; })) state.tanimKayitlari.push(Object.assign({ id: id, olusturma: nowISO() }, kayit));
+            if (tur === 'Banka') h.banka = id; else h.nakit = id;
+            byId('vErpSecim').innerHTML = secimHtml(); ciz();
+            toast('✓ ' + tur + ' hesabı açıldı: ' + d.ad);
+          }).catch(function(er){ ac.disabled = false; toast('Hesap açılamadı: ' + dbErrMsg(er), true); });
+        });
+        ciz();
       },
       onSave: function(){
         var plan = virgoErpPlan(h).filter(function(p){ return p.kayitlar.length; });
