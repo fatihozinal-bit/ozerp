@@ -1159,6 +1159,8 @@
   .tg-efpop .tg-ef-hepsi { border-bottom:1px solid var(--border); padding-bottom:5px; margin-bottom:3px; }
   .tg-ef-liste { max-height:260px; overflow:auto; }
   .tg-ef-liste label { display:flex; gap:6px; align-items:center; }
+  .tg-ef-liste .tg-ef-yil { margin-top:4px; }
+  .tg-ef-liste .tg-ef-ay { padding-left:20px; }
   .tg-ef-liste label span:first-of-type { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tg-ef-alt { display:flex; justify-content:space-between; gap:6px; margin-top:8px; border-top:1px solid var(--border); padding-top:8px; }
   th.tg-sirala.tg-asc::after { content:' ▲'; color:var(--accent); }
@@ -1692,7 +1694,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r339</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r340</div>
     </div>
   </nav>
   <main>
@@ -22834,7 +22836,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (secili) secili.forEach(function(an){ if (!(an in say)) say[an] = 0; });
     var anahtarlar = Object.keys(say).sort(function(p, r){
       if (p === TG_BOS) return 1; if (r === TG_BOS) return -1;
-      if (k.t === 'tarih') return r.localeCompare(p); // yeni ay üstte
+      if (k.t === 'tarih') return r.slice(0, 4).localeCompare(p.slice(0, 4)) || p.localeCompare(r); // yeni yıl üstte, yıl içinde Ocak → Aralık
       if (tgSayisalMi(k)) return (parseFloat(p) || 0) - (parseFloat(r) || 0);
       return p.localeCompare(r, 'tr', { numeric: true });
     });
@@ -22844,7 +22846,15 @@ Dikkat edilmesi gereken 2 nokta:
       '<div class="tg-ef-sira"><button type="button" class="btn secondary small" data-efs="1">' + (k.t === 'tarih' ? 'Eskiden yeniye' : tgSayisalMi(k) ? 'Küçükten büyüğe' : 'A → Z') + '</button><button type="button" class="btn secondary small" data-efs="-1">' + (k.t === 'tarih' ? 'Yeniden eskiye' : tgSayisalMi(k) ? 'Büyükten küçüğe' : 'Z → A') + '</button></div>' +
       '<input type="search" class="tg-ef-ara" placeholder="Ara…">' +
       '<label class="tg-ef-hepsi"><input type="checkbox" data-efh> <b>(Tümünü seç)</b></label>' +
-      '<div class="tg-ef-liste">' + anahtarlar.map(function(an, i){ return '<label data-efi="' + i + '"><input type="checkbox" data-efv="' + i + '"' + (sec[an] ? ' checked' : '') + '> <span>' + esc(tgSecimEtiket(k, an)) + '</span><span class="muted">' + say[an] + '</span></label>'; }).join('') + '</div>' +
+      '<div class="tg-ef-liste">' + (function(){
+        var yilTop = {}, son = '', h = '';
+        if (k.t === 'tarih') anahtarlar.forEach(function(an){ if (/^\d{4}-\d{2}$/.test(an)) yilTop[an.slice(0, 4)] = (yilTop[an.slice(0, 4)] || 0) + say[an]; });
+        anahtarlar.forEach(function(an, i){
+          var ay = k.t === 'tarih' && /^\d{4}-\d{2}$/.test(an), yil = ay ? an.slice(0, 4) : '';
+          if (ay && yil !== son){ son = yil; h += '<label class="tg-ef-yil" data-efyl="' + yil + '"><input type="checkbox" data-efy="' + yil + '"> <span><b>' + yil + '</b></span><span class="muted">' + yilTop[yil] + '</span></label>'; }
+          h += '<label data-efi="' + i + '"' + (ay ? ' class="tg-ef-ay" data-efay="' + yil + '"' : '') + '><input type="checkbox" data-efv="' + i + '"' + (sec[an] ? ' checked' : '') + '> <span>' + esc(ay ? MUH_AY_ADI[Number(an.slice(5, 7)) - 1] : tgSecimEtiket(k, an)) + '</span><span class="muted">' + say[an] + '</span></label>';
+        });
+        return h; })() + '</div>' +
       '<div class="tg-ef-alt"><button type="button" class="btn secondary small" data-eft>Filtreyi kaldır</button><button type="button" class="btn small" data-efo>Tamam</button></div>';
     document.body.appendChild(pop);
     var r = dugme.getBoundingClientRect();
@@ -22852,12 +22862,18 @@ Dikkat edilmesi gereken 2 nokta:
     pop.style.left = Math.max(8, Math.min(window.scrollX + r.right - pop.offsetWidth, window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 8)) + 'px';
     var ara = pop.querySelector('.tg-ef-ara'), hepsi = pop.querySelector('[data-efh]');
     var gorunen = function(){ return anahtarlar.map(function(an, i){ return i; }).filter(function(i){ return pop.querySelector('[data-efi="' + i + '"]').style.display !== 'none'; }); };
-    var hepsiYaz = function(){ var g = gorunen(), n = g.filter(function(i){ return sec[anahtarlar[i]]; }).length; hepsi.checked = !!g.length && n === g.length; hepsi.indeterminate = n > 0 && n < g.length; };
+    var yilYaz = function(){ pop.querySelectorAll('[data-efy]').forEach(function(y){
+        var l = anahtarlar.map(function(an, i){ return i; }).filter(function(i){ return anahtarlar[i].slice(0, 4) === y.dataset.efy && /^\d{4}-\d{2}$/.test(anahtarlar[i]) && pop.querySelector('[data-efi="' + i + '"]').style.display !== 'none'; });
+        var n = l.filter(function(i){ return sec[anahtarlar[i]]; }).length; y.checked = !!l.length && n === l.length; y.indeterminate = n > 0 && n < l.length;
+        y.closest('label').style.display = l.length ? '' : 'none'; }); };
+    var hepsiYaz = function(){ var g = gorunen(), n = g.filter(function(i){ return sec[anahtarlar[i]]; }).length; hepsi.checked = !!g.length && n === g.length; hepsi.indeterminate = n > 0 && n < g.length; yilYaz(); };
     hepsiYaz();
     ara.addEventListener('input', function(){ var t = ara.value.toLocaleLowerCase('tr').trim(); anahtarlar.forEach(function(an, i){ pop.querySelector('[data-efi="' + i + '"]').style.display = !t || tgSecimEtiket(k, an).toLocaleLowerCase('tr').indexOf(t) > -1 ? '' : 'none'; }); hepsiYaz(); });
     pop.addEventListener('click', function(ev){ ev.stopPropagation(); });
     pop.addEventListener('change', function(ev){
       if (ev.target === hepsi){ var on = hepsi.checked, g = gorunen(); if (ara.value.trim()) anahtarlar.forEach(function(an, i){ if (g.indexOf(i) < 0) sec[an] = false; }); g.forEach(function(i){ sec[anahtarlar[i]] = on; pop.querySelector('[data-efv="' + i + '"]').checked = on; }); return; }
+      var yb = ev.target.closest('[data-efy]');
+      if (yb){ anahtarlar.forEach(function(an, i){ var lb = pop.querySelector('[data-efi="' + i + '"]'); if (an.slice(0, 4) === yb.dataset.efy && /^\d{4}-\d{2}$/.test(an) && lb.style.display !== 'none'){ sec[an] = yb.checked; lb.querySelector('input').checked = yb.checked; } }); hepsiYaz(); return; }
       var cb = ev.target.closest('[data-efv]'); if (cb){ sec[anahtarlar[+cb.dataset.efv]] = cb.checked; hepsiYaz(); }
     });
     var kapat = function(){ pop.remove(); document.removeEventListener('click', disari); document.removeEventListener('keydown', tus); };
