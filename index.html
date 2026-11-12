@@ -1698,7 +1698,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r345</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r346</div>
     </div>
   </nav>
   <main>
@@ -13356,7 +13356,8 @@ Dikkat edilmesi gereken 2 nokta:
     var oKur = virgoOrtakKur(), oEur = function(v){ return oKur ? '<div class="muted" style="font-size:11px">' + virgoEur(v / oKur) + '</div>' : ''; };
     var tdT = function(o, kalin, isaret, dk){ var v = o ? o.tl : 0, bos = Math.abs(v) < 0.005, y = virgoTl(v);
       return '<td class="num' + (dk && !bos ? ' vg-tik" data-vd="' + escAttr(dk) + '" title="Ayrıntı için tıklayın' : '') + '">' + (bos ? '<span class="muted">—</span>' : '<span' + (isaret ? ' class="' + (v < -0.004 ? 'neg' : 'pos') + '"' : '') + '>' + (kalin ? '<b>' + y + '</b>' : y) + '</span>' + oEur(v)) + '</td>'; };
-    html += virgoHarcamaHtml() + virgoAlinanlarHtml() + '<div class="block" data-vsekme="ortak"><div class="block-head"><h3>Ortaklar hesabı ' + infoIco('Şirket sahiplerinin (Fatih, Ahmet…) bu süreçte kendi parasıyla yaptıkları; Virgo hesabına girmez. Katkı = kendi cebinden harcamalar + Virgo\'ya yaptığı geri ödemeler. Payına düşen = toplam katkı × ortaklık payı. Fark artıysa fazla ödemiş, eksiyse eksik. Aranızda ödeşince "Ortaklar arası ödeme" hareketiyle girin (veren → alan), fark kapanır. Paylar sayfanın altındaki Ayarlar bölümünde. Ortaklar hesabı yalnız ₺ izlenir; € karşılığı tutulmaz.') + '</h3></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ortak</th><th class="num">Pay</th><th class="num">Kendi cebinden harcama</th><th class="num">Virgo\'ya geri ödediği</th><th class="num">Toplam katkı</th><th class="num">Payına düşen</th><th class="num">Ortaklar arası verdi / aldı</th><th class="num">Fark</th><th class="num">Ödenecek</th></tr></thead><tbody>' +
+    // r346: Harcamalar ve Alınanlar bölümleri kaldırıldı (Virgo'nun ödediği faturalar ERP'de: Alış Faturaları / Giderler)
+    html += '<div class="block" data-vsekme="ortak"><div class="block-head"><h3>Ortaklar hesabı ' + infoIco('Şirket sahiplerinin (Fatih, Ahmet…) bu süreçte kendi parasıyla yaptıkları; Virgo hesabına girmez. Katkı = kendi cebinden harcamalar + Virgo\'ya yaptığı geri ödemeler. Payına düşen = toplam katkı × ortaklık payı. Fark artıysa fazla ödemiş, eksiyse eksik. Aranızda ödeşince "Ortaklar arası ödeme" hareketiyle girin (veren → alan), fark kapanır. Paylar sayfanın altındaki Ayarlar bölümünde. Ortaklar hesabı yalnız ₺ izlenir; € karşılığı tutulmaz.') + '</h3></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ortak</th><th class="num">Pay</th><th class="num">Kendi cebinden harcama</th><th class="num">Virgo\'ya geri ödediği</th><th class="num">Toplam katkı</th><th class="num">Payına düşen</th><th class="num">Ortaklar arası verdi / aldı</th><th class="num">Fark</th><th class="num">Ödenecek</th></tr></thead><tbody>' +
       oh.adlar.map(function(ad){ var x = oh.m[ad]; return '<tr class="vg-satir" data-vd="' + escAttr('ortak|' + ad + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(ad) + '</td><td class="num">%' + fmt2(x.pay) + '</td>' + tdT(x.cep, false, false, 'ortak|' + ad + '|cepN') + tdT(x.geri, false, false, 'ortak|' + ad + '|geri') + tdT(x.katki, true, false, 'ortak|' + ad + '|katki') + tdT(x.payina) + tdT(vgFark(x.verdi, x.aldi), false, false, 'ortak|' + ad + '|ortakArasi') + tdT(x.fark, true, true, 'ortak|' + ad + '|fark') + tdT(x.bekleyen, false, false, 'ortak|' + ad + '|bekleyenCep') + '</tr>'; }).join('') +
       '<tr class="kv-alt"><td><b>Toplam</b></td><td></td>' + tdT(oh.adlar.reduce(function(o, a){ vgEkle(o, oh.m[a].cep); return o; }, vgS()), true) + tdT(oh.adlar.reduce(function(o, a){ vgEkle(o, oh.m[a].geri); return o; }, vgS()), true) + tdT(oh.top, true) + tdT(oh.top, true) + '<td></td><td></td><td></td></tr>' +
       '</tbody></table></div>' +
@@ -13373,7 +13374,7 @@ Dikkat edilmesi gereken 2 nokta:
     html += virgoMaasHtml();
     html += virgoVergiHtml();
     // r246: ay ay tablolar tek blokta sekmeli; aynı anda biri görünür (seçim bu tarayıcıda hatırlanır)
-    var sekmeler = [['kazanc', 'Aylık kazanç'], ['ayay', 'Virgo hesabı ay ay'], ['maas', 'Maaşlar'], ['harcama', 'Harcamalar'], ['alinan', 'Alınanlar'], ['ortak', 'Ortaklar'], ['vergi', 'Vergi & amortisman']].filter(function(x){ return html.indexOf('data-vsekme="' + x[0] + '"') > -1; });
+    var sekmeler = [['kazanc', 'Aylık kazanç'], ['ayay', 'Virgo hesabı ay ay'], ['maas', 'Maaşlar'], ['ortak', 'Ortaklar'], ['vergi', 'Vergi & amortisman']].filter(function(x){ return html.indexOf('data-vsekme="' + x[0] + '"') > -1; });
     var sec = virgoSekme(); if (!sekmeler.some(function(x){ return x[0] === sec; })) sec = sekmeler.length ? sekmeler[0][0] : '';
     sekmeler.forEach(function(x){ if (x[0] !== sec) html = html.replace('data-vsekme="' + x[0] + '"', 'data-vsekme="' + x[0] + '" style="display:none"'); });
     return '<div class="sekme-bar vg-sekmeler">' + sekmeler.map(function(x){ return '<button type="button" data-vsekmesec="' + x[0] + '"' + (x[0] === sec ? ' class="aktif"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>' + html;
