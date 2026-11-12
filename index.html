@@ -1698,7 +1698,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r342</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r343</div>
     </div>
   </nav>
   <main>
@@ -19836,26 +19836,33 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function muhKdvBelgeleri(ay){
     var satis = {}, istisna = { matrah: 0, adet: 0 }, alis = {}, tevkifatli = {}, kdv2 = { matrah: 0, kdv: 0, tevkifat: 0, adet: 0 }, ihracKayitli = { matrah: 0, kdv: 0, adet: 0 }, istisnaKod = {};
-    function ekle(m, o, mt, kdv){ var x = m[o] = m[o] || { matrah: 0, kdv: 0, adet: 0 }; x.matrah += mt; x.kdv += kdv; x.adet++; }
+    // r343: belge dökümü — özet tablolarına giren her belge (oran başına bir satır); yon 'S' hesaplanan, 'I' indirilecek
+    var liste = [], _b = null;
+    function ekle(m, o, mt, kdv){ var x = m[o] = m[o] || { matrah: 0, kdv: 0, adet: 0 }; x.matrah += mt; x.kdv += kdv; x.adet++;
+      if (_b) liste.push(Object.assign({}, _b, { yon: m === satis ? 'S' : 'I', oran: Number(o) || 0, matrah: muhR2(mt), kdv: muhR2(kdv) })); }
     // ₺ / $ belgede tutarlar belgenin kendi para biriminde, kur belge kuru (₺ karşılığı kuruşu kuruşuna)
     function bel(f){ return belgePB(f) !== 'EUR' && f.belgeTutar ? Object.assign({}, f, f.belgeTutar) : f; }
     function belKur(f){ return belgePB(f) !== 'EUR' && f.belgeTutar ? belgeKur(f) : muhKur(f.tarih, f.kur); }
     state.faturalar.filter(function(f0){ return f0.durum === 'Kesildi' && ayAnahtari(f0.tarih) === ay; }).forEach(function(f0){
       var f = bel(f0), kur = belKur(f0);
+      _b = { tarih: f0.tarih, tur: 'Satış faturası' + (f0.faturaTipi && f0.faturaTipi !== 'Satış' ? ' · ' + f0.faturaTipi : ''), no: f0.resmiFaturaNo || f0.faturaNo || '', cari: cariAdi(f0.musteriId), git: 'faturalar/' + f0.id };
       var dg = f.kdvDagilim && f.kdvDagilim.length ? f.kdvDagilim : [{ oran: Number(f.kdvOrani) || 0, matrah: Number(f.araToplam) || 0, kdv: Number(f.kdvTutar) || 0 }];
       if (f.faturaTipi === 'İhraç kayıtlı'){ var y = ihracKayitli; y.matrah += (Number(f.araToplam) || 0) * kur; y.kdv += (Number(f.kdvTutar) || 0) * kur; y.adet++; }
-      if (Number(f.tevkifatTutar) > 0){ var x = tevkifatli[f.tevkifatOrani] = tevkifatli[f.tevkifatOrani] || { matrah: 0, kdv: 0, tevkifat: 0, adet: 0 }; x.matrah += (Number(f.araToplam) || 0) * kur; x.kdv += (Number(f.kdvTutar) || 0) * kur; x.tevkifat += Number(f.tevkifatTutar) * kur; x.adet++; }
+      if (Number(f.tevkifatTutar) > 0){ var x = tevkifatli[f.tevkifatOrani] = tevkifatli[f.tevkifatOrani] || { matrah: 0, kdv: 0, tevkifat: 0, adet: 0 }; x.matrah += (Number(f.araToplam) || 0) * kur; x.kdv += (Number(f.kdvTutar) || 0) * kur; x.tevkifat += Number(f.tevkifatTutar) * kur; x.adet++;
+        liste.push(Object.assign({}, _b, { yon: 'S', oran: Number(f.kdvOrani) || 0, matrah: muhR2((Number(f.araToplam) || 0) * kur), kdv: muhR2((Number(f.kdvTutar) || 0) * kur), not: 'tevkifat ' + (f.tevkifatOrani || '') + ': hesaplanana ₺' + muhTutar(muhR2(((Number(f.kdvTutar) || 0) - Number(f.tevkifatTutar)) * kur)) + ' girer' })); }
       else dg.forEach(function(d){ if (Number(d.oran) > 0) ekle(satis, Number(d.oran), d.matrah * kur, d.kdv * kur); else { istisna.matrah += d.matrah * kur; istisna.adet++; var ik = f.istisnaKodu || (f.serbest ? '?' : '301'); istisnaKod[ik] = (istisnaKod[ik] || 0) + d.matrah * kur; } });
     });
     (state.alisFaturalari || []).filter(function(f0){ return ayAnahtari(f0.tarih) === ay; }).forEach(function(f0){ var f = bel(f0), kur = belKur(f0), iade = (Number(f.genelToplam) || 0) < 0;
+      _b = { tarih: f0.tarih, tur: 'Alış faturası' + (f0.faturaTipi ? ' · ' + f0.faturaTipi : '') + (iade ? ' (iade)' : ''), no: f0.faturaNo || f0.no || '', cari: cariAdi(f0.tedarikciId), git: 'alisfatura/' + f0.id };
       if (f.faturaTipi !== 'İhraç kayıtlı alış') (f.kdvDagilim && f.kdvDagilim.length ? f.kdvDagilim : [{ oran: Number(f.kdvOrani) || 0, matrah: Math.abs(Number(f.araToplam) || 0), kdv: Math.abs(Number(f.kdvTutar) || 0) }]).forEach(function(d){ ekle(iade ? satis : alis, Number(d.oran) || 0, Math.abs(d.matrah) * kur, Math.abs(d.kdv) * kur); });
       var gTL = Number(f.gumrukKdvTL) > 0 ? Number(f.gumrukKdvTL) : (Number(f.gumrukKdv) > 0 ? Number(f.gumrukKdv) * muhKur(f.tarih, f.kur) : 0);
-      if (gTL > 0) ekle(alis, Number(f.gumrukKdvOrani) || 20, gTL / ((Number(f.gumrukKdvOrani) || 20) / 100), gTL);
+      if (gTL > 0){ _b = Object.assign({}, _b, { tur: 'Gümrük KDV\'si', no: f0.gumrukBeyanNo || _b.no }); ekle(alis, Number(f.gumrukKdvOrani) || 20, gTL / ((Number(f.gumrukKdvOrani) || 20) / 100), gTL); }
       if (Number(f.tevkifatTutar) > 0){ kdv2.matrah += (Number(f.araToplam) || 0) * kur; kdv2.kdv += (Number(f.kdvTutar) || 0) * kur; kdv2.tevkifat += Number(f.tevkifatTutar) * kur; kdv2.adet++; } });
-    (state.giderler || []).filter(function(g){ return ayAnahtari(g.tarih) === ay; }).forEach(function(g){ ekle(alis, Number(g.kdvOrani) || 0, belgeTL(g, 'tutar', 'belgeTutar'), belgeTL(g, 'kdvTutar', 'belgeKdv')); });
-    kfKayitlar().filter(function(r){ return r.durum !== 'İptal' && ayAnahtari(r.tarih) === ay; }).forEach(function(r){ ekle(r.lehine === 'Biz' ? satis : alis, Number(r.oran) || 0, Number(r.matrah) || 0, Number(r.kdv) || 0); });
-    (state.satisIadeleri || []).filter(function(i){ return Number(i.genelToplam) > 0 && ayAnahtari(i.tarih) === ay; }).forEach(function(i){ var kur = muhKur(i.tarih, i.kur); ekle(alis, Number(i.kdvOrani) || 0, (Number(i.araToplam) || 0) * kur, (Number(i.kdvTutar) || 0) * kur); });
-    return { satis: satis, istisna: istisna, alis: alis, tevkifatli: tevkifatli, kdv2: kdv2, ihracKayitli: ihracKayitli, istisnaKod: istisnaKod };
+    (state.giderler || []).filter(function(g){ return ayAnahtari(g.tarih) === ay; }).forEach(function(g){ _b = { tarih: g.tarih, tur: 'Gider · ' + (g.tur || ''), no: g.belgeNo || '', cari: g.cariId ? cariAdi(g.cariId) : (g.aciklama || ''), git: 'giderler/' + g.id }; ekle(alis, Number(g.kdvOrani) || 0, belgeTL(g, 'tutar', 'belgeTutar'), belgeTL(g, 'kdvTutar', 'belgeKdv')); });
+    kfKayitlar().filter(function(r){ return r.durum !== 'İptal' && ayAnahtari(r.tarih) === ay; }).forEach(function(r){ _b = { tarih: r.tarih, tur: 'Kur farkı faturası', no: r.no || '', cari: cariAdi(r.cariId), git: 'kurfarki' }; ekle(r.lehine === 'Biz' ? satis : alis, Number(r.oran) || 0, Number(r.matrah) || 0, Number(r.kdv) || 0); });
+    (state.satisIadeleri || []).filter(function(i){ return Number(i.genelToplam) > 0 && ayAnahtari(i.tarih) === ay; }).forEach(function(i){ var kur = muhKur(i.tarih, i.kur); _b = { tarih: i.tarih, tur: 'Satış iadesi', no: i.no || i.belgeNo || '', cari: cariAdi(i.cariId || i.musteriId), git: 'satisiade/' + i.id }; ekle(alis, Number(i.kdvOrani) || 0, (Number(i.araToplam) || 0) * kur, (Number(i.kdvTutar) || 0) * kur); });
+    liste.sort(function(a, b){ return String(a.tarih || '').localeCompare(String(b.tarih || '')) || String(a.tur).localeCompare(String(b.tur), 'tr'); });
+    return { satis: satis, istisna: istisna, alis: alis, tevkifatli: tevkifatli, kdv2: kdv2, ihracKayitli: ihracKayitli, istisnaKod: istisnaKod, liste: liste };
   }
   function muhKdvMahsupFisi(ay){
     var k = muhKdvDonem(ay), satir = [], aciklama = muhAyAdi(ay) + ' KDV mahsubu';
@@ -19914,6 +19921,19 @@ Dikkat edilmesi gereken 2 nokta:
       '<tr><td>Hesaplanan KDV</td><td class="num">' + muhTutar(k.H) + '</td></tr><tr><td>(−) Bu döneme ait indirilecek KDV</td><td class="num">' + muhTutar(k.I) + '</td></tr><tr><td>(−) Önceki dönemden devreden KDV</td><td class="num">' + muhTutar(k.devreden) + '</td></tr>' +
       '<tr class="muh-toplam"><td>' + (k.odenecek ? 'ÖDENECEK KDV' : 'SONRAKİ DÖNEME DEVREDEN KDV') + '</td><td class="num">' + muhTutar(k.odenecek || k.sonrakiDevreden) + '</td></tr></tbody></table>' +
       '</div></div>' +
+      (function(){
+        var dok = function(yon, baslik){
+          var l = d.liste.filter(function(x){ return x.yon === yon; });
+          if (!l.length) return '<h4 class="muh-h4">' + baslik + '</h4><div class="muted">Belge yok.</div>';
+          var tM = toplamla(l, function(x){ return x.matrah; }), tK = toplamla(l, function(x){ return x.kdv; });
+          return '<h4 class="muh-h4">' + baslik + ' <span class="muted" style="font-weight:400">· ' + l.length + ' satır</span></h4><div class="tablewrap"><table class="muh-tablo kdv-dokum"><thead><tr><th>Tarih</th><th>Belge</th><th>No</th><th>Cari / açıklama</th><th class="num">KDV %</th><th class="num">Matrah (₺)</th><th class="num">KDV (₺)</th></tr></thead><tbody>' +
+            l.map(function(x){ return '<tr><td>' + esc(kvTarihTR(x.tarih)) + '</td><td><a href="#' + escAttr(x.git) + '">' + esc(x.tur) + '</a>' + (x.not ? '<div class="muted" style="font-size:11px">' + esc(x.not) + '</div>' : '') + '</td><td>' + esc(x.no) + '</td><td>' + esc(x.cari && x.cari !== '-' ? x.cari : '') + '</td><td class="num">%' + fmt2(x.oran) + '</td><td class="num">' + muhTutar(x.matrah) + '</td><td class="num">' + muhTutar(x.kdv) + '</td></tr>'; }).join('') +
+            '<tr class="muh-toplam"><td colspan="5">Toplam</td><td class="num">' + muhTutar(tM) + '</td><td class="num">' + muhTutar(tK) + '</td></tr></tbody></table></div>';
+        };
+        return '<details class="block" open><summary class="block-head" style="cursor:pointer"><h3>Belge dökümü · ' + muhAyAdi(ay) + ' ' + infoIco('Yukarıdaki oran tablolarına giren her belge, oran başına bir satır: satış faturaları; alış faturaları, giderler (elektrik, kira, sarf…), satış iadeleri, kur farkı faturaları. Belge adına tıklayınca kaydı açılır. Hesaplanan / indirilecek KDV kartları muhasebe fişlerinden (391 / 191) gelir; elle fiş girdiyseniz bu dökümden farklı olabilir.') + '</h3>' +
+          '<div class="bh-actions"><button class="btn secondary small" type="button" data-muhkdvdokum="1">⇩ Excel</button></div></summary><div class="block-body">' +
+          dok('S', 'Hesaplanan KDV\'ye girenler (satışlar)') + dok('I', 'İndirilecek KDV\'ye girenler (alış, gider, iade, kur farkı)') + '</div></details>';
+      })() +
       (d.kdv2.adet ? '<div class="block"><div class="block-head"><h3>KDV-2 (sorumlu sıfatıyla) · ' + muhAyAdi(ay) + ' ' + infoIco('Tevkifatlı alış faturalarında tedarikçiye ödenmeyen KDV kısmını vergi dairesine siz ödersiniz (KDV-2 beyannamesi). Alış fişinde 360 hesabına alacak yazılır; ödeyince Vergi & SGK Ödemeleri sayfasında KDV-2 satırındaki "Öde" düğmesiyle girin (360 borç / banka alacak fişi ve banka hareketi kendiliğinden oluşur; ayrıca elle fiş girmeyin). Ödediğiniz KDV-2, KDV-1\'de indirilecek KDV olarak zaten 191\'dedir.') + '</h3><div class="bh-actions"><span class="muted">Son gün ' + kvTarihTR(sonGun) + '</span></div></div><div class="block-body"><table class="muh-tablo" style="max-width:560px"><tbody>' +
         '<tr><td>Tevkifatlı alış faturası</td><td class="num">' + d.kdv2.adet + '</td></tr><tr><td>Matrah (₺)</td><td class="num">' + muhTutar(d.kdv2.matrah) + '</td></tr><tr><td>Toplam KDV (₺)</td><td class="num">' + muhTutar(d.kdv2.kdv) + '</td></tr>' +
         '<tr class="muh-toplam"><td>ÖDENECEK KDV-2</td><td class="num">' + muhTutar(d.kdv2.tevkifat) + '</td></tr></tbody></table></div></div>' : '') +
@@ -19925,6 +19945,11 @@ Dikkat edilmesi gereken 2 nokta:
       host.addEventListener('change', function(e){ if (e.target.closest('[data-muhkdvay]')){ _muhKdvAy = e.target.value || _muhKdvAy; muhTumYenile(); } });
       host.addEventListener('click', function(e){
         if (e.target.closest('[data-muhkdvfis]')) muhKdvMahsupFisi(_muhKdvAy);
+        if (e.target.closest('[data-muhkdvdokum]')){ e.preventDefault(); e.stopPropagation();
+          var dl = muhKdvBelgeleri(_muhKdvAy).liste, bas = [['Tarih', 'Belge', 'No', 'Cari / açıklama', 'KDV %', 'Matrah (TL)', 'KDV (TL)', 'Not']];
+          var sat = function(yon){ return bas.concat(dl.filter(function(x){ return x.yon === yon; }).map(function(x){ return [kvTarihTR(x.tarih), x.tur, x.no, x.cari && x.cari !== '-' ? x.cari : '', x.oran, x.matrah, x.kdv, x.not || '']; })); };
+          muhExcel('kdv-belge-dokumu-' + _muhKdvAy, [{ ad: 'Hesaplanan (satış)', satirlar: sat('S'), genislik: [11, 26, 18, 34, 7, 14, 13, 30] }, { ad: 'İndirilecek', satirlar: sat('I'), genislik: [11, 26, 18, 34, 7, 14, 13, 30] }]);
+          return; }
         if (e.target.closest('[data-muhbabsexcel]')){
           var b2 = muhBabs(_muhKdvAy), satir = function(l, ad){ return [['Yön', 'Dönem', 'Unvan', 'VKN/TCKN', 'Vergi dairesi', 'Belge sayısı', 'Tutar (TL)']].concat(l.map(function(x){ return [ad, _muhKdvAy, x.cari.ad || '', x.cari.vergiNo || '', x.cari.vergiDairesi || '', x.adet, x.tutar]; })); };
           muhExcel('cari-mutabakat-' + _muhKdvAy, [{ ad: 'Alışlar', satirlar: satir(b2.ba, 'Alış'), genislik: [6, 9, 36, 14, 18, 10, 14] }, { ad: 'Satışlar', satirlar: satir(b2.bs, 'Satış'), genislik: [6, 9, 36, 14, 18, 10, 14] }]);
