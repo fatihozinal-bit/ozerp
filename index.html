@@ -1698,7 +1698,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r347</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r348</div>
     </div>
   </nav>
   <main>
@@ -4514,6 +4514,9 @@ Dikkat edilmesi gereken 2 nokta:
       l.push({ tarih: g.tarih, tur: 'Gider · ' + (g.tur || ''), aciklama: [g.aciklama, g.cariId ? cariAdi(g.cariId) : ''].filter(Boolean).join(' · '), tl: belgeTL(g, 'tutar', 'belgeTutar'), git: 'giderler/' + g.id }); });
     (state.alisFaturalari || []).forEach(function(f){ if (!ozetDonemde(f.tarih) || f.durum === 'İptal' || virgoErpEskiMi(f) || /Sabit kıymet/i.test(f.faturaTipi || '') || OZET_YATIRIM_GIDER.indexOf(f.giderTuru) > -1) return;
       l.push({ tarih: f.tarih, tur: 'Alış faturası' + (f.faturaTipi ? ' · ' + f.faturaTipi : ''), aciklama: [cariAdi(f.tedarikciId), f.faturaNo].filter(function(x){ return x && x !== '-'; }).join(' · '), tl: belgeTL(f, 'araToplam', 'araToplam'), git: 'alisfatura/' + f.id }); });
+    // r348: maaşlar Bordro Özeti'nden (ücret gideri = brüt + işveren SGK / işsizlik payı; ayın son günü)
+    bordrolar().forEach(function(b){ if (!/^\d{4}-\d{2}$/.test(b.ay || '')) return; var t = muhAySonu(b.ay); if (!ozetDonemde(t)) return;
+      l.push({ tarih: t, tur: 'Bordro · ' + muhAyAdi(b.ay), aciklama: (b.kisi ? b.kisi + ' kişi · ' : '') + 'brüt + işveren payı', tl: bordroHesap(b).maliyet, git: 'bordro/' + b.id }); });
     return l;
   }
   function ozetGiderTl(){ return toplamla(ozetGiderKayitlari(), function(x){ return x.tl; }); }
@@ -4555,7 +4558,7 @@ Dikkat edilmesi gereken 2 nokta:
       {label:'Üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim', sub: ozetUretimKirilim().map(function(x){ return '<div class="oz-kirilim"><span title="' + escAttr(x.ad) + '">' + esc(x.ad) + '</span><b>' + fmt(x.adet) + '</b></div>'; }).join('')},
       // r273: gerçekleşen (bugüne kadar) + ay sonu tahmini; r345: hepsi ERP'den (Üretim Kayıtları × stok kartı fiyatı, Giderler + Alış Faturaları)
       {label:'Üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: donemYazi + (kur ? ' · ' + eurYazi(toplamCiro) : '')},
-      {label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: 'Giderler + alış faturaları' + (kur ? ' · ' + eurYazi(gider) : '')},
+      {label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: 'Giderler + alış faturaları + bordro' + (kur ? ' · ' + eurYazi(gider) : '')},
       {label:'Kazanç', value: tlY(kazanc), cls:(kazanc < -0.004 ? 'bad' : 'good isaretli')+' yetki-maliyet', detay:'kazanc', sub: donemYazi + (kur ? ' · ' + eurYazi(kazanc) : '')}
     ].concat(ozetBuAy() ? [ // ay sonu tahmini yalnız içinde bulunulan ayda
       {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)}] : [], [
@@ -12897,6 +12900,11 @@ Dikkat edilmesi gereken 2 nokta:
           tl: muhR2(haric), eur: kur ? muhR2(haric / kur) : 0, kdvTl: muhR2(kdv), kdvEur: kur ? muhR2(kdv / kur) : 0 });
       });
     });
+    // r348: bordro da Virgo'nun ödediği gider: ücret gideri (brüt + işveren payı), ayın son günü; net maaş ödendiyse Ödendi
+    bordrolar().forEach(function(b){ if (!/^\d{4}-\d{2}$/.test(b.ay || '')) return; var t = muhAySonu(b.ay), h = bordroHesap(b), kur = muhKur(t) || 0; if (!(h.maliyet > 0.004)) return;
+      sanal.push({ id: 'erp:bordro:' + b.id, tur: 'virgo', _erp: { col: 'tanimKayitlari', id: b.id, tab: 'bordro', etiket: 'bordro' }, olusturma: b.olusturma || '', tarih: t, hareket: 'Harcama', odeyen: VIRGO_FINANSOR, kaynak: VIRGO_KAYNAK[0],
+        kategori: 'Maaş & SGK', borcPb: VIRGO_BORC_PB[0], kazancDus: 'Hayır', omurYil: '', odemeSekli: 'Banka / EFT', durum: b.maasOdeme && Number(b.maasOdeme.tutar) > 0 ? 'Ödendi' : 'Ödenecek', saticiId: '', belgeNo: b.belgeNo || '', ettn: '',
+        aciklama: muhAyAdi(b.ay) + ' bordrosu' + (b.kisi ? ' (' + b.kisi + ' kişi)' : ''), paraBirimi: '₺', tutarTuru: 'KDV hariç', tutar: h.maliyet, kdvOrani: '0', fatura: VIRGO_FATURA[1], kur: kur, tl: h.maliyet, eur: kur ? muhR2(h.maliyet / kur) : 0, kdvTl: 0, kdvEur: 0 }); });
     var kayitlar = ham.filter(function(v){ return !virgoElleErpMi(v); }).concat(sanal);
     _vgSaglama = { refs: refs, kayitlar: kayitlar, sanal: sanal, eslesen: eslesen, erpYok: erpYok };
     return _vgSaglama;
@@ -18034,7 +18042,7 @@ Dikkat edilmesi gereken 2 nokta:
         git: 'kayitlar', gitAd: 'Üretim Kayıtları' };
     } else if (k === 'gider'){
       var gl = ozetGiderKayitlari().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); });
-      d = { t: ozetDonemAd() + ' · gider (girilen)', f: '<b>Giderler</b> ve <b>Alış Faturaları</b>\'na bu dönemde girilen belgeler, KDV hariç ₺; yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz. Maaş, kira gibi giderler henüz girilmediyse burada görünmez.',
+      d = { t: ozetDonemAd() + ' · gider (girilen)', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz. Maaş, kira gibi giderler henüz girilmediyse burada görünmez.',
         h: ozetDetayTablo(['Tarih','Belge','Açıklama','Tutar (KDV hariç)'], gl.map(function(v){ return [esc(kvTarihTR(v.tarih)), '<a href="#' + escAttr(v.git) + '">' + esc(v.tur) + '</a>', esc(v.aciklama || ''), tlEur(v.tl)]; }), ['Toplam', '', '', tlEur(ozetGiderTl())]),
         git: 'giderler', gitAd: 'Giderler' };
     } else if (k === 'kazanc'){
