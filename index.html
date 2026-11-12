@@ -1630,7 +1630,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r333</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r334</div>
   </nav>
   <main>
     <div class="topbar">
@@ -21818,6 +21818,18 @@ Dikkat edilmesi gereken 2 nokta:
   // Belge tutarının para birimi: belgeTutar yoksa € alanı kullanılır, para birimi de € sayılır
   function tgBelgePb(o){ return (typeof o.belgeTutar === 'number' || (o.belgeTutar && typeof o.belgeTutar === 'object')) ? belgePB(o) : (o.genelToplam != null || o.tutar != null ? 'EUR' : belgePB(o)); }
   function tgKalemSayisi(o){ return (o.kalemler || []).length; }
+  // Faturanın belge para birimindeki tutarları ($ / ₺ faturada belgeTutar, € faturada kendisi): KDV hariç, KDV, KDV dahil (tevkifattan önce)
+  function tgFaturaBelge(f){ var b = belgePB(f) !== 'EUR' && f.belgeTutar ? f.belgeTutar : f, h = Number(b.araToplam) || 0, k = Number(b.kdvTutar) || 0;
+    return { haric: h, kdv: k, dahil: Math.round((h + k) * 100) / 100, odenecek: Number(b.genelToplam) || 0 }; }
+  function tgFaturaTutarKolonlari(){ return [
+    tgK('haric', 'KDV hariç', function(f){ return tgFaturaBelge(f).haric; }, 'para', { pb: belgePB, toplam: true }),
+    tgK('kdvb', 'KDV', function(f){ return tgFaturaBelge(f).kdv; }, 'para', { pb: belgePB, toplam: true }),
+    tgK('dahil', 'KDV dahil', function(f){ return tgFaturaBelge(f).dahil; }, 'para', { pb: belgePB, toplam: true }),
+    tgK('eurharic', 'KDV hariç (€)', function(f){ return Number(f.araToplam) || 0; }, 'eur', { toplam: true }),
+    tgK('btutar', 'Ödenecek (tevkifat sonrası)', function(f){ return faturaBelgeGenel(f); }, 'para', { pb: belgePB, toplam: true, gizli: true }),
+    tgK('eur', 'KDV dahil (€)', function(f){ return Math.round(((Number(f.araToplam) || 0) + (Number(f.kdvTutar) || 0)) * 100) / 100; }, 'eur', { toplam: true, gizli: true }),
+    tgK('kdv', 'KDV (€)', function(f){ return Number(f.kdvTutar) || 0; }, 'eur', { toplam: true, gizli: true })
+  ]; }
 
   var TABLO_TANIM = {
     faturaListesi: { kaynak: 'faturalar', mod: 'tablo', kolonlar: [
@@ -21827,14 +21839,12 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('tip', 'Çeşit', function(f){ return f.faturaTipi || 'Satış'; }, 'metin', { gizli: true }),
       tgK('durum', 'Durum', function(f){ return f.durum; }, 'durum'),
       tgK('ebelge', 'e-Belge', function(f){ return f.resmiFaturaNo || (f.durum === 'Kesildi' ? (f.eBelgeDurumu || 'Gönderilmedi') : ''); }),
-      tgK('btutar', 'Belge tutarı', function(f){ return faturaBelgeGenel(f); }, 'para', { pb: belgePB, toplam: true }),
-      tgK('eur', 'Tutar (€)', function(f){ return Number(f.genelToplam) || 0; }, 'eur', { toplam: true }),
-      tgK('kdv', 'KDV (€)', function(f){ return Number(f.kdvTutar) || 0; }, 'eur', { toplam: true, gizli: true }),
+    ].concat(tgFaturaTutarKolonlari(), [
       tgK('vade', 'Vade', function(f){ return f.vadeTarihi; }, 'tarih'),
       tgK('acik', 'Açık (€)', function(f){ return f.durum === 'Kesildi' ? (faturaKalanlari()[f.id] || 0) : 0; }, 'eur', { toplam: true }),
       tgK('gecikme', 'Gecikme (gün)', function(f){ var k = f.durum === 'Kesildi' ? (faturaKalanlari()[f.id] || 0) : 0; return k > 0.01 && f.vadeTarihi && f.vadeTarihi < todayISO() ? gunFarki(f.vadeTarihi, todayISO()) : ''; }, 'sayi'),
       tgK('not', 'Not', function(f){ return f.not_; }, 'metin', { gizli: true })
-    ] },
+    ]) },
     alfListe: { kaynak: 'alisFaturalari', mod: 'tablo', kolonlar: [
       tgK('no', 'No', function(f){ return f.no; }),
       tgK('fno', 'Fatura no', function(f){ return f.faturaNo; }),
@@ -21842,13 +21852,11 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('cari', 'Tedarikçi', function(f){ return tgCari(f.tedarikciId); }),
       tgK('tip', 'Çeşit', function(f){ return f.faturaTipi; }),
       tgK('gider', 'Gider türü', function(f){ return f.giderTuru; }, 'metin', { gizli: true }),
-      tgK('btutar', 'Belge tutarı', function(f){ return faturaBelgeGenel(f); }, 'para', { pb: belgePB, toplam: true }),
-      tgK('eur', 'Tutar (€)', function(f){ return Number(f.genelToplam) || 0; }, 'eur', { toplam: true }),
-      tgK('kdv', 'KDV (€)', function(f){ return Number(f.kdvTutar) || 0; }, 'eur', { toplam: true, gizli: true }),
+    ].concat(tgFaturaTutarKolonlari(), [
       tgK('vade', 'Vade', function(f){ return f.vadeTarihi; }, 'tarih'),
       tgK('acik', 'Açık (€)', function(f){ return alisKalan(f); }, 'eur', { toplam: true }),
       tgK('ettn', 'ETTN', function(f){ return f.ettn; }, 'metin', { gizli: true })
-    ] },
+    ]) },
     teklifListesi: { kaynak: 'teklifler', kolonlar: [
       tgK('no', 'Teklif no', function(t){ return t.teklifNo; }),
       tgK('rev', 'Rev.', function(t){ return Number(t.revizyon) || 0; }, 'sayi', { gizli: true }),
