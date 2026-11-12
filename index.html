@@ -1698,7 +1698,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r343</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r344</div>
     </div>
   </nav>
   <main>
@@ -12777,7 +12777,96 @@ Dikkat edilmesi gereken 2 nokta:
   var VIRGO_PB_KEY = 'ozerp_virgo_pb_v1';
   // r246: varsayılan yalnız ₺ (₺ ana para birimi); "₺ + €" sayfanın üstünden seçilir
   function virgoPbGorunum(){ try { var v = localStorage.getItem(VIRGO_PB_KEY); return v === '€' || v === 'ikisi' ? v : '₺'; } catch(e){ return '₺'; } }
-  function virgoKayitlari(){ return (state.tanimKayitlari||[]).filter(function(t){ return t.tur === 'virgo'; }).map(virgoYeniAd); }
+  // Hesap Defteri'ne elle girilen kayıtların hepsi (aktarım ve sağlama bunlarla çalışır)
+  function virgoKayitlariHam(){ return (state.tanimKayitlari||[]).filter(function(t){ return t.tur === 'virgo'; }).map(virgoYeniAd); }
+  // r344: Virgo'nun ödediği faturalar (Virgo adına faturalı harcama) ERP'den gelir: Alış Faturaları ve Giderler sanal Hesap Defteri kaydına dönüşür.
+  // Elle girilmiş Virgo adına harcamalar hesaba girmez (sağlama: ERP'deki karşılığıyla eşlenir, karşılığı yoksa uyarı). Kalan elle kayıtlar:
+  // ortakların cebinden harcamalar, fişsiz / bizim adımıza, Virgo'dan alınan, geri ödeme, ortaklar arası, sevk, mutabakat, bilgi.
+  function virgoKayitlari(){ return virgoSaglama().kayitlar; }
+  function virgoElleErpMi(v){ var n = virgoNorm(v); return n.tip === 'harcama' && n.fatura === 'virgo'; }
+  var VIRGO_KAT_GIDER = { 'Yatırım (makine)': 'Makine', 'Taşıma / montaj': 'Makine', 'Tesisat / tadilat': 'Kuruluş & tesisat', 'Demirbaş': 'Demirbaş & ekipman', 'Maaş': 'Maaş & SGK', 'SGK / vergi': 'Maaş & SGK',
+    'Kira': 'Kira', 'Elektrik': 'Elektrik & enerji', 'Su / doğalgaz': 'Elektrik & enerji', 'Doğalgaz': 'Elektrik & enerji', 'Hammadde / malzeme': 'Malzeme & takım', 'Takım / sarf': 'Malzeme & takım',
+    'Kesme sıvısı / yağ': 'Sarf malzeme', 'Atölye sarfı': 'Sarf malzeme', 'İş kıyafeti / KKD': 'Sarf malzeme', 'Ofis / temizlik': 'Sarf malzeme', 'Bakım / onarım': 'Bakım & onarım', 'Kalibrasyon': 'Bakım & onarım',
+    'Nakliye': 'Nakliye & taşıma', 'Kargo': 'Nakliye & taşıma', 'Yakıt': 'Nakliye & taşıma', 'Araç gideri': 'Nakliye & taşıma', 'Yemek': 'Yemek & servis', 'Personel servisi': 'Yemek & servis',
+    'Muhasebe': 'Resmî & finans', 'Sigorta': 'Resmî & finans', 'Vergi / harç': 'Resmî & finans', 'Banka masrafı / komisyon': 'Resmî & finans', 'Danışmanlık / hukuk': 'Resmî & finans', 'Oda aidatı': 'Resmî & finans' };
+  function virgoErpKategori(col, r){
+    if (col === 'giderler') return VIRGO_KAT_GIDER[r.tur] || 'Diğer';
+    if (r.giderTuru && VIRGO_KAT_GIDER[r.giderTuru]) return VIRGO_KAT_GIDER[r.giderTuru];
+    var t = String(r.faturaTipi || ''); return /Sabit kıymet/i.test(t) ? 'Makine' : /Mal alımı|Hammadde/i.test(t) ? 'Malzeme & takım' : /Hizmet|fason/i.test(t) ? 'Bakım & onarım' : 'Diğer';
+  }
+  var _vgSaglama = null;
+  function virgoSaglama(){
+    var refs = [state.tanimKayitlari, state.alisFaturalari, state.giderler, state.musteriler, state.config];
+    if (_vgSaglama && _vgSaglama.refs.every(function(r, i){ return r === refs[i]; })) return _vgSaglama;
+    var ham = virgoKayitlariHam(), byId = {}; ham.forEach(function(v){ byId[v.id] = v; });
+    var kul = {}, cache = {}, eslesen = [], erpYok = [], bag = {}; // bag: 'col/id' → elle kayıt
+    // önce aktarımın oluşturduğu kayıtlar (virgoId) kesin bağ, sonra elle girilenlerle eşleştirme (aynı ETTN / belge no, ya da ±5 gün aynı tutar)
+    ham.slice().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); }).forEach(function(v){
+      if (!virgoElleErpMi(v)) return;
+      var n = virgoNorm(v), dogrudan = [['giderler', 'gider'], ['alisFaturalari', 'alış faturası']].map(function(c){ var r = (state[c[0]] || []).find(function(x){ return x.virgoId === v.id && !kul[c[0] + '/' + x.id]; }); return r ? { col: c[0], id: r.id, etiket: c[1] + ' · ' + kvTarihTR(r.tarih) + (r.belgeNo || r.faturaNo ? ' · ' + (r.belgeNo || r.faturaNo) : ''), kesin: true } : null; }).filter(Boolean)[0];
+      if (dogrudan) kul[dogrudan.col + '/' + dogrudan.id] = 1;
+      var m = dogrudan || virgoErpManuel(v, n, kul, cache);
+      if (m && m.col !== 'alisFaturalari' && m.col !== 'giderler') m = null;
+      if (m){ bag[m.col + '/' + m.id] = v; eslesen.push({ v: v, n: n, m: m }); } else erpYok.push({ v: v, n: n });
+    });
+    // ERP belgeleri → sanal kayıt (eski r289 "[Virgo]" kayıtları ve iptaller hariç); elle eşi ya da belgede saklı Hesap Defteri bilgisi (virgoBilgi) varsa kategori, kaynak, borç türü ondan
+    var sanal = [];
+    [['alisFaturalari', 'alış faturası', 'alisfatura'], ['giderler', 'gider', 'giderler']].forEach(function(c){
+      (state[c[0]] || []).forEach(function(r){
+        if (virgoErpEskiMi(r) || r.durum === 'İptal' || !/^\d{4}-\d{2}-\d{2}/.test(r.tarih || '')) return;
+        var haric = c[0] === 'giderler' ? belgeTL(r, 'tutar', 'belgeTutar') : belgeTL(r, 'araToplam', 'araToplam'), kdv = c[0] === 'giderler' ? belgeTL(r, 'kdvTutar', 'belgeKdv') : belgeTL(r, 'kdvTutar', 'kdvTutar');
+        if (!(haric > 0.004)) return; // iade / sıfır
+        var e = bag[c[0] + '/' + r.id] || (r.virgoId && byId[r.virgoId]) || null, vb = r.virgoBilgi || {}, kay = Object.assign({}, e ? { kategori: e.kategori, odeyen: e.odeyen, kaynak: e.kaynak, borcPb: e.borcPb, kazancDus: e.kazancDus, omurYil: e.omurYil, odemeSekli: e.odemeSekli, durum: e.durum } : {}, vb);
+        var odendi = c[0] === 'giderler' ? r.odemeDurumu === 'Ödendi' : alisKalan(r) <= 0.01, kur = muhKur(r.tarih, r.kur) || 0, oran = Number(r.kdvOrani) || (haric ? Math.round(kdv / haric * 100) : 0);
+        sanal.push({ id: 'erp:' + c[0] + ':' + r.id, tur: 'virgo', _erp: { col: c[0], id: r.id, tab: c[2], etiket: c[1] }, olusturma: r.olusturma || '', tarih: String(r.tarih).slice(0, 10),
+          hareket: 'Harcama', odeyen: kay.odeyen || VIRGO_FINANSOR, kaynak: kay.kaynak || VIRGO_KAYNAK[0], kategori: kay.kategori || virgoErpKategori(c[0], r), borcPb: kay.borcPb || VIRGO_BORC_PB[0],
+          kazancDus: kay.kazancDus || 'Hayır', omurYil: kay.omurYil || '', odemeSekli: kay.odemeSekli || 'Banka / EFT', durum: kay.durum || (odendi ? 'Ödendi' : 'Ödenecek'),
+          saticiId: c[0] === 'giderler' ? (r.cariId || '') : (r.tedarikciId || ''), belgeNo: c[0] === 'giderler' ? (r.belgeNo || '') : (r.faturaNo || ''), ettn: r.ettn || '',
+          aciklama: (c[0] === 'giderler' ? (r.tur ? r.tur + (r.aciklama ? ' · ' + r.aciklama : '') : r.aciklama) : (r.aciklama || r.faturaTipi || '')) || (e && e.aciklama) || '',
+          paraBirimi: '₺', tutarTuru: 'KDV hariç', tutar: muhR2(haric), kdvOrani: String(oran), fatura: VIRGO_FATURA[1], kur: kur,
+          tl: muhR2(haric), eur: kur ? muhR2(haric / kur) : 0, kdvTl: muhR2(kdv), kdvEur: kur ? muhR2(kdv / kur) : 0 });
+      });
+    });
+    var kayitlar = ham.filter(function(v){ return !virgoElleErpMi(v); }).concat(sanal);
+    _vgSaglama = { refs: refs, kayitlar: kayitlar, sanal: sanal, eslesen: eslesen, erpYok: erpYok };
+    return _vgSaglama;
+  }
+  function virgoSanalMi(v){ return !!(v && v._erp); }
+  // Sağlama kutusu: ERP'den gelen belge sayısı / tutarı; elle girilip ERP'de eşi bulunanlar (kopya: kaldırılabilir), eşi olmayanlar (ERP'ye girilmeli), tutar farkları
+  function virgoSaglamaHtml(){
+    var sg = virgoSaglama(), top = toplamla(sg.sanal, function(v){ return v.tl; });
+    var fark = sg.eslesen.filter(function(x){ var r = (state[x.m.col] || []).find(function(y){ return y.id === x.m.id; }); if (!r) return false;
+      var h = x.m.col === 'giderler' ? belgeTL(r, 'tutar', 'belgeTutar') : belgeTL(r, 'araToplam', 'araToplam'); x.erpTl = h; return Math.abs(h - x.n.haric.tl) > 1; });
+    var tl = function(n){ return '₺' + muhTutar(n); };
+    var satir = function(x, sag){ return '<tr><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + esc(x.v.kategori || '') + '</td><td>' + esc(x.v.aciklama || '') + (x.v.belgeNo ? ' <span class="muted">· ' + esc(x.v.belgeNo) + '</span>' : '') + '</td><td class="num">' + tl(x.n.haric.tl) + '</td><td>' + sag + '</td></tr>'; };
+    var tablo = function(l, f){ return '<div class="tablewrap" style="margin-top:6px"><table><thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th class="num">KDV hariç</th><th></th></tr></thead><tbody>' + l.map(f).join('') + '</tbody></table></div>'; };
+    var h = '<div class="block vg-saglama"><div class="block-head"><h3>Sağlama — Virgo\'nun ödediği faturalar ERP\'den ' + infoIco('Virgo adına faturalı harcamalar (malzeme, kira, elektrik, maaş, makine…) artık Alış Faturaları ve Giderler sayfalarından alınır; Hesap Defteri\'nin borç, kazanç, KDV ve amortisman hesapları bu belgelerle yapılır. Buraya elle girilmiş Virgo adına harcamalar hesaba girmez, yalnız ERP ile karşılaştırılır (sağlama). Ortakların kendi cebinden harcamaları, Virgo\'dan alınan, geri ödemeler, ortaklar arası ödemeler, sevk ve mutabakat burada girilmeye devam eder.') + '</h3></div><div class="block-body">' +
+      '<div><b>' + sg.sanal.length + ' ERP belgesi</b> (alış faturası + gider), KDV hariç <b>' + tl(top) + '</b> Hesap Defteri\'ne giriyor.' + (sg.eslesen.length + sg.erpYok.length ? '' : ' Elle girilmiş Virgo adına harcama yok; sağlama temiz.') + '</div>';
+    if (sg.eslesen.length) h += '<div class="helper" style="margin-top:8px">✓ <b>' + sg.eslesen.length + ' elle kayıt ERP\'deki belgeyle eşleşti</b>; artık hesaba ERP\'deki belge giriyor, buradaki kopya fazlalık. ' +
+      '<button type="button" class="btn small" data-vsag-kaldir="1">Eşleştir ve ' + sg.eslesen.length + ' kopyayı kaldır</button> <span class="muted">(kategori, "Virgo ₺ fatura", kimin ödediği gibi bilgiler ERP belgesine yazılır; kopyalar 30 gün Silinenler\'de)</span></div>';
+    if (fark.length) h += '<div class="helper neg" style="margin-top:8px">⚠ <b>' + fark.length + ' eşleşmede tutar farkı</b> (Hesap Defteri ≠ ERP; hesapta ERP tutarı kullanılır):' + tablo(fark, function(x){ return satir(x, 'ERP: ' + tl(x.erpTl) + ' · ' + esc(x.m.etiket)); }) + '</div>';
+    if (sg.erpYok.length) h += '<div class="helper neg" style="margin-top:8px">⚠ <b>' + sg.erpYok.length + ' Virgo adına harcamanın ERP\'de karşılığı yok</b> (₺' + muhTutar(toplamla(sg.erpYok, function(x){ return x.n.haric.tl; })) + ' KDV hariç; şu an hesaba girmiyor). Faturayı Alış Faturaları\'na girin ya da yukarıdaki <b>Önizle ve aktar…</b> ile Giderler\'e aktarın; yanlış girilmişse kaydı silin.' +
+      tablo(sg.erpYok, function(x){ return satir(x, '<button type="button" class="btn secondary small" data-vduzelt="' + escAttr(x.v.id) + '">Aç</button>'); }) + '</div>';
+    return h + '</div></div>';
+  }
+  function virgoSaglamaKaldir(){
+    var sg = virgoSaglama(), l = sg.eslesen.filter(function(x){ return !virgoKilitli(x.v); }), kilitli = sg.eslesen.length - l.length;
+    if (!l.length){ toast(kilitli ? 'Eşleşenlerin hepsi mutabakatla kilitli; önce son mutabakatı silin.' : 'Kaldırılacak kopya yok.', true); return; }
+    if (!confirm(l.length + ' elle girilmiş Virgo adına harcama Hesap Defteri\'nden kaldırılacak; yerine ERP\'deki eşleri (alış faturası / gider) hesaba girer.' + (kilitli ? '\n' + kilitli + ' kayıt mutabakatla kilitli, onlar kalır.' : '') + '\nKategori, "Virgo ₺ fatura", kimin ödediği, amortisman süresi ERP belgesine yazılır.\n\nKaldırılanlar 30 gün "Silinenler"de saklanır. Devam edilsin mi?')) return;
+    var n = 0;
+    l.reduce(function(sira, x){ return sira.then(function(){
+      var v = x.v, bilgi = { kategori: v.kategori || '', odeyen: v.odeyen || '', kaynak: v.kaynak || '', borcPb: v.borcPb || '', kazancDus: v.kazancDus || '', omurYil: v.omurYil || '', odemeSekli: v.odemeSekli || '', durum: v.durum || '', virgoKayit: 'hd:' + v.id }; // 'hd:' öneki: silme koruması (kayıtta id geçiyor mu) bu notu bağ saymasın
+      // aktarımın bıraktığı bağ (virgoId) silmeyi engeller: bağ belgedeki virgoBilgi.virgoKayit'a taşınır
+      return kayitGuncelle(x.m.col, x.m.id, { virgoBilgi: bilgi, virgoId: null }).then(function(){
+        var r = (state[x.m.col] || []).find(function(y){ return y.id === x.m.id; }); if (r){ r.virgoBilgi = bilgi; r.virgoId = null; }
+        // aynı hareketin aktarımla açılmış sabit kıymet kartının bağı da taşınır
+        return Promise.all((state.tanimKayitlari || []).filter(function(t){ return t.tur === 'sabitKiymet' && t.virgoId === v.id; }).map(function(t){ t.virgoId = null; return kayitGuncelle('tanimKayitlari', t.id, { virgoId: null, virgoKayit: 'hd:' + v.id }); }));
+      }).then(function(){ return db.collection('tanimKayitlari').doc(v.id).delete(); }).then(function(){ n++; });
+    }); }, Promise.resolve())
+      .then(function(){ toast('✓ ' + n + ' kopya kaldırıldı; Virgo\'nun ödediği faturalar ERP\'den geliyor'); })
+      .catch(function(e){ toast((n ? n + ' kopya kaldırıldı; ' : '') + 'Durdu: ' + dbErrMsg(e), true); })
+      .then(function(){ _vgSaglama = null; var el = byId('virgoIcerik'); if (el) el.__sonHtml = null; EK_RENDER.virgo(); });
+  }
   // r240: üretim normal Üretim Girişi'nden girilir. Virgo hesabı, şirket kuruluşundan (Maliyet › kuruluş tarihi) önceki üretim kayıtlarını
   // Virgo kaydı biçiminde okur; karşılığı Virgo fiyat listesindeki (stok kartıyla eşleşen) fiyattan, üretim gününün kuruyla hesaplanır (bilgi).
   // Eski Virgo üretim girişleri (tanimKayitlari tur 'virgoUretim') "Aktar" ile normal kayda dönüşür, aktarıldı işaretiyle gizlenir (silinmez);
@@ -13584,7 +13673,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (n.kazancDus) y += ' · yatırım, İşin kazancından düşer';
     return n.odendi ? y : 'ödenecek (henüz işlenmedi)' + (y ? ' · ödenince: ' + y : '');
   }
-  function virgoKayitAc(id){ var kz = virgoKayitlari().find(function(x){ return x.id === id; }); if (kz) crudDuzenle(VIRGO_TANIM, kz); }
+  function virgoKayitAc(id){ var kz = virgoKayitlari().find(function(x){ return x.id === id; }) || virgoKayitlariHam().find(function(x){ return x.id === id; }); if (!kz) return; if (virgoSanalMi(kz)){ gitSekme(kz._erp.tab); setTimeout(function(){ location.hash = '#' + kz._erp.tab + '/' + kz._erp.id; }, 30); return; } crudDuzenle(VIRGO_TANIM, kz); }
   // r307: Virgo ₺ fatura kartına tıklayınca ay ay: fatura, ödeme, ay sonu kalan (son satır karttaki rakam; € bugünkü kurla, bilgi)
   function virgoTlFaturaAyHtml(){
     var l = virgoAylar(), kur = virgoGunKuru(todayISO()), bas = l.findIndex(function(a){ return Math.abs(a.tlFaturaE.tl) > 0.004 || Math.abs(a.tlFaturaOdeme.tl) > 0.004; });
@@ -13674,7 +13763,7 @@ Dikkat edilmesi gereken 2 nokta:
     var bugun = todayISO(), hafta = tarihEkle(bugun, 7);
     virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.odendi || n.tip === 'bilgi' || n.tip === 'mutabakat' || !v.vade || v.vade > hafta) return;
       ekle(v.vade < bugun ? 'kritik' : 'uyari', 'Virgo dönemi ödeme ' + (v.vade < bugun ? 'gecikti' : 'yaklaşıyor') + ' (' + kvTarihTR(v.vade) + '): ' + n.kisi + ' · ' + (v.aciklama || v.kategori || virgoTipAd(n)) + ' · ' + virgoEur(n.eur) + ' / ' + virgoTl(n.tl), 'virgo', v.id); });
-    virgoKayitlari().forEach(function(v){ var n = virgoNorm(v), e = virgoEskiAyar(n); if (!e) return;
+    virgoKayitlariHam().forEach(function(v){ var n = virgoNorm(v), e = virgoEskiAyar(n); if (!e) return;
       ekle('uyari', 'Virgo hesabı: ' + kvTarihTR(v.tarih) + ' ' + n.kisi + ' · ' + (v.aciklama || v.kategori || '') + ' — ' + e + '. Kaydı açıp kaydedin, düzelir.', 'virgo', v.id); });
   }
   // Formdaki değerlerle kaydın ne yapacağını anlatan önizleme (r209). Kayıt değişmez; hazirla'daki hesabın aynısı, uyarılar kırmızı.
@@ -13896,7 +13985,7 @@ Dikkat edilmesi gereken 2 nokta:
   var VIRGO_TANIM = {
     key: 'virgo', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'virgo'; }, listeBaslik: 'Hareketler', yeniEtiket: '+ Hareket',
     bilgi: 'Bu süreçteki her parayı girin. Virgo hesabı yalnız Virgo\'nun ödedikleri / verdikleri, ona geri ödediklerimizdir; üretim karşılığı (Üretim Girişi\'ndeki adet × Virgo fiyatı) yalnız bilgi içindir, borcu düşürmez. "Virgo\'dan alınan": size verdiği nakit / havale (kişi: parayı alan). "Harcama": kim ödediyse onun adıyla; Virgo ödediyse borca eklenir. Ortak (siz, Ahmet) ödediyse paranın kaynağını seçin: Virgo\'nun verdiği paradan ya da kendi cebimizden — kendi cebimizden yapılanlar Virgo hesabına girmez, Ortaklar hesabında tutulur. "Geri ödeme": Virgo\'ya yapılan ödeme, borçtan düşer. "Ortaklar arası ödeme": ortaklar ödeşince (veren → alan). Henüz ödenmemiş kalemi "Ödenecek" durumuyla ve son ödeme günüyle girin; ödenince "Ödendi" yapın. Harcamada KDV oranını ve faturanın kimin adına olduğunu seçin: Virgo adına faturada maliyet KDV hariç, bizim adımıza / fişsizde KDV dahil; ödenen nakit hep KDV dahil izlenir. Belli aralıklarla Virgo\'yla borcu karşılaştırıp "Mutabakat" girin: programın hesabıyla farkı görünür ve o tarih dahil önceki kayıtlar kilitlenir. ⧉ Sonraki aya: maaş, kira gibi aylık kalemi bir ay sonrası için hazır form olarak açar. Tutarı ₺ ya da € yazın: o günün TCMB kuruyla öbürü de saklanır, her yerde ikisi birlikte görünür. Üretim, Üretim Girişi\'nden girilir; karşılığı bilgi olarak görünür, borçtan düşmez (Virgo\'ya yaptığınız ödemeyi "Geri ödeme" olarak girin). ⇩ Excel ile her şey (özet, aylık kazanç, hareketler, kişiler, kategoriler, üretim) indirilir. Muhasebeye işlemez; şirket kurulunca kalan borç Virgo carisine açılış bakiyesi olarak aktarılır.',
-    ustHtml: function(){ return virgoAktarimHtml() + virgoErpAktarHtml() + virgoUretimKontrolHtml() + virgoAracHtml() + virgoKartlar() + virgoOdemeHtml() + virgoNakdeHtml(); }, altHtml: virgoAltHtml,
+    ustHtml: function(){ return virgoAktarimHtml() + virgoErpAktarHtml() + virgoSaglamaHtml() + virgoUretimKontrolHtml() + virgoAracHtml() + virgoKartlar() + virgoOdemeHtml() + virgoNakdeHtml(); }, altHtml: virgoAltHtml,
     fields: function(){ return [
       {key:'tarih', label:'Tarih', type:'date', required:true},
       {key:'hareket', label:'Hareket', type:'select', options: VIRGO_HAREKET, required:true},
@@ -13951,6 +14040,8 @@ Dikkat edilmesi gereken 2 nokta:
         if (v.sevkKarsilik !== VIRGO_SEVK_KARSILIK[1]){ v.sevkKarsilik = VIRGO_SEVK_KARSILIK[0]; v.odemeSekli = 'Mahsup'; }
       }
       if (v.saticiId === '__yeni') v.saticiId = '';
+      // r344: Virgo'nun ödediği faturalar ERP'den gelir (Alış Faturaları / Giderler); burada yeni Virgo adına harcama açılmaz
+      if (!eski && virgoElleErpMi(v)){ uyariGoster('Virgo\'nun ödediği faturalar artık <b>Alış Faturaları</b> (ya da Giderler) sayfasından girilir; Hesap Defteri onları oradan alır.<br><br>Burada yalnız ortakların kendi cebinden / fişsiz harcamaları, Virgo\'dan alınan, geri ödeme, ortaklar arası, sevk ve mutabakat girilir. Kendi cebinizden ödediyseniz "Paranın kaynağı = Kendi cebimizden" ve "Fatura kimin adına = Bizim adımıza / fişsiz" seçin.'); return false; }
       if (v.hareket === 'Harcama' || v.hareket === 'Kadir Bey ödedi'){
         var kc = virgoKalemHesap(v.kalemler, v.kdvOrani); if (kc.hata){ toast(kc.hata, true); return false; }
         var adlar = {}; virgoKalemAdlari().forEach(function(a){ adlar[virgoKalemAnahtar(a)] = a; }); kc.satir.forEach(function(k){ var a = adlar[virgoKalemAnahtar(k.urun)]; if (a) k.urun = a; }); // aynı ürün hep aynı adla
@@ -14037,6 +14128,7 @@ Dikkat edilmesi gereken 2 nokta:
       host.addEventListener('click', function(e){
         if (e.target.closest('[data-vaktar]')){ virgoUretimAktar(); return; }
         if (e.target.closest('[data-verpaktar]')){ virgoErpAktarFormu(); return; }
+        if (e.target.closest('[data-vsag-kaldir]')){ virgoSaglamaKaldir(); return; }
         if (e.target.closest('[data-virgoyazdir]')){ virgoYazdir(); return; }
         var opb = e.target.closest('[data-vortakpb]');
         if (opb){ configWrite({ virgoOrtakPb: opb.dataset.vortakpb }).then(function(){ var el = byId('virgoAlt'); if (el) el.__sonHtml = null; EK_RENDER.virgo(); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); }); return; }
@@ -14046,7 +14138,7 @@ Dikkat edilmesi gereken 2 nokta:
           host.querySelectorAll('#virgoAlt [data-vsekme]').forEach(function(b){ b.style.display = b.dataset.vsekme === vs.dataset.vsekmesec ? '' : 'none'; });
           var alt = byId('virgoAlt'); if (alt) alt.__sonHtml = null; return; }
         if (e.target.closest('[data-virgoexcel]')){ virgoExcel(); return; }
-        var vf = e.target.closest('[data-vfatura]'); if (vf){ var fv = virgoKayitlari().find(function(x){ return x.id === vf.dataset.vfatura; }); if (fv) virgoFaturaYazdir(fv); return; }
+        var vf = e.target.closest('[data-vfatura]'); if (vf){ var fv = virgoKayitlari().find(function(x){ return x.id === vf.dataset.vfatura; }); if (fv && virgoSanalMi(fv)){ virgoKayitAc(fv.id); return; } if (fv) virgoFaturaYazdir(fv); return; }
         var va = e.target.closest('[data-valinan]');
         if (va){ var ac = va.dataset.acik !== '1'; va.dataset.acik = ac ? '1' : ''; var ok = va.querySelector('.vg-ok'); if (ok) ok.textContent = ac ? '▾' : '▸';
           host.querySelectorAll('[data-valinanic="' + va.dataset.valinan + '"]').forEach(function(r){ r.style.display = ac ? '' : 'none'; }); return; }
@@ -14056,7 +14148,7 @@ Dikkat edilmesi gereken 2 nokta:
         if (e.target.closest('[data-vodemegir]')){ crudYeni(VIRGO_TANIM, { hareket: VIRGO_HAREKET[2], kategori: '', kdvOrani: '0', paraBirimi: '₺' }); return; }
         if (e.target.closest('[data-vdokum]')){ var sel = host.querySelector('[data-vdokumay]'); if (sel && sel.value) virgoAyDokum(sel.value); return; }
         var kb = e.target.closest('[data-vkopya]');
-        if (kb){ var v = virgoKayitlari().find(function(x){ return x.id === kb.dataset.vkopya; }); if (!v) return;
+        if (kb){ var v = virgoKayitlari().find(function(x){ return x.id === kb.dataset.vkopya; }); if (!v || virgoSanalMi(v)) return;
           var ay = KV_MODEL.ayEkle((v.tarih || todayISO()).slice(0, 7), 1), sonGun = new Date(Number(ay.slice(0, 4)), Number(ay.slice(5, 7)), 0).getDate(), gun = Math.min(Number((v.tarih || '').slice(8, 10)) || 1, sonGun);
           var kopya = {}; ['hareket', 'odeyen', 'alici', 'kaynak', 'kategori', 'aciklama', 'odemeSekli', 'durum', 'paraBirimi', 'tutarTuru', 'tutar', 'kdvOrani', 'fatura', 'saticiId'].forEach(function(k){ if (v[k] !== undefined) kopya[k] = v[k]; });
           kopya.tarih = ay + '-' + String(gun).padStart(2, '0'); kopya.belgeNo = ''; kopya.kur = ''; if (v.vade) kopya.vade = kopya.tarih;
@@ -14470,7 +14562,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function virgoErpPlan(h){
     var ak = virgoErpAktarilanlar(), kul = {}, cache = {}, z = h.zorla || {};
-    return virgoKayitlari().slice().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || '') || String(a.olusturma || '').localeCompare(String(b.olusturma || '')); })
+    return virgoKayitlariHam().slice().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || '') || String(a.olusturma || '').localeCompare(String(b.olusturma || '')); })
       .map(function(v){
         var n = virgoNorm(v), p = Object.assign({ v: v, n: n }, virgoErpPlanla(v, h, ak));
         if (ak[v.id] && n.tip === 'harcama' && n.kaynak === 'cep'){ var oc = virgoErpOlusanlar(v.id); if (oc.length) p.cep = { sil: oc }; return p; }
@@ -14494,7 +14586,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function virgoErpBekleyen(){ var pl = virgoErpPlan({ banka: '-', nakit: '-' }); return { yeni: pl.filter(function(p){ return p.kayitlar.length; }).length, cift: pl.filter(function(p){ return p.cift; }).length, cep: pl.filter(function(p){ return p.cep; }).length }; }
   function virgoErpAktarHtml(){
-    if (!virgoKayitlari().length || !izinVar('ekle')) return '';
+    if (!virgoKayitlariHam().length || !izinVar('ekle')) return '';
     var b = virgoErpBekleyen();
     return '<div class="vg-eski"><b>ERP\'ye aktarım:</b> ' + (b.yeni ? b.yeni + ' hareket aktarılmayı bekliyor' : 'aktarılacak hareket yok') + (b.cift ? ' · <b class="neg">' + b.cift + ' çift kayıt</b> (hem elle girilmiş hem aktarılmış)' : '') + (b.cep ? ' · <b class="neg">cepten ödenmiş ' + b.cep + ' harcama gider olarak aktarılmış</b>' : '') + (virgoErpEskiKalanlar().length ? ' · <b class="neg">eski aktarımdan kalan ' + virgoErpEskiKalanlar().length + ' kayıt</b>' : '') +
       ' — harcamalar Giderler\'e (yatırımlar ayrıca Sabit Kıymetler\'e), Virgo\'dan alınan / geri ödemeler kişinin carisine ödeme / tahsilat olarak geçer. Virgo kayıtları silinmez. ' +
@@ -14547,7 +14639,7 @@ Dikkat edilmesi gereken 2 nokta:
     var ilk = function(t){ var hl = hesaplar(), x = hl.find(function(y){ return y.hesapTuru === t && (y.paraBirimi || 'EUR') === 'TRY'; }) || hl.find(function(y){ return y.hesapTuru === t; }); return x ? x.id : ''; };
     var h = { banka: ilk('Banka'), nakit: ilk('Kasa') };
     // r336: hesap yoksa pencereden çıkmadan açılır (₺; açılış tarihi varsayılanı ilk Virgo hareketinden bir gün önce)
-    var ilkTarih = virgoKayitlari().map(function(v){ return v.tarih || ''; }).filter(function(t){ return /^\d{4}-\d{2}-\d{2}$/.test(t); }).sort()[0] || todayISO(), acTarih = tarihEkle(ilkTarih, -1);
+    var ilkTarih = virgoKayitlariHam().map(function(v){ return v.tarih || ''; }).filter(function(t){ return /^\d{4}-\d{2}-\d{2}$/.test(t); }).sort()[0] || todayISO(), acTarih = tarihEkle(ilkTarih, -1);
     var mini = function(tur){ return '<div class="vg-erp-yeni" data-tur="' + tur + '" style="display:none;margin-top:6px;padding:8px;border:1px dashed var(--border);background:var(--surface-alt)">' +
       '<div class="form-grid"><div class="field"><label>Hesap adı</label><input type="text" data-vh="ad" placeholder="' + (tur === 'Banka' ? 'ör. Virgo · Ziraat TL' : 'ör. Virgo kasa') + '"></div>' +
       (tur === 'Banka' ? '<div class="field"><label>Banka</label><input type="text" data-vh="banka"></div><div class="field"><label>IBAN</label><input type="text" data-vh="iban"></div>' : '') +
