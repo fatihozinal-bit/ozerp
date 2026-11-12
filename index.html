@@ -1698,7 +1698,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r348</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r349</div>
     </div>
   </nav>
   <main>
@@ -12660,14 +12660,19 @@ Dikkat edilmesi gereken 2 nokta:
   }
   var BORDRO_TANIM = {
     key: 'bordro', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'bordro'; }, listeBaslik: 'Aylık bordrolar', yeniEtiket: '+ Bordro',
-    bilgi: 'Müşavirin gönderdiği bordro icmalindeki (toplam) rakamları girin; kişi kişi girmeye gerek yok. Gider dağılımı, ücret giderinin hangi hesaba (üretimde çalışan 720, usta / şef 730, satış 760, ofis 770) gideceğidir; personelin görevine göre önerilir. Teşvik indirimi varsa işveren payını teşvik düşülmüş hâliyle yazın.',
+    bilgi: 'Net maaş ödüyorsanız ödediğiniz üç tutarı girin: işçilere ödenen net toplam, SGK\'ya ödenen prim, muhtasar (gelir + damga vergisi); gider (şirkete maliyet) bu üçünün toplamıdır, vergiden düşülür. Ya da müşavirin gönderdiği bordro icmalindeki (toplam) rakamları girin; kişi kişi girmeye gerek yok. Gider dağılımı, ücret giderinin hangi hesaba (üretimde çalışan 720, usta / şef 730, satış 760, ofis 770) gideceğidir; personelin görevine göre önerilir. Teşvik indirimi varsa işveren payını teşvik düşülmüş hâliyle yazın.',
     fields: function(){ return [
       {type:'section', label:'Dönem'},
       {key:'ay', label:'Bordro ayı', type:'select', options: bordroAySecenek, required:true},
       {key:'kisi', label:'Personel sayısı', type:'number', para:false},
       {key:'belgeNo', label:'Bordro / icmal no (e-Defter belge no)', type:'text'},
-      {type:'section', label:'Bordro icmali (₺)'},
-      {key:'brut', label:'Toplam brüt ücret (fazla mesai, ikramiye dahil)', type:'number', para:false, required:true},
+      // r349: net maaş ödeyenler için — bilinen üç ödeme girilir, brüt ve kesintiler bunlardan çıkarılır (gider = üçünün toplamı)
+      {type:'section', label:'Net ödüyorsanız: ödediğiniz üç tutar (₺)'},
+      {key:'netOdenen', label:'İşçilere ödenen net maaş toplamı', type:'number', para:false, hint:'Doldurursanız aşağıdaki icmal alanları buradan hesaplanır; boş bırakırsanız icmali girin.'},
+      {key:'sgkToplam', label:'SGK\'ya ödenen prim toplamı (işçi + işveren + işsizlik)', type:'number', para:false, hint:'SGK tahakkuk fişindeki ödenecek toplam (teşvik düşülmüş)'},
+      {key:'muhtasar', label:'Muhtasar: ücretlerin gelir + damga vergisi', type:'number', para:false, hint:'Vergi dairesine ödenen muhtasar tahakkukundaki ücret vergileri'},
+      {type:'section', label:'Ya da müşavirin bordro icmali (₺)'},
+      {key:'brut', label:'Toplam brüt ücret (fazla mesai, ikramiye dahil)', type:'number', para:false},
       {key:'sgkIsci', label:'SGK işçi payı (%14)', type:'number', para:false},
       {key:'issizIsci', label:'İşsizlik işçi payı (%1)', type:'number', para:false},
       {key:'gv', label:'Gelir vergisi (istisna düşülmüş)', type:'number', para:false},
@@ -12678,12 +12683,18 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'digerKesinti', label:'Diğer kesintiler (icra, sendika)', type:'number', para:false},
       {type:'section', label:'Gider dağılımı (%) — toplam 100'}
     ].concat(BORDRO_GIDER.map(function(g){ return {key: g[0], label: g[1] + ' ' + g[2], type:'number', para:false}; })).concat([{key:'aciklama', label:'Açıklama', type:'text'}]); },
-    defaults: function(){ var ay = muhAyEkle(todayISO().slice(0, 7), Number(todayISO().slice(8, 10)) <= 15 ? -1 : 0); return Object.assign({ tur:'bordro', ay: ay, kisi: (state.personel||[]).length, belgeNo:'', brut:0, sgkIsci:0, issizIsci:0, gv:0, dv:0, sgkIsveren:0, issizIsveren:0, avans:0, digerKesinti:0, aciklama:'' }, bordroDagilimOnerisi()); },
+    defaults: function(){ var ay = muhAyEkle(todayISO().slice(0, 7), Number(todayISO().slice(8, 10)) <= 15 ? -1 : 0); return Object.assign({ tur:'bordro', ay: ay, kisi: (state.personel||[]).length, belgeNo:'', netOdenen:0, sgkToplam:0, muhtasar:0, brut:0, sgkIsci:0, issizIsci:0, gv:0, dv:0, sgkIsveren:0, issizIsveren:0, avans:0, digerKesinti:0, aciklama:'' }, bordroDagilimOnerisi()); },
     hazirla: function(v, eski){
       if (!v.ay){ toast('Bordro ayını seçin.', true); return false; }
       if (bordrolar().some(function(b){ return b.ay === v.ay && (!eski || b.id !== eski.id); })){ toast(muhAyAdi(v.ay) + ' bordrosu zaten girilmiş; onu düzenleyin.', true); return false; }
       var top = BORDRO_GIDER.reduce(function(t, g){ return t + (Number(v[g[0]]) || 0); }, 0);
       if (Math.abs(top - 100) > 0.01){ toast('Gider dağılımı toplamı %' + fmt2(top) + '; %100 olmalı.', true); return false; }
+      // net girişi: brüt = net + vergi + kesintiler; SGK tek kalemde (işçi / işveren ayrımı bilinmez, toplam gider ve 361 borcu doğru çıkar)
+      var nt = Number(v.netOdenen) || 0;
+      if (nt > 0){ var sg = Number(v.sgkToplam) || 0, mu = Number(v.muhtasar) || 0;
+        v.netGiris = true; v.sgkIsci = 0; v.issizIsci = 0; v.issizIsveren = 0; v.sgkIsveren = muhR2(sg); v.gv = muhR2(mu); v.dv = 0;
+        v.brut = muhR2(nt + mu + (Number(v.avans) || 0) + (Number(v.digerKesinti) || 0)); }
+      else { v.netGiris = false; if (!(Number(v.brut) > 0)){ toast('İşçilere ödenen net toplamı (ya da müşavirin icmalindeki brüt ücreti) girin.', true); return false; } }
       var h = bordroHesap(v); if (h.net < 0){ toast('Kesintiler brüt ücretten fazla; rakamları kontrol edin.', true); return false; }
       var t = muhAySonu(v.ay);
       if (donemKilitli(t) || (eski && donemKilitli(muhAySonu(eski.ay)))){ toast(kilitMesaji(t), true); return false; }
@@ -12698,8 +12709,8 @@ Dikkat edilmesi gereken 2 nokta:
     sirala: function(a, b){ return (b.ay||'').localeCompare(a.ay||''); },
     rowFn: function(b){
       var h = bordroHesap(b), o = b.maasOdeme;
-      return { title: esc(muhAyAdi(b.ay)) + ' bordrosu · ' + (b.kisi || '?') + ' kişi · brüt <b>₺' + muhTutar(b.brut) + '</b>',
-        sub: 'Net maaş ₺' + muhTutar(h.net) + ' · SGK ₺' + muhTutar(h.sgk) + ' · gelir + damga v. ₺' + muhTutar(h.vergi) + ' · şirkete maliyeti <b>₺' + muhTutar(h.maliyet) + '</b><br>' +
+      return { title: esc(muhAyAdi(b.ay)) + ' bordrosu · ' + (b.kisi || '?') + ' kişi · ' + (b.netGiris ? 'net <b>₺' + muhTutar(h.net) + '</b> <span class="pill">net girişi</span>' : 'brüt <b>₺' + muhTutar(b.brut) + '</b>'),
+        sub: (b.netGiris ? 'Net ödenen ₺' + muhTutar(h.net) : 'Net maaş ₺' + muhTutar(h.net)) + ' · SGK ₺' + muhTutar(h.sgk) + ' · ' + (b.netGiris ? 'muhtasar' : 'gelir + damga v.') + ' ₺' + muhTutar(h.vergi) + ' · şirkete maliyeti (gider) <b>₺' + muhTutar(h.maliyet) + '</b><br>' +
           (o ? '<span class="pos">✓ Net maaş ödendi ' + kvTarihTR(o.tarih) + ' · ₺' + muhTutar(o.tutar) + ' · ' + esc(hesapAdi(o.hesapId)) + '</span>' + (Math.abs(muhR2(h.net - o.tutar)) >= 0.01 ? ' <span class="neg">(net maaştan ₺' + muhTutar(h.net - o.tutar) + ' fark)</span>' : '')
             : '<span class="' + (muhAyEkle(b.ay, 1) + '-' + String(Math.min(31, Number(sirketDeger('maasOdemeGunu')) || 5)).padStart(2, '0') < todayISO() ? 'neg' : 'muted') + '">Net maaş ödenmedi</span>') +
           ' · SGK ve muhtasar: <a href="#" data-gitvergi="1">Vergi & SGK Ödemeleri</a>' };
