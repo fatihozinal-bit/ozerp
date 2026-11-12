@@ -1698,7 +1698,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r346</div>
+    <div class="status" style="margin-top:6px;color:var(--side-muted)">sürüm: 2026-11-12-r347</div>
     </div>
   </nav>
   <main>
@@ -18040,7 +18040,7 @@ Dikkat edilmesi gereken 2 nokta:
     } else if (k === 'kazanc'){
       var kc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), kg = ozetGiderTl();
       d = { t: ozetDonemAd() + ' · kazanç', f: 'Bu dönemin üretim karşılığı (Üretim Kayıtları × stok kartı fiyatı) − bu dönemde ERP\'ye girilen gider (Giderler + Alış Faturaları, KDV hariç, yatırım hariç). Ay bitmeden maaş, kira gibi giderlerin bir kısmı henüz girilmemiş olabilir.',
-        h: ozetDetayTablo(['Hesap','Tutar'], [['Üretim karşılığı', tlEur(kc)], ['− Gider (girilen)', tlEur(-kg)]], ['Kazanç', tlEur(kc - kg)]),
+        h: ozetDetayTablo(['Hesap','Tutar'], [['<a href="#" data-ozdetayac="ciro" title="Ürün ürün karşılık">Üretim karşılığı ›</a>', tlEur(kc)], ['<a href="#" data-ozdetayac="gider" title="Gider belgeleri">− Gider (girilen) ›</a>', tlEur(-kg)]], ['Kazanç', tlEur(kc - kg)]) + '<div class="muted" style="font-size:11.5px;margin-top:6px">Satıra tıklayınca o rakamın ayrıntısı açılır.</div>',
         git: 'giderler', gitAd: 'Giderler' };
     } else if (k === 'tahmin'){
       var tc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), tt = ozetTahmin(tc), kh = tt.kh, ksat = kh.pers.map(function(p){ return [esc(p.ad), 'personel (bordro, bu ay)', tlEur(p.tl)]; });
@@ -18079,7 +18079,12 @@ Dikkat edilmesi gereken 2 nokta:
     if (!d) return;
     var bt = function(tab, ad){ return sekmeIzinli(tab) ? '<button class="btn secondary small" data-detaygit="'+tab+'">'+ad+' →</button>' : ''; };
     modalAc({ title: d.t, kaydetYok: true, genislik: 'orta', html: '<div class="hesap-formul">'+d.f+'</div>'+d.h+'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">'+bt(d.git, d.gitAd)+(d.git2 ? bt(d.git2, d.git2Ad) : '')+'</div>',
-      onOpen: function(el, kapat){ el.querySelectorAll('[data-detaygit]').forEach(function(b){ b.addEventListener('click', function(){ kapat(); gitSekme(b.dataset.detaygit); }); }); } });
+      onOpen: function(el, kapat){ el.querySelectorAll('[data-detaygit]').forEach(function(b){ b.addEventListener('click', function(){ kapat(); gitSekme(b.dataset.detaygit); }); });
+        // r347: penceredeki bağlantılar: başka bir Özet ayrıntısı (kazanç → gider / karşılık) ya da belge (#giderler/ID); önce pencere kapanır, yoksa belge pencerenin arkasında açılıyordu
+        el.addEventListener('click', function(e){
+          var a = e.target.closest('[data-ozdetayac]'); if (a){ e.preventDefault(); kapat(); setTimeout(function(){ ozetDetay(a.dataset.ozdetayac); }, 0); return; }
+          var h = e.target.closest('a[href^="#"]'); if (h && h.getAttribute('href').length > 1){ e.preventDefault(); var hedef = h.getAttribute('href'); kapat(); location.hash = hedef; }
+        }); } });
   }
   document.addEventListener('click', function(e){ var c = e.target.closest && e.target.closest('[data-ozetdetay]'); if (c) ozetDetay(c.dataset.ozetdetay); });
 
