@@ -742,6 +742,7 @@
     .topbar.kur-acik .kur-grup { flex:1 1 100%; flex-wrap:wrap; order:1; } /* açılınca kurlar en altta; Geri / QR / uyarı satırı bozulmaz */
   }
   .kur-ozet-btn { display:none; }
+  .surum-kisa { display:none; }
   .grid2 > .field > input, .grid2 > .field > select, .grid2 > .field > textarea { width:100%; max-width:100%; min-width:0; }
   .grid2 > .field { min-width:0; }
   /* ===== Sıkı düzen (tüm sistem): az boşluk, küçük kutular, orantılı yazı boyutları =====
@@ -1542,7 +1543,8 @@
     body.ust-menu .sidebar { width:auto; flex-direction:row; align-items:center; gap:2px; padding:5px 14px; padding-top:calc(5px + env(safe-area-inset-top, 0px)); position:sticky; top:0; z-index:300; max-height:none; overflow:visible; box-shadow:0 2px 10px rgba(21,32,43,.16); }
     body.ust-menu.has-banner .sidebar { top:40px; }
     body.ust-menu .brand { flex-direction:row; align-items:center; flex-shrink:0; gap:8px; padding:0 12px 0 0; margin:0 6px 0 0; border-bottom:0; border-right:1px solid var(--side-line); align-self:stretch; }
-    body.ust-menu .brand .brand-logo { max-height:30px; max-width:110px; padding:2px 4px; }
+    body.ust-menu .brand .brand-logo { max-height:28px; max-width:90px; padding:2px 4px; }
+    body.ust-menu .brand .brand-logo + .brand-ad { display:none; } /* r356: logo varsa çubukta firma adı tekrar yazılmaz (tek satır) */
     body.ust-menu .brand .brand-ad, body.ust-menu .brand .brand-ad.uzun { font-size:13px; white-space:nowrap; max-width:200px; overflow:hidden; text-overflow:ellipsis; }
     body.ust-menu .brand small { display:none; }
     body.ust-menu .sidebar > .navbtn { padding:7px 10px; flex-shrink:0; }
@@ -1566,18 +1568,29 @@
     body.ust-menu .side-alt .activeuser b, body.ust-menu .side-alt .activeuser button { font-size:11.5px; }
     body.ust-menu .side-alt .activeuser button { margin-left:6px; }
     body.ust-menu #statusBox br, body.ust-menu #statusBox .muted { display:none; } /* bağlantı durumu tek satır: ● canlı / ● TEST ORTAMI */
+    /* r356: çubukta yalnız "● bağlı" (açıklama ipucunda), ikinci çıkış düğmesi yok; sürüm kısa (r356, tamamı ipucunda) — hepsi tek satır */
+    body.ust-menu #statusBox { font-size:0 !important; }
+    body.ust-menu #statusBox > span:first-child { font-size:10.5px; }
+    body.ust-menu #statusBox button { display:none; }
+    body.ust-menu .side-alt #surumYazi { display:none; }
+    body.ust-menu .side-alt #surumKisa { display:block; cursor:default; }
+    body.ust-menu .side-alt .activeuser b { display:inline-block; max-width:140px; overflow:hidden; text-overflow:ellipsis; vertical-align:bottom; }
     body.ust-menu main { width:100%; margin:0 auto; }
     body.ust-menu #errLog { display:none !important; } /* hatalar zaten bildirim olarak çıkar; çubuğu uzatmasın */
     body.ust-menu .ym-fly { max-width:calc(100vw - 16px); }
   }
   @media (min-width: 861px) and (max-width: 1360px) {
     /* dizüstü: simgeler ve bağlantı yazısı çubukta yer kaplamasın */
-    body.ust-menu .side-alt .status:not(#surumYazi) { display:none; } /* r352: sürüm her genişlikte görünür */
+    body.ust-menu .side-alt .status:not(#surumKisa) { display:none; } /* r352: sürüm her genişlikte görünür (r356: kısa hâli) */
     body.ust-menu .navlabel.ym-alan .navgicon, body.ust-menu .navfav-baslik .navgicon, body.ust-menu .sidebar > .navbtn .navicon { display:none; }
   }
   @media (min-width: 861px) and (max-width: 1100px) {
     body.ust-menu .navlabel.ym-alan, body.ust-menu .navfav-baslik, body.ust-menu .sidebar > .navbtn { padding:7px 6px; font-size:11px; }
     body.ust-menu .brand .brand-ad { max-width:120px; }
+    body.ust-menu .brand .brand-logo { max-width:64px; max-height:24px; }
+    body.ust-menu .side-alt .activeuser b { max-width:72px; }
+    body.ust-menu .side-alt { gap:6px; padding-left:4px; }
+    body.ust-menu .brand { padding-right:8px; margin-right:2px; }
   }
   @media print { .alt-cubuk, .tel-panel { display:none !important; } }
 </style>
@@ -1711,7 +1724,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-15-r353</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-15-r356</div>
     </div>
   </nav>
   <main>
@@ -4531,6 +4544,43 @@ Dikkat edilmesi gereken 2 nokta:
     // r348: maaşlar Bordro Özeti'nden (ücret gideri = brüt + işveren SGK / işsizlik payı; ayın son günü)
     bordrolar().forEach(function(b){ if (!/^\d{4}-\d{2}$/.test(b.ay || '')) return; var t = muhAySonu(b.ay); if (!ozetDonemde(t)) return;
       l.push({ tarih: t, tur: 'Bordro · ' + muhAyAdi(b.ay), aciklama: (b.kisi ? b.kisi + ' kişi · ' : '') + 'brüt + işveren payı', tl: bordroHesap(b).maliyet, git: 'bordro/' + b.id }); });
+    return l.concat(ozetTahminiGiderler());
+  }
+  // r355: faturası gelmeyen giderler (maaş, kira) belge girilmemiş aylarda tahmini girer; şirket boşuna kârda görünmesin.
+  // Maaş: o ayın Bordro Özeti girilmediyse ve Giderler'de "Maaş" kaydı yoksa personel kartındaki net maaştan işveren maliyeti
+  // (gelmediği gün / eksik saat düşülmüş, İK & İzin'de girilen mesai eklenmiş). Kira: Aylık Kapasite gider listesindeki kira kalemi
+  // ("Kira" adlı ya da Şahıstan (stopajlı) türündeki; stopajlıda brüt); o ay Giderler'de ya da alış faturasında "Kira" türü varsa girmez.
+  // İçinde bulunulan ayda geçen iş günü oranında (Aylık Kapasite çalışma düzeni; karşılık da bugüne kadar), geçmiş aylarda tam ay.
+  function ozetTahminiGiderler(){
+    var bu = thisMonthKey(), bugun = todayISO(), l = [], plan = kpPlan(), P = kvParam(), MH = aylikMesaiHarita();
+    var aylar = ozetGenel() ? ozetAylar() : [ozetDonem()];
+    var kiraKalem = plan.giderler.filter(function(g){ return Number(g.tutar) > 0 && (g.tur === 'stopaj' || /^kira/i.test(String(g.ad || '').trim())); });
+    var ayda = function(r, a){ return String(r.tarih || '').slice(0, 7) === a && !virgoErpEskiMi(r); };
+    aylar.forEach(function(ay){
+      if (ay > bu) return;
+      var oran = 1, oranYazi = '', tarih = muhAySonu(ay);
+      if (ay === bu){
+        var gunler = kpAySaat(ay, plan.duzen).gunler, gecen = gunler.filter(function(g){ return g <= bugun; }).length;
+        oran = gunler.length ? gecen / gunler.length : Number(bugun.slice(8, 10)) / Number(muhAySonu(ay).slice(8, 10));
+        oranYazi = gunler.length ? ' · ayın ' + gecen + ' / ' + gunler.length + ' iş günü' : ''; tarih = bugun;
+      }
+      if (!(oran > 0)) return;
+      var gitYer = sekmeIzinli('bordro') ? 'bordro' : 'kapasiteplan';
+      if (!bordrolar().some(function(b){ return b.ay === ay; }) && !(state.giderler || []).some(function(g){ return g.tur === 'Maaş' && ayda(g, ay); })){
+        var top = 0, kisi = 0;
+        (state.personel || []).forEach(function(p){
+          var b = personelAyBordroTL(p, ay, P), m = b.net > 0 ? (personelAyMesai(p, ay, MH).tutar || 0) * b.maliyet / b.net : 0;
+          if (b.maliyet + m > 0.5){ top += b.maliyet + m; kisi++; }
+        });
+        if (top > 0.5) l.push({ tarih: tarih, tur: 'Maaş (tahmini) · ' + muhAyAdi(ay), aciklama: kisi + ' kişi · personel kartındaki net maaştan işveren maliyeti; bordro girilince yerine o geçer' + oranYazi, tl: top * oran, git: gitYer, tahmini: true });
+      }
+      if (kiraKalem.length && !(state.giderler || []).some(function(g){ return g.tur === 'Kira' && ayda(g, ay); }) && !(state.alisFaturalari || []).some(function(f){ return f.durum !== 'İptal' && f.giderTuru === 'Kira' && ayda(f, ay); })){
+        kiraKalem.forEach(function(g){
+          var t = Number(g.tutar), stopajli = g.tur === 'stopaj', tl = stopajli ? t / (1 - KP_STOPAJ) : t;
+          l.push({ tarih: tarih, tur: (g.ad || 'Kira') + ' (tahmini) · ' + muhAyAdi(ay), aciklama: 'Aylık Kapasite\'deki tutar' + (stopajli ? ' (stopajlı: net ₺' + fmt(t) + ' + stopaj)' : '') + '; faturası / gider kaydı girilince yerine o geçer' + oranYazi, tl: tl * oran, git: 'kapasiteplan', tahmini: true });
+        });
+      }
+    });
     return l;
   }
   function ozetGiderTl(){ return toplamla(ozetGiderKayitlari(), function(x){ return x.tl; }); }
@@ -4554,7 +4604,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kur = ozetKur();
     var toplamUretim = ozetKayitlari().filter(sonOperasyonKaydiMi).reduce(function(s,k){ return s+(Number(k.adet)||0); },0);
     var katkilar = urunListesi().map(ozetUrunKatki), toplamCiro = toplamla(katkilar, function(x){ return x.top; });
-    var gider = ozetGiderTl(), kazanc = toplamCiro - gider, th = ozetTahmin(toplamCiro), tlY = function(v){ return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)); }, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
+    var gider = ozetGiderTl(), giderTahmini = toplamla(ozetTahminiGiderler(), function(x){ return x.tl; }), kazanc = toplamCiro - gider, th = ozetTahmin(toplamCiro), tlY = function(v){ return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)); }, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
     // r244: üretim / kalite kartları da aynı şeritte (eskiden ayrı satırdı)
     var bugun = todayISO(), ay = thisMonthKey();
     var acikIe = state.isemirleri.filter(function(ie){ return ie.durum !== 'İptal' && isEmriKalan(ie) > 0; });
@@ -4572,7 +4622,7 @@ Dikkat edilmesi gereken 2 nokta:
       {label:'Üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim', sub: ozetUretimKirilim().map(function(x){ return '<div class="oz-kirilim"><span title="' + escAttr(x.ad) + '">' + esc(x.ad) + '</span><b>' + fmt(x.adet) + '</b></div>'; }).join('')},
       // r273: gerçekleşen (bugüne kadar) + ay sonu tahmini; r345: hepsi ERP'den (Üretim Kayıtları × stok kartı fiyatı, Giderler + Alış Faturaları)
       {label:'Üretim karşılığı', value: '₺'+fmt(toplamCiro), cls:'yetki-maliyet', detay:'ciro', sub: donemYazi + (kur ? ' · ' + eurYazi(toplamCiro) : '')},
-      {label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: 'Giderler + alış faturaları + bordro' + (kur ? ' · ' + eurYazi(gider) : '')},
+      {label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: (giderTahmini > 0.5 ? 'belgeli ₺' + fmt(gider - giderTahmini) + ' + tahmini maaş / kira ₺' + fmt(giderTahmini) : 'Giderler + alış faturaları + bordro') + (kur ? ' · ' + eurYazi(gider) : '')},
       {label:'Kazanç', value: tlY(kazanc), cls:(kazanc < -0.004 ? 'bad' : 'good isaretli')+' yetki-maliyet', detay:'kazanc', sub: donemYazi + (kur ? ' · ' + eurYazi(kazanc) : '')}
     ].concat(ozetBuAy() ? [ // ay sonu tahmini yalnız içinde bulunulan ayda
       {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)}] : [], [
@@ -8020,6 +8070,13 @@ Dikkat edilmesi gereken 2 nokta:
     _altSon = yeni;
     geriBtnGuncelle();
   }, true);
+  // r356: üst menüde sürümün kısa hâli ("r356"); tam yazı ve açıklama ipucunda
+  (function(){
+    var s = byId('surumYazi'); if (!s) return;
+    var m = /-(r\d+)\s*$/.exec(s.textContent), k = document.createElement('div');
+    k.className = 'status surum-kisa'; k.id = 'surumKisa'; k.textContent = m ? m[1] : s.textContent; k.title = s.textContent + ' — ' + s.title;
+    s.parentNode.insertBefore(k, s.nextSibling);
+  })();
   (function(){
     var gb = byId('geriBtn');
     if (gb) gb.addEventListener('click', function(){ if (gecmisN() > 0) history.back(); });
@@ -18146,13 +18203,14 @@ Dikkat edilmesi gereken 2 nokta:
         git: 'kayitlar', gitAd: 'Üretim Kayıtları' };
     } else if (k === 'gider'){
       var gl = ozetGiderKayitlari().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); });
-      d = { t: ozetDonemAd() + ' · gider (girilen)', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz. Maaş, kira gibi giderler henüz girilmediyse burada görünmez.',
-        h: ozetDetayTablo(['Tarih','Belge','Açıklama','Tutar (KDV hariç)'], gl.map(function(v){ return [esc(kvTarihTR(v.tarih)), '<a href="#' + escAttr(v.git) + '">' + esc(v.tur) + '</a>', esc(v.aciklama || ''), tlEur(v.tl)]; }), ['Toplam', '', '', tlEur(ozetGiderTl())]),
+      var tah = function(v, s){ return v.tahmini ? '<span class="muted">' + s + '</span>' : s; };
+      d = { t: ozetDonemAd() + ' · gider', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz.<br>Faturası gelmeyen <b>maaş</b> ve <b>kira</b>, belgesi girilmemiş aylarda <b>tahmini</b> girer (soluk satırlar): maaş personel kartındaki net maaştan (o ayın bordrosu girilince yerine o geçer), kira Aylık Kapasite\'deki tutardan (Giderler\'de ya da alış faturasında "Kira" türü girilince yerine o geçer). İçinde bulunulan ayda geçen iş günü kadarı sayılır.',
+        h: ozetDetayTablo(['Tarih','Belge','Açıklama','Tutar (KDV hariç)'], gl.map(function(v){ return [tah(v, esc(kvTarihTR(v.tarih))), '<a href="#' + escAttr(v.git) + '"' + (v.tahmini ? ' class="muted"' : '') + '>' + esc(v.tur) + '</a>', tah(v, esc(v.aciklama || '')), tah(v, tlEur(v.tl))]; }), ['Toplam', '', '', tlEur(ozetGiderTl())]),
         git: 'giderler', gitAd: 'Giderler' };
     } else if (k === 'kazanc'){
       var kc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), kg = ozetGiderTl();
-      d = { t: ozetDonemAd() + ' · kazanç', f: 'Bu dönemin üretim karşılığı (Üretim Kayıtları × stok kartı fiyatı) − bu dönemde ERP\'ye girilen gider (Giderler + Alış Faturaları, KDV hariç, yatırım hariç). Ay bitmeden maaş, kira gibi giderlerin bir kısmı henüz girilmemiş olabilir.',
-        h: ozetDetayTablo(['Hesap','Tutar'], [['<a href="#" data-ozdetayac="ciro" title="Ürün ürün karşılık">Üretim karşılığı ›</a>', tlEur(kc)], ['<a href="#" data-ozdetayac="gider" title="Gider belgeleri">− Gider (girilen) ›</a>', tlEur(-kg)]], ['Kazanç', tlEur(kc - kg)]) + '<div class="muted" style="font-size:11.5px;margin-top:6px">Satıra tıklayınca o rakamın ayrıntısı açılır.</div>',
+      d = { t: ozetDonemAd() + ' · kazanç', f: 'Bu dönemin üretim karşılığı (Üretim Kayıtları × stok kartı fiyatı) − bu dönemin gideri (Giderler + Alış Faturaları + Bordro Özeti, KDV hariç, yatırım hariç; belgesi girilmemiş maaş ve kira tahmini).',
+        h: ozetDetayTablo(['Hesap','Tutar'], [['<a href="#" data-ozdetayac="ciro" title="Ürün ürün karşılık">Üretim karşılığı ›</a>', tlEur(kc)], ['<a href="#" data-ozdetayac="gider" title="Gider belgeleri ve tahmini maaş / kira">− Gider ›</a>', tlEur(-kg)]], ['Kazanç', tlEur(kc - kg)]) + '<div class="muted" style="font-size:11.5px;margin-top:6px">Satıra tıklayınca o rakamın ayrıntısı açılır.</div>',
         git: 'giderler', gitAd: 'Giderler' };
     } else if (k === 'tahmin'){
       var tc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), tt = ozetTahmin(tc), kh = tt.kh, ksat = kh.pers.map(function(p){ return [esc(p.ad), 'personel (bordro, bu ay)', tlEur(p.tl)]; });
