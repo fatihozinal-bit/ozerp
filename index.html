@@ -1724,7 +1724,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-15-r356</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-15-r357</div>
     </div>
   </nav>
   <main>
@@ -4550,21 +4550,15 @@ Dikkat edilmesi gereken 2 nokta:
   // Maaş: o ayın Bordro Özeti girilmediyse ve Giderler'de "Maaş" kaydı yoksa personel kartındaki net maaştan işveren maliyeti
   // (gelmediği gün / eksik saat düşülmüş, İK & İzin'de girilen mesai eklenmiş). Kira: Aylık Kapasite gider listesindeki kira kalemi
   // ("Kira" adlı ya da Şahıstan (stopajlı) türündeki; stopajlıda brüt); o ay Giderler'de ya da alış faturasında "Kira" türü varsa girmez.
-  // İçinde bulunulan ayda geçen iş günü oranında (Aylık Kapasite çalışma düzeni; karşılık da bugüne kadar), geçmiş aylarda tam ay.
+  // r357: her ay tam ay (içinde bulunulan ay da; kullanıcı isteği): maaş puantajdaki gelmediği gün / eksik saat ve mesai girildikçe kendiliğinden revize olur.
   function ozetTahminiGiderler(){
-    var bu = thisMonthKey(), bugun = todayISO(), l = [], plan = kpPlan(), P = kvParam(), MH = aylikMesaiHarita();
+    var bu = thisMonthKey(), l = [], plan = kpPlan(), P = kvParam(), MH = aylikMesaiHarita();
     var aylar = ozetGenel() ? ozetAylar() : [ozetDonem()];
     var kiraKalem = plan.giderler.filter(function(g){ return Number(g.tutar) > 0 && (g.tur === 'stopaj' || /^kira/i.test(String(g.ad || '').trim())); });
     var ayda = function(r, a){ return String(r.tarih || '').slice(0, 7) === a && !virgoErpEskiMi(r); };
     aylar.forEach(function(ay){
       if (ay > bu) return;
-      var oran = 1, oranYazi = '', tarih = muhAySonu(ay);
-      if (ay === bu){
-        var gunler = kpAySaat(ay, plan.duzen).gunler, gecen = gunler.filter(function(g){ return g <= bugun; }).length;
-        oran = gunler.length ? gecen / gunler.length : Number(bugun.slice(8, 10)) / Number(muhAySonu(ay).slice(8, 10));
-        oranYazi = gunler.length ? ' · ayın ' + gecen + ' / ' + gunler.length + ' iş günü' : ''; tarih = bugun;
-      }
-      if (!(oran > 0)) return;
+      var tarih = muhAySonu(ay), oranYazi = ay === bu ? ' · tam ay; gelmediği gün / mesai girildikçe güncellenir' : '';
       var gitYer = sekmeIzinli('bordro') ? 'bordro' : 'kapasiteplan';
       if (!bordrolar().some(function(b){ return b.ay === ay; }) && !(state.giderler || []).some(function(g){ return g.tur === 'Maaş' && ayda(g, ay); })){
         var top = 0, kisi = 0;
@@ -4572,12 +4566,12 @@ Dikkat edilmesi gereken 2 nokta:
           var b = personelAyBordroTL(p, ay, P), m = b.net > 0 ? (personelAyMesai(p, ay, MH).tutar || 0) * b.maliyet / b.net : 0;
           if (b.maliyet + m > 0.5){ top += b.maliyet + m; kisi++; }
         });
-        if (top > 0.5) l.push({ tarih: tarih, tur: 'Maaş (tahmini) · ' + muhAyAdi(ay), aciklama: kisi + ' kişi · personel kartındaki net maaştan işveren maliyeti; bordro girilince yerine o geçer' + oranYazi, tl: top * oran, git: gitYer, tahmini: true });
+        if (top > 0.5) l.push({ tarih: tarih, tur: 'Maaş (tahmini) · ' + muhAyAdi(ay), aciklama: kisi + ' kişi · personel kartındaki net maaştan işveren maliyeti; bordro girilince yerine o geçer' + oranYazi, tl: top, git: gitYer, tahmini: true });
       }
       if (kiraKalem.length && !(state.giderler || []).some(function(g){ return g.tur === 'Kira' && ayda(g, ay); }) && !(state.alisFaturalari || []).some(function(f){ return f.durum !== 'İptal' && f.giderTuru === 'Kira' && ayda(f, ay); })){
         kiraKalem.forEach(function(g){
           var t = Number(g.tutar), stopajli = g.tur === 'stopaj', tl = stopajli ? t / (1 - KP_STOPAJ) : t;
-          l.push({ tarih: tarih, tur: (g.ad || 'Kira') + ' (tahmini) · ' + muhAyAdi(ay), aciklama: 'Aylık Kapasite\'deki tutar' + (stopajli ? ' (stopajlı: net ₺' + fmt(t) + ' + stopaj)' : '') + '; faturası / gider kaydı girilince yerine o geçer' + oranYazi, tl: tl * oran, git: 'kapasiteplan', tahmini: true });
+          l.push({ tarih: tarih, tur: (g.ad || 'Kira') + ' (tahmini) · ' + muhAyAdi(ay), aciklama: 'Aylık Kapasite\'deki tutar' + (stopajli ? ' (stopajlı: net ₺' + fmt(t) + ' + stopaj)' : '') + '; faturası / gider kaydı girilince yerine o geçer', tl: tl, git: 'kapasiteplan', tahmini: true });
         });
       }
     });
@@ -18204,7 +18198,7 @@ Dikkat edilmesi gereken 2 nokta:
     } else if (k === 'gider'){
       var gl = ozetGiderKayitlari().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); });
       var tah = function(v, s){ return v.tahmini ? '<span class="muted">' + s + '</span>' : s; };
-      d = { t: ozetDonemAd() + ' · gider', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz.<br>Faturası gelmeyen <b>maaş</b> ve <b>kira</b>, belgesi girilmemiş aylarda <b>tahmini</b> girer (soluk satırlar): maaş personel kartındaki net maaştan (o ayın bordrosu girilince yerine o geçer), kira Aylık Kapasite\'deki tutardan (Giderler\'de ya da alış faturasında "Kira" türü girilince yerine o geçer). İçinde bulunulan ayda geçen iş günü kadarı sayılır.',
+      d = { t: ozetDonemAd() + ' · gider', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz.<br>Faturası gelmeyen <b>maaş</b> ve <b>kira</b>, belgesi girilmemiş aylarda <b>tahmini</b> girer (soluk satırlar): maaş personel kartındaki net maaştan (o ayın bordrosu girilince yerine o geçer), kira Aylık Kapasite\'deki tutardan (Giderler\'de ya da alış faturasında "Kira" türü girilince yerine o geçer). Her ay tam ay sayılır; bu ayın maaşı İK &amp; İzin\'de gelmediği gün, eksik saat ve mesai girildikçe güncellenir.',
         h: ozetDetayTablo(['Tarih','Belge','Açıklama','Tutar (KDV hariç)'], gl.map(function(v){ return [tah(v, esc(kvTarihTR(v.tarih))), '<a href="#' + escAttr(v.git) + '"' + (v.tahmini ? ' class="muted"' : '') + '>' + esc(v.tur) + '</a>', tah(v, esc(v.aciklama || '')), tah(v, tlEur(v.tl))]; }), ['Toplam', '', '', tlEur(ozetGiderTl())]),
         git: 'giderler', gitAd: 'Giderler' };
     } else if (k === 'kazanc'){
