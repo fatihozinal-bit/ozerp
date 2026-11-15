@@ -140,6 +140,18 @@
   .kur-box .kur-btn { border:none; background:var(--surface-alt); color:var(--ink); font-size:11px; padding:3px 7px; border-radius:2px; cursor:pointer; font-family:inherit; }
   .kur-box .kur-btn:hover { background:var(--accent); color:#fff; }
   .kur-box .kur-tarih { font-size:10.5px; color:var(--ink-soft); padding:0 4px 0 2px; }
+  /* r353: € ve $ kuru tek sıkı kutuda yan yana; Kaydet yalnız değer değişince, tarih aynıysa bir kez */
+  .kur-grup { display:inline-flex; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:3px; white-space:nowrap; margin-left:auto; padding-right:3px; }
+  .kur-grup .kur-box { border:0; background:transparent; margin:0; padding:2px 2px 2px 8px; gap:2px; }
+  .kur-grup .kur-box + .kur-box { border-left:1px solid var(--border); }
+  .kur-grup .kur-box:focus-within { box-shadow:inset 0 -2px 0 var(--accent); }
+  .kur-grup:focus-within { border-color:var(--accent); }
+  .kur-grup .kur-ad { font-weight:600; color:var(--ink-soft); }
+  .kur-grup .kur-box input { width:58px; }
+  .kur-grup .kur-box:not(.degisti) .kur-btn[id$="Kaydet"] { display:none; }
+  .kur-grup.ayni-tarih #gKurBilgi { display:none; }
+  .kur-grup > .kur-btn { border:none; background:var(--surface-alt); color:var(--ink); font-size:10.5px; padding:3px 6px; border-radius:2px; cursor:pointer; font-family:inherit; margin-left:2px; }
+  .kur-grup > .kur-btn:hover { background:var(--accent); color:#fff; }
   .info-ico {
     display: inline-flex; align-items: center; justify-content: center;
     width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0;
@@ -563,7 +575,8 @@
   body.no-edit select[data-siparisdurum], body.no-edit select[data-teklifdurum], body.no-edit select[data-faturadurum], body.no-edit select[data-irsdurum], body.no-edit select[data-sasdurum], body.no-edit select[data-iedurum], body.no-edit select[data-ebelge] { pointer-events:none; opacity:.6; }
   .sidebar { max-height:100vh; overflow-y:auto; position:sticky; top:0; }
   .topbar { display:flex; gap:8px; align-items:center; margin-bottom:18px; }
-  .arama-wrap { position:relative; flex:1; max-width:560px; }
+  .arama-wrap { position:relative; flex:0 1 300px; min-width:150px; transition:flex-basis .15s; }
+  .arama-wrap:focus-within { flex-basis:520px; } /* r353: arama dar durur, tıklayınca genişler */
   .arama-wrap input { width:100%; }
   .arama-sonuc { position:absolute; top:100%; left:0; right:0; z-index:70; background:var(--surface); border:1px solid var(--border); box-shadow:0 8px 20px rgba(0,0,0,.15); max-height:380px; overflow-y:auto; display:none; }
   .arama-sonuc.acik { display:block; }
@@ -720,12 +733,13 @@
     body.yeni-menu #eskiMenu, #eskiMenu { display:contents; }
     .topbar { flex-wrap:wrap; }
     /* Telefonda arama kutusu kendi satırında tam genişlik; kur ve düğmeler altına */
-    .topbar .arama-wrap { flex:1 1 100%; max-width:none; }
+    .topbar .arama-wrap { flex:1 1 100%; max-width:none; order:-1; } /* arama üstte; Geri, kur, QR, uyarı altta tek satır */
+    .arama-wrap:focus-within { flex-basis:100%; }
     .topbar .arama-wrap input { font-size:16px; } /* iOS'ta odaklanınca sayfanın büyümesini önler */
     /* Telefonda kur kutuları tek düğmede (€ · $ kuru yazar); dokununca açılır — üst kısım ekranın yarısını kaplamasın */
     .topbar .kur-ozet-btn { display:inline-flex; }
-    .topbar:not(.kur-acik) .kur-box { display:none; }
-    .topbar.kur-acik .kur-box { flex:1 1 100%; }
+    .topbar:not(.kur-acik) .kur-grup { display:none; }
+    .topbar.kur-acik .kur-grup { flex:1 1 100%; flex-wrap:wrap; order:1; } /* açılınca kurlar en altta; Geri / QR / uyarı satırı bozulmaz */
   }
   .kur-ozet-btn { display:none; }
   .grid2 > .field > input, .grid2 > .field > select, .grid2 > .field > textarea { width:100%; max-width:100%; min-width:0; }
@@ -1697,14 +1711,14 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-15-r352</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-15-r353</div>
     </div>
   </nav>
   <main>
     <div class="topbar">
       <button class="btn secondary small" id="geriBtn" type="button" disabled title="Önceki sayfaya / sekmeye dön (klavyede Alt + ←)" aria-label="Geri">← Geri</button>
-      <div class="arama-wrap"><input type="search" id="globalArama" autocomplete="off" placeholder="Ara: sayfa, işlem (yeni fatura…), belge no, müşteri, lot… (Ctrl+K) — QR / barkod okuyucu da buraya yazar"><div id="aramaSonuc" class="arama-sonuc"></div></div>
-      <div class="kur-box" title="Bu kur, € tutarların ₺ karşılığını göstermek için kullanılır. Her gün ilk açılışta TCMB döviz satış kuru otomatik alınır; elle de değiştirilebilir."><span>1 € = ₺</span><input type="number" step="0.01" id="gKur" min="0" placeholder="55,00" aria-label="1 Euro kaç TL"><span class="kur-tarih" id="gKurBilgi"></span><button class="kur-btn" id="gKurKaydet">Kaydet</button></div>
+      <div class="arama-wrap"><input type="search" id="globalArama" autocomplete="off" placeholder="Ara… (Ctrl+K)" title="Ara: sayfa, işlem (yeni fatura…), belge no, müşteri, lot… QR / barkod okuyucu da buraya yazar"><div id="aramaSonuc" class="arama-sonuc"></div></div>
+      <div class="kur-grup"><div class="kur-box" title="1 € kaç ₺: € tutarların ₺ karşılığını göstermek için kullanılır. Her gün ilk açılışta TCMB döviz satış kuru otomatik alınır; elle de değiştirilebilir (yazınca Kaydet çıkar, Enter da kaydeder)."><span class="kur-ad">€</span><input type="number" step="0.01" id="gKur" min="0" placeholder="55,00" aria-label="1 Euro kaç TL"><span class="kur-tarih" id="gKurBilgi"></span><button class="kur-btn" id="gKurKaydet">Kaydet</button></div></div>
       <button class="btn secondary small" id="qrKameraBtn" title="Kamera ile QR okut">📷 QR</button>
       <button class="btn secondary small" id="uyariBtn" title="Uyarı merkezi">🔔 <span id="uyariSayi">0</span></button>
     </div>
@@ -21896,8 +21910,8 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Üst çubuk: 1 $ = ₺ ----------
   (function(){
     var kutu = document.querySelector('.topbar .kur-box'); if (!kutu) return;
-    var u = document.createElement('div'); u.className = 'kur-box'; u.title = '$ cinsinden belgelerin varsayılan kuru (belge üzerinde değiştirilebilir). Kur geçmişi saklanır.';
-    u.innerHTML = '<span>1 $ = ₺</span><input type="number" step="0.01" id="gUsdKur" min="0" placeholder="—" aria-label="1 Dolar kaç TL"><span class="kur-tarih" id="gUsdBilgi"></span><button class="kur-btn" id="gUsdKaydet">Kaydet</button>';
+    var u = document.createElement('div'); u.className = 'kur-box'; u.title = '1 $ kaç ₺: $ cinsinden belgelerin varsayılan kuru (belge üzerinde değiştirilebilir). Kur geçmişi saklanır. Yazınca Kaydet çıkar, Enter da kaydeder.';
+    u.innerHTML = '<span class="kur-ad">$</span><input type="number" step="0.01" id="gUsdKur" min="0" placeholder="—" aria-label="1 Dolar kaç TL"><span class="kur-tarih" id="gUsdBilgi"></span><button class="kur-btn" id="gUsdKaydet">Kaydet</button>';
     kutu.parentNode.insertBefore(u, kutu.nextSibling);
     byId('gUsdKur').addEventListener('keydown', function(e){ if (e.key === 'Enter') byId('gUsdKaydet').click(); });
     byId('gUsdKaydet').addEventListener('click', function(){
@@ -21917,7 +21931,7 @@ Dikkat edilmesi gereken 2 nokta:
     var tb = document.querySelector('.topbar'), kutu = tb && tb.querySelector('.kur-box'); if (!kutu) return;
     var b = document.createElement('button'); b.type = 'button'; b.className = 'btn secondary small kur-ozet-btn'; b.id = 'kurOzetBtn'; b.title = 'Kurları göster / değiştir';
     b.addEventListener('click', function(){ tb.classList.toggle('kur-acik'); });
-    tb.insertBefore(b, kutu);
+    tb.insertBefore(b, kutu.closest('.kur-grup') || kutu);
   })();
   EK_HER_ZAMAN.push(function(){
     var b = byId('kurOzetBtn'), c = state.config || {}; if (!b) return;
@@ -21948,7 +21962,7 @@ Dikkat edilmesi gereken 2 nokta:
     var b = document.createElement('button'); b.className = 'kur-btn'; b.id = 'gTcmbBtn'; b.textContent = 'TCMB'; b.style.display = 'none';
     b.title = 'TCMB günlük kur bülteninden € ve $ döviz satış kurunu al';
     b.addEventListener('click', function(){ b.disabled = true; tcmbKurAl(false).then(function(){ b.disabled = false; }); });
-    kutu.appendChild(b);
+    (kutu.closest('.kur-grup') || kutu).appendChild(b);
   })();
   EK_HER_ZAMAN.push(function(){
     var b = byId('gTcmbBtn'); if (b) b.style.display = tcmbKaynak() ? '' : 'none';
@@ -21961,8 +21975,21 @@ Dikkat edilmesi gereken 2 nokta:
     var el = byId('gUsdKur'); if (!el || !state.config) return;
     if (document.activeElement !== el) el.value = state.config.usdTryKuru || '';
     var t = state.config.usdKuruTarihi, b = byId('gUsdBilgi'); if (b) b.textContent = t ? t.slice(8, 10) + '.' + t.slice(5, 7) : '';
+    var g = el.closest('.kur-grup'); if (g) g.classList.toggle('ayni-tarih', !!t && t === state.config.kuruTarihi);
   }
   EK_HER_ZAMAN.push(usdKurKutusu);
+  // r353: üst çubuk kurlarında Kaydet düğmesi yalnız kutudaki değer kayıtlı kurdan farklıyken görünür (Enter da kaydeder)
+  function kurDegistiIsaretle(inp){
+    var kutu = inp && inp.closest('.kur-box'), c = state.config || {}; if (!kutu) return;
+    var kayitli = Number(inp.id === 'gUsdKur' ? c.usdTryKuru : c.eurTryKuru) || 0;
+    kutu.classList.toggle('degisti', inp.value !== '' && Math.abs((Number(inp.value) || 0) - kayitli) > 1e-9);
+  }
+  (function(){
+    var g = document.querySelector('.topbar .kur-grup'); if (!g) return;
+    g.addEventListener('input', function(e){ if (e.target.matches('input')) kurDegistiIsaretle(e.target); });
+    g.addEventListener('focusout', function(e){ if (e.target.matches('input')) kurDegistiIsaretle(e.target); });
+  })();
+  EK_HER_ZAMAN.push(function(){ document.querySelectorAll('.topbar .kur-grup input').forEach(kurDegistiIsaretle); });
   // Belge para birimi + kur seçimi (formlarda): pb seçilince kur kutusu açılır/kapanır, varsayılan kur gelir
   function pbSecimHtml(idOn, pb, dkur, tarih){
     return '<div class="field"><label>Para birimi</label><select id="' + idOn + 'Pb">' + PB_LISTE.map(function(x){ return '<option value="' + x + '"' + (x === (pb || 'EUR') ? ' selected' : '') + '>' + x + ' (' + PB_SEMBOL[x] + ')</option>'; }).join('') + '</select></div>' +
