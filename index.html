@@ -613,6 +613,27 @@
   .card.tiklanir:hover { border-color:var(--accent); box-shadow:0 1px 6px rgba(0,0,0,.06); }
   .card .kart-ok { color:var(--ink-soft); float:right; font-size:14px; line-height:1; }
   .card.tiklanir:hover .kart-ok { color:var(--accent); }
+  /* r360: Özet kartlarının ayrıntı penceresi: geniş, okunaklı tablo; yazı sütunları solda, rakamlar sağda tek satır; açıklama altta kapalı */
+  .oz-detay .tablewrap { max-height: min(58vh, 560px); overflow: auto; border: 1px solid var(--border); border-radius: 6px; }
+  .oz-detay table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .oz-detay th { position: sticky; top: 0; z-index: 1; background: var(--surface-alt); text-align: left; font-size: 12px; font-weight: 600; color: var(--ink-soft); padding: 9px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .oz-detay td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+  .oz-detay th.num, .oz-detay td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .oz-detay tbody tr:hover td { background: var(--surface-alt); }
+  .oz-detay tr.oz-detay-top td { background: var(--surface-alt); border-top: 2px solid var(--border); border-bottom: none; font-size: 14.5px; position: sticky; bottom: 0; }
+  .oz-detay td .muted, .oz-detay td.muted { font-size: .94em; }
+  .oz-detay td.empty { text-align: center; color: var(--ink-soft); padding: 22px; }
+  .oz-detay table + * { margin-top: 10px; }
+  .oz-detay .oz-mob { display: none; }
+  @media (max-width: 640px){
+    .oz-detay th, .oz-detay td { padding: 8px 10px; }
+    .oz-detay .uzun { display: none; }
+    .oz-detay .oz-mob { display: block; margin-top: 3px; font-size: 12px; color: var(--ink-soft); }
+  }
+  .oz-detay-nasil { margin-top: 12px; font-size: 12.5px; }
+  .oz-detay-nasil > summary { cursor: pointer; color: var(--ink-soft); user-select: none; }
+  .oz-detay-nasil > div { margin-top: 6px; line-height: 1.65; color: var(--ink); }
+  .oz-detay-alt { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
   .hesap-formul { background:var(--surface-alt); border:1px solid var(--border); padding:8px 10px; font-size:12.5px; line-height:1.6; margin:0 0 10px; }
   .uyari-satir .nokta { width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
   .nokta.kritik { background:var(--bad); } .nokta.uyari { background:var(--accent); } .nokta.bilgi { background:var(--steel); }
@@ -1724,7 +1745,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-16-r359</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-16-r360</div>
     </div>
   </nav>
   <main>
@@ -18231,10 +18252,21 @@ Dikkat edilmesi gereken 2 nokta:
   EK_HER_ZAMAN.push(kiraFaturaDuzelt);
 
   // ---------- Özet kartları: tıklayınca hesabın dökümü ----------
+  // r360: sütun rakamsa (₺ / € / % / adet) sağa yaslı ve tek satır; tarih, ad, açıklama gibi yazı sütunları solda
   function ozetDetayTablo(bas, satirlar, toplam){
-    return '<div class="tablewrap"><table><thead><tr>'+bas.map(function(b, i){ return '<th'+(i ? ' class="num"' : '')+'>'+b+'</th>'; }).join('')+'</tr></thead><tbody>'+
-      (satirlar.length ? satirlar.map(function(r){ return '<tr>'+r.map(function(c, i){ return '<td'+(i ? ' class="num"' : '')+'>'+c+'</td>'; }).join('')+'</tr>'; }).join('') : '<tr><td colspan="'+bas.length+'" class="empty">Kayıt yok</td></tr>')+
-      (toplam ? '<tr>'+toplam.map(function(c, i){ return '<td'+(i ? ' class="num"' : '')+'><b>'+c+'</b></td>'; }).join('')+'</tr>' : '')+'</tbody></table></div>';
+    var duz = function(c){ return String(c == null ? '' : c).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim(); };
+    var num = bas.map(function(b, i){
+      if (!i) return false;
+      var dolu = satirlar.map(function(r){ return duz(r[i]); }).filter(function(t){ return t && t !== '-' && t !== '—'; });
+      if (!dolu.length) dolu = toplam ? [duz(toplam[i])].filter(Boolean) : [];
+      return dolu.length > 0 && dolu.every(function(t){ return !/^(\d{1,2}\.\d{1,2}\.\d{4}|\d{4}-\d{2}-\d{2})/.test(t) && /^[−\-+]?\s*[₺€$%≈]?\s*[−\-]?\d/.test(t); });
+    });
+    // uzun yazı sütunu (açıklama): telefonda kendi sütunu gizlenir, soldaki hücrenin altında görünür (tutar sütunu sığsın)
+    var uzun = bas.map(function(b, i){ if (!i || num[i]) return false; var l = satirlar.map(function(r){ return duz(r[i]).length; }); return l.length > 0 && l.reduce(function(a, x){ return a + x; }, 0) / l.length > 30; });
+    var td = function(c, i, tag){ var k = [num[i] ? 'num' : '', uzun[i] ? 'uzun' : ''].filter(Boolean).join(' '); return '<' + tag + (k ? ' class="' + k + '"' : '') + '>' + c + '</' + tag + '>'; };
+    return '<div class="tablewrap"><table><thead><tr>'+bas.map(function(b, i){ return td(b, i, 'th'); }).join('')+'</tr></thead><tbody>'+
+      (satirlar.length ? satirlar.map(function(r){ return '<tr>'+r.map(function(c, i){ return td(c + (uzun[i + 1] && duz(r[i + 1]) ? '<div class="oz-mob">' + r[i + 1] + '</div>' : ''), i, 'td'); }).join('')+'</tr>'; }).join('') : '<tr><td colspan="'+bas.length+'" class="empty">Kayıt yok</td></tr>')+
+      (toplam ? '<tr class="oz-detay-top">'+toplam.map(function(c, i){ return td('<b>'+c+'</b>', i, 'td'); }).join('')+'</tr>' : '')+'</tbody></table></div>';
   }
   function eurTl(v){ return (v < 0 ? '−€' : '€')+fmt(Math.abs(v))+(tl(v) ? ' <span class="muted">(₺'+fmt(tl(v))+')</span>' : ''); }
   function ozetDetay(k){
@@ -18293,7 +18325,8 @@ Dikkat edilmesi gereken 2 nokta:
     }
     if (!d) return;
     var bt = function(tab, ad){ return sekmeIzinli(tab) ? '<button class="btn secondary small" data-detaygit="'+tab+'">'+ad+' →</button>' : ''; };
-    modalAc({ title: d.t, kaydetYok: true, genislik: 'orta', html: '<div class="hesap-formul">'+d.f+'</div>'+d.h+'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">'+bt(d.git, d.gitAd)+(d.git2 ? bt(d.git2, d.git2Ad) : '')+'</div>',
+    // r360: geniş pencere; önce tablo, hesap açıklaması altta kapalı "Nasıl hesaplanır?"
+    modalAc({ title: d.t, kaydetYok: true, genislik: 'genis', html: '<div class="oz-detay">'+d.h+'<details class="oz-detay-nasil"><summary>Nasıl hesaplanır?</summary><div>'+d.f+'</div></details><div class="oz-detay-alt">'+bt(d.git, d.gitAd)+(d.git2 ? bt(d.git2, d.git2Ad) : '')+'</div></div>',
       onOpen: function(el, kapat){ el.querySelectorAll('[data-detaygit]').forEach(function(b){ b.addEventListener('click', function(){ kapat(); gitSekme(b.dataset.detaygit); }); });
         // r347: penceredeki bağlantılar: başka bir Özet ayrıntısı (kazanç → gider / karşılık) ya da belge (#giderler/ID); önce pencere kapanır, yoksa belge pencerenin arkasında açılıyordu
         el.addEventListener('click', function(e){
