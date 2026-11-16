@@ -614,7 +614,7 @@
   .card .kart-ok { color:var(--ink-soft); float:right; font-size:14px; line-height:1; }
   .card.tiklanir:hover .kart-ok { color:var(--accent); }
   /* r360: Özet kartlarının ayrıntı penceresi: geniş, okunaklı tablo; yazı sütunları solda, rakamlar sağda tek satır; açıklama altta kapalı */
-  .oz-detay .tablewrap { max-height: min(58vh, 560px); overflow: auto; border: 1px solid var(--border); border-radius: 6px; }
+  .oz-detay .tablewrap { max-height: min(calc(90vh - 230px), 680px); overflow: auto; border: 1px solid var(--border); border-radius: 6px; }
   .oz-detay table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .oz-detay th { position: sticky; top: 0; z-index: 1; background: var(--surface-alt); text-align: left; font-size: 12px; font-weight: 600; color: var(--ink-soft); padding: 9px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
   .oz-detay td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
@@ -624,10 +624,17 @@
   .oz-detay td .muted, .oz-detay td.muted { font-size: .94em; }
   .oz-detay td.empty { text-align: center; color: var(--ink-soft); padding: 22px; }
   .oz-detay table + * { margin-top: 10px; }
-  .oz-detay .oz-mob { display: none; }
+  /* r361: pencere içeriğe göre genişler (en az 980 px, en çok ekranın %96'sı); belge / fatura / ürün adları tek satır, yalnız uzun açıklama gerekirse alt satıra geçer */
+  #formBox.tam:has(.oz-detay) { width: auto; min-width: min(980px, 96vw); max-width: min(1600px, 96vw); }
+  .oz-detay td:not(.uzun), .oz-detay th { white-space: nowrap; }
+  .oz-detay td.uzun { min-width: 280px; }
+  .oz-detay .oz-mob { display: none; white-space: normal; }
   @media (max-width: 640px){
     .oz-detay th, .oz-detay td { padding: 8px 10px; }
     .oz-detay .uzun { display: none; }
+    #formBox.tam:has(.oz-detay) { width: 100%; min-width: 0; max-width: 100%; }
+    .oz-detay td:not(.num) { white-space: normal; }
+    .oz-detay td.num .muted { display: block; }
     .oz-detay .oz-mob { display: block; margin-top: 3px; font-size: 12px; color: var(--ink-soft); }
   }
   .oz-detay-nasil { margin-top: 12px; font-size: 12.5px; }
@@ -1745,7 +1752,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-16-r360</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-16-r361</div>
     </div>
   </nav>
   <main>
@@ -18325,8 +18332,8 @@ Dikkat edilmesi gereken 2 nokta:
     }
     if (!d) return;
     var bt = function(tab, ad){ return sekmeIzinli(tab) ? '<button class="btn secondary small" data-detaygit="'+tab+'">'+ad+' →</button>' : ''; };
-    // r360: geniş pencere; önce tablo, hesap açıklaması altta kapalı "Nasıl hesaplanır?"
-    modalAc({ title: d.t, kaydetYok: true, genislik: 'genis', html: '<div class="oz-detay">'+d.h+'<details class="oz-detay-nasil"><summary>Nasıl hesaplanır?</summary><div>'+d.f+'</div></details><div class="oz-detay-alt">'+bt(d.git, d.gitAd)+(d.git2 ? bt(d.git2, d.git2Ad) : '')+'</div></div>',
+    // r360: geniş pencere (r361: içeriğe göre, ekranın %96'sına kadar); önce tablo, hesap açıklaması altta kapalı "Nasıl hesaplanır?"
+    modalAc({ title: d.t, kaydetYok: true, genislik: 'tam', html: '<div class="oz-detay">'+d.h+'<details class="oz-detay-nasil"><summary>Nasıl hesaplanır?</summary><div>'+d.f+'</div></details><div class="oz-detay-alt">'+bt(d.git, d.gitAd)+(d.git2 ? bt(d.git2, d.git2Ad) : '')+'</div></div>',
       onOpen: function(el, kapat){ el.querySelectorAll('[data-detaygit]').forEach(function(b){ b.addEventListener('click', function(){ kapat(); gitSekme(b.dataset.detaygit); }); });
         // r347: penceredeki bağlantılar: başka bir Özet ayrıntısı (kazanç → gider / karşılık) ya da belge (#giderler/ID); önce pencere kapanır, yoksa belge pencerenin arkasında açılıyordu
         el.addEventListener('click', function(e){
