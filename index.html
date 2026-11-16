@@ -1724,7 +1724,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-15-r357</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-16-r358</div>
     </div>
   </nav>
   <main>
@@ -4570,8 +4570,9 @@ Dikkat edilmesi gereken 2 nokta:
       }
       if (kiraKalem.length && !(state.giderler || []).some(function(g){ return g.tur === 'Kira' && ayda(g, ay); }) && !(state.alisFaturalari || []).some(function(f){ return f.durum !== 'İptal' && f.giderTuru === 'Kira' && ayda(f, ay); })){
         kiraKalem.forEach(function(g){
-          var t = Number(g.tutar), stopajli = g.tur === 'stopaj', tl = stopajli ? t / (1 - KP_STOPAJ) : t;
-          l.push({ tarih: tarih, tur: (g.ad || 'Kira') + ' (tahmini) · ' + muhAyAdi(ay), aciklama: 'Aylık Kapasite\'deki tutar' + (stopajli ? ' (stopajlı: net ₺' + fmt(t) + ' + stopaj)' : '') + '; faturası / gider kaydı girilince yerine o geçer', tl: tl, git: 'kapasiteplan', tahmini: true });
+          var bo = kpKalemOran(g, ay); if (!(bo > 0)) return; // r358: kira başlamadan önceki aylarda yok, başladığı ayda kalan gün kadar
+          var t = Number(g.tutar), stopajli = g.tur === 'stopaj', tl = (stopajli ? t / (1 - KP_STOPAJ) : t) * bo;
+          l.push({ tarih: tarih, tur: (g.ad || 'Kira') + ' (tahmini) · ' + muhAyAdi(ay), aciklama: 'Aylık Kapasite\'deki tutar' + (stopajli ? ' (stopajlı: net ₺' + fmt(t) + ' + stopaj)' : '') + (bo < 1 ? ' · ' + kpKalemOranYazi(g, ay) : '') + '; faturası / gider kaydı girilince yerine o geçer', tl: tl, git: 'kapasiteplan', tahmini: true });
         });
       }
     });
@@ -4746,6 +4747,24 @@ Dikkat edilmesi gereken 2 nokta:
       if (!l.length) return;
       configWrite({ fireOtoR316: { tarih: nowISO(), kisi: aktifKullaniciAdi() || '', adet: l.length } }).then(function(){ return fireDuzeltYaz(l); })
         .then(function(n){ toast('✓ ' + n + ' üretim kaydı düzeltildi (fire düşüldü)'); }).catch(function(e){ toast('Fire düzeltmesi durdu: ' + dbErrMsg(e) + '. Üretim Kayıtları\'ndaki düğmeyle tamamlayın.', true); });
+    }, 4000);
+  }
+  // r358: kullanıcı isteğiyle tek seferlik (16.11.2026): Yunus Emre ve Selman'ın işe girişi Kasım (kartta 23.10.2026 yazıyordu → 01.11.2026; Ekim'e maaş
+  // tahmini girmesin) ve kira 23.10.2026'da başladı (Aylık Kapasite'deki kira kalemine bas: '2026-10-23'). config.girisKiraR358 bir kez çalışmasını sağlar.
+  var girisKiraDenendi = false;
+  function girisKiraDuzelt(){
+    if (girisKiraDenendi || !db || !aktifKullanici() || aktifRol() !== 'Yönetici' || !state.config || !(state.personel || []).length) return;
+    girisKiraDenendi = true; if (state.config.girisKiraR358) return;
+    setTimeout(function(){
+      if ((state.config || {}).girisKiraR358) return;
+      var kisi = (state.personel || []).filter(function(p){ return ['smvkrfsn0f85tav', 'smvkrjmrowb3b1h'].indexOf(p.id) >= 0 && p.iseGiris === '2026-10-23'; });
+      var plan = kpPlan(), kira = plan.giderler.filter(function(g){ return !g.bas && (g.tur === 'stopaj' || /^kira/i.test(String(g.ad || '').trim())); });
+      kira.forEach(function(g){ g.bas = '2026-10-23'; });
+      var isler = [configWrite({ girisKiraR358: { tarih: nowISO(), kisi: aktifKullaniciAdi() || '', personel: kisi.length, kira: kira.length } })];
+      if (kira.length) isler.push(configWrite({ kapasitePlan: { urunler: plan.urunler, giderler: plan.giderler, elektrik: plan.elektrik, duzen: plan.duzen } }));
+      kisi.forEach(function(p){ isler.push(kayitGuncelle('personel', p.id, { iseGiris: '2026-11-01' })); });
+      Promise.all(isler).then(function(){ if (kisi.length || kira.length) toast('✓ ' + [kisi.length ? kisi.length + ' personelin işe girişi 01.11.2026' : '', kira.length ? 'kira 23.10.2026\'dan' : ''].filter(Boolean).join(' · ')); })
+        .catch(function(e){ toast('Düzeltme yapılamadı: ' + dbErrMsg(e), true); });
     }, 4000);
   }
   (function(){ var k = byId('fireDuzeltKutu'); if (k) k.addEventListener('click', function(e){ if (e.target.id === 'fireDuzeltUygula') fireDuzeltUygula(e.target); }); })();
@@ -15164,6 +15183,19 @@ Dikkat edilmesi gereken 2 nokta:
     if (g.kdv !== '' && g.kdv != null && !isNaN(Number(g.kdv))) return Math.max(0, Number(g.kdv));
     var ad = String(g.ad || '').trim(); return KP_KDV_VARS.hasOwnProperty(ad) ? KP_KDV_VARS[ad] : 20;
   }
+  // r358: gider kaleminin başlangıç tarihi (g.bas, YYYY-AA-GG; ör. kira 23.10.2026'da başladı): o aydan önce yok, başladığı ayda
+  // kalan takvim günü kadar (Ekim'de 23–31 = 9 / 31 gün), sonraki aylarda tam ay. bas yoksa her ay tam.
+  function kpKalemOran(g, ay){
+    var b = /^\d{4}-\d{2}-\d{2}$/.test((g && g.bas) || '') ? g.bas : '';
+    if (!b || ay > b.slice(0, 7)) return 1;
+    if (ay < b.slice(0, 7)) return 0;
+    var gun = new Date(Number(ay.slice(0, 4)), Number(ay.slice(5, 7)), 0).getDate();
+    return Math.max(0, gun - Number(b.slice(8, 10)) + 1) / gun;
+  }
+  function kpKalemOranYazi(g, ay){
+    var o = kpKalemOran(g, ay), gun = new Date(Number(ay.slice(0, 4)), Number(ay.slice(5, 7)), 0).getDate();
+    return o >= 1 ? '' : o <= 0 ? kvTarihTR(g.bas) + '\'da başlıyor, bu ay yok' : kvTarihTR(g.bas) + '\'dan: ' + Math.round(o * gun) + ' / ' + gun + ' gün';
+  }
   function kpPlan(){
     var c = (state.config || {}).kapasitePlan || {}, kopya = function(l){ return Array.isArray(l) ? l.map(function(x){ return Object.assign({}, x); }) : null; };
     var gid = kopya(c.giderler);
@@ -15266,9 +15298,9 @@ Dikkat edilmesi gereken 2 nokta:
       mesai.tl += x.mesaiTl; mesai.saat += x.mesaiSaat; if (x.mesaiSaat > 0) mesai.kisi++;
     });
     var e = plan.elektrik, kwM = Number(e.kwMakine) || kpKartKw(), kwG = Number(e.kwGenel) || 0, kwh = (calisanMk * kwM + kwG) * ks.saat, elekTl = kwh * (Number(e.fiyat) || 0);
-    var gid = plan.giderler.map(function(g){ var t = Number(g.tutar) || 0, k = g.tur === 'kisi' ? pers.length : g.tur === 'makine' ? calisanMk : g.tur === 'gece' ? (ks.gece > 0 ? 1 : 0) : 1;
-      if (g.tur === 'stopaj'){ var brut = t / (1 - KP_STOPAJ); return { g: g, carpan: 1, tl: brut, net: t, stopaj: brut - t, kdvOran: 0, kdvTl: 0 }; }
-      var ko = kpGiderKdv(g); return { g: g, carpan: k, tl: t * k, kdvOran: ko, kdvTl: t * k * ko / 100 }; });
+    var gid = plan.giderler.map(function(g){ var bo = kpKalemOran(g, ay), t = (Number(g.tutar) || 0) * bo, k = g.tur === 'kisi' ? pers.length : g.tur === 'makine' ? calisanMk : g.tur === 'gece' ? (ks.gece > 0 ? 1 : 0) : 1;
+      if (g.tur === 'stopaj'){ var brut = t / (1 - KP_STOPAJ); return { g: g, carpan: 1, bo: bo, tl: brut, net: t, stopaj: brut - t, kdvOran: 0, kdvTl: 0 }; }
+      var ko = kpGiderKdv(g); return { g: g, carpan: k, bo: bo, tl: t * k, kdvOran: ko, kdvTl: t * k * ko / 100 }; });
     var gidTl = gid.reduce(function(a, x){ return a + x.tl; }, 0);
     // r295: KDV kâra girmez (devletin parası): satışta hesaplanan KDV − giderlerde ödenen (indirilecek) KDV = ödenecek KDV; eksiyse devreden.
     // Giderler KDV hariç yazılır; kurumlar vergisi vergi öncesi kârdan. Gider KDV'si oran oran (kalemin KDV % sütunu; elektrik %20).
@@ -15341,7 +15373,7 @@ Dikkat edilmesi gereken 2 nokta:
         }).join('') : '') +
       satir('− Elektrik', h.elekTl, { adetBasi: 1, not: fmt(Math.round(h.kwh)) + ' kWh', bilgi: fmt(Math.round(h.kwh)) + ' kWh = (' + fmt2(h.calisanMk) + ' makine × ' + fmt2(h.kwM) + ' kW + ' + fmt2(h.kwG) + ' kW genel) × ' + fmt2(h.ks.saat) + ' sa' + (h.ks.gece ? ' (gece dahil)' : '') + '. kW ve ₺ / kWh Çalışma düzeni\'nde.' }) +
       dolu.map(function(x){ var ad = '− ' + esc(x.g.ad || 'Kalem');
-        if (x.g.tur === 'stopaj') return satir(ad, x.tl, { adetBasi: 1, not: 'brüt', bilgi: 'Şahıstan kira: brüt = net ÷ 0,80; aradaki %20 stopaj muhtasarla vergi dairesine.' }) +
+        if (x.g.tur === 'stopaj') return satir(ad, x.tl, { adetBasi: 1, not: 'brüt', bilgi: 'Şahıstan kira: brüt = net ÷ 0,80; aradaki %20 stopaj muhtasarla vergi dairesine.' + (x.bo < 1 ? ' ' + kpKalemOranYazi(x.g, h.ay) + '.' : '') }) +
           satir('Net (ev sahibine)', x.net, { alt: 1, ic: 1 }) + satir('Stopaj %20 (vergi dairesine, muhtasar)', x.stopaj, { alt: 1, ic: 1 });
         return satir(ad, x.tl, { adetBasi: 1, not: x.g.tur === 'kisi' ? fmt(x.carpan) + ' kişi × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'makine' ? fmt2(x.carpan) + ' makine × ₺' + muhTutar(Number(x.g.tutar) || 0) : x.g.tur === 'gece' ? 'gece vardiyası çalışıyor' : '' }); }).join('') +
       satir('Toplam gider', h.giderTop, { ara: 1, adetBasi: 1 }) +
@@ -15378,7 +15410,7 @@ Dikkat edilmesi gereken 2 nokta:
     // r326: Bu ay hücresi tek satır; çarpan, stopaj, KDV üzerine gelince
     h.gid.forEach(function(x){ var el = host.querySelector('[data-kpgc="' + x.g.id + '"]'); if (!el) return;
       el.innerHTML = x.tl ? '₺' + muhTutar(x.tl) : '<span class="muted">—</span>';
-      el.title = x.tl ? [x.g.tur === 'stopaj' ? 'brüt (net ÷ 0,80) · stopaj ₺' + muhTutar(x.stopaj) : x.g.tur !== 'ay' && x.g.tur !== 'gece' ? '₺' + muhTutar(Number(x.g.tutar) || 0) + ' × ' + fmt2(x.carpan) : '', x.kdvTl > 0.004 ? '+ KDV ₺' + muhTutar(x.kdvTl) : 'KDV yok'].filter(Boolean).join(' · ') : ''; });
+      el.title = x.tl ? [x.bo < 1 ? kpKalemOranYazi(x.g, h.ay) : '', x.g.tur === 'stopaj' ? 'brüt (net ÷ 0,80) · stopaj ₺' + muhTutar(x.stopaj) : x.g.tur !== 'ay' && x.g.tur !== 'gece' ? '₺' + muhTutar(Number(x.g.tutar) || 0) + ' × ' + fmt2(x.carpan) : '', x.kdvTl > 0.004 ? '+ KDV ₺' + muhTutar(x.kdvTl) : 'KDV yok'].filter(Boolean).join(' · ') : ''; });
     var el = host.querySelector('[data-kpelek]'); if (el){ el.innerHTML = '₺' + muhTutar(h.elekTl); el.title = fmt(Math.round(h.kwh)) + ' kWh · + KDV ₺' + muhTutar(h.elekTl * KP_ELEKTRIK_KDV / 100); }
     var gt = host.querySelector('[data-kpgtop]'); if (gt) gt.innerHTML = '<b>₺' + muhTutar(h.elekTl + h.gidTl) + '</b>';
     var so = host.querySelector('#kpSonuc'); if (so) so.innerHTML = kpSonucHtml(h);
@@ -18178,6 +18210,7 @@ Dikkat edilmesi gereken 2 nokta:
   var _rozetZaman = null;
   EK_HER_ZAMAN.push(function uyarilar(){ clearTimeout(_rozetZaman); _rozetZaman = setTimeout(uyariRozetleri, 400); });
   EK_HER_ZAMAN.push(fireOtoDuzelt);
+  EK_HER_ZAMAN.push(girisKiraDuzelt);
 
   // ---------- Özet kartları: tıklayınca hesabın dökümü ----------
   function ozetDetayTablo(bas, satirlar, toplam){
@@ -18198,7 +18231,7 @@ Dikkat edilmesi gereken 2 nokta:
     } else if (k === 'gider'){
       var gl = ozetGiderKayitlari().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); });
       var tah = function(v, s){ return v.tahmini ? '<span class="muted">' + s + '</span>' : s; };
-      d = { t: ozetDonemAd() + ' · gider', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz.<br>Faturası gelmeyen <b>maaş</b> ve <b>kira</b>, belgesi girilmemiş aylarda <b>tahmini</b> girer (soluk satırlar): maaş personel kartındaki net maaştan (o ayın bordrosu girilince yerine o geçer), kira Aylık Kapasite\'deki tutardan (Giderler\'de ya da alış faturasında "Kira" türü girilince yerine o geçer). Her ay tam ay sayılır; bu ayın maaşı İK &amp; İzin\'de gelmediği gün, eksik saat ve mesai girildikçe güncellenir.',
+      d = { t: ozetDonemAd() + ' · gider', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz.<br>Faturası gelmeyen <b>maaş</b> ve <b>kira</b>, belgesi girilmemiş aylarda <b>tahmini</b> girer (soluk satırlar): maaş personel kartındaki net maaştan (o ayın bordrosu girilince yerine o geçer), kira Aylık Kapasite\'deki tutardan, başladığı tarihten itibaren (ilk ay kalan gün kadar; Giderler\'de ya da alış faturasında "Kira" türü girilince yerine o geçer). Her ay tam ay sayılır; bu ayın maaşı İK &amp; İzin\'de gelmediği gün, eksik saat ve mesai girildikçe güncellenir.',
         h: ozetDetayTablo(['Tarih','Belge','Açıklama','Tutar (KDV hariç)'], gl.map(function(v){ return [tah(v, esc(kvTarihTR(v.tarih))), '<a href="#' + escAttr(v.git) + '"' + (v.tahmini ? ' class="muted"' : '') + '>' + esc(v.tur) + '</a>', tah(v, esc(v.aciklama || '')), tah(v, tlEur(v.tl))]; }), ['Toplam', '', '', tlEur(ozetGiderTl())]),
         git: 'giderler', gitAd: 'Giderler' };
     } else if (k === 'kazanc'){
