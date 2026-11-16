@@ -1724,7 +1724,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-16-r358</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-16-r359</div>
     </div>
   </nav>
   <main>
@@ -4766,6 +4766,23 @@ Dikkat edilmesi gereken 2 nokta:
       Promise.all(isler).then(function(){ if (kisi.length || kira.length) toast('✓ ' + [kisi.length ? kisi.length + ' personelin işe girişi 01.11.2026' : '', kira.length ? 'kira 23.10.2026\'dan' : ''].filter(Boolean).join(' · ')); })
         .catch(function(e){ toast('Düzeltme yapılamadı: ' + dbErrMsg(e), true); });
     }, 4000);
+  }
+  // r359: kullanıcı isteğiyle tek seferlik (16.11.2026): kira faturalı (kiraya veren Virgo Hidrolik / Kadir Bey de kiracı, bize fatura keser; stopaj yok):
+  // Aylık Kapasite'deki kira kalemi "Aylık sabit", 60.000 ₺ + KDV %20 (fatura 72.000 ₺), başlangıç 23.10.2026. config.kiraFaturaR359 bir kez çalışmasını sağlar.
+  // r358'in kira yazısından sonra çalışsın diye 6 sn bekler; başlangıç tarihi burada da yazılır.
+  var kiraFaturaDenendi = false;
+  function kiraFaturaDuzelt(){
+    if (kiraFaturaDenendi || !db || !aktifKullanici() || aktifRol() !== 'Yönetici' || !state.config) return;
+    kiraFaturaDenendi = true; if (state.config.kiraFaturaR359) return;
+    setTimeout(function(){
+      if ((state.config || {}).kiraFaturaR359) return;
+      var plan = kpPlan(), kira = plan.giderler.filter(function(g){ return g.tur === 'stopaj' || /^kira/i.test(String(g.ad || '').trim()); });
+      kira.forEach(function(g){ g.tur = 'ay'; g.tutar = 60000; g.kdv = ''; if (!g.bas) g.bas = '2026-10-23'; });
+      var isler = [configWrite({ kiraFaturaR359: { tarih: nowISO(), kisi: aktifKullaniciAdi() || '', kira: kira.length } })];
+      if (kira.length) isler.push(configWrite({ kapasitePlan: { urunler: plan.urunler, giderler: plan.giderler, elektrik: plan.elektrik, duzen: plan.duzen } }));
+      Promise.all(isler).then(function(){ if (kira.length) toast('✓ Kira faturalı: ₺60.000 + KDV %20 (Aylık Kapasite)'); })
+        .catch(function(e){ toast('Kira düzeltmesi yapılamadı: ' + dbErrMsg(e), true); });
+    }, 6000);
   }
   (function(){ var k = byId('fireDuzeltKutu'); if (k) k.addEventListener('click', function(e){ if (e.target.id === 'fireDuzeltUygula') fireDuzeltUygula(e.target); }); })();
   function m1Render(){
@@ -18211,6 +18228,7 @@ Dikkat edilmesi gereken 2 nokta:
   EK_HER_ZAMAN.push(function uyarilar(){ clearTimeout(_rozetZaman); _rozetZaman = setTimeout(uyariRozetleri, 400); });
   EK_HER_ZAMAN.push(fireOtoDuzelt);
   EK_HER_ZAMAN.push(girisKiraDuzelt);
+  EK_HER_ZAMAN.push(kiraFaturaDuzelt);
 
   // ---------- Özet kartları: tıklayınca hesabın dökümü ----------
   function ozetDetayTablo(bas, satirlar, toplam){
