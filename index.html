@@ -470,6 +470,9 @@
   #userGateParola { border-top: 1px solid var(--border); padding-top: 14px; flex-shrink: 0; }
   #userGateParola .field { margin-bottom: 10px; }
   #userGateParola label { display: block; }
+  #userGateParola label.gate-hatirla { display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:13px; color:var(--ink); cursor:pointer; }
+  #userGateParola label.gate-hatirla input { width:20px; height:20px; margin:0; flex-shrink:0; }
+  #userGateParola label.gate-hatirla .muted { font-size:11px; }
   #userGateParola input { width: 100%; font-size: 14px; padding: 9px 10px; }
   #userGateParola .btn { width: 100%; padding: 10px; font-size: 14px; }
   #userGateParola .btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -1773,6 +1776,7 @@
   <div id="userGateParola">
     <div class="field"><label for="gatePw1" id="gatePw1Etiket">Parola</label><input type="password" id="gatePw1" autocomplete="current-password"></div>
     <div class="field" id="gatePw2Alan" style="display:none"><label for="gatePw2">Parola (tekrar)</label><input type="password" id="gatePw2" autocomplete="new-password"></div>
+    <label class="gate-hatirla"><input type="checkbox" id="gateHatirla" checked><span>Bu cihazda beni hatırla<br><span class="muted">Ortak bilgisayarda işareti kaldırın.</span></span></label>
     <button class="btn" id="gateGirisBtn">Giriş yap</button>
     <div id="gateMsg"></div>
   </div>
@@ -3790,11 +3794,28 @@ Dikkat edilmesi gereken 2 nokta:
     renderActiveUserBox();
     yetkileriUygula();
   }
-  // Oturum bu tarayıcı penceresi açık kaldıkça sürer; tarayıcı kapanınca yeniden parola istenir
-  var OTURUM_KEY = 'ozerp_oturum_v1';
-  function oturumId(){ try { return sessionStorage.getItem(OTURUM_KEY) || ''; } catch(e){ return ''; } }
-  function oturumAc(id){ try { sessionStorage.setItem(OTURUM_KEY, id); } catch(e){} setAktifKullanici(id); hideUserGate(); renderAll(); }
-  function oturumKapat(){ try { sessionStorage.removeItem(OTURUM_KEY); } catch(e){} showUserGate(); }
+  // Oturum bu tarayıcı penceresi açık kaldıkça sürer. r371: girişte "Bu cihazda beni hatırla" işaretliyse (varsayılan) bu cihazda kalıcıdır:
+  // telefon / tablet her açılışta parola sormaz. Çıkış yapılınca, kullanıcı silinince ya da parolası değişince (başka cihazdan) yeniden sorulur.
+  var OTURUM_KEY = 'ozerp_oturum_v1', OTURUM_KALICI_KEY = 'ozerp_oturum_kalici_v1';
+  function kaliciOturum(){ try { var x = JSON.parse(localStorage.getItem(OTURUM_KALICI_KEY) || 'null'); return x && x.id ? x : null; } catch(e){ return null; } }
+  function oturumId(){
+    try { var s = sessionStorage.getItem(OTURUM_KEY); if (s) return s; } catch(e){}
+    var k = kaliciOturum(); if (!k) return '';
+    // kayıtlı parola izi değiştiyse (parola başka cihazdan değiştirildi) hatırlanan oturum geçersiz
+    var kul = (state.kullanicilar || []).find(function(x){ return x.id === k.id; });
+    if (kul && kul.parolaHash && !k.iz){ try { localStorage.setItem(OTURUM_KALICI_KEY, JSON.stringify({ id: k.id, iz: kul.parolaHash })); } catch(e){} } // girişte parola yeni belirleniyordu
+    else if (kul && (kul.parolaHash || '') !== (k.iz || '')) { try { localStorage.removeItem(OTURUM_KALICI_KEY); } catch(e){} return ''; }
+    return k.id;
+  }
+  function oturumAc(id, hatirla){
+    try { sessionStorage.setItem(OTURUM_KEY, id); } catch(e){}
+    try {
+      if (hatirla){ var kul = (state.kullanicilar || []).find(function(x){ return x.id === id; }); localStorage.setItem(OTURUM_KALICI_KEY, JSON.stringify({ id: id, iz: (kul && kul.parolaHash) || '' })); }
+      else localStorage.removeItem(OTURUM_KALICI_KEY);
+    } catch(e){}
+    setAktifKullanici(id); hideUserGate(); renderAll();
+  }
+  function oturumKapat(){ try { sessionStorage.removeItem(OTURUM_KEY); localStorage.removeItem(OTURUM_KALICI_KEY); } catch(e){} showUserGate(); }
   // SHA-256 (senkron, UTF-8) — parolalar düz metin saklanmasın diye
   function sha256(s){
     s = unescape(encodeURIComponent(s));
@@ -3888,7 +3909,8 @@ Dikkat edilmesi gereken 2 nokta:
   function gateGirisTamam(id){
     try { localStorage.setItem(GATE_SON_KEY, id); } catch(e){}
     byId('gatePw1').value = ''; byId('gatePw2').value = ''; gateMesaj('');
-    oturumAc(id);
+    var h = byId('gateHatirla');
+    oturumAc(id, !h || h.checked);
   }
   function renderUserGateList(){
     var listEl = byId('userGateList'), ilk = byId('userGateIlk'), acik = byId('userGateAciklama'), pwPanel = byId('userGateParola');
@@ -3950,7 +3972,7 @@ Dikkat edilmesi gereken 2 nokta:
     db.collection('kullanicilar').add(kayit).then(function(res){
       var yeniId = res && res.id;
       if (yeniId && !state.kullanicilar.some(function(k){ return k.id===yeniId; })) state.kullanicilar.push(Object.assign({ id: yeniId }, kayit));
-      oturumAc(yeniId);
+      oturumAc(yeniId, true);
     }).catch(function(e){ toast('Oluşturulamadı: '+dbErrMsg(e), true); });
   });
 
@@ -3962,7 +3984,8 @@ Dikkat edilmesi gereken 2 nokta:
     var baglantiHatasi = '';
     if (!db && supabaseKullan()){
       try {
-        var sb = (await supabaseKutuphanesi()).createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // r371: e-posta girişi bu cihazda kalıcı (yenilenen anahtarla); çıkış yapılmadıkça yeniden sorulmaz
+        var sb = (await supabaseKutuphanesi()).createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
         var oturum = await supabaseGiris(sb);
         statusBox.innerHTML = '<span class="muted">bağlanıyor…</span>';
         var sdb = createSupabaseDb(sb);
