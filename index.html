@@ -1751,7 +1751,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-18-r369</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-18-r370</div>
     </div>
   </nav>
   <main>
@@ -4650,6 +4650,10 @@ Dikkat edilmesi gereken 2 nokta:
       {label:'Plansız duruş', value: sureStrOlustur(durusDk), cls:'', detay:'durus'}
     ]);
     if (sekmeIzinli('carihesap') || sekmeIzinli('faturalar')) cards.push({label:'Açık alacak', value: euro(acikAlacak), cls:'', detay:'alacak'});
+    // r370: € borç (makine): MS Mekanik Sanatlar faturalarının fatura günü kuruyla € karşılığı − € borç ödemeleri; tıklayınca ayrıntı
+    if (sekmeIzinli('virgo')) try { var eb = virgoIkiBorc(), ebKur = virgoGunKuru(todayISO());
+      cards.push({ label: '€ borç (makine)', value: virgoEur(eb.eur.eur), cls: 'accent', detay: 'eurborc', sub: virgoEurCariler().length ? 'ödenen ' + virgoEur(eb.eurOdenen.eur) + (ebKur ? ' · ≈ ₺' + fmt(eb.eur.eur * ebKur) + ' bugünkü kurla' : '') : 'MS Mekanik Sanatlar cari kartı bulunamadı — tıklayıp seçin' });
+    } catch(e){ renderHatasi('€ borç', e); }
     document.getElementById('ozetCards').innerHTML = cards.map(function(c){
       return '<div class="card '+c.cls+(c.detay?' tiklanir" data-ozetdetay="'+c.detay+'" title="Hesabı görmek için tıklayın':'')+'"><div class="label">'+c.label+(c.detay?' <span class="kart-ok">›</span>':'')+'</div><div class="value">'+c.value+'</div>'+(c.sub?'<div class="sub">'+c.sub+'</div>':'')+'</div>';
     }).join('');
@@ -13564,25 +13568,27 @@ Dikkat edilmesi gereken 2 nokta:
   // ve sevk mahsubu ₺ borçtan düşer. Sevkte "Virgo para ödedi" seçilen tutar elimizdeki sevk parasıdır; Özet'teki dağıtımla önce ₺ borç, kalanı € borç ödenir.
   function virgoEurCariler(){
     var c = (state.config || {}).virgoEurCariler; if (Array.isArray(c) && c.length) return c;
-    var m = (state.musteriler || []).find(function(x){ return /m\.?\s*s\.?\s*mekanik/i.test(x.ad || '') || /mekanik\s*sanat/i.test(x.ad || ''); });
+    var sade = function(t){ return String(t || '').toLocaleLowerCase('tr').replace(/[^a-zçğıöşü0-9]/g, ''); }; // r370: 'MEKANİK' (Türkçe İ) /i ile eşleşmiyordu
+    var m = (state.musteriler || []).find(function(x){ var a = sade(x.ad) + ' ' + sade(x.unvan); return /msmekanik/.test(a) || /mekaniksanat/.test(a); });
     return m ? [m.id] : [];
   }
   function virgoEurOdemeMi(v){ return v.borcPb === VIRGO_BORC_PB[3]; } // yalnız 'Virgo € borcu (makine)'; eski 'Virgo ₺ fatura' ₺ borçtan düşer
   var _vgIki = null;
   function virgoIkiBorc(){
     var l = virgoKayitlari(); if (_vgIki && _vgIki.l === l && _vgIki.c === state.config) return _vgIki.r;
-    var cari = virgoEurCariler(), r = { eur: { eur: 0, tl: 0 }, tl: 0, elde: 0, sevkPara: 0, dagitilan: 0, eurL: [], tlL: [], eldeL: [], msOdenmemis: 0 };
+    var cari = virgoEurCariler(), r = { eur: { eur: 0, tl: 0 }, eurFatura: { eur: 0, tl: 0 }, eurOdenen: { eur: 0, tl: 0 }, tl: 0, elde: 0, sevkPara: 0, dagitilan: 0, eurL: [], tlL: [], eldeL: [], msOdenmemis: 0 };
     var ekle = function(liste, v, tl, eur){ liste.push({ v: v, n: virgoNorm(v), tl: muhR2(tl), eur: eur == null ? null : muhR2(eur) }); };
-    l.forEach(function(v){ var n = virgoNorm(v), ms = n.tip === 'harcama' && n.kaynak === 'kb' && cari.indexOf(v.saticiId) > -1;
+    l.forEach(function(v){ var n = virgoNorm(v), ms = n.tip === 'harcama' && cari.indexOf(v.saticiId) > -1; // r370: MS faturası kim ödediyse € borç
       // € borç fatura kesilince doğar (Virgo tedarikçiye ödemiş olsun olmasın); diğer kayıtlar ödenince sayılır
       if (!n.odendi && !ms) return;
       if (!n.odendi) r.msOdenmemis += n.m.tl;
       if (n.tip === 'harcama'){
-        if (n.kaynak === 'kb'){ if (ms){ r.eur.eur += n.m.eur; r.eur.tl += n.m.tl; ekle(r.eurL, v, n.m.tl, n.m.eur); } else { r.tl += n.m.tl; ekle(r.tlL, v, n.m.tl); } }
+        if (ms){ r.eur.eur += n.haric.eur; r.eur.tl += n.haric.tl; r.eurFatura.eur += n.haric.eur; r.eurFatura.tl += n.haric.tl; ekle(r.eurL, v, n.haric.tl, n.haric.eur); }
+        else if (n.kaynak === 'kb'){ r.tl += n.m.tl; ekle(r.tlL, v, n.m.tl); }
         else if (n.iade.tl){ r.tl -= n.iade.tl; ekle(r.tlL, v, -n.iade.tl); }
       } else if (n.tip === 'alinan'){ r.tl += n.tl; ekle(r.tlL, v, n.tl); }
       else if (n.tip === 'geri'){
-        if (!n.sevk && virgoEurOdemeMi(v)){ r.eur.eur -= n.eur; r.eur.tl -= n.tl; ekle(r.eurL, v, -n.tl, -n.eur); } else { r.tl -= n.tl; ekle(r.tlL, v, -n.tl); }
+        if (!n.sevk && virgoEurOdemeMi(v)){ r.eur.eur -= n.eur; r.eur.tl -= n.tl; r.eurOdenen.eur += n.eur; r.eurOdenen.tl += n.tl; ekle(r.eurL, v, -n.tl, -n.eur); } else { r.tl -= n.tl; ekle(r.tlL, v, -n.tl); }
         if (v.sevkParasi){ r.dagitilan += n.tl; ekle(r.eldeL, v, -n.tl); }
       } else if (n.tip === 'sevkPara'){ r.sevkPara += n.tl; ekle(r.eldeL, v, n.tl); }
     });
@@ -13650,7 +13656,7 @@ Dikkat edilmesi gereken 2 nokta:
       '<div class="helper" style="margin:0 0 8px">Bugünkü kur <b>1 € = ' + kurH(kur) + '</b>' + (kb ? ' <span class="muted">(' + esc(kb.etiket) + ')</span>' : '') + ' · Kalan € borç <b>' + virgoEur(top.eur) + '</b>; bugün ödense <b>' + virgoTl(bTl) + '</b>. İşlem günlerinin kuruyla ' + virgoTl(top.tl) + (ort ? ' (ortalama 1 € = ' + kurH(ort) + ')' : '') + (Math.abs(fark) > 0.5 ? '; kur farkı <b>' + fk(fark) + '</b> (' + (fark > 0 ? 'kur yükseldi, aleyhimize' : 'kur düştü, lehimize') + ')' : '') + '.</div>' +
       '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Kalem</th><th>Firma / açıklama</th><th class="num">€</th><th class="num">İşlem günü kuru</th><th class="num">₺ (işlem günü)</th><th class="num">₺ (bugünkü kurla)</th><th class="num">Kur farkı</th></tr></thead><tbody>' +
       L.map(function(x){ var e = x.eur || 0, b = e * kur;
-        return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + (e < 0 ? '− Ödeme' : '+ Fatura') + '</td><td>' + esc((x.v.saticiId ? cariAdi(x.v.saticiId) + ' · ' : '') + (x.v.aciklama || '')) + '</td><td class="num"><b>' + virgoEur(e) + '</b></td><td class="num">' + kurH(e ? Math.abs(x.tl / e) : 0) + '</td><td class="num">' + virgoTl(x.tl) + '</td><td class="num">' + virgoTl(b) + '</td><td class="num">' + fk(b - x.tl) + '</td></tr>'; }).join('') +
+        return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td style="white-space:nowrap">' + (e < 0 ? '− Ödeme' : '+ Fatura') + '</td><td>' + esc((x.v.saticiId ? cariAdi(x.v.saticiId) + ' · ' : '') + (x.v.aciklama || '')) + '</td><td class="num"><b>' + virgoEur(e) + '</b></td><td class="num">' + kurH(e ? Math.abs(x.tl / e) : 0) + '</td><td class="num">' + virgoTl(x.tl) + '</td><td class="num">' + virgoTl(b) + '</td><td class="num">' + fk(b - x.tl) + '</td></tr>'; }).join('') +
       '<tr class="kv-alt"><td colspan="3"><b>Kalan € borç</b></td><td class="num"><b>' + virgoEur(top.eur) + '</b></td><td class="num">' + kurH(ort) + '</td><td class="num"><b>' + virgoTl(top.tl) + '</b></td><td class="num"><b>' + virgoTl(bTl) + '</b></td><td class="num"><b>' + fk(fark) + '</b></td></tr></tbody></table></div>';
     // Ay ay: ay sonundaki kalan € borç, ₺ (işlem günleri), ay sonu kuru ve o kurla ₺, bugünkü kurla ₺, kur farkı
     var ilk = L[0].v.tarih.slice(0, 7), son = bugun.slice(0, 7), sat = [];
@@ -13662,6 +13668,24 @@ Dikkat edilmesi gereken 2 nokta:
     html += '<h4 style="margin:14px 0 6px">Ay ay borç ve kur ' + infoIco('Her ay sonundaki kalan € borç. Ay sonu kuru: o ayın son günündeki (içinde bulunulan ayda bugünkü) kayıtlı kur; o güne ya da önceki 7 güne ait kur yoksa "kur kaydı yok" yazar. Ay sonu kuruyla ₺: o gün ödenseydi. Kur farkı: bugünkü kurla ₺ − işlem günlerinin kuruyla ₺.') + '</h4>' +
       '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Ay sonu borç €</th><th class="num">₺ (işlem günlerinin kuruyla)</th><th class="num">Ortalama kur</th><th class="num">Ay sonu kuru</th><th class="num">₺ (ay sonu kuruyla)</th><th class="num">₺ (bugünkü kurla)</th><th class="num">Kur farkı</th></tr></thead><tbody>' + sat.join('') + '</tbody></table></div></div></div>';
     return html;
+  }
+  // r370: € borç ayrıntısı (Özet kartı): borç (MS faturaları), ödenen, kalan; + € borca ödeme gir; tedarikçi seçimi; kalem kalem kur farkı ve ay ay
+  function virgoEurBorcDetay(){
+    var r = virgoIkiBorc(), kur = virgoGunKuru(todayISO()), cari = virgoEurCariler();
+    var sat = function(ad, o, kalin){ return '<tr' + (kalin ? ' class="kv-alt"' : '') + '><td>' + (kalin ? '<b>' + ad + '</b>' : ad) + '</td><td class="num">' + (kalin ? '<b>' + virgoEur(o.eur) + '</b>' : virgoEur(o.eur)) + '</td><td class="num">' + virgoTl(o.tl) + '</td><td class="num">' + (kur ? virgoTl(o.eur * kur) : '—') + '</td></tr>'; };
+    var html = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><span class="muted">€ borç tedarikçisi</span><select data-vdgcari="1">' + [{ id: '', ad: '— seçin —' }].concat(virgoSaticilar()).map(function(m){ return '<option value="' + escAttr(m.id) + '"' + (cari[0] === m.id ? ' selected' : '') + '>' + esc(m.ad) + '</option>'; }).join('') + '</select>' +
+      '<button class="btn small" data-veurodeme="1"' + (izinVar('ekle') ? '' : ' disabled') + '>+ € borca ödeme gir</button></div>' +
+      '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th></th><th class="num">€</th><th class="num">₺ (işlem günlerinin kuruyla)</th><th class="num">₺ (bugünkü kurla)</th></tr></thead><tbody>' +
+        sat('Borç (MS Mekanik Sanatlar faturaları, KDV hariç)', r.eurFatura) + sat('− Ödenen', r.eurOdenen) + sat('Kalan € borç', r.eur, true) + '</tbody></table></div>' +
+      '<div class="helper" style="margin:6px 0 12px">Borç, faturanın fatura günü kuruyla € karşılığıdır ve sabittir. Ödeme ₺ girilir, ödeme günü kuruyla €\'ya çevrilip düşer (ödemede "Hangi borç = Virgo € borcu (makine)"). Diğer faturalar ve Virgo hesabı eskisi gibi işler.</div>' +
+      (virgoEurKurHtml() || '<div class="empty">' + (cari.length ? 'Henüz € borç kaydı yok.' : 'Yukarıdan MS Mekanik Sanatlar cari kartını seçin.') + '</div>');
+    modalAc({ title: '€ borç (makine)', kaydetYok: true, genislik: 'genis', html: html, onOpen: function(f, kapat){
+      f.addEventListener('click', function(e){
+        if (e.target.closest('[data-veurodeme]')){ kapat(); crudYeni(VIRGO_TANIM, { hareket: VIRGO_HAREKET[2], borcPb: VIRGO_BORC_PB[3], kategori: '', kdvOrani: '0', paraBirimi: '₺' }); return; }
+        var z = e.target.closest('[data-vduzelt]'); if (z){ kapat(); virgoKayitAc(z.dataset.vduzelt); } });
+      f.addEventListener('change', function(e){ var t = e.target; if (!t.matches || !t.matches('[data-vdgcari]')) return;
+        configWrite({ virgoEurCariler: t.value ? [t.value] : [] }).then(function(){ toast('✓ € borç tedarikçisi: ' + (t.value ? cariAdi(t.value) : 'yok')); kapat(); setTimeout(virgoEurBorcDetay, 300); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); }); });
+    } });
   }
   function virgoDagitimSonuc(top, tlPay, kur){
     var r = virgoIkiBorc(), eurTl = muhR2(top - tlPay), eur = kur ? eurTl / kur : 0;
@@ -13685,6 +13709,8 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function renderOzetVirgoBorc(){
     var host = byId('ozetVirgoBorc'); if (!host) return;
+    // r370: bölüm kaldırıldı; € borç Özet'in üst kartlarında (tıklayınca ayrıntı: virgoEurBorcDetay)
+    setHtmlIdle(host, ''); return;
     if (!sekmeIzinli('virgo') || (!virgoKayitlariHam().length && !(state.alisFaturalari || []).length && !(state.giderler || []).length)){ setHtmlIdle(host, ''); return; }
     if (!virgoKayitlari().length){ setHtmlIdle(host, ''); return; }
     // r368: iki borç (€ makine / ₺ faturalar), sevk parası dağıtımı ve ödemeler; eski tek borçlu blok (grafik, kur ayrıntısı, ay ay) Özet'ten kalktı
@@ -18517,6 +18543,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function eurTl(v){ return (v < 0 ? '−€' : '€')+fmt(Math.abs(v))+(tl(v) ? ' <span class="muted">(₺'+fmt(tl(v))+')</span>' : ''); }
   function ozetDetay(k){
+    if (k === 'eurborc'){ virgoEurBorcDetay(); return; } // r370
     var bugun = todayISO(), ay = thisMonthKey(), d = null;
     var sabit = calcSabitGider(), saatM = calcSaatMaliyeti(), kapasite = state.config ? Number(state.config.aylikMakineSaati)||0 : 0;
     if (k === 'uretim'){
