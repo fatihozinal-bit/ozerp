@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>OZerp</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#15202B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="OZerp">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="simge/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="simge/favicon-32.png" data-varsayilan="simge/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1516,10 +1524,10 @@
   .kv-ay-urun td:first-child { min-width:110px; font-size:12px; }
   .kv-ay-urun tfoot td { font-size:12px; border-top:2px solid var(--border); white-space:nowrap; }
   .kv-ay-makine { font-size:12.5px; padding:6px 0; }
-  /* ===== Telefon (767 px ve altı): altta sabit çubuk (Özet · Ara · Favoriler · Menü) + tam ekran menü =====
+  /* ===== Telefon ve dikey tablet (860 px ve altı; r371 öncesi 767): altta sabit çubuk (Özet · Ara · Favoriler · Menü) + tam ekran menü =====
      Yatay menü şeridi (kenar çubuğu) telefonda kalkar; tablet ve masaüstü değişmez. Atölye modunda ve giriş ekranında çubuk yok. */
   .alt-cubuk, .tel-panel { display:none; }
-  @media (max-width: 767px) {
+  @media (max-width: 860px) { /* r371: dikey tablet de (768–860 px) telefon menüsünü kullanır */
     :root { --alt-h: 56px; }
     .sidebar { display:none; }
     body.alt-hazir:not(.atolye) .alt-cubuk { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:340; height:calc(var(--alt-h) + env(safe-area-inset-bottom, 0px)); padding:0 4px env(safe-area-inset-bottom, 0px); background:var(--ink); border-top:1px solid var(--side-line); box-shadow:0 -4px 14px rgba(21,32,43,.18); }
@@ -1621,6 +1629,119 @@
     body.ust-menu .brand { padding-right:8px; margin-right:2px; }
   }
   @media print { .alt-cubuk, .tel-panel { display:none !important; } }
+  /* ===== r371: Mobil uyum — telefon önce, sonra tablet =====
+     Kalem tabloları (alış / satış faturası, irsaliye, teklif / sipariş, kalemli formlar) telefonda ve dokunmatik tablette
+     satır satır KART olarak görünür: her alanın başlığı üstünde, kutular parmakla dokunulacak boyutta.
+     Sınıflar (mk, mk-genis, mk-sil, mk-metin) JS'te tablo başlığından otomatik verilir; masaüstünde tablo değişmez. */
+  .form-alt-toplam { display:none; }
+  .ek-ac-btn { display:none; }
+  @media (max-width: 767px) {
+    table.mk { display:block; width:100% !important; min-width:0 !important; border:0; }
+    table.mk > thead { display:none; }
+    table.mk > tbody, table.mk > tfoot { display:block; }
+    table.mk > tbody > tr { display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:10px 10px; align-items:end; padding:12px; margin:0 0 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); box-shadow:0 1px 2px rgba(21,32,43,.05); }
+    table.mk > tbody > tr:focus-within { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+    table.mk > tbody > tr > td { display:block; grid-column:span 2; padding:0 !important; border:0 !important; background:none !important; width:auto !important; min-width:0 !important; max-width:none !important; text-align:left; white-space:normal; }
+    table.mk > tbody > tr > td[data-lbl]::before { content:attr(data-lbl); display:block; margin:0 0 3px; font-size:11.5px; font-weight:500; color:var(--ink-soft); line-height:1.25; }
+    table.mk > tbody > tr > td.mk-genis { grid-column:1 / -1; }
+    table.mk > tbody > tr > td.mk-gizle { display:none; }
+    table.mk > tbody > tr > td.mk-metin { font-size:14px; min-height:44px; font-variant-numeric:tabular-nums; }
+    table.mk > tbody > tr > td.mk-metin.num { font-weight:600; }
+    table.mk > tbody > tr > td.mk-sil { grid-column:-3 / -1; justify-self:end; align-self:end; }
+    table.mk > tbody > tr > td.mk-sil button { min-height:40px; min-width:40px; padding:0 12px; font-size:13px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--bad); }
+    table.mk > tbody > tr > td.mk-sil button::after { content:' Sil'; }
+    table.mk > tbody > tr > td.mk-sil button { white-space:nowrap; }
+    table.mk .kf-fiyat-sec { min-width:34px !important; padding:0 !important; }
+    .kf-oneri > div[data-oi] { padding:10px 10px; }
+    table.mk > tbody > tr.mk-tek { display:block; }
+    table.mk > tbody > tr.mk-tek > td { grid-column:auto; }
+    table.mk > tbody { counter-reset:mk; }
+    table.mk > tbody > tr:not(.mk-tek) { counter-increment:mk; }
+    table.mk > tbody > tr:not(.mk-tek)::before { content:'Kalem ' counter(mk); grid-column:1 / -1; margin:-2px 0 -4px; font-size:12px; font-weight:700; color:var(--steel); letter-spacing:.02em; }
+    table.mk input:not([type=checkbox]):not([type=radio]), table.mk select, table.mk textarea { width:100% !important; max-width:none !important; min-width:0 !important; min-height:44px; padding:8px 10px; font-size:16px; border:1px solid var(--border) !important; background:var(--surface) !important; border-radius:6px; }
+    table.mk input + input, table.mk select + input { margin-top:6px !important; }
+    table.mk .kf-fiyat { display:flex; gap:4px; }
+    table.mk .kf-fiyat input { flex:1; }
+    table.mk .kf-fiyat-sec { min-height:44px; }
+    .tablewrap:has(> table.mk), .kf-tablo-wrap:has(> table.mk) { overflow:visible; max-height:none; border:0; border-radius:0; }
+    /* üst alanlar: dokunulacak boyutta (iOS'ta 16 px altı yazı odaklanınca sayfayı büyütür) */
+    #formFields .field > input:not([type=checkbox]):not([type=radio]):not([type=file]), #formFields .field > select, #formFields .field > textarea, #formFields .kf-yanyana select { min-height:44px; font-size:16px; padding:8px 10px; }
+    #formFields input[type=checkbox] { width:20px !important; height:20px; flex-shrink:0; }
+    #formFields .form-section { margin-top:18px; }
+    [data-keekle], [data-irekle] { min-height:44px; padding:0 18px !important; font-size:14px !important; width:100%; margin-top:2px !important; }
+    /* alış faturası: az kullanılan alanlar "Ek bilgiler" altında */
+    .ek-ac-btn { display:flex; align-items:center; justify-content:space-between; grid-column:1 / -1; width:100%; min-height:44px; margin:2px 0 8px; padding:0 12px; font-size:13.5px; text-align:left; }
+    .ek-ac-btn::after { content:'▾'; margin-left:8px; }
+    .grid2.ek-acik > .ek-ac-btn::after { content:'▴'; }
+    .grid2:not(.ek-acik) > .ek-alan { display:none; }
+  }
+  /* Kalem kartlarının altında toplam: form uzasa da tutar hep görünür (telefon ve tablet) */
+  @media (max-width: 1100px) {
+    #formBox .form-alt-toplam:not([hidden]) { display:flex; flex-shrink:0; align-items:baseline; gap:8px; padding:8px 16px; border-top:1px solid var(--border); background:var(--surface); font-size:13px; color:var(--ink-soft); }
+    .form-alt-toplam b { margin-left:auto; font-size:17px; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  }
+  /* Dokunmatik ekran (telefon + tablet): giriş kutuları 16 px — iOS / iPadOS odaklanınca sayfayı büyütmez */
+  @media (max-width: 1100px) and (pointer: coarse) {
+    input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), select, textarea { font-size:16px; }
+    .btn { min-height:36px; }
+    #formBox .btnrow .btn { min-height:44px; }
+    .modal-kapat { width:44px; height:44px; }
+    #formBox .btnrow .modal-ipucu { display:none; }
+  }
+  @media (min-width: 601px) and (max-width: 1100px) and (pointer: coarse) and (min-height: 501px) {
+    #formBox { max-height:calc(100dvh - 40px); }
+  }
+  /* Tablet (dikey ~768–860 px): formlar tek sütun yerine iki sütun */
+  @media (min-width: 600px) and (max-width: 860px) {
+    .grid2 { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .grid2 > .field-genis, .grid2 > .form-section { grid-column:1 / -1; }
+  }
+  /* Dokunmatik tablet (768–1100 px): kalem tablosu iki satırlı kart — üstte stok / gider, altta miktar · birim · fiyat · iskonto · KDV · tutar */
+  @media (min-width: 768px) and (max-width: 1100px) and (pointer: coarse) {
+    table.mk { display:block; width:100% !important; min-width:0 !important; }
+    table.mk > thead { display:none; }
+    table.mk > tbody, table.mk > tfoot { display:block; }
+    table.mk > tbody > tr { display:grid; grid-template-columns:repeat(12, minmax(0, 1fr)); gap:8px 10px; align-items:end; padding:10px 12px; margin:0 0 8px; border:1px solid var(--border); border-radius:8px; background:var(--surface); }
+    table.mk > tbody > tr:focus-within { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+    table.mk > tbody > tr > td { display:block; grid-column:span 2; padding:0 !important; border:0 !important; background:none !important; width:auto !important; min-width:0 !important; max-width:none !important; text-align:left; white-space:normal; }
+    table.mk > tbody > tr > td[data-lbl]::before { content:attr(data-lbl); display:block; margin:0 0 3px; font-size:11.5px; color:var(--ink-soft); line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    table.mk > tbody > tr > td.mk-genis { grid-column:span 6; }
+    table.mk > tbody > tr > td.mk-gizle { display:none; }
+    table.mk > tbody > tr > td.mk-metin { font-size:14px; min-height:44px; font-variant-numeric:tabular-nums; }
+    table.mk > tbody > tr > td.mk-metin.num { font-weight:600; }
+    table.mk > tbody > tr > td.mk-sil { grid-column:-2 / -1; justify-self:end; }
+    table.mk > tbody > tr > td.mk-sil button { min-height:44px; min-width:44px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--bad); }
+    table.mk > tbody > tr.mk-tek { display:block; }
+    table.mk input:not([type=checkbox]):not([type=radio]), table.mk select, table.mk textarea { width:100% !important; max-width:none !important; min-width:0 !important; min-height:44px; padding:8px 8px; font-size:16px; border:1px solid var(--border) !important; background:var(--surface) !important; border-radius:6px; }
+    table.mk input + input, table.mk select + input { margin-top:6px !important; }
+    table.mk .kf-fiyat { display:flex; gap:4px; }
+    table.mk .kf-fiyat input { flex:1; }
+    .tablewrap:has(> table.mk), .kf-tablo-wrap:has(> table.mk) { overflow:visible; max-height:none; border:0; }
+    #formFields .field > input:not([type=checkbox]):not([type=radio]):not([type=file]), #formFields .field > select { min-height:44px; }
+    [data-keekle], [data-irekle] { min-height:44px; padding:0 18px !important; font-size:14px !important; }
+  }
+  /* Telefon yatay (alçak ekran): açılır form tam ekran, başlık ve düğme çubuğu ince — içeriğe yer kalır */
+  @media (max-height: 500px) and (orientation: landscape) {
+    #formOverlay { padding:0 !important; align-items:stretch !important; }
+    #formBox, #formBox.wide, #formBox.genis, #formBox.orta, #formBox.tam { max-width:100% !important; width:100% !important; height:100%; max-height:100% !important; border-radius:0 !important; }
+    #formBox .modal-head { padding:4px 8px 4px calc(14px + env(safe-area-inset-left, 0px)); align-items:center; }
+    #formBox h3 { font-size:14px; margin:0; }
+    #formBox .modal-kapat { width:40px; height:40px; }
+    #formFields { padding:8px calc(14px + env(safe-area-inset-right, 0px)) 8px calc(14px + env(safe-area-inset-left, 0px)) !important; }
+    #formBox .btnrow { padding:6px calc(14px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px)); }
+    #formBox .btnrow .modal-ipucu { display:none; }
+    #formBox .btnrow .btn { min-height:38px; }
+    #formBox { position:relative; }
+    #formBox .form-alt-toplam:not([hidden]) { position:absolute; left:0; right:230px; bottom:0; height:calc(50px + env(safe-area-inset-bottom, 0px)); z-index:1; align-items:center; padding:0 0 env(safe-area-inset-bottom, 0px) calc(14px + env(safe-area-inset-left, 0px)); border:0; background:transparent; pointer-events:none; }
+    #formBox .btnrow { min-height:50px; }
+    table.mk > tbody > tr { grid-template-columns:repeat(12, minmax(0, 1fr)) !important; gap:6px 8px !important; padding:8px 10px !important; }
+    table.mk > tbody > tr > td { grid-column:span 2 !important; }
+    table.mk > tbody > tr > td.mk-genis { grid-column:span 6 !important; }
+    table.mk > tbody > tr > td.mk-sil { grid-column:-3 / -1 !important; }
+    table.mk > tbody > tr::before { display:none !important; }
+    table.mk input:not([type=checkbox]):not([type=radio]), table.mk select { min-height:40px !important; }
+  }
+  @media print { .form-alt-toplam, .ek-ac-btn { display:none !important; } }
 </style>
 </head>
 <body>
@@ -2467,6 +2588,7 @@ Dikkat edilmesi gereken 2 nokta:
 <div id="formOverlay"><div id="formBox" role="dialog" aria-modal="true" aria-labelledby="formTitle">
   <div class="modal-head"><h3 id="formTitle"></h3><button type="button" class="modal-kapat" id="formKapat" aria-label="Kapat" title="Kapat (Esc)">×</button></div>
   <div id="formFields"></div>
+  <div class="form-alt-toplam" id="formAltToplam" hidden aria-live="polite"></div>
   <div class="btnrow">
     <span class="modal-ipucu" id="formIpucu">Esc: kapat · Ctrl+Enter: kaydet</span>
     <button class="btn secondary" id="formIptal">İptal</button>
@@ -6070,7 +6192,7 @@ Dikkat edilmesi gereken 2 nokta:
           (s.musteriParcaNo ? ' <span class="muted">müşteri no ' + esc(s.musteriParcaNo) + '</span>' : '') + '<span class="kf-oneri-sag muted">' + fmt2(Number(s.miktar) || 0) + ' ' + esc(s.birim || '') + (Number(s.birimFiyat) && satis ? ' · €' + fmt2(s.birimFiyat) : '') + '</span></div>'; }).join('')
         : '<div class="muted" style="padding:6px 8px">Eşleşen stok kartı yok — "+ Yeni stok kartı" ile açabilirsiniz.</div>';
       var r = inp.getBoundingClientRect();
-      oneriEl.style.left = r.left + 'px'; oneriEl.style.width = Math.max(r.width, 420) + 'px';
+      var gw = Math.min(Math.max(r.width, 420), document.documentElement.clientWidth - 16); oneriEl.style.width = gw + 'px'; oneriEl.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - gw - 8)) + 'px'; // r371: telefonda ekrandan taşmaz
       var alt = window.innerHeight - r.bottom; if (alt < 220 && r.top > alt){ oneriEl.style.top = ''; oneriEl.style.bottom = (window.innerHeight - r.top + 2) + 'px'; } else { oneriEl.style.bottom = ''; oneriEl.style.top = (r.bottom + 2) + 'px'; }
       var ak = oneriEl.querySelector('.aktif'); if (ak) ak.scrollIntoView({ block: 'nearest' });
     }
@@ -10811,7 +10933,7 @@ Dikkat edilmesi gereken 2 nokta:
     document.querySelectorAll('.gate-marka').forEach(function(g){ g.innerHTML = (m.logo ? '<img src="' + escAttr(m.logo) + '" alt="">' : '') + esc((m.ad ? m.ad + ' · ' : '') + PROGRAM_ADI); });
     document.title = (testOrtami ? 'TEST · ' : '') + (m.ad ? m.ad + ' · ' : '') + PROGRAM_ADI;
     var ik = document.querySelector('link[rel="icon"]');
-    if (m.logo){ if (!ik){ ik = document.createElement('link'); ik.rel = 'icon'; document.head.appendChild(ik); } ik.href = m.logo; } else if (ik) ik.remove();
+    if (m.logo){ if (!ik){ ik = document.createElement('link'); ik.rel = 'icon'; document.head.appendChild(ik); } ik.href = m.logo; } else if (ik){ if (ik.dataset.varsayilan) ik.href = ik.dataset.varsayilan; else ik.remove(); } // r371: logo yoksa OZerp simgesi
   }
   markaGuncelle();
   EK_HER_ZAMAN.push(markaGuncelle);
@@ -21855,30 +21977,33 @@ Dikkat edilmesi gereken 2 nokta:
       kalemler: [{ miktar: 0, birim: 'adet', kdvOrani: 20, giderTuru: 'Hammadde / malzeme' }] }, on || {});
     if (mevcut && !mevcut.paraBirimi) d.paraBirimi = 'EUR';
     if (mevcut){ d.kalemler = (d.kalemler || []).map(function(k){ return k; }); if (d.genelToplam < 0) ['araToplam', 'kdvTutar', 'genelToplam', 'brutToplam'].forEach(function(k){ d[k] = Math.abs(d[k] || 0); }); }
-    var o = { kalemler: d.kalemler, satis: false, gider: true }, tekrarSoruOnay = false;
+    var o = { kalemler: d.kalemler, satis: false, gider: true }, tekrarSoruOnay = false, ekAcik = false;
     function ciz(el){
       o.kalemler = d.kalemler;
       var t = alisTipi(d.faturaTipi); o.gider = alisTipi(d.faturaTipi).gider; o.kdvKilit = !!t.ithalat; o.kdvVarsayilan = t.ithalat ? 0 : (t.kdv != null ? t.kdv : 20); o.pb = d.paraBirimi || 'EUR';
       if (t.stopaj != null && d.stopajOrani == null) d.stopajOrani = t.stopaj;
       if (t.biz && !d.faturaNo) d.faturaNo = 'GP-' + kodYilStr() + '-' + String(((state.alisFaturalari || []).filter(function(x){ return x.faturaTipi === 'Gider pusulası'; }).length + 1)).padStart(4, '0');
       var irsListe = d.tedarikciId ? faturalanacakIrsaliyeler(d.tedarikciId, false) : [];
-      el.innerHTML = '<div class="grid2">' +
+      // r371: telefonda az kullanılan alanlar (ETTN, vade, sipariş, fason, tevkifat) "Ek bilgiler" düğmesiyle açılır; dolu alan sayısı düğmede yazar
+      var ekDolu = [d.ettn, d.vadeTarihi, d.sasId, d.fasonSiparisId, d.tevkifatOrani].filter(function(x){ return x; }).length;
+      el.innerHTML = '<div class="grid2' + (ekAcik ? ' ek-acik' : '') + '">' +
         '<div class="field"><label>Tedarikçi / fasoncu</label><select id="afCari"><option value="">Seçin</option>' + state.musteriler.filter(tedarikciMi).map(function(m){ return '<option value="' + m.id + '"' + (m.id === d.tedarikciId ? ' selected' : '') + '>' + esc((m.kod ? m.kod + ' · ' : '') + m.ad) + '</option>'; }).join('') + '</select></div>' +
         '<div class="field"><label>Fatura çeşidi</label><select id="afTip">' + ALIS_FATURA_TIPLERI.map(function(x){ return '<option' + (x.ad === d.faturaTipi ? ' selected' : '') + '>' + esc(x.ad) + '</option>'; }).join('') + '</select>' +
           (t.iade ? '<span class="field-hint">Tedarikçiye mal iadesinde BİZİM kestiğimiz iade faturası: borcumuz düşer, KDV hesaplanan KDV olarak beyan edilir.</span>' : (t.ithalat ? '<span class="field-hint">Yabancı tedarikçi faturası KDV\'siz; ithalat KDV\'si gümrükte ödenir ve indirilir.</span>' : (t.aciklama ? '<span class="field-hint">' + esc(t.aciklama) + '</span>' : ''))) + '</div>' +
         '<div class="field"><label>' + (t.iade ? 'İade faturası no (bizim)' : (t.biz ? 'Gider pusulası no (bizim)' : (d.faturaTipi === 'Serbest meslek makbuzu' ? 'Makbuz no' : 'Tedarikçinin fatura no'))) + '</label><input type="text" id="afNo" value="' + escAttr(d.faturaNo || '') + '"></div>' +
-        '<div class="field"><label>ETTN</label><input type="text" id="afEttn" value="' + escAttr(d.ettn || '') + '"></div>' +
+        '<div class="field ek-alan"><label>ETTN</label><input type="text" id="afEttn" value="' + escAttr(d.ettn || '') + '"></div>' +
         '<div class="field"><label>Fatura tarihi</label><input type="date" id="afTarih" value="' + escAttr(d.tarih) + '"></div>' +
-        '<div class="field"><label>Vade (boş: carinin vadesi)</label><input type="date" id="afVade" value="' + escAttr(d.vadeTarihi || '') + '"></div>' +
-        '<div class="field"><label>Satınalma siparişi</label><select id="afSas"><option value="">-</option>' + (state.satinalmaSiparisleri || []).filter(function(s){ return !d.tedarikciId || s.tedarikciId === d.tedarikciId; }).map(function(s){ return '<option value="' + s.id + '"' + (s.id === d.sasId ? ' selected' : '') + '>' + esc(s.no) + '</option>'; }).join('') + '</select></div>' +
-        '<div class="field"><label>Giden fason</label><select id="afFason"><option value="">-</option>' + (state.fasonSiparisleri || []).filter(function(s){ return !d.tedarikciId || s.fasoncuId === d.tedarikciId; }).map(function(s){ return '<option value="' + s.id + '"' + (s.id === d.fasonSiparisId ? ' selected' : '') + '>' + esc(s.no) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field ek-alan"><label>Vade (boş: carinin vadesi)</label><input type="date" id="afVade" value="' + escAttr(d.vadeTarihi || '') + '"></div>' +
+        '<div class="field ek-alan"><label>Satınalma siparişi</label><select id="afSas"><option value="">-</option>' + (state.satinalmaSiparisleri || []).filter(function(s){ return !d.tedarikciId || s.tedarikciId === d.tedarikciId; }).map(function(s){ return '<option value="' + s.id + '"' + (s.id === d.sasId ? ' selected' : '') + '>' + esc(s.no) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field ek-alan"><label>Giden fason</label><select id="afFason"><option value="">-</option>' + (state.fasonSiparisleri || []).filter(function(s){ return !d.tedarikciId || s.fasoncuId === d.tedarikciId; }).map(function(s){ return '<option value="' + s.id + '"' + (s.id === d.fasonSiparisId ? ' selected' : '') + '>' + esc(s.no) + '</option>'; }).join('') + '</select></div>' +
         (t.ithalat ? '<div class="field"><label>Gümrük beyannamesi no</label><input type="text" id="afGbNo" value="' + escAttr(d.gumrukBeyanNo || '') + '"></div><div class="field"><label>Gümrük beyannamesi tarihi</label><input type="date" id="afGbTarih" value="' + escAttr(d.gumrukTarih || '') + '"></div>' +
           '<div class="field"><label>Gümrükte ödenen KDV (₺)</label><input type="number" step="any" id="afGKdv" value="' + (d.gumrukKdvTL || (d.gumrukKdv ? muhR2(d.gumrukKdv * muhKur(d.tarih)) : '')) + '"></div><div class="field"><label>Gümrük KDV oranı (%)</label><input type="number" id="afGKdvO" value="' + (d.gumrukKdvOrani || 20) + '"></div>' +
           '<div class="field"><label>Gümrük KDV\'sinin ödendiği hesap</label><select id="afGKdvH">' + hesapSecenekleri().map(function(h){ return '<option value="' + h.value + '"' + (h.value === d.gumrukKdvHesapId ? ' selected' : '') + '>' + esc(h.label) + '</option>'; }).join('') + '</select></div>' : '') +
         (t.iade ? '<div class="field"><label>İade edilen malın alış faturası no</label><input type="text" id="afRefNo" value="' + escAttr(d.refFaturaNo || '') + '"></div><div class="field"><label>Alış faturası tarihi</label><input type="date" id="afRefTarih" value="' + escAttr(d.refFaturaTarih || '') + '"></div>' : '') +
         (t.stopaj != null ? '<div class="field"><label>Gelir vergisi stopajı (%)</label><input type="number" step="any" id="afStopaj" value="' + (d.stopajOrani != null ? d.stopajOrani : t.stopaj) + '"><span class="field-hint">Brüt tutardan kesilir, muhtasar beyannamesiyle ödenir (360).</span></div>' : '') +
         pbSecimHtml('af', d.paraBirimi, d.dovizKuru, d.tarih) +
-        (t.ithalat || t.biz || t.ihracKayitli ? '' : '<div class="field"><label>' + (t.iade ? 'Tevkifat (iade edilen alış tevkifatlıysa — tevkifat iade)' : 'KDV tevkifatı (faturada yazıyorsa)') + '</label><select id="afTevk"><option value="">Yok</option>' + TEVKIFAT_ORANLARI.map(function(x){ return '<option' + (d.tevkifatOrani === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>') +
+        (t.ithalat || t.biz || t.ihracKayitli ? '' : '<div class="field ek-alan"><label>' + (t.iade ? 'Tevkifat (iade edilen alış tevkifatlıysa — tevkifat iade)' : 'KDV tevkifatı (faturada yazıyorsa)') + '</label><select id="afTevk"><option value="">Yok</option>' + TEVKIFAT_ORANLARI.map(function(x){ return '<option' + (d.tevkifatOrani === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>') +
+        '<button type="button" class="btn secondary ek-ac-btn" data-ekac="1"><span>' + (ekAcik ? 'Ek bilgileri gizle' : 'Ek bilgiler: ETTN, vade, sipariş, fason, tevkifat' + (ekDolu ? ' · <b>' + ekDolu + ' dolu</b>' : '')) + '</span></button>' +
         '</div>' +
         '<div class="form-section">İrsaliye ve stok</div>' +
         (t.stok && !mevcut ? '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="afStok" style="width:auto"' + (d.stokIsle ? ' checked' : '') + '> ' + (t.iade ? 'Stoktan düş (iade irsaliyesi ayrıca kesilmediyse)' : 'Stoğa giriş yap (mal irsaliyesiz geldiyse / irsaliyeli fatura) — birim fiyat maliyet olur') + '</label>' : '') +
@@ -21887,6 +22012,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<div class="form-section">Kalemler</div><div data-kalemyer="1">' + kalemTabloHtml(o) + '</div><div id="afOzet" style="margin-top:8px"></div>' +
         '<div class="field"><label>Açıklama</label><input type="text" id="afAc" value="' + escAttr(d.aciklama || '') + '" style="width:100%"></div>';
       kalemEditorBagla(el, o, function(k){ var tt = alisToplamlari(k, (byId('afTevk') || {}).value, Number((byId('afStopaj') || {}).value) || 0, !!t.ihracKayitli); byId('afOzet').innerHTML = toplamOzetHtml(tt, !!t.ihracKayitli, d.paraBirimi) + (d.paraBirimi !== 'EUR' ? '<div class="helper" style="text-align:right">≈ €' + fmt2(tt.genelToplam * belgeEurOrani(d.paraBirimi, (byId('afKur') || {}).value, d.tarih)) + '</div>' : ''); });
+      var ekb = el.querySelector('[data-ekac]'); if (ekb) ekb.onclick = function(){ yakala(el); ekAcik = !ekAcik; ciz(el); };
       var sp = byId('afStopaj'); if (sp) sp.oninput = function(){ el.dispatchEvent(new Event('input')); };
       ['afKur'].forEach(function(id){ var x = byId(id); if (x) x.oninput = function(){ el.dispatchEvent(new Event('input')); }; });
       pbSecimBagla('af', function(pb){ yakala(el); d.paraBirimi = pb; ciz(el); });
@@ -22702,7 +22828,7 @@ Dikkat edilmesi gereken 2 nokta:
   EK_HER_ZAMAN.push(ymCiz);
 
 // ===== m12b — Telefon: altta sabit çubuk (Özet · Ara · Favoriler · Menü) ve tam ekran menü =====
-  // Görünürlük CSS'te (767 px ve altı); tablet ve masaüstünde öğeler gizli kalır. Menü MENU_YENI'den çizilir, yetkisiz sayfa çıkmaz.
+  // Görünürlük CSS'te (860 px ve altı: telefon ve dikey tablet); geniş tablet ve masaüstünde öğeler gizli kalır. Menü MENU_YENI'den çizilir, yetkisiz sayfa çıkmaz.
   var _telPanel = ''; // '' kapalı · 'menu' · 'fav'
   function telPanelAcik(){ return !!_telPanel; }
   function telPanelKapat(){
@@ -22807,7 +22933,7 @@ Dikkat edilmesi gereken 2 nokta:
     });
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && _telPanel && !document.querySelector('#formOverlay.open, #confirmOverlay.open')) telPanelKapat(); });
     // ekran genişleyince (telefon yan çevrildi, pencere büyütüldü) açık panel kapanır
-    window.addEventListener('resize', function(){ if (_telPanel && !(window.matchMedia && window.matchMedia('(max-width: 767px)').matches)) telPanelKapat(); });
+    window.addEventListener('resize', function(){ if (_telPanel && !(window.matchMedia && window.matchMedia('(max-width: 860px)').matches)) telPanelKapat(); });
   })();
   // Menü başlıkları büyük harf yazılmış (KARTLAR, FİNANS & MUHASEBE…): ekranda Türkçe baş harfi büyük gösterilir (Kartlar, Finans & Muhasebe)
   function trBaslik(t){ return t.toLocaleLowerCase('tr').replace(/(^|[\s&\/(-])(\S)/g, function(m, a, b){ return a + b.toLocaleUpperCase('tr'); }); }
@@ -25155,6 +25281,60 @@ Dikkat edilmesi gereken 2 nokta:
   document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('#ozetDuzenBtn'); if (b) ozetDuzenAc(); });
   document.addEventListener('change', function(e){ if (e.target && e.target.id === 'ozetDonemSec'){ _ozetDonem = e.target.value === thisMonthKey() ? '' : e.target.value; renderOzet(); } }); // r275
   init();
+// ===== r371: Mobil uyum — kalem tabloları telefonda / dokunmatik tablette kart; açılır formun altında toplam; uygulama olarak kurulum =====
+  // Tablo başlığındaki adlar hücrelere etiket olarak yazılır (data-lbl); kart düzeni CSS'te (767 px ve altı, dokunmatik 768–1100 px).
+  // Masaüstünde tablo görünümü değişmez. Kaydetme ve hesap kodu bu sınıflara bakmaz.
+  (function(){
+    var MK_HARIC = '.kp-tablo, .kp-gider, .kv-urun-tablo';
+    var GENIS_RE = /stok|açıklama|gider türü|hesap|kalem|karakteristik|personel|malzeme|operasyon|ürün|^not$/i;
+    var GIRIS = 'input:not([type=hidden]), select, textarea';
+    function hucreler(t){
+      var bas = [], thr = t.tHead && t.tHead.rows.length ? t.tHead.rows[t.tHead.rows.length - 1] : null;
+      if (thr) Array.prototype.forEach.call(thr.cells, function(th){ var ad = (th.textContent || '').replace(/\s+/g, ' ').trim(); for (var c = 0; c < (th.colSpan || 1); c++) bas.push(ad); });
+      Array.prototype.forEach.call(t.tBodies, function(tb){ Array.prototype.forEach.call(tb.rows, function(tr){
+        if (tr.__mk) return; tr.__mk = 1;
+        if (tr.cells.length === 1){ tr.classList.add('mk-tek'); return; }
+        var col = 0;
+        Array.prototype.forEach.call(tr.cells, function(td, i){
+          var ad = bas[col] || ''; col += td.colSpan || 1;
+          var giris = td.querySelector(GIRIS), dugme = td.querySelector('button');
+          if (ad) td.setAttribute('data-lbl', ad);
+          if (!giris && (td.classList.contains('kf-sira') || ad === '#')){ td.classList.add('mk-gizle'); return; }
+          if (!giris && dugme && !ad && (td.textContent || '').trim().length <= 2){ td.classList.add('mk-sil'); return; }
+          if (!giris && !dugme) td.classList.add('mk-metin');
+          if (td.classList.contains('kf-stok') || td.classList.contains('kf-acik') || (i === 0 && giris) || GENIS_RE.test(ad)) td.classList.add('mk-genis');
+        });
+      }); });
+    }
+    function altToplam(){
+      var kutu = byId('formAltToplam'), f = byId('formFields'); if (!kutu || !f) return;
+      var satir = f.querySelectorAll('tr.muh-toplam, tr.kf-genel'), tr = satir.length ? satir[satir.length - 1] : null;
+      if (!tr || tr.cells.length < 2){ if (!kutu.hidden){ kutu.hidden = true; kutu.innerHTML = ''; kutu.dataset.k = ''; } return; }
+      var tablo = f.querySelector('table.mk'), n = 0;
+      if (tablo && tablo.tBodies[0]) n = Array.prototype.filter.call(tablo.tBodies[0].rows, function(r){ return r.cells.length > 1; }).length;
+      var etiket = tr.cells[0].textContent.trim(), deger = tr.cells[tr.cells.length - 1].textContent.trim(), k = n + '|' + etiket + '|' + deger;
+      if (kutu.dataset.k !== k){ kutu.dataset.k = k; kutu.innerHTML = (n ? '<span>' + n + ' kalem ·</span>' : '') + '<span>' + esc(etiket) + '</span><b>' + esc(deger) + '</b>'; }
+      kutu.hidden = false;
+    }
+    var _bekle = 0;
+    function tara(){
+      _bekle = 0;
+      document.querySelectorAll('table.edit-tablo, table.kf-tablo').forEach(function(t){
+        if (t.matches(MK_HARIC)) return;
+        if (!t.classList.contains('mk')){ var tb = t.tBodies[0]; if (!tb || !tb.querySelector(GIRIS)) return; t.classList.add('mk'); }
+        hucreler(t);
+      });
+      altToplam();
+    }
+    function planla(){ if (!_bekle) _bekle = setTimeout(tara, 60); }
+    if (window.MutationObserver) new MutationObserver(planla).observe(document.body, { childList: true, subtree: true });
+    planla();
+    // Uygulama olarak kurulum (ana ekrana ekle): yayındaki adreste program dosyası önbelleğe alınır, bağlantı kısa süre kopsa da açılır.
+    // Veri her zaman Supabase'den gelir; çevrimdışı kayıt yapılmaz. Yerel (Mac) sürümde kullanılmaz.
+    try {
+      if ('serviceWorker' in navigator && location.protocol === 'https:' && !yerelAdres()) navigator.serviceWorker.register('sw.js').catch(function(){});
+    } catch(e){}
+  })();
 })();
 </script>
 </body>
