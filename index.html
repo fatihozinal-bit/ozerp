@@ -1715,7 +1715,6 @@
     <button class="navbtn" data-grup="FİNANS" data-tab="ceksenet"><svg class="navicon" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="1"/><path d="M6 14h6M15 10h3"/></svg>Çek / Senet</button>
     <button class="navbtn" data-grup="FİNANS" data-tab="giderler"><svg class="navicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9M12 6v2M12 16v2"/></svg>Giderler</button>
     <button class="navbtn" data-grup="FİNANS" data-tab="bordro"><svg class="navicon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 19c.8-3 3.2-4.5 6-4.5s5.2 1.5 6 4.5M16 8h5M16 12h5M18 16h3"/></svg>Bordro Özeti</button>
-    <button class="navbtn" data-tab="virgo"><svg class="navicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5a4.5 4.5 0 1 0 0 7M6.5 10.5h6M6.5 13.5h6"/></svg>Hesap Defteri</button>
     <div class="navlabel" data-grup="MUHASEBE"><span class="nl-ad"><svg class="navgicon" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M12 4v16M4 12h16"/></svg>MUHASEBE</span></div>
     <button class="navbtn" data-grup="MUHASEBE" data-tab="muhfis"><svg class="navicon" viewBox="0 0 24 24"><path d="M6 2h12v20H6z"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>Muhasebe Fişleri</button>
     <button class="navbtn" data-grup="MUHASEBE" data-tab="hesapplani"><svg class="navicon" viewBox="0 0 24 24"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M11 5h9M13 12h7M13 19h7"/><path d="M11 5v14"/></svg>Hesap Planı</button>
@@ -1752,7 +1751,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-16-r361</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-18-r365</div>
     </div>
   </nav>
   <main>
@@ -1805,6 +1804,8 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
           </div>
         </div>
       </div>
+      <div id="ozetVirgoBorc"></div>
+      <div id="ozetHesapDefteri" hidden><div class="block-head" style="background:none;border:0;padding:14px 0 6px"><h3 style="font-size:16px">Ortaklar ve hesap defteri (Virgo dönemi)</h3></div><div id="virgoIcerik"></div></div>
       <div class="block" id="ozetAnaliz"></div>
       <div id="ozetPano"></div>
     </section>
@@ -2351,10 +2352,6 @@ Dikkat edilmesi gereken 2 nokta:
     <section class="panel" id="panel-bordro">
       <div class="pagehead"><h1>Bordro özeti</h1><p>Mali müşavirin her ay verdiği bordro icmalinin toplamları. Maaş, SGK ve vergi borcu muhasebe fişine otomatik gider; net maaş ödemesi buradan, SGK ve muhtasar ödemesi Vergi &amp; SGK Ödemeleri'nden girilir.</p></div>
       <div id="bordroIcerik"></div>
-    </section>
-    <section class="panel" id="panel-virgo">
-      <div class="pagehead"><h1>Hesap defteri (Virgo Hidrolik)</h1><p>Şirket kurulana kadar makineler ve personel Virgo Hidrolik'te. Virgo'nun ödedikleri ve ona geri ödediklerimiz (Virgo hesabı) ile ortakların kendi cebinden harcamaları (Ortaklar hesabı) ayrı ayrı, € ve ₺ olarak izlenir; aylık kazanç da buradan görünür, ⇩ Excel ile hepsi indirilir. Üretim, normal Üretim Girişi'nden girilir; karşılığı burada Virgo fiyatıyla bilgi olarak görünür, borçtan düşmez (ödemeyi "Geri ödeme" olarak girin). Muhasebeye işlemez.</p></div>
-      <div id="virgoIcerik"></div>
     </section>
     <section class="panel" id="panel-kapasitedoluluk">
       <div class="pagehead"><h1>Kapasite ve doluluk</h1><p>Üretim Kayıtları'ndan gerçek üretim hızı, bir işin kaç gün süreceği ve makinelerin ne kadar dolu çalıştığı.</p></div>
@@ -4670,6 +4667,7 @@ Dikkat edilmesi gereken 2 nokta:
     renderOzetMakineTablo();
     try { renderOzetDonemSerit(); } catch(e){ renderHatasi('dönem şeridi', e); }
     renderOzetTrendGrafik();
+    try { renderOzetVirgoBorc(); } catch(e){ renderHatasi('Virgo borcu', e); }
     renderOzetAnaliz();
     try { renderOzetPano(); } catch(e){ renderHatasi('pano', e); }
   }
@@ -8141,9 +8139,11 @@ Dikkat edilmesi gereken 2 nokta:
   })();
 
   function gitSekme(tab){
+    if (tab === 'virgo'){ hesapDefterineGit(); return; } // r365: Hesap Defteri Özet'te
     var b = document.querySelector('.navbtn[data-tab="'+tab+'"]');
     if (b) b.click();
   }
+  function hesapDefterineGit(){ gitSekme('ozet'); setTimeout(function(){ var el = byId('ozetHesapDefteri'); if (el && el.offsetParent) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); }
   function sekmeAcildi(tab){
     document.body.classList.toggle('genis-sayfa', tab === 'kapasiteplan'); // r328: Aylık Kapasite ekranın tamamını kullanır (1560 px sınırı yok)
     navGrupAc(tab);
@@ -9391,6 +9391,8 @@ Dikkat edilmesi gereken 2 nokta:
   var KAYIT_SUZGEC_TEMIZLE = { irsaliyeler: function(){ if (!_irsFiltre) return; _irsFiltre = ''; var s = byId('irsFiltre'); if (s) s.value = ''; } };
   function gitKayit(tab, id, bulunamazsa){
     if (!sekmeIzinli(tab)){ toast('Bu kayda erişim yetkiniz yok.', true); return; }
+    // r365: Hesap Defteri sayfası yok; kayıt Özet'teki bölümde, form doğrudan açılır
+    if (tab === 'virgo'){ hesapDefterineGit(); var hv = virgoKayitlariHam().find(function(x){ return x.id === id; }); if (hv) setTimeout(function(){ crudDuzenle(VIRGO_TANIM, hv); }, 200); else if (bulunamazsa) bulunamazsa(); return; }
     // sayfa geçişi geçmişe ayrı satır yazmasın: adres tek seferde #sayfa/ID olur
     var sessiz = adresSessiz(), eski = _adres.sessiz; _adres.sessiz = true;
     try { gitSekme(tab); } finally { _adres.sessiz = eski; }
@@ -13536,6 +13538,45 @@ Dikkat edilmesi gereken 2 nokta:
         '<tr class="kv-alt"' + tik('top||cepN') + '><td><b>Toplam</b></td>' + cKisi.map(function(k){ return c(top.c[k], true); }).join('') + c(top.ct, true) + '</tr></tbody></table></div>'
         : '<div class="empty">Ortakların şahsi ödemesi yok.</div>') + '</div></div></div></div>';
   }
+  // r364: Hesap Defteri'ndeki Virgo borcu Özet'e taşındı: borç kartları (Virgo € / ₺ fatura, geri ödenen, elimizdeki para, ödenecek, son mutabakat),
+  // Virgo'ya borç bloğu (özet, ödemeler, borç grafiği, kur ayrıntısı) ve Virgo hesabı ay ay. Hesap Defteri sayfasını görebilen rollerde, Virgo kaydı varsa görünür.
+  // Tıklamalar Hesap Defteri'ndekiyle aynı: rakam → kayıtları (virgoDetayAc), satır → kayıt, + Ödeme gir, aylık döküm.
+  function virgoBorcKartlar(){
+    var t = virgoToplam(), kur = virgoGunKuru(todayISO());
+    return '<div class="cards">' +
+      virgoKartUc('Virgo € fatura', (t.kalanTl < -0.004 ? 'eksi: Virgo size borçlu · ' : '') + 'Virgo\'ya kalan borç: gelen − geri ödeme; ₺ sabit, kurla değişmez. Tıklayınca kayıtları.', t.kalanO.tl, t.kalanO.eur, 'kalan') +
+      (Math.abs(t.tlFaturaKalan.tl) > 0.5 ? virgoKartUc('Virgo ₺ fatura', '"Hangi borç = Virgo ₺ fatura" seçilen kayıtlar (KDV hariç) ve bu borca yapılan ödemeler. ₺ izlenir; € bugünkü kurla yalnız bilgi. Tıklayınca ay ay döküm.', t.tlFaturaKalan.tl, kur ? t.tlFaturaKalan.tl / kur : null, 'tlFaturaE') : '') +
+      virgoKart('Virgo\'ya geri ödenen', t.geri, 'borçtan düştü', '', 'geri') +
+      (Math.abs(t.elde.eur) > 0.004 ? virgoKart('Elimizdeki Virgo parası', t.elde, t.elde.eur < 0 ? 'eksi: verdiğinden fazla harcanmış, "Virgo\'dan alınan" kaydı eksik olabilir' : 'verdiği paradan harcanmayan', '', 'elde') : '') +
+      (t.bekleyen.eur > 0.004 ? virgoKart('Ödenecek (bekleyen)', t.bekleyen, 'toplamlara girmedi', '', 'bekleyen') : '') +
+      (function(){ var l = virgoMutabakatlar(); if (!l.length) return ''; var son = l[l.length - 1], an = virgoNorm(son), p = virgoBorcTarihte(son.tarih), f = an.eur - p.eur;
+        return '<div class="card"><div class="label">Son mutabakat · ' + esc(kvTarihTR(son.tarih)) + '</div><div class="value">' + virgoTl(an.tl) + '</div><div class="sub">' + virgoEur(an.eur) + ' · program ' + virgoET(p) + ' · ' + (Math.abs(f) < 0.5 ? '<span class="pos">✓ tutuyor</span>' : '<span class="neg">fark ' + virgoET({ eur: f, tl: f * (Number(son.kur) || virgoGunKuru(son.tarih)) }) + '</span>') + '</div></div>'; })() +
+      '</div>';
+  }
+  function renderOzetVirgoBorc(){
+    var host = byId('ozetVirgoBorc'); if (!host) return;
+    if (!sekmeIzinli('virgo') || (!virgoKayitlariHam().length && !(state.alisFaturalari || []).length && !(state.giderler || []).length)){ setHtmlIdle(host, ''); return; }
+    var ic = virgoOdemeHtml(); if (!ic){ setHtmlIdle(host, ''); return; }
+    setHtmlIdle(host, '<div class="vg-ozet-borc">' + virgoBorcKartlar() + ic + virgoAyAyHtml() + '</div>');
+    if (host.dataset.bagli) return; host.dataset.bagli = '1';
+    host.addEventListener('click', function(e){
+      var vd = e.target.closest('[data-vd]'); if (vd){ virgoDetayAc(vd.dataset.vd); return; }
+      var vz = e.target.closest('[data-vduzelt]'); if (vz){ virgoKayitAc(vz.dataset.vduzelt); return; }
+      if (e.target.closest('[data-vodemegir]')){ crudYeni(VIRGO_TANIM, { hareket: VIRGO_HAREKET[2], kategori: '', kdvOrani: '0', paraBirimi: '₺' }); return; }
+      if (e.target.closest('[data-vdokum]')){ var sel = host.querySelector('[data-vdokumay]'); if (sel && sel.value) virgoAyDokum(sel.value); return; }
+    });
+  }
+  // r364: Virgo hesabı ay ay (Hesap Defteri'nden Özet › Virgo'ya borç'a taşındı)
+  function virgoAyAyHtml(){
+    var l = virgoAylar(), t = virgoToplam(), html = '';
+    var td = function(o, kalin, isaret, dk){ var bos = !o || (Math.abs(o.eur) < 0.005 && Math.abs(o.tl) < 0.005); return '<td class="num' + (dk && !bos ? ' vg-tik" data-vd="' + escAttr(dk) + '" title="Ayrıntı için tıklayın' : '') + '">' + virgoIki(o, kalin, isaret) + '</td>'; };
+    var A = function(ay, alan){ return 'ay|' + ay + '|' + alan; }, TP = function(alan){ return 'top||' + alan; };
+    if (l.length) html += '<div class="block" id="ozetVirgoAyAy"><div class="block-head"><h3>Virgo hesabı ay ay ' + infoIco('Borcu artıranlar: Virgo\'dan alınan para ve Virgo\'nun doğrudan ödedikleri. Borçtan düşenler: Virgo\'ya geri ödemeler (elle girilir). Üretim karşılığı yalnız bilgi içindir, borcu etkilemez. Ortakların kendi cebinden harcamaları bu hesaba girmez (Ortaklar hesabı). Virgo\'nun verdiği paradan yapılan harcamalar borcu değiştirmez, elimizdeki Virgo parasından düşer (KDV dahil ödenen); fatura Virgo adınaysa Virgo o KDV\'yi indirdiği için KDV borçtan düşer; kendi cebimizden ödenen Virgo adına faturanın KDV\'si de borçtan düşer. Ay sonu borç € esastır; ₺ her işlemin kendi günündeki kurla toplanır.') + '</h3><div class="bh-actions"><select data-vdokumay="1" title="Döküm ayı">' + l.slice().reverse().map(function(a, i){ return '<option value="' + a.ay + '"' + (a.ay === todayISO().slice(0, 7) || (i === 0 && !l.some(function(x){ return x.ay === todayISO().slice(0, 7); })) ? ' selected' : '') + '>' + esc(muhAyAdi(a.ay)) + '</option>'; }).join('') + '</select> <button class="btn secondary small" data-vdokum="1" title="Seçilen ayın Virgo dökümü: ay başı / sonu borç, hareketler, üretim, imza yerleri (mutabakat için)">🖨 Aylık döküm</button></div></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Virgo\'dan alınan</th><th class="num">Virgo\'nun ödediği (KDV hariç)</th><th class="num">Verdiği paradan harcanan</th>' + (t.iade.eur ? '<th class="num">Virgo\'nun indirdiği KDV</th>' : '') + '<th class="num">Üretim karşılığı (bilgi)</th><th class="num">Geri ödeme</th><th class="num">Ay sonu borç</th><th class="num">Elimizdeki Virgo parası</th></tr></thead><tbody>' +
+      l.map(function(a){ return '<tr class="vg-satir" data-vd="' + escAttr('ay|' + a.ay + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(muhAyAdi(a.ay)) + '</td>' + td(a.alinan, false, false, A(a.ay, 'alinan')) + td(a.kbDog, false, false, A(a.ay, 'kbDog')) + td(a.avans, false, false, A(a.ay, 'avans')) + (t.iade.eur ? td(a.iade, false, false, A(a.ay, 'iade')) : '') + td(a.gelir, false, false, A(a.ay, 'gelir')) + td(a.geri, false, false, A(a.ay, 'geri')) + td(a.kalan, true, false, A(a.ay, 'kalan')) + td(a.elde, false, false, A(a.ay, 'elde')) + '</tr>'; }).join('') +
+      '<tr class="kv-alt vg-satir" data-vd="top||hepsi"><td><b>Toplam</b></td>' + td(t.alinan, true, false, TP('alinan')) + td(t.kbDog, true, false, TP('kbDog')) + td(t.avans, true, false, TP('avans')) + (t.iade.eur ? td(t.iade, true, false, TP('iade')) : '') + td(t.gelir, true, false, TP('gelir')) + td(t.geri, true, false, TP('geri')) + td(t.kalanO, true, false, TP('kalan')) + td(t.elde, true, false, TP('elde')) + '</tr>' +
+      '</tbody></table></div></div></div>';
+    return html;
+  }
   function virgoAltHtml(){
     var l = virgoAylar(), t = virgoToplam(), k = virgoKirilim(), g = virgoPbGorunum(), kisiler = virgoKisiler();
     var td = function(o, kalin, isaret, dk){ var bos = !o || (Math.abs(o.eur) < 0.005 && Math.abs(o.tl) < 0.005); return '<td class="num' + (dk && !bos ? ' vg-tik" data-vd="' + escAttr(dk) + '" title="Ayrıntı için tıklayın' : '') + '">' + virgoIki(o, kalin, isaret) + '</td>'; };
@@ -13546,10 +13587,7 @@ Dikkat edilmesi gereken 2 nokta:
         l.map(function(a){ return '<tr class="vg-satir" data-vd="' + escAttr('ay|' + a.ay + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(muhAyAdi(a.ay)) + '</td><td class="num">' + fmt(a.adet) + '</td>' + td(a.gelir, false, false, A(a.ay, 'gelir')) + td(a.isletme, false, false, A(a.ay, 'isletme')) + td(a.kazanc, true, true, A(a.ay, 'kazanc')) + td(a.yatirim, false, false, A(a.ay, 'yatirim')) + '</tr>'; }).join('') +
         '<tr class="kv-alt vg-satir" data-vd="top||hepsi"><td><b>Toplam</b></td><td class="num"><b>' + fmt(t.adet) + '</b></td>' + td(t.gelir, true, false, TP('gelir')) + td(t.isletme, true, false, TP('isletme')) + td(t.kazanc, true, true, TP('kazanc')) + td(t.yatirim, true, false, TP('yatirim')) + '</tr>' +
         '</tbody></table></div>' : '<div class="empty">Henüz hareket ya da üretim yok.</div>') + '</div></div>';
-    if (l.length) html += '<div class="block" data-vsekme="ayay"><div class="block-head"><h3>Virgo hesabı ay ay ' + infoIco('Borcu artıranlar: Virgo\'dan alınan para ve Virgo\'nun doğrudan ödedikleri. Borçtan düşenler: Virgo\'ya geri ödemeler (elle girilir). Üretim karşılığı yalnız bilgi içindir, borcu etkilemez. Ortakların kendi cebinden harcamaları bu hesaba girmez (Ortaklar hesabı). Virgo\'nun verdiği paradan yapılan harcamalar borcu değiştirmez, elimizdeki Virgo parasından düşer (KDV dahil ödenen); fatura Virgo adınaysa Virgo o KDV\'yi indirdiği için KDV borçtan düşer; kendi cebimizden ödenen Virgo adına faturanın KDV\'si de borçtan düşer. Ay sonu borç € esastır; ₺ her işlemin kendi günündeki kurla toplanır.') + '</h3><div class="bh-actions"><select data-vdokumay="1" title="Döküm ayı">' + l.slice().reverse().map(function(a, i){ return '<option value="' + a.ay + '"' + (a.ay === todayISO().slice(0, 7) || (i === 0 && !l.some(function(x){ return x.ay === todayISO().slice(0, 7); })) ? ' selected' : '') + '>' + esc(muhAyAdi(a.ay)) + '</option>'; }).join('') + '</select> <button class="btn secondary small" data-vdokum="1" title="Seçilen ayın Virgo dökümü: ay başı / sonu borç, hareketler, üretim, imza yerleri (mutabakat için)">🖨 Aylık döküm</button></div></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ay</th><th class="num">Virgo\'dan alınan</th><th class="num">Virgo\'nun ödediği (KDV hariç)</th><th class="num">Verdiği paradan harcanan</th>' + (t.iade.eur ? '<th class="num">Virgo\'nun indirdiği KDV</th>' : '') + '<th class="num">Üretim karşılığı (bilgi)</th><th class="num">Geri ödeme</th><th class="num">Ay sonu borç</th><th class="num">Elimizdeki Virgo parası</th></tr></thead><tbody>' +
-      l.map(function(a){ return '<tr class="vg-satir" data-vd="' + escAttr('ay|' + a.ay + '|hepsi') + '" title="Satırın bütün kayıtları için tıklayın; bir rakamın kayıtları için hücreye"><td>' + esc(muhAyAdi(a.ay)) + '</td>' + td(a.alinan, false, false, A(a.ay, 'alinan')) + td(a.kbDog, false, false, A(a.ay, 'kbDog')) + td(a.avans, false, false, A(a.ay, 'avans')) + (t.iade.eur ? td(a.iade, false, false, A(a.ay, 'iade')) : '') + td(a.gelir, false, false, A(a.ay, 'gelir')) + td(a.geri, false, false, A(a.ay, 'geri')) + td(a.kalan, true, false, A(a.ay, 'kalan')) + td(a.elde, false, false, A(a.ay, 'elde')) + '</tr>'; }).join('') +
-      '<tr class="kv-alt vg-satir" data-vd="top||hepsi"><td><b>Toplam</b></td>' + td(t.alinan, true, false, TP('alinan')) + td(t.kbDog, true, false, TP('kbDog')) + td(t.avans, true, false, TP('avans')) + (t.iade.eur ? td(t.iade, true, false, TP('iade')) : '') + td(t.gelir, true, false, TP('gelir')) + td(t.geri, true, false, TP('geri')) + td(t.kalanO, true, false, TP('kalan')) + td(t.elde, true, false, TP('elde')) + '</tr>' +
-      '</tbody></table></div></div></div>';
+    // r364: "Virgo hesabı ay ay" Özet › Virgo'ya borç'a taşındı (virgoAyAyHtml)
     var oh = virgoOrtakHesap();
     // r269: ortaklar tablosu ₺ (sayfadaki ₺ / € seçiminden bağımsız). r270: tablonun altına elle kur yazılırsa ₺'nin altında o kurla € karşılığı
     var oKur = virgoOrtakKur(), oEur = function(v){ return oKur ? '<div class="muted" style="font-size:11px">' + virgoEur(v / oKur) + '</div>' : ''; };
@@ -13570,10 +13608,10 @@ Dikkat edilmesi gereken 2 nokta:
           '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Ortak</th><th>Kayıt</th><th>Açıklama</th><th class="num">Tutar</th><th>Nereye işlendi</th><th>Kendi parasıysa</th></tr></thead><tbody>' +
           d.map(function(x){ return '<tr class="vg-tik" data-vduzelt="' + escAttr(x.v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(x.v.tarih)) + '</td><td>' + esc(x.n.kisi) + '</td><td>' + esc(virgoTipAd(x.n)) + (x.n.tip === 'harcama' && x.v.kategori ? ' · ' + esc(x.v.kategori) : '') + '</td><td>' + esc(x.v.aciklama || '') + '</td><td class="num">' + virgoIki({ eur: x.n.eur, tl: x.n.tl }) + '</td><td>' + esc(x.yer) + '</td><td class="muted">' + esc(x.oneri) + '</td></tr>'; }).join('') +
           '</tbody></table></div>'; })() + '</div></div>';
-    html += virgoMaasHtml();
+    // r365: Maaşlar İK & İzin › Aylık maaş'ta
     html += virgoVergiHtml();
     // r246: ay ay tablolar tek blokta sekmeli; aynı anda biri görünür (seçim bu tarayıcıda hatırlanır)
-    var sekmeler = [['kazanc', 'Aylık kazanç'], ['ayay', 'Virgo hesabı ay ay'], ['maas', 'Maaşlar'], ['ortak', 'Ortaklar'], ['vergi', 'Vergi & amortisman']].filter(function(x){ return html.indexOf('data-vsekme="' + x[0] + '"') > -1; });
+    var sekmeler = [['ortak', 'Ortaklar'], ['kazanc', 'Aylık kazanç'], ['vergi', 'Vergi & amortisman']].filter(function(x){ return html.indexOf('data-vsekme="' + x[0] + '"') > -1; });
     var sec = virgoSekme(); if (!sekmeler.some(function(x){ return x[0] === sec; })) sec = sekmeler.length ? sekmeler[0][0] : '';
     sekmeler.forEach(function(x){ if (x[0] !== sec) html = html.replace('data-vsekme="' + x[0] + '"', 'data-vsekme="' + x[0] + '" style="display:none"'); });
     return '<div class="sekme-bar vg-sekmeler">' + sekmeler.map(function(x){ return '<button type="button" data-vsekmesec="' + x[0] + '"' + (x[0] === sec ? ' class="aktif"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>' + html;
@@ -13737,7 +13775,7 @@ Dikkat edilmesi gereken 2 nokta:
     return html;
   }
   var VIRGO_SEKME_KEY = 'ozerp_virgo_sekme_v1';
-  function virgoSekme(){ try { return localStorage.getItem(VIRGO_SEKME_KEY) || 'kazanc'; } catch(e){ return 'kazanc'; } }
+  function virgoSekme(){ try { return localStorage.getItem(VIRGO_SEKME_KEY) || 'ortak'; } catch(e){ return 'ortak'; } }
   // Kişiler / ortaklık payı (r246: sayfanın altındaki Ayarlar bölümünde)
   function virgoKisiHtml(){
     var html = '';
@@ -14255,7 +14293,7 @@ Dikkat edilmesi gereken 2 nokta:
   var VIRGO_TANIM = {
     key: 'virgo', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'virgo'; }, listeBaslik: 'Hareketler', yeniEtiket: '+ Hareket',
     bilgi: 'Bu süreçteki her parayı girin. Virgo hesabı yalnız Virgo\'nun ödedikleri / verdikleri, ona geri ödediklerimizdir; üretim karşılığı (Üretim Girişi\'ndeki adet × Virgo fiyatı) yalnız bilgi içindir, borcu düşürmez. "Virgo\'dan alınan": size verdiği nakit / havale (kişi: parayı alan). "Harcama": kim ödediyse onun adıyla; Virgo ödediyse borca eklenir. Ortak (siz, Ahmet) ödediyse paranın kaynağını seçin: Virgo\'nun verdiği paradan ya da kendi cebimizden — kendi cebimizden yapılanlar Virgo hesabına girmez, Ortaklar hesabında tutulur. "Geri ödeme": Virgo\'ya yapılan ödeme, borçtan düşer. "Ortaklar arası ödeme": ortaklar ödeşince (veren → alan). Henüz ödenmemiş kalemi "Ödenecek" durumuyla ve son ödeme günüyle girin; ödenince "Ödendi" yapın. Harcamada KDV oranını ve faturanın kimin adına olduğunu seçin: Virgo adına faturada maliyet KDV hariç, bizim adımıza / fişsizde KDV dahil; ödenen nakit hep KDV dahil izlenir. Belli aralıklarla Virgo\'yla borcu karşılaştırıp "Mutabakat" girin: programın hesabıyla farkı görünür ve o tarih dahil önceki kayıtlar kilitlenir. ⧉ Sonraki aya: maaş, kira gibi aylık kalemi bir ay sonrası için hazır form olarak açar. Tutarı ₺ ya da € yazın: o günün TCMB kuruyla öbürü de saklanır, her yerde ikisi birlikte görünür. Üretim, Üretim Girişi\'nden girilir; karşılığı bilgi olarak görünür, borçtan düşmez (Virgo\'ya yaptığınız ödemeyi "Geri ödeme" olarak girin). ⇩ Excel ile her şey (özet, aylık kazanç, hareketler, kişiler, kategoriler, üretim) indirilir. Muhasebeye işlemez; şirket kurulunca kalan borç Virgo carisine açılış bakiyesi olarak aktarılır.',
-    ustHtml: function(){ return virgoAktarimHtml() + virgoErpAktarHtml() + virgoSaglamaHtml() + virgoUretimKontrolHtml() + virgoAracHtml() + virgoKartlar() + virgoOdemeHtml() + virgoNakdeHtml(); }, altHtml: virgoAltHtml,
+    ustHtml: function(){ return virgoAktarimHtml() + virgoErpAktarHtml() + virgoSaglamaHtml() + virgoUretimKontrolHtml() + virgoAracHtml() + virgoNakdeHtml(); }, altHtml: virgoAltHtml,
     fields: function(){ return [
       {key:'tarih', label:'Tarih', type:'date', required:true},
       {key:'hareket', label:'Hareket', type:'select', options: VIRGO_HAREKET, required:true},
@@ -17151,13 +17189,67 @@ Dikkat edilmesi gereken 2 nokta:
           '<td class="num" data-gymtutar="1" title="' + escAttr(personelNetTL(p) > 0 ? 'Net maaş ÷ 225 × (1 + zam %) × saat' : 'Tanımlar › Personel\'de net maaş girilmemiş') + '">' + (m.tutar ? virgoTl(m.tutar) : '-') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
   }
+  // r362: İK & İzin › Aylık maaş — seçilen ayın maaşı kişi kişi kendiliğinden: Tanımlar › Personel'deki net maaş, işe giriş / çıkış ayı (kıst),
+  // gelmediği günler (1/30) ve eksik saatler (1/225) düşülür, Aylık mesai eklenir; brüt ve işveren maliyeti bordro modelinden (personelAyBordroTL).
+  // Yalnız bilgi: kayıt yazmaz. Altında yıl içinde ay ay ödenecek net. Maliyet görme yetkisi olmayan rolde görünmez.
+  function ikMaasKisi(p, ay, P, MH){
+    var r = personelAyBordroTL(p, ay, P), m = r.tam > 0 && r.oran > 0 ? personelAyMesai(p, ay, MH) : null, mt = m ? m.tutar : 0;
+    var kesinti = r.netAylik * Math.max(0, r.tam - r.oran), mesaiMaliyet = mt * (r.net > 0 ? r.maliyet / r.net : 1);
+    return { p: p, r: r, m: m, mesai: mt, kesinti: kesinti, odenecek: r.net + mt, brut: r.brut == null ? null : r.brut + mt * (r.net > 0 ? r.brut / r.net : 1), maliyet: r.maliyet + mesaiMaliyet };
+  }
+  function ikMaasHtml(ay){
+    var P = kvParam(), MH = aylikMesaiHarita(), bu = thisMonthKey();
+    var kisiler = (state.personel || []).filter(function(p){ return KV_MODEL.kistOran(ay, p.iseGiris, p.istenCikis, 0) > 0; });
+    if (!kisiler.length) return '<div class="empty">' + esc(muhAyAdi(ay)) + ' ayında çalışan personel yok.</div>';
+    var T = { odenecek: 0, kesinti: 0, mesai: 0, brut: 0, maliyet: 0, net: 0 }, eksikMaas = [];
+    var tl = function(v, cls){ v = Number(v) || 0; return Math.abs(v) < 0.005 ? '<span class="muted">-</span>' : '<span' + (cls ? ' class="' + cls + '"' : '') + '>' + virgoTl(v) + '</span>'; };
+    var satir = kisiler.map(function(p){
+      if (!(personelNetTL(p) > 0)){ eksikMaas.push(p.ad); return '<tr><td>' + esc(p.ad) + (p.rol ? ' <span class="muted">· ' + esc(p.rol) + '</span>' : '') + '</td><td colspan="7" class="muted">Net maaş girilmemiş (Tanımlar › Personel)</td></tr>'; }
+      var x = ikMaasKisi(p, ay, P, MH), r = x.r, e = r.eksik;
+      T.odenecek += x.odenecek; T.kesinti += x.kesinti; T.mesai += x.mesai; T.brut += x.brut || 0; T.maliyet += x.maliyet; T.net += r.netAylik;
+      var gir = /^\d{4}-\d{2}-\d{2}/.test(p.iseGiris || '') && p.iseGiris.slice(0, 7) === ay, cik = /^\d{4}-\d{2}-\d{2}/.test(p.istenCikis || '') && p.istenCikis.slice(0, 7) === ay;
+      var calisma = r.tam < 1 ? fmt2(r.tam * 30) + ' / 30 gün' + (gir ? ' · giriş ' + kvTarihTR(p.iseGiris) : '') + (cik ? ' · çıkış ' + kvTarihTR(p.istenCikis) : '') : 'tam ay';
+      var kesTitle = [eksikDetayMetni(e), r.tam < 1 ? 'giriş / çıkış ayı: ' + fmt2(r.tam * 30) + ' gün çalışma (30 gün üzerinden)' : ''].filter(Boolean).join(' · ');
+      return '<tr><td>' + esc(p.ad) + (p.rol ? ' <span class="muted">· ' + esc(p.rol) + '</span>' : '') + '</td>' +
+        '<td class="num">' + virgoTl(r.netAylik) + '</td>' +
+        '<td' + (r.tam < 1 ? ' class="muted"' : '') + '>' + esc(calisma) + '</td>' +
+        '<td class="num" title="' + escAttr(eksikDetayMetni(e) || 'Gelmediği gün / eksik saat yok') + '">' + tl(-x.kesinti, 'neg') + (e && (e.tamGun || e.saat) ? '<div class="neg" style="font-size:11px">' + esc(eksikKisaYazi(e)) + '</div>' : '') + '</td>' +
+        '<td class="num" title="' + escAttr(x.m && x.mesai ? mesaiDetayMetni(x.m) : 'Bu ay mesai girilmemiş') + '">' + tl(x.mesai, 'pos') + (x.m && x.m.toplamSaat ? '<div class="muted" style="font-size:11px">' + fmt2(x.m.toplamSaat) + ' sa</div>' : '') + '</td>' +
+        '<td class="num" title="' + escAttr('Net maaş' + (kesTitle ? ' − ' + kesTitle : '') + (x.mesai ? ' + mesai' : '')) + '"><b>' + virgoTl(x.odenecek) + '</b></td>' +
+        '<td class="num">' + (x.brut == null ? '<span class="muted">-</span>' : virgoTl(x.brut)) + '</td>' +
+        '<td class="num"' + (r.maliyetGirilen ? ' title="İşveren maliyeti Tanımlar › Personel\'de elle girilmiş"' : '') + '>' + virgoTl(x.maliyet) + (r.maliyetGirilen ? ' <span class="muted" style="font-size:11px">(elle)</span>' : '') + '</td></tr>';
+    }).join('');
+    var html = '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Personel</th><th class="num">Net maaş (aylık)</th><th>Çalışma</th><th class="num">Kesinti ' + infoIco('Gelmediği günler (Devamsız, Raporlu, onaylı Ücretsiz / Rapor izni) her gün aylık net maaşın 1/30\'u; erken çıkış / geç gelme her saat 1/225\'i. İşe giriş / çıkış ayında yalnız çalışılan günler ödenir.') + '</th><th class="num">Mesai</th><th class="num">Ödenecek net</th><th class="num">Brüt (tahmini) ' + infoIco('Net maaştan bordro modeliyle (Tanımlar\'daki asgari ücret, vergi dilimi ve teşvik ayarları) hesaplanan brüt. Kesin tutar müşavirin bordrosundadır.') + '</th><th class="num">İşveren maliyeti ' + infoIco('Brüt + işveren SGK ve işsizlik payı (Tanımlar › Personel\'de işveren maliyeti elle girilmişse o). Şirkete toplam maliyet.') + '</th></tr></thead><tbody>' + satir +
+      '<tr class="kv-alt"><td><b>Toplam</b></td><td class="num"><b>' + virgoTl(T.net) + '</b></td><td></td><td class="num">' + tl(-T.kesinti, 'neg') + '</td><td class="num">' + tl(T.mesai, 'pos') + '</td><td class="num"><b>' + virgoTl(T.odenecek) + '</b></td><td class="num"><b>' + virgoTl(T.brut) + '</b></td><td class="num"><b>' + virgoTl(T.maliyet) + '</b></td></tr></tbody></table></div>';
+    var notlar = [];
+    if (ay === bu) notlar.push('Ay sürüyor: gelmediği gün, eksik saat ve mesai girildikçe rakamlar kendiliğinden güncellenir.');
+    else if (ay > bu) notlar.push('Gelecek ay: şimdilik tam ay maaş görünür.');
+    var b = bordrolar().filter(function(x){ return x.ay === ay; });
+    if (b.length){ var bn = 0, bm = 0; b.forEach(function(x){ var h = bordroHesap(x); bn += h.net; bm += h.maliyet; });
+      notlar.push('Bordro Özeti\'ne girilen ' + esc(muhAyAdi(ay)) + ' bordrosu: net <b>' + virgoTl(bn) + '</b>, şirkete maliyet <b>' + virgoTl(bm) + '</b>' + (Math.abs(bn - T.odenecek) > 1 ? ' <span class="muted">(hesaplanan ödenecek netten fark ' + virgoTl(bn - T.odenecek) + ')</span>' : ' ✓') + '.'); }
+    else if (ay < bu) notlar.push(esc(muhAyAdi(ay)) + ' bordrosu Bordro Özeti\'ne henüz girilmedi; müşavirin bordrosu gelince girildiğinde burada karşılaştırılır.');
+    if (eksikMaas.length) notlar.push('Maaşı girilmemiş: ' + eksikMaas.map(esc).join(', ') + '.');
+    if (notlar.length) html += '<div class="helper" style="margin-top:6px">' + notlar.join('<br>') + '</div>';
+    // Yıl içinde ay ay (ocaktan seçilen aya; işe girişten önceki aylar boş)
+    var yil = ay.slice(0, 4), aylar = []; for (var a = yil + '-01'; a <= ay; a = KV_MODEL.ayEkle(a, 1)) aylar.push(a);
+    var maasli = kisiler.filter(function(p){ return personelNetTL(p) > 0; });
+    if (aylar.length > 1 && maasli.length){
+      var YT = maasli.map(function(){ return 0; }), YG = 0;
+      html += '<details style="margin-top:10px"><summary class="muted" style="cursor:pointer">' + yil + ' ay ay ödenecek net (Ocak – ' + esc(muhAyAdi(ay)) + ')</summary><div class="tablewrap" style="margin-top:6px"><table class="vg-tablo"><thead><tr><th>Ay</th>' + maasli.map(function(p){ return '<th class="num">' + esc(p.ad) + '</th>'; }).join('') + '<th class="num">Toplam</th></tr></thead><tbody>' +
+        aylar.map(function(a){ var top = 0; return '<tr><td>' + esc(muhAyAdi(a)) + '</td>' + maasli.map(function(p, i){ var x = ikMaasKisi(p, a, P, MH); if (!(x.r.tam > 0)) return '<td class="num muted">-</td>'; top += x.odenecek; YT[i] += x.odenecek;
+          return '<td class="num" title="' + escAttr([eksikDetayMetni(x.r.eksik), x.mesai ? 'mesai ' + virgoTl(x.mesai) : ''].filter(Boolean).join(' · ') || 'Tam ay') + '">' + virgoTl(x.odenecek) + '</td>'; }).join('') + '<td class="num"><b>' + virgoTl(top) + '</b></td></tr>' + (YG += top, ''); }).join('') +
+        '<tr class="kv-alt"><td><b>Toplam</b></td>' + YT.map(function(v){ return '<td class="num"><b>' + virgoTl(v) + '</b></td>'; }).join('') + '<td class="num"><b>' + virgoTl(YG) + '</b></td></tr></tbody></table></div></details>';
+    }
+    return html;
+  }
   EK_RENDER.puantaj = function(){
     var host = byId('puantajIcerik'); if (!host) return;
     if (!_puantajTarih) _puantajTarih = todayISO();
     if (!host.dataset.kuruldu){
       host.dataset.kuruldu = '1';
-      host.innerHTML = '<div class="block"><div class="block-head"><h3>Gelmediği günler '+infoIco('Her gün kayıt girmeniz gerekmez. İşaretsiz iş günü çalışıldı sayılır. Kutuya tıkladıkça Devamsız, Raporlu, İzinli ve boş arasında değişir, hemen kaydedilir. Sağdaki kutuya gün numaralarını da yazabilirsiniz (örn. 3, 7, 12-14); yazılanlar Devamsız olur.\n\nDevamsız ve Raporlu günler aylık maaştan 1/30 olarak düşer ve Hesap Defteri › Maaşlar\'a yansır.\n\nErken çıkış / geç gelme saatleri aşağıdaki Günlük ayrıntı\'da "Eksik saat" olarak girilir; her saat 1/225 düşer.')+'</h3><div class="bh-actions"><input type="month" id="gyAy" value="'+thisMonthKey()+'"></div></div><div class="block-body" id="gyIcerik"></div></div>'+
-        '<div class="block"><div class="block-head"><h3>Aylık mesai '+infoIco('Her kişi için ayın toplam mesai saatini yazın, yazınca kaydedilir ve Hesap Defteri › Maaşlar\'a eklenir. Ücret: net maaş ÷ 225 × (1 + zam %) × saat. Yalnız normal maaşının üstüne çalışılan saatleri yazın: işi zaten gece vardiyası olan kişinin normal saatleri maaşına dahildir.\n\n"Diğer fazla mesai" boş bırakılırsa Günlük ayrıntı\'da girilen saatlerin toplamı kullanılır (kutuda soluk görünür).')+'</h3></div><div class="block-body" id="gyMesaiIcerik"></div></div>'+
+      host.innerHTML = '<div class="block"><div class="block-head"><h3>Gelmediği günler '+infoIco('Her gün kayıt girmeniz gerekmez. İşaretsiz iş günü çalışıldı sayılır. Kutuya tıkladıkça Devamsız, Raporlu, İzinli ve boş arasında değişir, hemen kaydedilir. Sağdaki kutuya gün numaralarını da yazabilirsiniz (örn. 3, 7, 12-14); yazılanlar Devamsız olur.\n\nDevamsız ve Raporlu günler aylık maaştan 1/30 olarak düşer ve aşağıdaki Aylık maaş\'a yansır.\n\nErken çıkış / geç gelme saatleri aşağıdaki Günlük ayrıntı\'da "Eksik saat" olarak girilir; her saat 1/225 düşer.')+'</h3><div class="bh-actions"><input type="month" id="gyAy" value="'+thisMonthKey()+'"></div></div><div class="block-body" id="gyIcerik"></div></div>'+
+        '<div class="block"><div class="block-head"><h3>Aylık mesai '+infoIco('Her kişi için ayın toplam mesai saatini yazın, yazınca kaydedilir ve aşağıdaki Aylık maaş\'a eklenir. Ücret: net maaş ÷ 225 × (1 + zam %) × saat. Yalnız normal maaşının üstüne çalışılan saatleri yazın: işi zaten gece vardiyası olan kişinin normal saatleri maaşına dahildir.\n\n"Diğer fazla mesai" boş bırakılırsa Günlük ayrıntı\'da girilen saatlerin toplamı kullanılır (kutuda soluk görünür).')+'</h3></div><div class="block-body" id="gyMesaiIcerik"></div></div>'+
+        '<div class="block" id="gyMaasBlok"><div class="block-head"><h3>Aylık maaş '+infoIco('Seçilen ayın maaşı kişi kişi, kendiliğinden hesaplanır: Tanımlar › Personel\'deki net maaştan gelmediği günler (1/30) ve eksik saatler (1/225) düşülür, Aylık mesai eklenir; işe giriş / çıkış ayında çalışılan gün kadar. Brüt ve işveren maliyeti bordro modelinden tahmindir; kesin tutar müşavirin bordrosundadır (Bordro Özeti\'ne girilince burada karşılaştırılır). Ay, yukarıdaki takvimden seçilir. Yalnız bilgi: kayıt oluşturmaz.')+'</h3><div class="bh-actions"><span class="muted" id="gyMaasAy"></span></div></div><div class="block-body" id="gyMaasIcerik"></div></div>'+
         '<div class="block"><div class="block-head"><h3>Aylık özet</h3><div class="bh-actions"><input type="month" id="gpAy" value="'+thisMonthKey()+'"></div></div><div class="block-body tablewrap" id="gpOzet"></div></div>'+
         '<div class="block"><div class="block-head"><h3>Yıllık izin hakları '+infoIco('İş Kanunu md. 53: hizmet süresi 1–5 yıl (5 dahil) 14 gün, 5–15 yıl 20 gün, 15 yıl ve üstü 26 gün; 18 yaş ve altı ile 50 yaş ve üstü en az 20 gün. Doğum tarihi ve devreden izin personel kartından girilir.')+'</h3></div><div class="block-body tablewrap" id="gpIzinHak"></div></div>'+
         '<div id="bolum-izin"></div>'+
@@ -17195,6 +17287,9 @@ Dikkat edilmesi gereken 2 nokta:
     setHtmlIdle('gpIcerik', state.personel.length ? gunlukPuantajHtml(_puantajTarih) : '<div class="empty">Tanımlar\'dan personel ekleyin.</div>');
     setHtmlIdle('gyIcerik', state.personel.length ? gelmedigiGunHtml(byId('gyAy').value || thisMonthKey()) : '<div class="empty">Tanımlar\'dan personel ekleyin.</div>');
     setHtmlIdle('gyMesaiIcerik', state.personel.length ? aylikMesaiHtml(byId('gyAy').value || thisMonthKey()) : '<div class="empty">Tanımlar\'dan personel ekleyin.</div>');
+    // r362: Aylık maaş (yalnız maliyet / kâr görme yetkisi olan roller)
+    var gyMB = byId('gyMaasBlok'), gyAyS = byId('gyAy').value || thisMonthKey();
+    if (gyMB){ gyMB.style.display = maliyetGorur() ? '' : 'none'; if (maliyetGorur()){ byId('gyMaasAy').textContent = muhAyAdi(gyAyS); setHtmlIdle('gyMaasIcerik', state.personel.length ? ikMaasHtml(gyAyS) : '<div class="empty">Tanımlar\'dan personel ekleyin.</div>'); } }
     var ay = byId('gpAy').value || thisMonthKey(), MH = aylikMesaiHarita();
     var ozet = state.personel.map(function(p){
       var k = (state.puantaj||[]).filter(function(x){ return x.personelId === p.id && ayAnahtari(x.tarih) === ay; });
@@ -18402,6 +18497,10 @@ Dikkat edilmesi gereken 2 nokta:
 
   // ---------- Özet ekleri: uyarılar, OEE, üretim & kalite kartları ----------
   EK_RENDER.ozet = function(){
+    // r365: Hesap Defteri sayfası kapandı; içeriği (ortaklar, hareketler, nakde dönüş, aylık kazanç, vergi & amortisman, ayarlar) Özet'te
+    var hd = byId('ozetHesapDefteri');
+    if (hd){ var hdIzin = sekmeIzinli('virgo'); if (hd.hidden === hdIzin) hd.hidden = !hdIzin; // style.display'i Özet düzeni yönetir; yetki hidden ile
+      if (hdIzin){ try { EK_RENDER.virgo(); } catch(e){ renderHatasi('hesap defteri', e); } } }
     var host = byId('ozetEkUst'); if (!host) return;
     var u = uyarilariHesapla(), dar = darbogazHesapla().some(function(r){ return r.adet > 0; });
     // r244: kartlar Özet şeridinde, OEE makine tablosunda; burada yalnız uyarılar ve (iş varsa) operasyon darboğazı
@@ -20383,6 +20482,62 @@ Dikkat edilmesi gereken 2 nokta:
 
   // ---------- 7) Sabit kıymetler ve amortisman ----------
   function muhSabitKiymetler(){ return (state.tanimKayitlari || []).filter(function(t){ return t.tur === 'sabitKiymet'; }); }
+  // r363: Alış faturası / gider ↔ sabit kıymet kartı. Muhasebede gider türü 25x / 26x hesabına giden (aktifleştirilen) her kalem bir sabit kıymettir
+  // (Yatırım (makine) 253, Taşıma / montaj 253, Demirbaş 255, Tesisat / tadilat 264; eşleştirme Muhasebe ayarlarından). Kart kaynağı: kaynak = 'alisFaturalari/<id>/<kalem>'
+  // ya da 'giderler/<id>/0'. Kaynağı yazılmamış eski kartlar (Fatura no notu ya da aynı bedel ±1 ₺ ve ±30 gün) eşleşmiş sayılır.
+  var SK_HESAPLAR = ['252', '253', '254', '255', '256', '260', '264', '267'];
+  var SK_OMUR_VARSAYILAN = { '252': 50, '253': 10, '254': 5, '255': 5, '256': 5, '260': 5, '264': 5, '267': 5 };
+  function skOmur(hesap){ var o = ((state.config || {}).skOmur || {})[muhAna(hesap || '253')], n = Math.round(Number(o) || 0); return n >= 1 && n <= 50 ? n : SK_OMUR_VARSAYILAN[muhAna(hesap || '253')] || 10; }
+  function skYontem(){ return (state.config || {}).skYontem === 'Azalan bakiyeler' ? 'Azalan bakiyeler' : 'Normal'; }
+  function skHesapAd(h){ h = muhAna(h || '253'); return h + ' ' + (muhPlan()[h] || ''); }
+  function skGiderHesap(tur){ var h = muhAna(muhGiderHesabi(tur || '')); return SK_HESAPLAR.indexOf(h) > -1 ? h : ''; }
+  // Bir belgenin aktifleştirilen kalemleri (₺, KDV hariç)
+  function skBelgeKalemleri(col, r){
+    var l = []; if (!r || r.durum === 'İptal' || !/^\d{4}-\d{2}-\d{2}/.test(r.tarih || '') || (typeof virgoErpEskiMi === 'function' && virgoErpEskiMi(r))) return l;
+    if (col === 'giderler'){ var hg = skGiderHesap(r.tur), tg = belgeTL(r, 'tutar', 'belgeTutar'); if (hg && tg > 0.004) l.push({ i: 0, ad: r.aciklama || r.tur, hesap: hg, bedel: tg }); return l; }
+    if (/iade/i.test(r.faturaTipi || '') || !(Number(r.araToplam) > 0)) return l;
+    if (r.kalemli && Array.isArray(r.kalemler) && r.kalemler.length){ var kur = belgeKur(r);
+      r.kalemler.forEach(function(k, i){ var h = skGiderHesap(k.giderTuru || r.giderTuru), t = muhR2((Number(k.tutar) || 0) * kur); if (h && t > 0.004) l.push({ i: i, ad: k.ad || r.aciklama || k.giderTuru, hesap: h, bedel: t }); });
+    } else { var h = skGiderHesap(r.giderTuru), t = belgeTL(r, 'araToplam', 'araToplam'); if (h && t > 0.004) l.push({ i: 0, ad: r.aciklama || r.faturaTipi || r.giderTuru, hesap: h, bedel: t }); }
+    return l;
+  }
+  function skAdaylar(){
+    var l = [];
+    [['alisFaturalari', 'alisfatura', 'Alış faturası'], ['giderler', 'giderler', 'Gider']].forEach(function(c){
+      (state[c[0]] || []).forEach(function(r){ l = l.concat(skBelgeAdaylari(c[0], r)); });
+    });
+    return l.sort(function(a, b){ return a.tarih.localeCompare(b.tarih); });
+  }
+  function skBelgeAdaylari(col, r){
+    var g = col === 'giderler';
+    return skBelgeKalemleri(col, r).map(function(k){ return { anahtar: col + '/' + r.id + '/' + k.i, col: col, tab: g ? 'giderler' : 'alisfatura', tur: g ? 'Gider' : 'Alış faturası', id: r.id, tarih: String(r.tarih).slice(0, 10),
+      belgeNo: g ? (r.belgeNo || '') : (r.faturaNo || r.no || ''), cari: cariAdi(g ? r.cariId : r.tedarikciId), ad: String(k.ad || '').trim() || 'Sabit kıymet', hesap: k.hesap, bedel: k.bedel }; });
+  }
+  var _skEs = null;
+  function skEslestir(){
+    var refs = [state.tanimKayitlari, state.alisFaturalari, state.giderler, state.config];
+    if (_skEs && _skEs.refs.every(function(r, i){ return r === refs[i]; })) return _skEs;
+    var adaylar = skAdaylar(), kartlar = muhSabitKiymetler(), kul = {}, byA = {}, kartKaynak = {};
+    adaylar.forEach(function(a){ byA[a.anahtar] = a; });
+    kartlar.forEach(function(k){ if (k.kaynak && byA[k.kaynak] && !byA[k.kaynak].kart){ byA[k.kaynak].kart = k; kul[k.id] = 1; } });
+    adaylar.forEach(function(a){ if (a.kart) return;
+      var x = kartlar.find(function(k){ return !kul[k.id] && !k.kaynak && a.belgeNo && k.not_ === 'Fatura ' + a.belgeNo && String(k.ad || '').trim() === a.ad; }) ||
+        kartlar.find(function(k){ return !kul[k.id] && !k.kaynak && Math.abs((Number(k.bedel) || 0) - a.bedel) <= 1 && Math.abs(gunFarki(k.alisTarihi || '', a.tarih)) <= 30; });
+      if (x){ a.kart = x; a.tahmini = true; kul[x.id] = 1; } });
+    adaylar.forEach(function(a){ if (a.kart) kartKaynak[a.kart.id] = a; });
+    var yetim = kartlar.filter(function(k){ if (!k.kaynak || kartKaynak[k.id]) return false; var p = k.kaynak.split('/'); return p[0] === 'alisFaturalari' || p[0] === 'giderler'; });
+    _skEs = { refs: refs, adaylar: adaylar, kartsiz: adaylar.filter(function(a){ return !a.kart; }), fark: adaylar.filter(function(a){ return a.kart && Math.abs((Number(a.kart.bedel) || 0) - a.bedel) > 1; }), yetim: yetim, kartKaynak: kartKaynak };
+    return _skEs;
+  }
+  function skKartVeri(a){ return { tur: 'sabitKiymet', ad: a.ad, hesap: a.hesap, alisTarihi: a.tarih, bedel: muhR2(a.bedel), omurYil: skOmur(a.hesap), yontem: skYontem(), giderHesap: '730', makineId: '', satisTarihi: '', not_: a.tur + (a.belgeNo ? ' ' + a.belgeNo : '') + (a.cari && a.cari !== '-' ? ' · ' + a.cari : ''), kaynak: a.anahtar }; }
+  function skKartlarAc(l, bitti){
+    if (!muhYazmaYetkisi() || !l.length) return;
+    Promise.all(l.map(function(a){ return kayitEkle('tanimKayitlari', skKartVeri(a)); }))
+      .then(function(){ toast('✓ ' + l.length + ' sabit kıymet kartı açıldı (Muhasebe › Sabit Kıymet & Amortisman); ömrü gerekirse karttan değiştirin.'); if (bitti) bitti(); })
+      .catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+  }
+  function skBelgeAc(col, id){ var tab = col === 'giderler' ? 'giderler' : 'alisfatura'; gitSekme(tab); setTimeout(function(){ location.hash = '#' + tab + '/' + id; }, 30); }
+  function skOmurOzet(l){ var h = {}; l.forEach(function(a){ h[a.hesap] = 1; }); return Object.keys(h).sort().map(function(k){ return k + ' ' + skOmur(k) + ' yıl'; }).join(', '); }
   // VUK: normal yöntemde her yıl bedel / ömür; azalan bakiyelerde net değer × (2 / ömür, en çok %50), son yıl kalan. Binek otomobil dışında kıst yok.
   function muhAmortismanPlani(k){
     var bedel = Number(k.bedel) || 0, omur = Math.max(1, Math.round(Number(k.omurYil) || 1)), y0 = Number(String(k.alisTarihi || todayISO()).slice(0, 4));
@@ -20413,7 +20568,7 @@ Dikkat edilmesi gereken 2 nokta:
       { key: 'satisTarihi', label: 'Satış / hurdaya ayırma tarihi (varsa)', type: 'date' },
       { key: 'not_', label: 'Not', type: 'text' }
     ]; },
-    defaults: function(){ return { tur: 'sabitKiymet', ad: '', hesap: '253', alisTarihi: todayISO(), bedel: 0, omurYil: 10, yontem: 'Normal', giderHesap: '730', makineId: '', satisTarihi: '', not_: '' }; },
+    defaults: function(){ return { tur: 'sabitKiymet', ad: '', hesap: '253', alisTarihi: todayISO(), bedel: 0, omurYil: skOmur('253'), yontem: skYontem(), giderHesap: '730', makineId: '', satisTarihi: '', not_: '' }; },
     sirala: function(a, b){ return (a.alisTarihi || '').localeCompare(b.alisTarihi || ''); },
     hazirla: function(v){ if ((Number(v.omurYil) || 0) < 1){ toast('Faydalı ömür en az 1 yıl olmalı.', true); return false; } return v; },
     ekButonlar: '<button class="btn secondary small" id="sabitMakineAktar" title="Tanımlar\'daki makinelerin alış bedelinden sabit kıymet kartı açar">Makinelerden aktar</button>',
@@ -20431,7 +20586,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<div class="card accent"><div class="label">' + buYil + ' amortismanı</div><div class="value" style="font-size:16px">₺' + muhTutar(yillar[buYil] || 0) + '</div><div class="sub">aylık ≈ ₺' + muhTutar((yillar[buYil] || 0) / 12) + '</div></div></div>' +
         '<div class="block"><div class="block-head"><h3>Amortisman fişi</h3><div class="bh-actions"><select id="muhAmYil">' + (ys.length ? ys : [buYil]).map(function(y){ return '<option' + (y === _muhAmYil ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select>' +
         (fis ? '<span class="pill" style="background:var(--good-soft);color:var(--good)">✓ ' + esc(fis.no || '') + '</span>' : '<button class="btn small" id="muhAmFis"' + (a.toplam ? '' : ' disabled') + '>' + _muhAmYil + ' amortisman fişini oluştur (₺' + muhTutar(a.toplam) + ')</button>') + '</div></div>' +
-        '<div class="block-body tablewrap">' + (ys.length ? '<table class="muh-tablo"><thead><tr><th>Yıl</th><th class="num">Amortisman (₺)</th><th>Fiş</th></tr></thead><tbody>' + ys.map(function(y){ var f = muhKaynakFisi('amort:' + y); return '<tr><td>' + y + '</td><td class="num">' + muhTutar(yillar[y]) + '</td><td>' + (f ? '✓ ' + esc(f.no || '') : '<span class="muted">—</span>') + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty">Sabit kıymet kartı açınca amortisman planı burada görünür.</div>') + '</div></div>';
+        '<div class="block-body tablewrap">' + (ys.length ? '<table class="muh-tablo"><thead><tr><th>Yıl</th><th class="num">Amortisman (₺)</th><th>Fiş</th></tr></thead><tbody>' + ys.map(function(y){ var f = muhKaynakFisi('amort:' + y); return '<tr><td>' + y + '</td><td class="num">' + muhTutar(yillar[y]) + '</td><td>' + (f ? '✓ ' + esc(f.no || '') : '<span class="muted">—</span>') + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty">Sabit kıymet kartı açınca amortisman planı burada görünür.</div>') + '</div></div>' + skKontrolHtml() + skTabloHtml(_muhAmYil);
     },
     rowFn: function(k){
       var plan = muhAmortismanPlani(k), buYil = Number(todayISO().slice(0, 4)), bu = plan.find(function(p){ return p.yil === buYil; }), son = plan.filter(function(p){ return p.yil <= buYil; }).pop();
@@ -20440,6 +20595,7 @@ Dikkat edilmesi gereken 2 nokta:
     },
     ekAksiyon: function(k){ return '<button class="btn secondary small" data-muhamplan="' + k.id + '">Plan</button>'; },
     sonra: function(host){
+      skBagla();
       var ys = byId('muhAmYil'); if (ys && !ys.dataset.bagli){ ys.dataset.bagli = 1; ys.addEventListener('change', function(){ _muhAmYil = Number(this.value); byId('sabitUst').__sonHtml = null; EK_RENDER.amortisman(); }); }
       var fb = byId('muhAmFis'); if (fb && !fb.dataset.bagli){ fb.dataset.bagli = 1; fb.addEventListener('click', function(){ muhAmortismanFisi(_muhAmYil); }); }
       host.querySelectorAll('[data-muhamplan]').forEach(function(b){ if (b.dataset.bagli) return; b.dataset.bagli = 1; b.addEventListener('click', function(){
@@ -20449,6 +20605,61 @@ Dikkat edilmesi gereken 2 nokta:
       }); });
     }
   };
+  // r363: Sabit Kıymet sayfası — kartı açılmamış yatırımlar (alış faturası / gider), bedel farkı, kaynağı silinen kartlar; demirbaş tablosu; varsayılan ömür
+  function skKontrolHtml(){
+    var es = skEslestir(), k = es.kartsiz, f = es.fark, y = es.yetim; if (!k.length && !f.length && !y.length) return '';
+    var tl = function(v){ return '₺' + muhTutar(v); }, yaz = izinVar('ekle');
+    var belge = function(a){ return '<a href="#" data-skbelge="' + escAttr(a.col + '|' + a.id) + '" title="Belgeyi aç">' + esc(a.tur + (a.belgeNo ? ' ' + a.belgeNo : '')) + '</a>'; };
+    var h = '<div class="block"><div class="block-head"><h3>Kontrol: alış faturaları ve giderlerdeki yatırımlar ' + infoIco('Muhasebede 25x / 26x hesabına (makine 253, demirbaş 255, taşıt 254, özel maliyet 264…) giden alış faturası kalemleri ve giderler sabit kıymettir; amortisman ayrılması için her birinin kartı olmalı. Hangi gider türünün hangi hesaba gittiği Muhasebe ayarlarındaki eşleştirmededir (Yatırım (makine) ve Taşıma / montaj 253, Demirbaş 255, Tesisat / tadilat 264).\n\nKart açılınca belgeye bağlanır: belgenin tutarı sonra değişirse burada "bedel farkı" olarak görünür. Ömür hesaba göre aşağıdaki varsayılandan gelir, karttan değiştirilebilir.') + '</h3>' +
+      (k.length && yaz ? '<div class="bh-actions"><button class="btn small" data-skhepsi="1">Hepsine kart aç (' + k.length + ')</button></div>' : '') + '</div><div class="block-body">';
+    if (k.length) h += '<h4 style="margin:0 0 6px">Kartı açılmamış (' + k.length + ') · ₺' + muhTutar(k.reduce(function(t, a){ return t + a.bedel; }, 0)) + '</h4><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Belge</th><th>Cari</th><th>Kalem</th><th>Hesap</th><th class="num">Bedel (₺, KDV hariç)</th><th class="num">Ömür</th><th></th></tr></thead><tbody>' +
+      k.map(function(a){ return '<tr><td>' + esc(kvTarihTR(a.tarih)) + '</td><td>' + belge(a) + '</td><td>' + esc(a.cari === '-' ? '' : a.cari) + '</td><td>' + esc(a.ad) + '</td><td>' + esc(skHesapAd(a.hesap)) + '</td><td class="num">' + tl(a.bedel) + '</td><td class="num">' + skOmur(a.hesap) + ' yıl</td><td>' + (yaz ? '<button class="btn secondary small" data-skac="' + escAttr(a.anahtar) + '" title="Kartı ön dolu açar; ömrü ve adı kaydetmeden önce değiştirebilirsiniz">Kart aç</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    if (f.length) h += '<h4 style="margin:14px 0 6px">Bedel farkı (' + f.length + ') ' + infoIco('Kart açıldıktan sonra belgenin tutarı değişmiş. "Bedeli güncelle" kartın bedelini belgedekine eşitler (amortisman planı yeniden hesaplanır; geçmiş yılın amortisman fişi kesildiyse değişmez).') + '</h4><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kart</th><th>Belge</th><th class="num">Kartta</th><th class="num">Belgede</th><th></th></tr></thead><tbody>' +
+      f.map(function(a){ return '<tr><td>' + esc(a.kart.ad) + (a.tahmini ? ' <span class="muted" title="Kartta belge bağlantısı yok; tarih ve tutardan eşleştirildi">(tahmini eşleşme)</span>' : '') + '</td><td>' + belge(a) + '</td><td class="num">' + tl(a.kart.bedel) + '</td><td class="num">' + tl(a.bedel) + '</td><td>' + (yaz ? '<button class="btn secondary small" data-skbedel="' + escAttr(a.anahtar) + '">Bedeli güncelle</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    if (y.length) h += '<h4 style="margin:14px 0 6px">Kaynak belgesi silinmiş / iptal (' + y.length + ') ' + infoIco('Kart bir alış faturasından ya da giderden açılmıştı; o belge artık yok, iptal ya da kalem yatırım olmaktan çıktı. Kart yanlışlıkla kaldıysa silin; varlık hâlâ elinizdeyse kartı açıp kaynağını kontrol edin.') + '</h4><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kart</th><th>Alış</th><th class="num">Bedel</th><th>Not</th></tr></thead><tbody>' +
+      y.map(function(x){ return '<tr class="vg-tik" data-skkart="' + escAttr(x.id) + '" title="Kartı açmak için tıklayın"><td>' + esc(x.ad) + '</td><td>' + esc(kvTarihTR(x.alisTarihi)) + '</td><td class="num">' + tl(x.bedel) + '</td><td class="muted">' + esc(x.not_ || '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    return h + '</div></div>';
+  }
+  function skTabloHtml(yil){
+    var l = muhSabitKiymetler().slice().sort(function(a, b){ return (a.alisTarihi || '').localeCompare(b.alisTarihi || ''); }), es = skEslestir();
+    var omurAyar = '<div class="sk-ayar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:10px"><span class="muted">Yeni kartlarda varsayılan ömür ' + infoIco('Faturadan / giderden açılan kartlara hesaba göre bu süre yazılır (VUK amortisman listesi: talaşlı imalat tezgâhları genelde 10 yıl, demirbaş ve taşıt 5, özel maliyet kira süresi). Var olan kartlar değişmez.') + '</span>' +
+      ['253', '254', '255', '264'].map(function(h){ return '<label class="muted" style="margin:0" title="' + escAttr(skHesapAd(h)) + '">' + h + ' <input type="number" min="1" max="50" step="1" data-skomur="' + h + '" value="' + skOmur(h) + '" style="width:56px"> yıl</label>'; }).join('') +
+      '<label class="muted" style="margin:0">Yöntem <select data-skyontem="1">' + ['Normal', 'Azalan bakiyeler'].map(function(o){ return '<option' + (o === skYontem() ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select></label></div>';
+    if (!l.length) return '<div class="block"><div class="block-head"><h3>Demirbaş listesi</h3></div><div class="block-body"><div class="empty">Henüz sabit kıymet kartı yok.</div>' + omurAyar + '</div></div>';
+    var T = { b: 0, y: 0, k: 0, n: 0 }, tl = function(v, kalin){ var y = Math.abs(v) < 0.005 ? '<span class="muted">—</span>' : '₺' + muhTutar(v); return kalin ? '<b>' + y + '</b>' : y; };
+    var satir = l.map(function(k){
+      var p = muhAmortismanPlani(k), bu = p.find(function(x){ return x.yil === yil; }), son = p.filter(function(x){ return x.yil <= yil; }).pop(), baslamadi = Number(String(k.alisTarihi || '').slice(0, 4)) > yil;
+      var birik = son ? son.birikmis : 0, net = baslamadi ? 0 : (son ? son.net : Number(k.bedel) || 0), cikti = k.satisTarihi && k.satisTarihi.slice(0, 4) <= String(yil);
+      if (!baslamadi){ T.b += Number(k.bedel) || 0; T.y += bu ? bu.amortisman : 0; T.k += birik; T.n += cikti ? 0 : net; }
+      var a = es.kartKaynak[k.id], kaynak = a ? '<a href="#" data-skbelge="' + escAttr(a.col + '|' + a.id) + '">' + esc(a.tur + (a.belgeNo ? ' ' + a.belgeNo : '')) + '</a>' + (a.tahmini ? ' <span class="muted" title="Kartta belge bağlantısı yok; tarih ve tutardan eşleştirildi">~</span>' : '') : (/^(alisFaturalari|giderler)\//.test(k.kaynak || '') ? '<span class="neg">belge yok</span>' : '<span class="muted">' + esc(k.makineId ? 'makine kartı' : k.virgoId ? 'Hesap Defteri' : 'elle') + '</span>');
+      return '<tr class="vg-tik' + (baslamadi ? ' muted' : '') + '" data-skkart="' + escAttr(k.id) + '" title="Kartı açmak için tıklayın"><td>' + esc(k.ad) + (cikti ? ' ' + badgeHtml('elden çıktı', 'iptal') : '') + '</td><td>' + esc(muhAna(k.hesap || '253')) + '</td><td>' + esc(kvTarihTR(k.alisTarihi)) + '</td><td>' + kaynak + '</td><td class="num">' + tl(Number(k.bedel) || 0) + '</td><td class="num">' + esc(k.omurYil) + ' yıl' + (k.yontem === 'Azalan bakiyeler' ? ' <span class="muted">azalan</span>' : '') + '</td><td class="num">' + tl(bu ? bu.amortisman : 0) + '</td><td class="num">' + tl(birik) + '</td><td class="num">' + tl(cikti ? 0 : net) + '</td></tr>';
+    }).join('');
+    return '<div class="block"><div class="block-head"><h3>Demirbaş listesi ve amortisman (' + yil + ') ' + infoIco('Bütün sabit kıymet kartları. ' + yil + ' amortismanı: o yıla düşen tutar (VUK: alındığı yıl tam yıl, kıst yok); birikmiş ve net değer ' + yil + ' sonu itibarıyla. Yıl, yukarıdaki Amortisman fişi kutusundan seçilir. Satıra tıklayınca kart açılır.') + '</h3></div><div class="block-body"><div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Kıymet</th><th>Hesap</th><th>Alış</th><th>Kaynak</th><th class="num">Bedel</th><th class="num">Ömür</th><th class="num">' + yil + ' amortismanı</th><th class="num">Birikmiş</th><th class="num">Net değer</th></tr></thead><tbody>' + satir +
+      '<tr class="kv-alt"><td colspan="4"><b>Toplam</b></td><td class="num">' + tl(T.b, true) + '</td><td></td><td class="num">' + tl(T.y, true) + '</td><td class="num">' + tl(T.k, true) + '</td><td class="num">' + tl(T.n, true) + '</td></tr></tbody></table></div>' +
+      '<div class="helper" style="margin-top:6px">' + yil + ' amortismanı aylık ≈ <b>₺' + muhTutar(T.y / 12) + '</b>.</div>' + omurAyar + '</div></div>';
+  }
+  function skBagla(){
+    var host = byId('amortismanIcerik'); if (!host || host.dataset.skBagli) return; host.dataset.skBagli = '1';
+    host.addEventListener('click', function(e){
+      var b = e.target.closest('[data-skbelge],[data-skac],[data-skhepsi],[data-skbedel],[data-skkart]'); if (!b) return;
+      if (b.blur) b.blur(); // odak blokta kalırsa setHtmlIdle tabloyu yenilemiyor
+      if (b.dataset.skbelge){ e.preventDefault(); e.stopPropagation(); var p = b.dataset.skbelge.split('|'); skBelgeAc(p[0], p[1]); return; }
+      var es = skEslestir(), bul = function(an){ return es.adaylar.find(function(a){ return a.anahtar === an; }); };
+      if (b.dataset.skhepsi){ var l = es.kartsiz.slice(); onayIste(l.length + ' yatırım için sabit kıymet kartı açılsın mı? (₺' + muhTutar(l.reduce(function(t, a){ return t + a.bedel; }, 0)) + ') Faydalı ömür: ' + skOmurOzet(l) + ', ' + skYontem().toLocaleLowerCase('tr') + ' yöntem. Sonra kartlardan değiştirilebilir.', 'Kartları aç', function(){ skKartlarAc(l); }); return; }
+      if (b.dataset.skac){ var a = bul(b.dataset.skac); if (a) crudYeni(SABIT_KIYMET_TANIM, skKartVeri(a)); return; }
+      if (b.dataset.skbedel){ var x = bul(b.dataset.skbedel); if (!x || !x.kart || !muhYazmaYetkisi()) return;
+        kayitGuncelle('tanimKayitlari', x.kart.id, { bedel: muhR2(x.bedel), kaynak: x.anahtar }).then(function(){ toast('✓ ' + x.kart.ad + ' bedeli ₺' + muhTutar(x.bedel) + ' oldu'); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); }); return; }
+      if (b.dataset.skkart){ var k = muhSabitKiymetler().find(function(t){ return t.id === b.dataset.skkart; }); if (k) crudDuzenle(SABIT_KIYMET_TANIM, k); }
+    });
+    host.addEventListener('change', function(e){
+      var t = e.target; if (!t.matches || !(t.matches('[data-skomur]') || t.matches('[data-skyontem]'))) return;
+      if (!muhYazmaYetkisi()) return;
+      if (t.dataset.skomur){ var n = Math.round(Number(t.value) || 0); if (!(n >= 1 && n <= 50)){ toast('Ömür 1 ile 50 yıl arasında olmalı.', true); t.value = skOmur(t.dataset.skomur); return; }
+        var o = Object.assign({}, (state.config || {}).skOmur); o[t.dataset.skomur] = n;
+        configWrite({ skOmur: o }).then(function(){ toast('✓ ' + skHesapAd(t.dataset.skomur) + ': yeni kartlarda ' + n + ' yıl'); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); }); }
+      else configWrite({ skYontem: t.value }).then(function(){ toast('✓ Yeni kartlarda yöntem: ' + t.value); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); });
+    });
+  }
   EK_RENDER.amortisman = function(){ crudBolumler('amortisman', [SABIT_KIYMET_TANIM]); };
   function muhAmortismanFisi(yil){
     var a = muhAmortismanYili(yil); if (!a.toplam){ toast(yil + ' için amortisman yok.', true); return; }
@@ -21576,7 +21787,7 @@ Dikkat edilmesi gereken 2 nokta:
           if (d.stokIsle && t.stok) veri.kalemler.forEach(function(k){ if (k.stokId) stokHareketi({ stokId: k.stokId, miktar: (t.iade ? -1 : 1) * k.miktar, birimMaliyet: t.iade ? 0 : (k.miktar ? k.tutar * belgeEurOrani(pbF, dkF, veri.tarih) / k.miktar : 0), tur: t.iade ? 'Alış iadesi' : 'Alış (irsaliyeli fatura)', kaynakTur: 'alisFatura', kaynakId: res && res.id, kaynakNo: veri.faturaNo, tarih: veri.tarih }); });
           faturaIrsaliyeleriniBagla(res && res.id, veri.irsaliyeIdleri);
           toast('✓ Alış faturası kaydedildi: ' + veri.faturaNo);
-          if (d.faturaTipi === 'Sabit kıymet alımı') setTimeout(function(){ sabitKiymetFaturadan(veri); }, 400);
+          setTimeout(function(){ sabitKiymetFaturadan(Object.assign({ id: res && res.id }, veri)); }, 600);
         }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
       }
       return true;
@@ -21589,11 +21800,13 @@ Dikkat edilmesi gereken 2 nokta:
     tt.genelToplam = muhR2(tt.genelToplam - tt.stopajTutar);
     return tt;
   }
+  // r363: kaydedilen alış faturasında aktifleştirilen (25x / 26x) kalem varsa kartlar faturaya bağlı açılır; ömür hesaba göre (Sabit Kıymet sayfasındaki varsayılanlar)
   function sabitKiymetFaturadan(f){
-    onayIste(f.faturaNo + ' faturasındaki ' + f.kalemler.length + ' kalem sabit kıymet (demirbaş) kartı olarak açılsın mı? Amortisman için bedel ve faydalı ömrü sonra kartlardan kontrol edin.', 'Kartları aç', function(){
-      Promise.all(f.kalemler.map(function(k){ return kayitEkle('tanimKayitlari', { tur: 'sabitKiymet', ad: k.ad, hesap: '253', alisTarihi: f.tarih, bedel: muhR2(k.tutar * (belgePB(f) === 'EUR' ? (Number(f.kur) || muhKur(f.tarih)) : belgeKur(f))), omurYil: 10, yontem: 'Normal', giderHesap: '730', makineId: '', satisTarihi: '', not_: 'Fatura ' + f.faturaNo }); }))
-        .then(function(){ toast('✓ Sabit kıymet kartları açıldı (Muhasebe › Sabit Kıymet & Amortisman)'); });
-    });
+    if (!f || !f.id) return;
+    var var_ = {}; muhSabitKiymetler().forEach(function(k){ if (k.kaynak) var_[k.kaynak] = 1; });
+    var l = skBelgeAdaylari('alisFaturalari', f).filter(function(a){ return !var_[a.anahtar]; });
+    if (!l.length) return;
+    onayIste(f.faturaNo + ' faturasında ' + l.length + ' kalem sabit kıymet (' + l.map(function(a){ return a.ad + ' · ₺' + muhTutar(a.bedel); }).join('; ') + '). Amortisman için kart açılsın mı? Faydalı ömür: ' + skOmurOzet(l) + ', ' + skYontem().toLocaleLowerCase('tr') + ' yöntem; sonra karttan değiştirilebilir.', 'Kartları aç', function(){ skKartlarAc(l); });
   }
 
   // ---------- İrsaliyeler (tüm çeşitler) ----------
@@ -22183,7 +22396,6 @@ Dikkat edilmesi gereken 2 nokta:
       { ad: 'Finans', kolonlar: [[{ baslik: 'Finans' }, { ad: 'Cari Hesap', tab: 'carihesap' }, { ad: 'Cari Ekstre', tab: 'cariekstre' }, { ad: 'Kasa & Banka', tab: 'kasabanka' }, { ad: 'Çek / Senet', tab: 'ceksenet' }, { ad: 'Giderler', tab: 'giderler' }, { ad: 'Bordro Özeti', tab: 'bordro' }]] },
       { ad: 'Muhasebe', kolonlar: [[{ baslik: 'Muhasebe' }, { ad: 'Muhasebe Fişleri', tab: 'muhfis' }, { ad: 'Hesap Planı', tab: 'hesapplani' }, { ad: 'Defterler', tab: 'defterler' }, { ad: 'Mizan', tab: 'mizan' }, { ad: 'Bilanço & Gelir Tablosu', tab: 'malitablolar' }]] },
       { ad: 'Beyan & Dönem', kolonlar: [[{ baslik: 'Beyan & dönem işlemleri' }, { ad: 'KDV Beyanı', tab: 'kdvbeyan' }, { ad: 'Vergi & SGK Ödemeleri', tab: 'vergiodeme' }, { ad: 'e-Defter', tab: 'edefter' }, { ad: 'Kur Farkı Faturaları', tab: 'kurfarki' }, { ad: 'Sabit Kıymet & Amortisman', tab: 'amortisman' }, { ad: 'Dönem Sonu İşlemleri', tab: 'donemsonu' }]] } ] },
-    { alan: 'HESAP DEFTERİ', ikon: 'virgo', tek: true, ogeler: [{ ad: 'Hesap Defteri', tab: 'virgo' }] }, // r240: alt başlıksız, alan satırı doğrudan sayfayı açar
     { alan: 'MALİYET', ikon: 'maliyet', ogeler: [{ ad: 'Ürün Maliyet Hesabı', tab: 'maliyethesap' }, { ad: 'Aylık Kapasite', tab: 'kapasiteplan' }] },
     { alan: 'RAPORLAR', ikon: 'rapor', ogeler: [{ ad: 'Raporlar', tab: 'raporlar' }, { ad: 'Finans Raporları', tab: 'finansrapor' }, { ad: 'Çıktı Önizleme', tab: 'cikti' }] },
     { alan: 'PARAMETRELER', ikon: 'param', ogeler: [{ ad: 'Tanımlar', tab: 'tanimlar' }, { ad: 'Kullanıcılar', tab: 'kullanicilar' }, { ad: 'Dokümanlar', tab: 'dokumanlar' }, { ad: 'İşlem Geçmişi', tab: 'islemgecmisi' }, { ad: 'Veri & Yedek', tab: 'veri' }] }
@@ -24692,7 +24904,7 @@ Dikkat edilmesi gereken 2 nokta:
   // yukarı / aşağı taşınır; her blok tek tek gizlenebilir. Ayar kullanıcıya özel, bu tarayıcıda saklanır.
   // Bölümler kendi kaplarında yeniden çizildiği için düzen her çizimden sonra (MutationObserver) yeniden uygulanır.
   var OZET_DUZEN_KEY = 'ozerp_ozet_duzen_v1';
-  var OZET_BOLUM_AD = { ozetAnaliz: 'Üretim analizi (makine / operatör / ürün)', ozetDonemSerit: 'Dönem şeridi (bugün, hafta, ay: adet ve ₺)', ozetCards: 'Kartlar (üretim, katkı, iş emri, fire, duruş…)', ozetIzgara: 'Makineler, ürün katkısı, uyarılar, trend', ozetPano: 'Yönetim panosu (grafikler)' };
+  var OZET_BOLUM_AD = { ozetAnaliz: 'Üretim analizi (makine / operatör / ürün)', ozetDonemSerit: 'Dönem şeridi (bugün, hafta, ay: adet ve ₺)', ozetCards: 'Kartlar (üretim, katkı, iş emri, fire, duruş…)', ozetIzgara: 'Makineler, ürün katkısı, uyarılar, trend', ozetPano: 'Yönetim panosu (grafikler)', ozetVirgoBorc: 'Virgo\'ya borç (kalan borç, ödemeler, ay ay)', ozetHesapDefteri: 'Ortaklar ve hesap defteri' };
   function ozetDuzen(){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); return t[aktifKullaniciId() || '-'] || { sira: [], gizli: [] }; } catch(e){ return { sira: [], gizli: [] }; } }
   function ozetDuzenYaz(d){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); t[aktifKullaniciId() || '-'] = d; localStorage.setItem(OZET_DUZEN_KEY, JSON.stringify(t)); } catch(e){} }
   function ozetBlokAdi(b){ var h = b.querySelector('.block-head h3'); if (!h) return ''; var k = h.cloneNode(true); k.querySelectorAll('.info-ico, button, select').forEach(function(x){ x.remove(); }); return k.textContent.replace(/\s*\(\d[\d.]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -24710,6 +24922,7 @@ Dikkat edilmesi gereken 2 nokta:
     // r244: ızgaradaki bloklar sütun kaplarının içinde; iç içe olmayan tüm bloklar ayrı ayrı gizlenebilir
     Array.prototype.forEach.call(b.el.querySelectorAll('.block'), function(c){
       if (c.parentElement.closest('.block')) return;
+      if (c.hasAttribute('data-vsekme')) return; // r365: Hesap Defteri sekmelerinin blokları; görünürlüğü sekme seçer (düzen açarsa hepsi birden görünüyordu)
       l.push({ el: c, k: 'blok:' + ozetBlokAdi(c), ad: ozetBlokAdi(c) });
     });
     if (b.el.classList.contains('cards')) l = [{ el: b.el, k: b.k, ad: b.ad }];
