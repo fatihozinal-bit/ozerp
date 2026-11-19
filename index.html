@@ -1876,7 +1876,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r373</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r374</div>
     </div>
   </nav>
   <main>
@@ -4799,6 +4799,10 @@ Dikkat edilmesi gereken 2 nokta:
     if (sekmeIzinli('virgo')) try { var eb = virgoIkiBorc(), ebKur = virgoGunKuru(todayISO());
       cards.push({ label: '€ borç (makine)', value: virgoEur(eb.eur.eur), cls: 'accent', detay: 'eurborc', sub: virgoEurCariler().length ? 'ödenen ' + virgoEur(eb.eurOdenen.eur) + (ebKur ? ' · ≈ ₺' + fmt(eb.eur.eur * ebKur) + ' bugünkü kurla' : '') : 'MS Mekanik Sanatlar cari kartı bulunamadı — tıklayıp seçin' });
     } catch(e){ renderHatasi('€ borç', e); }
+    // r374: KDV borcu (makine): MS faturalarının toplamı (KDV dahil) − KDV hariç tutar (€ borçta) − KDV borcu ödemeleri; tıklayınca ayrıntı
+    if (sekmeIzinli('virgo')) try { var kb = virgoIkiBorc();
+      if (kb.kdvBorc > 0.004 || kb.kdvOdenen > 0.004 || kb.kdvToplamElle) cards.push({ label: 'KDV borcu (makine)', value: virgoTl(kb.kdvKalan), cls: 'accent', detay: 'kdvborc', sub: 'borç ' + virgoTl(kb.kdvBorc) + ' · ödenen ' + virgoTl(kb.kdvOdenen) });
+    } catch(e){ renderHatasi('KDV borcu', e); }
     document.getElementById('ozetCards').innerHTML = cards.map(function(c){
       return '<div class="card '+c.cls+(c.detay?' tiklanir" data-ozetdetay="'+c.detay+'" title="Hesabı görmek için tıklayın':'')+'"><div class="label">'+c.label+(c.detay?' <span class="kart-ok">›</span>':'')+'</div><div class="value">'+c.value+'</div>'+(c.sub?'<div class="sub">'+c.sub+'</div>':'')+'</div>';
     }).join('');
@@ -13129,7 +13133,7 @@ Dikkat edilmesi gereken 2 nokta:
   // kategoriye bakılmaz (r277'de kategori Makine kendiliğinden ayrılıyordu; varsayılan kategori Makine olduğu için günlük alımlar kaymıştı).
   // Kartta ₺, altında bugünkü kurla küçük € karşılığı (bilgi). Diğer her şey Virgo borcunda.
   // Eski değerler: '₺ sabit (devirde ₺ mahsup)', 'Makine borcu (€)' (r277) ve 'Makine borcu' (r278) Virgo ₺ fatura, '€ (varsayılan)' Otomatik (virgoYeniAd çevirir).
-  var VIRGO_BORC_PB = ['Otomatik', 'Virgo borcu', 'Virgo ₺ fatura', 'Virgo € borcu (makine)']; // r368: 4. seçenek yeni € (makine) borcu ödemesi
+  var VIRGO_BORC_PB = ['Otomatik', 'Virgo borcu', 'Virgo ₺ fatura', 'Virgo € borcu (makine)', 'Virgo KDV borcu (makine)']; // r368: 4. seçenek yeni € (makine) borcu ödemesi; r374: 5. MS faturalarının KDV borcu ödemesi
   var VIRGO_ESKI_BORC_PB = { '₺ sabit (devirde ₺ mahsup)': VIRGO_BORC_PB[2], 'Makine borcu (€)': VIRGO_BORC_PB[2], 'Makine borcu': VIRGO_BORC_PB[2], 'Virgo borcu (₺)': VIRGO_BORC_PB[1], '€ (varsayılan)': VIRGO_BORC_PB[0] };
   function virgoTlFaturaMi(v, tip, kaynak){
     if (!(tip === 'geri' || (tip === 'harcama' && kaynak === 'kb'))) return false;
@@ -13378,7 +13382,9 @@ Dikkat edilmesi gereken 2 nokta:
     if (odendi){ if (tip === 'alinan') b = nakit; else if (tip === 'geri') b = { eur: -nakit.eur, tl: -nakit.tl }; else if (tip === 'harcama'){ if (kaynak === 'kb') b = m; else b = { eur: -iade.eur, tl: -iade.tl }; } }
     var tlFatura = virgoTlFaturaMi(v, tip, kaynak), mk = vgS();
     if (tlFatura){ mk = tip === 'geri' ? { eur: -nakit.eur, tl: -nakit.tl } : { eur: m.eur, tl: m.tl }; if (!odendi) mk = vgS(); b = vgS(); }
-    return { sevk: sevk, tlFatura: tlFatura, tlFaturaE: mk, tip: tip, kisi: kisi, alici: v.alici || '', kaynak: kaynak, fatura: fatura, odendi: odendi, eur: nakit.eur, tl: nakit.tl, m: m, kdv: kdv, iade: iade, oran: t.oran,
+    // r374: KDV borcu (makine) ödemesi ayrı izlenir: MS faturalarının KDV'si Virgo'ya kalan borçta yok, ödemesi de oradan düşmez
+    var kdvOd = tip === 'geri' && !sevk && v.borcPb === VIRGO_BORC_PB[4]; if (kdvOd) b = vgS();
+    return { sevk: sevk, tlFatura: tlFatura, tlFaturaE: mk, kdvOd: kdvOd, tip: tip, kisi: kisi, alici: v.alici || '', kaynak: kaynak, fatura: fatura, odendi: odendi, eur: nakit.eur, tl: nakit.tl, m: m, kdv: kdv, iade: iade, oran: t.oran,
       haric: { eur: t.eur, tl: t.tl }, borcEur: b.eur, borcTl: b.tl, yatirim: tip === 'harcama' && VIRGO_YATIRIM.indexOf(v.kategori) > -1, kazancDus: tip === 'harcama' && VIRGO_YATIRIM.indexOf(v.kategori) > -1 && v.kazancDus === 'Evet' };
   }
   function virgoEtki(v){ return virgoNorm(v).borcEur; }
@@ -13415,14 +13421,14 @@ Dikkat edilmesi gereken 2 nokta:
   function vgS(){ return { eur: 0, tl: 0 }; }
   function vgEkle(o, n, k){ k = k == null ? 1 : k; o.eur += k * n.eur; o.tl += k * n.tl; }
   function vgFark(a, b){ return { eur: a.eur - b.eur, tl: a.tl - b.tl }; }
-  var VIRGO_AY_ALAN = ['gelir', 'alinan', 'kbDog', 'kbYat', 'avans', 'cep', 'geri', 'bekleyen', 'isletme', 'yatirim', 'kbGider', 'harcama', 'kdv', 'iade', 'tlFaturaE', 'tlFaturaOdeme'];
+  var VIRGO_AY_ALAN = ['gelir', 'alinan', 'kbDog', 'kbYat', 'avans', 'cep', 'geri', 'bekleyen', 'isletme', 'yatirim', 'kbGider', 'harcama', 'kdv', 'iade', 'tlFaturaE', 'tlFaturaOdeme', 'kdvOdeme'];
   function virgoAylar(){
     var aylar = {}, ekle = function(ay){ if (/^\d{4}-\d{2}$/.test(ay) && !aylar[ay]){ var a = aylar[ay] = { ay: ay, adet: 0, fire: 0 }; VIRGO_AY_ALAN.forEach(function(k){ a[k] = vgS(); }); } return aylar[ay]; };
     virgoKayitlari().forEach(function(v){ var a = ekle((v.tarih||'').slice(0, 7)); if (!a) return; var n = virgoNorm(v);
       if (n.tip === 'mutabakat' || n.tip === 'bilgi' || n.tip === 'ortak' || n.tip === 'sevkPara') return;
       if (!n.odendi){ vgEkle(a.bekleyen, n); return; }
       if (n.tip === 'alinan') vgEkle(a.alinan, n);
-      else if (n.tip === 'geri') vgEkle(n.tlFatura ? a.tlFaturaOdeme : a.geri, n);
+      else if (n.tip === 'geri') vgEkle(n.tlFatura ? a.tlFaturaOdeme : n.kdvOd ? a.kdvOdeme : a.geri, n); // r374: KDV borcu ödemesi Virgo'ya kalan borçtan düşmez
       else if (n.tip === 'harcama'){
         vgEkle(a.harcama, n.m); vgEkle(n.yatirim && !n.kazancDus ? a.yatirim : a.isletme, n.m); vgEkle(a.kdv, n.kdv); vgEkle(a.iade, n.iade);
         if (n.kaynak === 'kb' && n.tlFatura) vgEkle(a.tlFaturaE, n.m);
@@ -13571,7 +13577,7 @@ Dikkat edilmesi gereken 2 nokta:
     // Ödenecekler ödenince borç ne olur (yalnız Virgo hesabını etkileyenler)
     var bek = { art: vgS(), dus: vgS(), adet: 0 };
     virgoKayitlari().forEach(function(v){ var n = virgoNorm(v); if (n.odendi) return; var nak = { eur: n.eur, tl: n.tl };
-      if (n.tip === 'alinan') vgEkle(bek.art, nak); else if (n.tip === 'geri') vgEkle(bek.dus, nak);
+      if (n.kdvOd) return; if (n.tip === 'alinan') vgEkle(bek.art, nak); else if (n.tip === 'geri') vgEkle(bek.dus, nak);
       else if (n.tip === 'harcama' && n.kaynak === 'kb') vgEkle(bek.art, n.m); else if (n.tip === 'harcama' && n.kaynak === 'avans') vgEkle(bek.dus, n.iade); else return;
       bek.adet++; });
     var alt = [];
@@ -13595,7 +13601,7 @@ Dikkat edilmesi gereken 2 nokta:
   function virgoOdemeHtml(){
     var t = virgoToplam(); if (!virgoKayitlari().length && !virgoUretimKayitlari().length) return '';
     var kur = virgoGunKuru(todayISO()), kalan = t.kalanO, eklenen = { eur: t.alinan.eur + t.kbDog.eur - t.iade.eur, tl: t.alinan.tl + t.kbDog.tl - t.iade.tl };
-    var od = virgoKayitlari().filter(function(v){ return virgoNorm(v).tip === 'geri'; }).sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || '') || String(a.olusturma || '').localeCompare(String(b.olusturma || '')); });
+    var od = virgoKayitlari().filter(function(v){ var n = virgoNorm(v); return n.tip === 'geri' && !n.kdvOd; }).sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || '') || String(a.olusturma || '').localeCompare(String(b.olusturma || '')); });
     var odendi = od.filter(function(v){ return virgoNorm(v).odendi; }), plan = od.filter(function(v){ return !virgoNorm(v).odendi; });
     var kimde = {}, planTop = vgS(); odendi.forEach(function(v){ var n = virgoNorm(v); vgEkle(kimde[n.kisi] || (kimde[n.kisi] = vgS()), n); }); var tfPlan = { tl: 0, adet: 0 }; plan.forEach(function(v){ var n = virgoNorm(v); if (n.tlFatura){ tfPlan.tl += n.tl; tfPlan.adet++; } else vgEkle(planTop, n); });
     var sonra = { eur: kalan.eur - planTop.eur, tl: kalan.tl - planTop.tl };
@@ -13721,23 +13727,30 @@ Dikkat edilmesi gereken 2 nokta:
   var _vgIki = null;
   function virgoIkiBorc(){
     var l = virgoKayitlari(); if (_vgIki && _vgIki.l === l && _vgIki.c === state.config) return _vgIki.r;
-    var cari = virgoEurCariler(), r = { eur: { eur: 0, tl: 0 }, eurFatura: { eur: 0, tl: 0 }, eurOdenen: { eur: 0, tl: 0 }, tl: 0, elde: 0, sevkPara: 0, dagitilan: 0, eurL: [], tlL: [], eldeL: [], msOdenmemis: 0 };
+    var cari = virgoEurCariler(), r = { eur: { eur: 0, tl: 0 }, eurFatura: { eur: 0, tl: 0 }, eurOdenen: { eur: 0, tl: 0 }, tl: 0, elde: 0, sevkPara: 0, dagitilan: 0, eurL: [], tlL: [], eldeL: [], msOdenmemis: 0,
+      kdvFatura: 0, kdvDahil: 0, kdvOdenen: 0, kdvFL: [], kdvOL: [] }; // r374: KDV borcu (makine)
     var ekle = function(liste, v, tl, eur){ liste.push({ v: v, n: virgoNorm(v), tl: muhR2(tl), eur: eur == null ? null : muhR2(eur) }); };
     l.forEach(function(v){ var n = virgoNorm(v), ms = n.tip === 'harcama' && cari.indexOf(v.saticiId) > -1; // r370: MS faturası kim ödediyse € borç
       // € borç fatura kesilince doğar (Virgo tedarikçiye ödemiş olsun olmasın); diğer kayıtlar ödenince sayılır
       if (!n.odendi && !ms) return;
       if (!n.odendi) r.msOdenmemis += n.m.tl;
       if (n.tip === 'harcama'){
-        if (ms){ r.eur.eur += n.haric.eur; r.eur.tl += n.haric.tl; r.eurFatura.eur += n.haric.eur; r.eurFatura.tl += n.haric.tl; ekle(r.eurL, v, n.haric.tl, n.haric.eur); }
+        if (ms){ r.eur.eur += n.haric.eur; r.eur.tl += n.haric.tl; r.eurFatura.eur += n.haric.eur; r.eurFatura.tl += n.haric.tl; ekle(r.eurL, v, n.haric.tl, n.haric.eur);
+          r.kdvFatura += n.kdv.tl; r.kdvDahil += n.haric.tl + n.kdv.tl; r.kdvFL.push({ v: v, haric: n.haric.tl, kdv: n.kdv.tl }); }
         else if (n.kaynak === 'kb'){ r.tl += n.m.tl; ekle(r.tlL, v, n.m.tl); }
         else if (n.iade.tl){ r.tl -= n.iade.tl; ekle(r.tlL, v, -n.iade.tl); }
       } else if (n.tip === 'alinan'){ r.tl += n.tl; ekle(r.tlL, v, n.tl); }
       else if (n.tip === 'geri'){
-        if (!n.sevk && virgoEurOdemeMi(v)){ r.eur.eur -= n.eur; r.eur.tl -= n.tl; r.eurOdenen.eur += n.eur; r.eurOdenen.tl += n.tl; ekle(r.eurL, v, -n.tl, -n.eur); } else { r.tl -= n.tl; ekle(r.tlL, v, -n.tl); }
+        if (n.kdvOd){ r.kdvOdenen += n.tl; r.kdvOL.push({ v: v, n: n, tl: n.tl }); }
+        else if (!n.sevk && virgoEurOdemeMi(v)){ r.eur.eur -= n.eur; r.eur.tl -= n.tl; r.eurOdenen.eur += n.eur; r.eurOdenen.tl += n.tl; ekle(r.eurL, v, -n.tl, -n.eur); } else { r.tl -= n.tl; ekle(r.tlL, v, -n.tl); }
         if (v.sevkParasi){ r.dagitilan += n.tl; ekle(r.eldeL, v, -n.tl); }
       } else if (n.tip === 'sevkPara'){ r.sevkPara += n.tl; ekle(r.eldeL, v, n.tl); }
     });
     r.elde = muhR2(r.sevkPara - r.dagitilan); r.tl = muhR2(r.tl); r.eur.eur = muhR2(r.eur.eur); r.eur.tl = muhR2(r.eur.tl);
+    // r374: KDV borcu (makine) = toplam (KDV dahil) − KDV hariç (€ borçta). Toplam elle yazıldıysa o, yoksa MS faturalarının KDV dahil toplamı (= fatura KDV'si).
+    var elle = Number((state.config || {}).virgoMakineToplamTl) || 0;
+    r.kdvToplamElle = elle > 0 ? elle : 0; r.kdvToplam = muhR2(elle > 0 ? elle : r.kdvDahil); r.kdvHaric = muhR2(r.eurFatura.tl);
+    r.kdvBorc = muhR2(r.kdvToplam - r.kdvHaric); r.kdvOdenen = muhR2(r.kdvOdenen); r.kdvKalan = muhR2(r.kdvBorc - r.kdvOdenen);
     _vgIki = { l: l, c: state.config, r: r }; return r;
   }
   function virgoIkiDetay(tur){
@@ -13830,6 +13843,42 @@ Dikkat edilmesi gereken 2 nokta:
         var z = e.target.closest('[data-vduzelt]'); if (z){ kapat(); virgoKayitAc(z.dataset.vduzelt); } });
       f.addEventListener('change', function(e){ var t = e.target; if (!t.matches || !t.matches('[data-vdgcari]')) return;
         configWrite({ virgoEurCariler: t.value ? [t.value] : [] }).then(function(){ toast('✓ € borç tedarikçisi: ' + (t.value ? cariAdi(t.value) : 'yok')); kapat(); setTimeout(virgoEurBorcDetay, 300); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); }); });
+    } });
+  }
+  // r374: KDV borcu (makine) ayrıntısı: toplam (KDV dahil; boşsa MS faturalarından) − KDV hariç (€ borçta) = borç − ödenen = kalan; toplam elle yazılabilir; ödeme gir
+  function virgoTlSayi(x){ var t = String(x == null ? '' : x).trim().replace(/[\s₺]/g, ''); if (t.indexOf(',') > -1) t = t.replace(/\./g, '').replace(',', '.'); else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ''); var n = Number(t); return isFinite(n) ? n : NaN; }
+  function virgoKdvBorcDetay(){
+    var r = virgoIkiBorc(), cari = virgoEurCariler(), msAd = cari.length ? cari.map(cariAdi).join(', ') : 'MS Mekanik Sanatlar';
+    var sat = function(ad, v, o){ o = o || {}; return '<tr' + (o.kalin ? ' class="kv-alt"' : '') + '><td>' + (o.kalin ? '<b>' + ad + '</b>' : ad) + (o.not ? ' <span class="muted">' + o.not + '</span>' : '') + '</td><td class="num">' + (o.kalin ? '<b>' + virgoTl(v) + '</b>' : virgoTl(v)) + '</td></tr>'; };
+    var faturalar = r.kdvFL.slice().sort(function(a, b){ return (a.v.tarih || '').localeCompare(b.v.tarih || ''); }), odemeler = r.kdvOL.slice().sort(function(a, b){ return (a.v.tarih || '').localeCompare(b.v.tarih || ''); });
+    var html = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px">' +
+      '<div class="field" style="margin:0"><label for="vkdvTop">Toplam (KDV dahil, ₺)</label><input type="text" inputmode="decimal" id="vkdvTop" data-vkdvtop="1" style="width:160px" value="' + (r.kdvToplamElle ? escAttr(muhTutar(r.kdvToplamElle)) : '') + '" placeholder="' + escAttr(muhTutar(r.kdvDahil)) + '"></div>' +
+      '<button class="btn secondary small" data-vkdvkaydet="1">Toplamı kaydet</button>' +
+      '<button class="btn small" data-vkdvodeme="1"' + (izinVar('ekle') ? '' : ' disabled') + '>+ KDV borcuna ödeme gir</button></div>' +
+      '<div class="tablewrap"><table class="vg-tablo"><tbody>' +
+        sat('Toplam (KDV dahil)', r.kdvToplam, { not: r.kdvToplamElle ? 'elle yazılan' : esc(msAd) + ' faturalarından' }) +
+        sat('− KDV hariç tutar', r.kdvHaric, { not: '€ borçta (faturalar, fatura günü kuruyla)' }) +
+        sat('= KDV borcu', r.kdvBorc) + sat('− Ödenen', r.kdvOdenen, { not: odemeler.length + ' ödeme' }) + sat('Kalan', r.kdvKalan, { kalin: 1 }) + '</tbody></table></div>' +
+      '<div class="helper" style="margin:6px 0 12px">Toplam boşsa ' + esc(msAd) + ' faturalarının KDV dahil toplamı alınır (yani faturadaki KDV). Farklı bir toplam yazarsanız kalan borç toplam − KDV hariç tutar olur; kutuyu boşaltıp kaydedince faturalardan hesaplar. Ödeme: Geri ödeme, "Hangi borç = Virgo KDV borcu (makine)". Bu borç ve ödemeleri Virgo\'ya kalan borca ve ₺ borca girmez, ayrı izlenir.</div>' +
+      '<h4 style="margin:10px 0 6px">Faturalar</h4>' +
+      (faturalar.length ? '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Fatura no</th><th>Açıklama</th><th class="num">KDV hariç</th><th class="num">KDV</th><th class="num">KDV dahil</th></tr></thead><tbody>' +
+        faturalar.map(function(x){ var v = x.v; return '<tr class="vg-tik" data-vduzelt="' + escAttr(v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(v.tarih)) + '</td><td>' + esc(v.belgeNo || '') + '</td><td>' + esc(v.aciklama || '') + '</td><td class="num">' + virgoTl(x.haric) + '</td><td class="num">' + virgoTl(x.kdv) + '</td><td class="num"><b>' + virgoTl(x.haric + x.kdv) + '</b></td></tr>'; }).join('') +
+        '<tr class="kv-alt"><td colspan="3"><b>Toplam</b></td><td class="num"><b>' + virgoTl(r.kdvHaric) + '</b></td><td class="num"><b>' + virgoTl(r.kdvFatura) + '</b></td><td class="num"><b>' + virgoTl(r.kdvDahil) + '</b></td></tr></tbody></table></div>'
+        : '<div class="empty">' + (cari.length ? esc(msAd) + ' faturası yok.' : 'MS Mekanik Sanatlar cari kartı seçilmemiş (€ borç ayrıntısından seçin).') + '</div>') +
+      '<h4 style="margin:12px 0 6px">Ödemeler</h4>' +
+      (odemeler.length ? '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Tarih</th><th>Ödeyen</th><th>Ödeme şekli</th><th>Açıklama</th><th class="num">₺</th></tr></thead><tbody>' +
+        odemeler.map(function(x){ var v = x.v; return '<tr class="vg-tik" data-vduzelt="' + escAttr(v.id) + '" title="Kaydı açmak için tıklayın"><td>' + esc(kvTarihTR(v.tarih)) + '</td><td>' + esc(x.n.kisi) + '</td><td>' + esc(v.odemeSekli || '') + '</td><td>' + esc(v.aciklama || '') + '</td><td class="num"><b>' + virgoTl(x.tl) + '</b></td></tr>'; }).join('') +
+        '<tr class="kv-alt"><td colspan="4"><b>Toplam</b></td><td class="num"><b>' + virgoTl(r.kdvOdenen) + '</b></td></tr></tbody></table></div>'
+        : '<div class="empty">Henüz KDV borcuna ödeme girilmedi.</div>');
+    modalAc({ title: 'KDV borcu (makine)', kaydetYok: true, genislik: 'genis', html: html, onOpen: function(f, kapat){
+      f.addEventListener('click', function(e){
+        if (e.target.closest('[data-vkdvodeme]')){ kapat(); crudYeni(VIRGO_TANIM, { hareket: VIRGO_HAREKET[2], borcPb: VIRGO_BORC_PB[4], kategori: '', kdvOrani: '0', paraBirimi: '₺', aciklama: 'KDV borcu (makine) ödemesi' }); return; }
+        if (e.target.closest('[data-vkdvkaydet]')){
+          var g = f.querySelector('[data-vkdvtop]'), ham = g ? g.value.trim() : '', val = ham ? virgoTlSayi(ham) : 0;
+          if (ham && !(val > 0)){ toast('Toplamı rakamla yazın (ör. 6.000.000).', true); return; }
+          configWrite({ virgoMakineToplamTl: val > 0 ? muhR2(val) : '' }).then(function(){ toast(val > 0 ? '✓ Toplam ₺' + muhTutar(val) + ' (KDV dahil)' : '✓ Toplam faturalardan hesaplanıyor'); kapat(); setTimeout(virgoKdvBorcDetay, 300); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); });
+          return; }
+        var z = e.target.closest('[data-vduzelt]'); if (z){ kapat(); virgoKayitAc(z.dataset.vduzelt); } });
     } });
   }
   function virgoDagitimSonuc(top, tlPay, kur){
@@ -14244,7 +14293,7 @@ Dikkat edilmesi gereken 2 nokta:
       case 'tlFaturaE': return o && n.tlFatura ? n.tlFaturaE : null;
       case 'avans': return o && h && n.kaynak === 'avans' ? nak : null;
       case 'iade': return o && h && (n.iade.eur || n.iade.tl) ? n.iade : null;
-      case 'geri': return o && n.tip === 'geri' && !n.tlFatura ? nak : null;
+      case 'geri': return o && n.tip === 'geri' && !n.tlFatura && !n.kdvOd ? nak : null;
       case 'cep': return o && h && n.kaynak === 'cep' ? n.m : null;
       case 'cepN': return o && h && n.kaynak === 'cep' ? nak : null;
       case 'isletme': return o && h && (!n.yatirim || n.kazancDus) ? n.m : null;
@@ -14421,6 +14470,7 @@ Dikkat edilmesi gereken 2 nokta:
       if (n.tip === 'alinan') ne = 'Virgo borcuna <b class="neg">eklenir</b>.';
       else if (n.sevk) ne = (n.tip === 'sevkPara' ? 'Virgo ürün bedelini <b class="pos">para olarak öder</b>; borç değişmez.' : 'Ürün bedeli Virgo borcundan <b class="pos">düşer</b>.') + ' Ürünler stoktan düşer.';
       else if (n.tip === 'geri' && n.tlFatura) ne = 'Virgo ₺ faturadan <b>' + virgoTl(n.tl) + '</b> <b class="pos">düşer</b>.';
+      else if (n.tip === 'geri' && n.kdvOd) ne = 'KDV borcundan (makine) <b>' + virgoTl(n.tl) + '</b> <b class="pos">düşer</b>; Virgo\'ya kalan borcu değiştirmez.';
       else if (n.tip === 'geri') ne = 'Virgo borcundan <b class="pos">düşer</b>.';
       else if (n.tip === 'harcama' && n.kaynak === 'kb' && n.tlFatura) ne = 'Virgo ₺ faturaya <b>' + virgoTl(n.m.tl) + '</b> <b class="neg">eklenir</b>' + (n.fatura === 'virgo' ? ' (KDV hariç)' : '') + '.';
       else if (n.tip === 'harcama' && n.kaynak === 'kb') ne = 'Virgo borcuna ' + ET(n.m.eur, n.m.tl) + ' <b class="neg">eklenir</b>' + (n.fatura === 'virgo' && n.kdv.eur ? ' (KDV hariç; KDV\'yi Virgo indirir)' : '') + '.';
@@ -14636,7 +14686,7 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'tutarTuru', label:'Girilen tutar', type:'select', options: ['KDV hariç', 'KDV dahil'], hint:'Fatura toplamını yazacaksanız "KDV dahil" seçin.'},
       {key:'tutar', label:'Tutar', type:'number', para:false, required:true},
       {key:'kdvOrani', label:'KDV oranı (%)', type:'select', options: VIRGO_KDV, hint:'Maaş, SGK, şahıstan kira, fişsiz alım: 0.'},
-      {key:'borcPb', label:'Hangi borç', type:'select', options: VIRGO_BORC_PB, hint:'Geri ödemede: Virgo € borcu (makine) seçilirse ödeme, ödeme günü kuruyla €\'ya çevrilip € borçtan düşer; Otomatik / Virgo borcu ₺ borçtan (faturalar) düşer. Virgo ₺ fatura (eski seçenek) de ₺ borçtan düşer.'},
+      {key:'borcPb', label:'Hangi borç', type:'select', options: VIRGO_BORC_PB, hint:'Geri ödemede: Virgo € borcu (makine) seçilirse ödeme, ödeme günü kuruyla €\'ya çevrilip € borçtan düşer; Otomatik / Virgo borcu ₺ borçtan (faturalar) düşer. Virgo ₺ fatura (eski seçenek) de ₺ borçtan düşer. Virgo KDV borcu (makine): MS faturalarının KDV borcundan düşer (Özet › KDV borcu).'},
       {key:'fatura', label:'Fatura kimin adına', type:'select', options: VIRGO_FATURA, hint:'Otomatik: Virgo\'nun parasıyla yapılan harcamada Virgo adına (maliyet KDV hariç), kendi cebimizden yapılanda bizim adımıza / fişsiz (KDV maliyet).'},
       {key:'kur', label:'Kur (1 € = ₺)', type:'number', para:false, hint:'Boş: o tarihin TCMB döviz satış kuru. € ve ₺ karşılığı bu kurla saklanır.'}
     ]; },
@@ -18689,6 +18739,7 @@ Dikkat edilmesi gereken 2 nokta:
   function eurTl(v){ return (v < 0 ? '−€' : '€')+fmt(Math.abs(v))+(tl(v) ? ' <span class="muted">(₺'+fmt(tl(v))+')</span>' : ''); }
   function ozetDetay(k){
     if (k === 'eurborc'){ virgoEurBorcDetay(); return; } // r370
+    if (k === 'kdvborc'){ virgoKdvBorcDetay(); return; } // r374
     var bugun = todayISO(), ay = thisMonthKey(), d = null;
     var sabit = calcSabitGider(), saatM = calcSaatMaliyeti(), kapasite = state.config ? Number(state.config.aylikMakineSaati)||0 : 0;
     if (k === 'uretim'){
