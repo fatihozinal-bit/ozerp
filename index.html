@@ -1876,7 +1876,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r372</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r373</div>
     </div>
   </nav>
   <main>
@@ -4757,7 +4757,7 @@ Dikkat edilmesi gereken 2 nokta:
     return { gecen: gecen, toplam: toplam, ciro: ciroT, gider: kh.giderTop, net: ciroT - kh.giderTop, kh: kh };
   }
   // r261: sabit gider Aylık Kapasite'deki bu ayın toplam giderinden (personel + elektrik + gider kalemleri; amortisman ve vergi hariç)
-  function ozetKapasite(){ return kpHesap(thisMonthKey(), kpPlan(), true); }
+  function ozetKapasite(){ return kpHesap(thisMonthKey(), kpPlan()); }
   // r261: bu ay üretilen adet ürün ürün (son operasyon kayıtları, Üretilen kartının toplamıyla aynı), çoktan aza
   function ozetUretimKirilim(){
     var g = {}; ozetKayitlari().filter(sonOperasyonKaydiMi).forEach(function(x){ var ad = uretimUrunAdi(x).replace(/^\S+ · /, ''); g[ad] = (g[ad] || 0) + (Number(x.adet) || 0); }); // kod yazılmaz, kart küçük
@@ -15660,49 +15660,7 @@ Dikkat edilmesi gereken 2 nokta:
     l.push('İşveren maliyeti: ' + tl(b.maliyet) + (b.maliyetGirilen ? ' (Tanımlar\'da girilen)' : ''));
     return l.join('\n');
   }
-  // r371: makine alış faturalarının KDV'si (Aylık Kapasite › KDV): € borç tedarikçisinden (varsayılan MS Mekanik Sanatlar) ya da Makine kategorisindeki
-  // Virgo adına harcamalar, fatura ayına. Ödenmiş olsun olmasın (KDV fatura tarihinde indirilir, ödemeye bağlı değil).
-  var _kpMk = null;
-  function kpMakineKdv(){
-    var l = virgoKayitlari(); if (_kpMk && _kpMk.l === l && _kpMk.c === state.config && _kpMk.m === state.musteriler) return _kpMk.r;
-    var cari = virgoEurCariler(), r = { aylar: {}, ilk: '' };
-    l.forEach(function(v){ var n = virgoNorm(v), t = String(v.tarih || '');
-      if (n.tip !== 'harcama' || n.fatura !== 'virgo' || !(n.kdv.tl > 0.004) || !/^\d{4}-\d{2}/.test(t)) return;
-      if (cari.indexOf(v.saticiId) < 0 && v.kategori !== 'Makine') return;
-      var ay = t.slice(0, 7), a = r.aylar[ay] || (r.aylar[ay] = { tl: 0, l: [] }), sat = v.saticiId ? cariAdi(v.saticiId) : '';
-      a.tl += n.kdv.tl; a.l.push({ ad: String((sat && sat !== '-' ? sat : '') || v.aciklama || v.kategori || 'Fatura').trim(), tarih: t, kdv: n.kdv.tl, oran: n.oran, odendi: n.odendi });
-      if (!r.ilk || ay < r.ilk) r.ilk = ay; });
-    _kpMk = { l: l, c: state.config, m: state.musteriler, r: r }; return r;
-  }
-  // r372: KDV beyanındaki (muhasebe 191 / 391) bir ayın sonraki döneme devreden KDV'si; o aya kadar KDV hareketi yoksa null
-  var _kpBeyan = null;
-  function kpBeyanDevreden(ay){
-    try {
-      var l = muhTumFisler();
-      if (!_kpBeyan || _kpBeyan.l !== l){ var ilk = null;
-        l.some(function(f){ if (!muhKdvFisiMi(f) && (f.satirlar || []).some(function(s){ return /^[13]91/.test(s.hesap); })){ ilk = String(f.tarih).slice(0, 7); return true; } return false; });
-        _kpBeyan = { l: l, ilk: ilk, m: {} }; }
-      if (!_kpBeyan.ilk || _kpBeyan.ilk > ay) return null;
-      if (!(ay in _kpBeyan.m)) _kpBeyan.m[ay] = muhKdvDonem(ay);
-      return _kpBeyan.m[ay];
-    } catch(e){ return null; }
-  }
-  // r371 / r372: seçilen aya önceki aylardan devreden KDV. Geçmiş aylar KDV beyanından: kaynak ay = seçilen aydan önceki ay, en geç geçen ay
-  // (bu ay henüz kapanmadı); o ayın "sonraki döneme devreden"i başlangıç. Kaynak aydan sonra seçilen aya kadar her ay planla:
-  // hesaplanan − indirilecek − makine KDV'si − önceki devreden; eksi kalan sonraki aya devreder. KDV beyanında hareket yoksa ilk makine faturasının ayından planla.
-  function kpKdvDevreden(ay, plan, mkK){
-    var r = { tl: 0, aylar: [], beyan: null }, gecen = KV_MODEL.ayEkle(thisMonthKey(), -1), onceki = KV_MODEL.ayEkle(ay, -1), kaynak = onceki < gecen ? onceki : gecen;
-    var b = kpBeyanDevreden(kaynak), bas;
-    if (b){ r.tl = Number(b.sonrakiDevreden) || 0; r.beyan = { ay: kaynak, tl: r.tl, odenecek: Number(b.odenecek) || 0 }; bas = KV_MODEL.ayEkle(kaynak, 1); }
-    else { if (!mkK.ilk || mkK.ilk >= ay) return r; bas = mkK.ilk; }
-    for (var m = bas, i = 0; m < ay && i < 120; m = KV_MODEL.ayEkle(m, 1), i++){
-      var hm = kpHesap(m, plan, true), net = hm.kdvHes - hm.kdvInd - hm.mkKdv - r.tl;
-      r.tl = Math.max(0, -net); r.aylar.push({ ay: m, hes: hm.kdvHes, ind: hm.kdvInd, mk: hm.mkKdv, dev: r.tl });
-    }
-    return r;
-  }
-  // r371: hafif = true: kişi ⓘ balonu ve devreden KDV zinciri hesaplanmaz (Özet ve devreden zincirinin ara ayları için)
-  function kpHesap(ay, plan, hafif){
+  function kpHesap(ay, plan){
     var dz = plan.duzen || KP_DUZEN_VARS, ks = kpAySaat(ay, dz), kur = virgoGunKuru(todayISO()) || 0, tl = function(v, pb){ return pb === '€' ? v * kur : v; };
     // Verimli saat: gündüz + gece × gece verimi; adet = makine × verimli saat × saatlik adet × genel verim × (1 − fire)
     var etkin = ks.gunduz + ks.gece * kpSayi(dz.geceVerim, 100) / 100, verim = kpSayi(dz.verim, 100) / 100, fireO = Math.min(100, Math.max(0, kpSayi(dz.fire, 0))) / 100;
@@ -15722,7 +15680,7 @@ Dikkat edilmesi gereken 2 nokta:
     var top = { makine: 0, adet: 0, ciroTl: 0, degTl: 0 }; satir.forEach(function(x){ top.makine += x.makine; top.adet += x.adet; top.ciroTl += x.ciroTl; top.degTl += x.degTl; });
     // Elektrik ve makine başı giderler çalışan makineyle (seçildiyse o, yoksa ürünlerdeki toplam)
     var calisanMk = dzMk != null ? dzMk : top.makine;
-    var kapali = dz.persKapali || [], persHepsi = (state.personel || []).map(function(p){ var b = personelAyBordroTL(p, ay); return { id: p.id, p: p, b: b, ad: p.ad, rol: p.rol, tl: b.maliyet, bilgi: hafif ? '' : kpPersonelBilgi(p, ay, b), kapali: kapali.indexOf(p.id) >= 0 }; }).filter(function(x){ return x.tl > 0.5; });
+    var kapali = dz.persKapali || [], persHepsi = (state.personel || []).map(function(p){ var b = personelAyBordroTL(p, ay); return { id: p.id, p: p, b: b, ad: p.ad, rol: p.rol, tl: b.maliyet, bilgi: kpPersonelBilgi(p, ay, b), kapali: kapali.indexOf(p.id) >= 0 }; }).filter(function(x){ return x.tl > 0.5; });
     var pers = persHepsi.filter(function(x){ return !x.kapali; });
     var persTl = pers.reduce(function(a, x){ return a + x.tl; }, 0);
     // r321: Mesai gideri (maaşlar sabit kalır, mesai ayrı gider). Bu ay İK & İzin › Aylık mesai'de (ya da günlük ayrıntıda) saat girilmişse o kullanılır (gerçekleşen);
@@ -15749,8 +15707,6 @@ Dikkat edilmesi gereken 2 nokta:
     var kdvOranlar = {}, kdvEkle = function(o, v){ if (o > 0 && v > 0.004) kdvOranlar[o] = (kdvOranlar[o] || 0) + v; };
     kdvEkle(KP_ELEKTRIK_KDV, elekTl * KP_ELEKTRIK_KDV / 100); gid.forEach(function(x){ kdvEkle(x.kdvOran, x.kdvTl); });
     var kdvInd = Object.keys(kdvOranlar).reduce(function(a, o){ return a + kdvOranlar[o]; }, 0);
-    // r371: makine alış faturalarının KDV'si fatura ayında indirilir; satış KDV'sinden artanı sonraki aylara devreder (zincir ilk makine faturasının ayından)
-    var mkK = kpMakineKdv(), mkAy = mkK.aylar[ay] || { tl: 0, l: [] }, kdvDev = hafif ? { tl: 0, aylar: [] } : kpKdvDevreden(ay, plan, mkK), kdvHes = top.ciroTl * satisKdv / 100;
     // r257: bir kişinin kişi başı giderleri (yemek, servis…) — çalışmayan kişide bunlar da düşer, satırında gösterilir
     var kisiBasi = plan.giderler.reduce(function(a, g){ return a + (g.tur === 'kisi' ? Number(g.tutar) || 0 : 0); }, 0);
     var aktifMk = (state.makineler || []).filter(function(m){ return m.durum !== 'Pasif'; }).length;
@@ -15764,7 +15720,7 @@ Dikkat edilmesi gereken 2 nokta:
     var faal = katki - giderTop, vOnce = faal - amortTl, kvOran = Number(muhAyar().kvOrani) || 25, vergi = Math.max(0, vOnce) * kvOran / 100, net = vOnce - vergi;
     var kurulus = (kvParam() || {}).kurulusTarihi || '';
     return { ay: ay, ks: ks, dz: dz, etkin: etkin, verim: verim, fireO: fireO, kur: kur, satir: satir, top: top, calisanMk: calisanMk, dzMk: dzMk, kisiBasi: kisiBasi, isGun: isGun, pers: pers, persHepsi: persHepsi, persTl: persTl, mesai: mesai, kwh: kwh, kwM: kwM, kwG: kwG, elekTl: elekTl, gid: gid, gidTl: gidTl, giderTop: giderTop,
-      kdvOranlar: kdvOranlar, kdvInd: kdvInd, satisKdv: satisKdv, kdvHes: kdvHes, mkKdv: mkAy.tl, mkKdvL: mkAy.l, kdvDev: kdvDev, kdvOde: kdvHes - kdvInd - mkAy.tl - kdvDev.tl,
+      kdvOranlar: kdvOranlar, kdvInd: kdvInd, satisKdv: satisKdv, kdvHes: top.ciroTl * satisKdv / 100, kdvOde: top.ciroTl * satisKdv / 100 - kdvInd,
       katki: katki, kalan: faal, amortTl: amortTl, amortMk: amortMk.length, vOnce: vOnce, kvOran: kvOran, vergi: vergi, net: net, nakit: net + amortTl, kurulus: kurulus, aktifMk: aktifMk };
   }
   // r329: KDV bölümü (Ay tablosunun sonunda): kâra ve kurumlar vergisine girmez. Hesaplanan KDV ürün ürün, indirilecek KDV kalem kalem,
@@ -15774,26 +15730,12 @@ Dikkat edilmesi gereken 2 nokta:
     if (h.elekTl > 0.004) kalemler.push({ ad: 'Elektrik', matrah: h.elekTl, oran: KP_ELEKTRIK_KDV, kdv: h.elekTl * KP_ELEKTRIK_KDV / 100 });
     var kdvli = kalemler.filter(function(k){ return k.kdv > 0.004; }).sort(function(a, b){ return b.kdv - a.kdv; }), kdvsiz = kalemler.filter(function(k){ return !(k.kdv > 0.004); });
     var devir = h.kdvOde < -0.004;
-    // r371: makine alışı KDV'si (fatura fatura) ve önceki aylardan devreden KDV
-    var mkCari = virgoEurCariler().map(cariAdi).filter(function(x){ return x && x !== '-'; }).join(', ') || 'MS Mekanik Sanatlar';
-    var devL = h.kdvDev.aylar.length > 12 ? h.kdvDev.aylar.slice(-12) : h.kdvDev.aylar;
-    var dv = h.kdvDev, devPlan = (dv.aylar.length > devL.length ? '…\n' : '') + devL.map(function(a){ return muhAyAdi(a.ay) + ': hesaplanan ₺' + muhTutar(a.hes) + ' − indirilecek ₺' + muhTutar(a.ind) + (a.mk > 0.004 ? ' − makine ₺' + muhTutar(a.mk) : '') + ' → devreden ₺' + muhTutar(a.dev); }).join('\n');
-    // r372: devreden geçmiş aylar için KDV beyanından (Muhasebe › KDV Beyanı), sonraki aylar planla
-    var devNot = dv.beyan ? (dv.aylar.length ? 'KDV beyanı + plan' : 'KDV beyanından') : 'plan';
-    var devBilgi = dv.beyan
-      ? 'KDV Beyanı (Muhasebe): ' + muhAyAdi(dv.beyan.ay) + ' sonu sonraki döneme devreden ₺' + muhTutar(dv.beyan.tl) + (dv.beyan.odenecek > 0.004 ? ' (o ay ödenecek ₺' + muhTutar(dv.beyan.odenecek) + ', devreden yok)' : '') + '.' +
-        (dv.aylar.length ? '\nSonraki aylar henüz kapanmadı, bu sayfadaki planla:\n' + devPlan : '')
-      : 'Muhasebe › KDV Beyanı\'nda bu aylar için KDV hareketi yok; ilk makine faturasının ayından bu sayfadaki planla:\n' + devPlan;
-    var mkSatir = h.mkKdv > 0.004 ? satir('− Makine alışı KDV', h.mkKdv, { not: h.mkKdvL.length + ' fatura', bilgi: 'Bu ay kesilen makine faturalarının KDV\'si (' + mkCari + ' ve Makine kategorisi, Virgo adına fatura). Fatura ayında indirilir, ödenmiş olsun olmasın; satış KDV\'sinden artanı sonraki aylara devreder. Gerçekte bu KDV\'yi Virgo kendi beyannamesinde indirir (Virgo › KDV).' }) +
-      h.mkKdvL.slice().sort(function(a, b){ return a.tarih.localeCompare(b.tarih) || b.kdv - a.kdv; }).map(function(f){ return satir(esc(f.ad), f.kdv, { alt: 1, ic: 1, not: kisaTarihTR(f.tarih) + (f.oran ? ' · %' + fmt2(f.oran) : '') + (f.odendi ? '' : ' · ödenmedi') }); }).join('') : '';
-    return '<tr class="kp-kdv-bas"><td colspan="4"><b>KDV</b>' + infoIco('KDV kâra ve kurumlar vergisine girmez: müşteriden alınan KDV\'den giderlerde ve makine alışında ödenen KDV düşülür. Fark ertesi ay beyannameyle ödenir; eksi kalırsa sonraki aylara devreder.') + '</td></tr>' +
+    return '<tr class="kp-kdv-bas"><td colspan="4"><b>KDV</b>' + infoIco('KDV kâra ve kurumlar vergisine girmez: müşteriden alınan KDV\'den giderlerde ödenen KDV düşülür, fark ertesi ay beyannameyle ödenir.') + '</td></tr>' +
       satir('Hesaplanan KDV', h.kdvHes, { not: 'satış', bilgi: 'Ciro ₺' + muhTutar(h.top.ciroTl) + ' × %' + fmt2(h.satisKdv) }) +
       h.satir.filter(function(x){ return x.ciroTl > 0.004; }).map(function(x){ return satir(esc(x.u.ad || 'Ürün'), x.ciroTl * h.satisKdv / 100, { alt: 1, ic: 1, not: fmt(x.adet) + ' adet', bilgi: 'Matrah ₺' + muhTutar(x.ciroTl) + ' × %' + fmt2(h.satisKdv) }); }).join('') +
       satir('− İndirilecek KDV', h.kdvInd, { not: 'giderler', bilgi: Object.keys(h.kdvOranlar).map(Number).sort(function(a, b){ return b - a; }).map(function(o){ return '%' + fmt2(o) + ' ₺' + muhTutar(h.kdvOranlar[o]); }).join(' + ') }) +
       kdvli.map(function(k){ return satir(esc(k.ad), k.kdv, { alt: 1, ic: 1, not: '%' + fmt2(k.oran), bilgi: 'Matrah ₺' + muhTutar(k.matrah) + ' × %' + fmt2(k.oran) }); }).join('') +
       (kdvsiz.length ? '<tr class="kp-alt"><td colspan="4" class="muted kp-i1">KDV\'siz: ' + kdvsiz.map(function(k){ return esc(k.ad) + (k.tur === 'stopaj' ? ' (şahıstan kira: KDV yok, %20 stopaj)' : ''); }).join(' · ') + (h.pers.length ? ' · personel' : '') + '</td></tr>' : '') +
-      mkSatir +
-      (h.kdvDev.tl > 0.004 ? satir('− Önceki aylardan devreden KDV', h.kdvDev.tl, { not: devNot, bilgi: devBilgi }) : '') +
       satir(devir ? 'Devreden KDV' : 'Ödenecek KDV', Math.abs(h.kdvOde), { ara: 1, cls: devir ? 'pos' : '', bilgi: devir ? 'Ödeme yok, sonraki ayın KDV\'sinden düşülür.' : 'Ertesi ayın 28\'ine kadar KDV beyannamesiyle.' });
   }
   // r329: Ay tablosu yalnız plan (r324–r325'teki Virgo faturalarından gerçekleşen / Fark kullanıcı isteğiyle kaldırıldı). Sütunlar: ₺, € (bugünkü kur), adet başı.
@@ -16040,7 +15982,7 @@ Dikkat edilmesi gereken 2 nokta:
       dzG('Üretim', dzS('makine', 'Çalışan makine', 'ürünler', aktifMk + ' makine aktif (Tanımlar). Bu ay kaç makine çalışıyor. Boş: ürün satırlarındaki makinelerin toplamı. Yazılırsa elektrik ve makine başı giderler bununla hesaplanır; ürün satırında makine kutusu boş olan işler kalan makineleri eşit paylaşır.') + dzS('verim', 'Genel verim %', '100', 'Duruş, ayar, bakım payı (OEE)') + dzS('fire', 'Fire %', '0', 'Sağlam çıkmayan parça oranı')) +
       dzG('Elektrik', dzE('kwMakine', 'Makine başı kW', kartKw ? fmt2(kartKw) : 'ör. 6,5', 'Çalışan makine başına ortalama güç. Boş: makine kartlarındaki güç ortalaması') + dzE('kwGenel', 'Genel kW', '0', 'Kompresör, aydınlatma, ofis…') + dzE('fiyat', '₺ / kWh', 'KDV hariç', 'Elektrik birim fiyatı, KDV hariç')) +
       '</div></div></div>';
-    var ayHtml = '<div class="block"><div class="block-head"><h3>Ay ' + infoIco('Ay seçince o ayın görüntüsü hesaplanır; hiçbir şey ay ay saklanmaz. Çalışma saatleri Tanımlar › Kapasite\'den, resmî tatiller programdan, personel Tanımlar › Personel\'den gelir. Ürünler ve giderler tek listelerden. Giderler ve kâr KDV hariç; KDV tablonun sonunda ayrı, kâra girmez. Makine alımı gider değil, amortismanla girer; KDV\'si fatura ayında indirilir, artanı sonraki aylara devreder. Önceki aylardan devreden KDV kapanan aylar için KDV Beyanı\'ndan, gelecek aylar planla. € tutarlar bugünkü kurla.') + '</h3><div class="bh-actions"><button class="btn secondary small" data-kpay="-1" title="Önceki ay">‹</button> <input type="month" id="kpAySec" value="' + kpAy + '"> <button class="btn secondary small" data-kpay="1" title="Sonraki ay">›</button> <button class="btn secondary small" data-kpay="0">Bu ay</button></div></div><div class="block-body" id="kpSonuc"></div></div>';
+    var ayHtml = '<div class="block"><div class="block-head"><h3>Ay ' + infoIco('Ay seçince o ayın görüntüsü hesaplanır; hiçbir şey ay ay saklanmaz. Çalışma saatleri Tanımlar › Kapasite\'den, resmî tatiller programdan, personel Tanımlar › Personel\'den gelir. Ürünler ve giderler tek listelerden. Giderler ve kâr KDV hariç; KDV tablonun sonunda ayrı, kâra girmez. Makine alımı gider değil, amortismanla girer. € tutarlar bugünkü kurla.') + '</h3><div class="bh-actions"><button class="btn secondary small" data-kpay="-1" title="Önceki ay">‹</button> <input type="month" id="kpAySec" value="' + kpAy + '"> <button class="btn secondary small" data-kpay="1" title="Sonraki ay">›</button> <button class="btn secondary small" data-kpay="0">Bu ay</button></div></div><div class="block-body" id="kpSonuc"></div></div>';
     var urunHtml = '<div class="block"><div class="block-head"><h3>Ürünler ve çalışan makineler ' + infoIco('Her satır bir ürün ya da iş. Makine: bu işe ayrılan makine sayısı (yarım zamanlı için 0,5; boşsa Çalışma düzeni › Çalışan makine\'den kalan pay). Parça süresi saniyeyle: ya çevrim (sn / adet) yazılır ya da boy bilgisi: boydan çıkan adet ve boyun işlenme süresi (dk). Örnek: bir boydan 12 parça, boy 30 dk → 30 × 60 ÷ 12 = 150 sn. M1 fazlası: CNC\'de M1 kodu her boyda sayacı bir fazla sayar; yazılan değer boydan adetten düşülür (sayaç 24, M1 fazlası 1 → 23 sağlam). Boy değiştirme / bağlama süresi her boyda eklenir. Ayar: iş değişimindeki bir kerelik bağlama, program ve ilk parça onayı; ayar dk × ayda kaç kez ayın makine saatinden düşülür. Saatte = 3600 ÷ süre × genel verim × (1 − fire). Ayda = (makine × verimli saat − ayar saati) × saatte; günde = ayda ÷ çalışılan gün. Verimli saat = gündüz + gece × gece verimi (Çalışma düzeni). Satış sınırı varsa onunla sınırlanır. Ciro = adet × birim fiyat (KDV hariç). Katkı = ciro − adet başı giderler. Liste tektir, her ay için aynı kullanılır; yazdıkça kaydedilir.') + '</h3><div class="bh-actions"><button class="btn small" data-kpekle="1">+ Ürün / iş ekle</button></div></div><div class="block-body">' +
       (plan.urunler.length ? '<div class="tablewrap"><table class="edit-tablo kv-urun-tablo kp-tablo">' + kpCol + '<thead>' + bas + '</thead><tbody>' + satirlar + '</tbody><tfoot><tr class="kv-toplam" data-kptop></tr></tfoot></table></div>'
         : '<div class="kv-urun-bos">Henüz ürün yok. Ürettiğiniz her parça ya da iş için bir satır ekleyin: fiyat, kaç makinede yapıldığı ve bir parçanın süresi (sn) yeterli; boy ve ayar ▸ ayrıntıda.<br><button class="btn" data-kpekle="1" style="margin-top:8px">+ İlk ürünü ekle</button></div>') + '</div></div>';
