@@ -1880,7 +1880,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r374</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r375</div>
     </div>
   </nav>
   <main>
@@ -4752,6 +4752,21 @@ Dikkat edilmesi gereken 2 nokta:
     return l;
   }
   function ozetGiderTl(){ return toplamla(ozetGiderKayitlari(), function(x){ return x.tl; }); }
+  // r375: KDV kartı. Alışta (alış faturası, gider) ödenen KDV gider değildir: belge Virgo Hidrolik adına olduğu için Virgo beyannamede indirir,
+  // satış faturasında alınan KDV'den düşer; devlete yalnız fark ödenir. Satıştakinden fazlası sonraki aya devreder (geri gelmeyi bekleyen para).
+  // Rakamlar KDV Beyanı ile aynı hesaptan (muhasebe fişleri, 191 / 391). Seçilen ay ya da genel toplamda başlangıçtan bugüne.
+  function ozetKdv(){
+    var l = muhKdvAylar(thisMonthKey()); if (!l.length) return null;
+    var sec = ozetGenel() ? l : l.filter(function(x){ return x.ay === ozetDonem(); }), son = sec[sec.length - 1];
+    if (!son) return null;
+    return { l: l, sec: sec, H: toplamla(sec, function(x){ return x.H; }), I: toplamla(sec, function(x){ return x.I; }), odenecek: son.odenecek, devreden: son.sonrakiDevreden, ay: son.ay };
+  }
+  function ozetKdvKart(){
+    var k = ozetKdv(); if (!k) return null;
+    var ode = k.odenecek > 0.5, ac = ozetGenel() ? ' (başlangıçtan)' : '';
+    return { label: ode ? 'KDV · ödenecek' : 'KDV · devreden', value: '₺' + fmt(ode ? k.odenecek : k.devreden), cls: (ode ? '' : 'accent') + ' yetki-maliyet', detay: 'kdv',
+      sub: 'alışta ödenen ₺' + fmt(k.I) + ' · satışta alınan ₺' + fmt(k.H) + ac + (ode ? '' : '<br>gider değil, satış KDV\'sinden geri gelir') };
+  }
   // r273: ay sonu tahmini: bugüne kadarki karşılık ÷ geçen iş günü × ayın iş günü (Aylık Kapasite'deki çalışma düzeni, tatiller hariç);
   // gider = Aylık Kapasite'deki ay toplamı. Gider bir kez düşülür.
   function ozetTahmin(ciro){
@@ -4793,7 +4808,8 @@ Dikkat edilmesi gereken 2 nokta:
       {label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: (giderTahmini > 0.5 ? 'belgeli ₺' + fmt(gider - giderTahmini) + ' + tahmini maaş / kira ₺' + fmt(giderTahmini) : 'Giderler + alış faturaları + bordro') + (kur ? ' · ' + eurYazi(gider) : '')},
       {label:'Kazanç', value: tlY(kazanc), cls:(kazanc < -0.004 ? 'bad' : 'good isaretli')+' yetki-maliyet', detay:'kazanc', sub: donemYazi + (kur ? ' · ' + eurYazi(kazanc) : '')}
     ].concat(ozetBuAy() ? [ // ay sonu tahmini yalnız içinde bulunulan ayda
-      {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)}] : [], [
+      {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)}] : [],
+      (function(){ try { var kk = ozetKdvKart(); return kk ? [kk] : []; } catch(e){ renderHatasi('KDV kartı', e); return []; } })(), [
       {label:'Açık iş emri', value: acikIe.length, cls: gecIe.length?'accent':'', detay:'isemri', sub: gecIe.length ? '<span class="neg">'+gecIe.length+' gecikmiş</span>' : 'gecikme yok'},
       {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'},
       {label:'Plansız duruş', value: sureStrOlustur(durusDk), cls:'', detay:'durus'}
@@ -12570,15 +12586,19 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'belgeTutar', label:'Tutar', type:'number', required:true, para:'paraBirimi'},
       {key:'dovizKuru', label:'Kur (yalnız $: 1 $ = ₺; boş: günün kuru)', type:'number', para:false},
       {key:'yontem', label:'Yöntem', type:'select', options:['Havale/EFT','Nakit','Çek','Senet','Kredi kartı','Diğer']},
-      {key:'hesapId', label:'Kasa / banka hesabı', type:'select', options: hesapSecenekleri},
+      {key:'odeyenOrtak', label:'Kim ödedi', type:'select', options: odeyenSecenek},
+      {key:'hesapId', label:'Kasa / banka hesabı (ortak ödediyse boş)', type:'select', options: hesapSecenekleri},
       {key:'belgeNo', label:'Dekont / makbuz no (e-Defter için)', type:'text'},
       {key:'alisFaturaId', label:'Kapanan alış faturası (yalnız bu carinin)', type:'select', options: function(){ return odemeFaturaSecenek(v && v.cariId, v && v.alisFaturaId); }},
       {key:'aciklama', label:'Açıklama', type:'text'}
     ]; },
-    defaults: function(){ return { tarih: todayISO(), cariId:'', paraBirimi:'TRY', belgeTutar:0, dovizKuru:0, tutar:0, yontem:'Havale/EFT', hesapId:'', alisFaturaId:'', aciklama:'' }; },
+    defaults: function(){ return { tarih: todayISO(), cariId:'', paraBirimi:'TRY', belgeTutar:0, dovizKuru:0, tutar:0, yontem:'Havale/EFT', odeyenOrtak:'', hesapId:'', alisFaturaId:'', aciklama:'' }; },
     // tarih ya da $ kuru sınır dışındaysa sorulur (düzenlemede yalnız değişen alan)
     kayitOncesi: function(v, eski, devam){ kayitKontrolu(tarihKurSorulari({ engel: [], soru: [] }, v, eski), devam); },
-    hazirla: function(v, eski){ if (cekYontemi(v.yontem)) v.hesapId = ''; else if (!v.hesapId){ toast('Paranın çıktığı kasa / banka hesabını seçin (muhasebede hesabın alt hesabına yazılır).', true); return false; }
+    hazirla: function(v, eski){
+      // r375: ortak kendi cebinden ödediyse kasa / banka hesabı yok (muhasebede borç ortağın carisine geçer; Hesap Defteri'nde Virgo borcundan düşer)
+      if (v.odeyenOrtak){ if (cekYontemi(v.yontem)){ toast('Ortak kendi cebinden ödediyse yöntem çek / senet olamaz.', true); return false; } v.hesapId = ''; }
+      else if (cekYontemi(v.yontem)) v.hesapId = ''; else if (!v.hesapId){ toast('Paranın çıktığı kasa / banka hesabını seçin (muhasebede hesabın alt hesabına yazılır). Ortak kendi cebinden ödediyse "Kim ödedi"den ortağı seçin.', true); return false; }
       var yf = odemeFaturaUyumsuz(v); if (yf){ toast('Seçilen alış faturası '+(yf.faturaNo||yf.no)+' başka bir cariye ('+cariAdi(yf.tedarikciId)+') ait — ödeme yalnız kendi carisinin faturasını kapatabilir. Kaydedilmedi.', true); return false; }
       if (!(Number(v.belgeTutar) > 0) && belgePB(v) === 'EUR') v.belgeTutar = Number(v.tutar) || 0; return basitBelgeEur(v, 'belgeTutar', 'tutar'); },
     // cari değişince "Kapanan alış faturası" listesi yeni carinin faturalarıyla yenilenir (önceki carinin faturası seçili kalmaz)
@@ -12589,13 +12609,15 @@ Dikkat edilmesi gereken 2 nokta:
         secenekDoldur(fSel, odemeFaturaSecenek(cSel.value, secili).map(function(o){ return '<option value="'+escAttr(o.value)+'">'+esc(o.label)+'</option>'; }).join(''), secili); });
     },
     eklendi: function(o){ if (cekYontemi(o.yontem) && !o.cekId && o.id) cekKarsiliktanAc(o, 'odeme'); },
-    rowFn: function(o){ var yf = odemeFaturaUyumsuz(o); return { title: esc(cariAdi(o.cariId))+' · '+(belgePB(o) !== 'EUR' ? pbFmt(o.belgeTutar, belgePB(o))+' <span class="muted">≈ '+euro(o.tutar)+'</span>' : euro(o.tutar)), sub: esc(o.tarih)+' · '+esc(o.yontem)+(o.hesapId?' · '+esc(hesapAdi(o.hesapId)):'')+(o.aciklama?' · '+esc(o.aciklama):'')+(yf ? ' · <span class="neg">⚠ başka carinin faturasına bağlı ('+esc(yf.faturaNo||yf.no)+') — düzenleyip kaydedin</span>' : '') }; }
+    rowFn: function(o){ var yf = odemeFaturaUyumsuz(o); return { title: esc(cariAdi(o.cariId))+' · '+(belgePB(o) !== 'EUR' ? pbFmt(o.belgeTutar, belgePB(o))+' <span class="muted">≈ '+euro(o.tutar)+'</span>' : euro(o.tutar)), sub: esc(o.tarih)+' · '+esc(o.yontem)+(o.odeyenOrtak?' · <b>'+esc(o.odeyenOrtak)+' kendi cebinden</b>':'')+(o.hesapId?' · '+esc(hesapAdi(o.hesapId)):'')+(o.aciklama?' · '+esc(o.aciklama):'')+(yf ? ' · <span class="neg">⚠ başka carinin faturasına bağlı ('+esc(yf.faturaNo||yf.no)+') — düzenleyip kaydedin</span>' : '') }; }
   };
 
   // ---------- Kasa & banka ----------
   function hesaplar(){ return (state.tanimKayitlari||[]).filter(function(t){ return t.tur === 'hesap'; }); }
   function hesapAdi(id){ var h = hesaplar().find(function(x){ return x.id === id; }); return h ? h.ad : '-'; }
   function hesapSecenekleri(){ return secenek(hesaplar(), function(h){ return h.id; }, function(h){ return h.ad+' ('+(h.hesapTuru||'')+')'; }); }
+  // r375: ödemeyi / gideri kim ödedi: kasa / banka hesabından ya da bir ortak kendi cebinden (ortaklar: Hesap Defteri › Ayarlar'daki kişiler)
+  function odeyenSecenek(){ return [{ value: '', label: 'Kasa / banka hesabından' }].concat(virgoOrtaklar().map(function(ad){ return { value: ad, label: ad + ' — kendi cebinden' }; })); }
   // Hareketler hesabın kendi para biriminde: aynı para birimindeki belge tutarıyla, değilse ₺ karşılığı tarihteki kurla çevrilerek
   function hesapPB(id){ var h = hesaplar().find(function(x){ return x.id === id; }); return (h && h.paraBirimi) || 'EUR'; }
   function hesapTutari(hpb, d, eur, tl, belgeTutari){
@@ -13220,7 +13242,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   var _vgSaglama = null;
   function virgoSaglama(){
-    var refs = [state.tanimKayitlari, state.alisFaturalari, state.giderler, state.musteriler, state.config];
+    var refs = [state.tanimKayitlari, state.alisFaturalari, state.giderler, state.musteriler, state.config, state.odemeler];
     if (_vgSaglama && _vgSaglama.refs.every(function(r, i){ return r === refs[i]; })) return _vgSaglama;
     var ham = virgoKayitlariHam(), byId = {}; ham.forEach(function(v){ byId[v.id] = v; });
     var kul = {}, cache = {}, eslesen = [], erpYok = [], bag = {}; // bag: 'col/id' → elle kayıt
@@ -13256,8 +13278,26 @@ Dikkat edilmesi gereken 2 nokta:
       sanal.push({ id: 'erp:bordro:' + b.id, tur: 'virgo', _erp: { col: 'tanimKayitlari', id: b.id, tab: 'bordro', etiket: 'bordro' }, olusturma: b.olusturma || '', tarih: t, hareket: 'Harcama', odeyen: VIRGO_FINANSOR, kaynak: VIRGO_KAYNAK[0],
         kategori: 'Maaş & SGK', borcPb: VIRGO_BORC_PB[0], kazancDus: 'Hayır', omurYil: '', odemeSekli: 'Banka / EFT', durum: b.maasOdeme && Number(b.maasOdeme.tutar) > 0 ? 'Ödendi' : 'Ödenecek', saticiId: '', belgeNo: b.belgeNo || '', ettn: '',
         aciklama: muhAyAdi(b.ay) + ' bordrosu' + (b.kisi ? ' (' + b.kisi + ' kişi)' : ''), paraBirimi: '₺', tutarTuru: 'KDV hariç', tutar: h.maliyet, kdvOrani: '0', fatura: VIRGO_FATURA[1], kur: kur, tl: h.maliyet, eur: kur ? muhR2(h.maliyet / kur) : 0, kdvTl: 0, kdvEur: 0 }); });
-    var kayitlar = ham.filter(function(v){ return !virgoElleErpMi(v); }).concat(sanal);
-    _vgSaglama = { refs: refs, kayitlar: kayitlar, sanal: sanal, eslesen: eslesen, erpYok: erpYok };
+    // r375: ortağın kendi cebinden yaptığı ödeme (tedarikçiye) ya da gider: belge Virgo'nun (yukarıda Virgo ödedi sayılır, borca KDV hariç girer),
+    // parayı ortak verdi → Virgo'ya geri ödeme sayılır: ödeyen ortak, KDV dahil tutar. Net etki: Virgo'nun indirdiği KDV borçtan düşer, tutarın tamamı ortağın katkısı.
+    // € borç tedarikçisinin (makine) faturasıysa € borçtan (ödeme günü kuruyla), değilse ₺ borçtan düşer.
+    var ortakOdeme = [], eurCari = virgoEurCariler();
+    [['odemeler', 'ödeme', 'kasabanka'], ['giderler', 'gider', 'giderler']].forEach(function(c){
+      (state[c[0]] || []).forEach(function(r){
+        if (!r.odeyenOrtak || virgoErpEskiMi(r) || !/^\d{4}-\d{2}-\d{2}/.test(r.tarih || '')) return;
+        if (c[0] === 'giderler' && r.odemeDurumu !== 'Ödendi') return;
+        var tl = c[0] === 'odemeler' ? odemeTL(r) : muhR2(belgeTL(r, 'tutar', 'belgeTutar') + belgeTL(r, 'kdvTutar', 'belgeKdv')); if (!(tl > 0.004)) return;
+        var af = c[0] === 'odemeler' && r.alisFaturaId ? (state.alisFaturalari || []).find(function(f){ return f.id === r.alisFaturaId; }) : null;
+        var cari = c[0] === 'odemeler' ? r.cariId || (af && af.tedarikciId) || '' : r.cariId || '', eurMi = !!cari && eurCari.indexOf(cari) > -1, kur = muhKur(r.tarih, r.kur) || 0;
+        var belge = c[0] === 'odemeler' ? (af ? af.faturaNo || af.no || '' : r.belgeNo || '') : r.belgeNo || '';
+        ortakOdeme.push({ id: 'erp:ortak:' + c[0] + ':' + r.id, tur: 'virgo', _erp: { col: c[0], id: r.id, tab: c[2], etiket: c[1] + ' (ortak cebinden)' }, olusturma: r.olusturma || '', tarih: String(r.tarih).slice(0, 10),
+          hareket: VIRGO_HAREKET[2], odeyen: r.odeyenOrtak, kaynak: VIRGO_KAYNAK[0], kategori: '', borcPb: eurMi ? VIRGO_BORC_PB[3] : VIRGO_BORC_PB[1], kazancDus: 'Hayır', omurYil: '', odemeSekli: 'Mahsup', durum: 'Ödendi',
+          saticiId: cari, belgeNo: belge, ettn: '', aciklama: [cari ? cariAdi(cari) : (r.tur || ''), belge, r.odeyenOrtak + ' kendi cebinden ödedi (KDV dahil)'].filter(Boolean).join(' · '),
+          paraBirimi: '₺', tutarTuru: 'KDV hariç', tutar: muhR2(tl), kdvOrani: '0', fatura: VIRGO_FATURA[0], kur: kur, tl: muhR2(tl), eur: kur ? muhR2(tl / kur) : 0, kdvTl: 0, kdvEur: 0, ortakOdemesi: true });
+      });
+    });
+    var kayitlar = ham.filter(function(v){ return !virgoElleErpMi(v); }).concat(sanal, ortakOdeme);
+    _vgSaglama = { refs: refs, kayitlar: kayitlar, sanal: sanal, ortakOdeme: ortakOdeme, eslesen: eslesen, erpYok: erpYok };
     return _vgSaglama;
   }
   function virgoSanalMi(v){ return !!(v && v._erp); }
@@ -14669,7 +14709,7 @@ Dikkat edilmesi gereken 2 nokta:
       }
       if (v.saticiId === '__yeni') v.saticiId = '';
       // r344: Virgo'nun ödediği faturalar ERP'den gelir (Alış Faturaları / Giderler); burada yeni Virgo adına harcama açılmaz
-      if (!eski && virgoElleErpMi(v)){ uyariGoster('Virgo\'nun ödediği faturalar artık <b>Alış Faturaları</b> (ya da Giderler) sayfasından girilir; Hesap Defteri onları oradan alır.<br><br>Burada yalnız ortakların kendi cebinden / fişsiz harcamaları, Virgo\'dan alınan, geri ödeme, ortaklar arası, sevk ve mutabakat girilir. Kendi cebinizden ödediyseniz "Paranın kaynağı = Kendi cebimizden" ve "Fatura kimin adına = Bizim adımıza / fişsiz" seçin.'); return false; }
+      if (!eski && virgoElleErpMi(v)){ uyariGoster('Virgo\'nun ödediği faturalar artık <b>Alış Faturaları</b> (ya da Giderler) sayfasından girilir; Hesap Defteri onları oradan alır.<br><br>Virgo adına faturayı <b>kendi cebinizden</b> ödediyseniz de faturayı Alış Faturaları\'na (ya da Giderler\'e) girin, ödemede <b>Kim ödedi</b>\'den kendinizi seçin: KDV\'yi Virgo indirir ve borcunuzdan düşer, tutarın tamamı katkınıza yazılır.<br><br>Burada yalnız fişsiz / bizim adımıza harcamalar ("Paranın kaynağı = Kendi cebimizden", "Fatura kimin adına = Bizim adımıza / fişsiz"), Virgo\'dan alınan, geri ödeme, ortaklar arası, sevk ve mutabakat girilir.'); return false; }
       if (v.hareket === 'Harcama' || v.hareket === 'Kadir Bey ödedi'){
         var kc = virgoKalemHesap(v.kalemler, v.kdvOrani); if (kc.hata){ toast(kc.hata, true); return false; }
         var adlar = {}; virgoKalemAdlari().forEach(function(a){ adlar[virgoKalemAnahtar(a)] = a; }); kc.satir.forEach(function(k){ var a = adlar[virgoKalemAnahtar(k.urun)]; if (a) k.urun = a; }); // aynı ürün hep aynı adla
@@ -16436,12 +16476,13 @@ Dikkat edilmesi gereken 2 nokta:
       {key:'kdvOrani', label:'KDV oranı (%)', type:'number'},
       {key:'makineId', label:'Makine (bakım / enerji ise)', type:'select', options: makineSecenek},
       {key:'odemeDurumu', label:'Ödeme durumu', type:'select', options:['Ödendi','Ödenmedi']},
-      {key:'hesapId', label:'Ödendiği hesap', type:'select', options: hesapSecenekleri},
+      {key:'odeyenOrtak', label:'Kim ödedi', type:'select', options: odeyenSecenek},
+      {key:'hesapId', label:'Ödendiği hesap (ortak ödediyse boş)', type:'select', options: hesapSecenekleri},
       {key:'tekrar', label:'Her ay tekrar eden (şablon)', type:'select', options:['Hayır','Evet']},
       {key:'donemAy', label:'Kapsadığı ay sayısı (peşin ödenen)', type:'number', para:false, hint:'1 = bu ayın gideri. Yıllık sigorta poliçesi, peşin kira gibi birden çok aya ait giderde ay sayısını yazın: gelecek aylar 180 / 280\'e alınır, her ay kendi payı gidere aktarılır.'},
       {key:'donemBaslangic', label:'Kapsadığı ilk ay', type:'month', hint:'Boş: gider tarihinin ayı'}
     ]; },
-    defaults: function(){ return { tarih: todayISO(), tur:'Diğer', aciklama:'', belgeNo:'', cariId:'', paraBirimi:'TRY', belgeTutar:0, dovizKuru:0, tutar:0, kdvOrani:20, makineId:'', odemeDurumu:'Ödendi', hesapId:'', tekrar:'Hayır', donemAy:1, donemBaslangic:'' }; },
+    defaults: function(){ return { tarih: todayISO(), tur:'Diğer', aciklama:'', belgeNo:'', cariId:'', paraBirimi:'TRY', belgeTutar:0, dovizKuru:0, tutar:0, kdvOrani:20, makineId:'', odemeDurumu:'Ödendi', odeyenOrtak:'', hesapId:'', tekrar:'Hayır', donemAy:1, donemBaslangic:'' }; },
     // aynı cari + belge no ile gider ya da alış faturası varsa, tarih ya da $ kuru sınır dışındaysa sorulur (tek kutuda)
     kayitOncesi: function(v, eski, devam){ kayitKontrolu(tarihKurSorulari(giderKontrolu(v, eski), v, eski), devam); },
     // belge para biriminde tutar + KDV → € alanları (tutar, kdvTutar) belge tarihindeki kurla
@@ -16449,7 +16490,9 @@ Dikkat edilmesi gereken 2 nokta:
       if ((v.tur === 'Maaş' || v.tur === 'SGK / vergi') && bordrolar().length){
         uyariGoster('Bordro özeti kullanılıyor: maaş, SGK ve vergi gideri bordrodan zaten muhasebeye yazılıyor. Burada gider olarak girerseniz <b>iki kez gider</b> yazılır.<br><br>Net maaş ödemesi: <b>Bordro Özeti › Maaşı öde</b><br>SGK, muhtasar, KDV ödemesi: <b>Vergi &amp; SGK Ödemeleri › Öde</b>');
         return false; }
-      if (v.odemeDurumu === 'Ödendi' && !v.hesapId){ toast('Ödendiği kasa / banka hesabını seçin; ödenmediyse "Ödenmedi" seçin.', true); return false; }
+      // r375: ortak kendi cebinden ödediyse gider ödenmiştir, kasa / banka hesabı yoktur (muhasebede borç ortağın carisine geçer)
+      if (v.odeyenOrtak){ v.odemeDurumu = 'Ödendi'; v.hesapId = ''; }
+      if (v.odemeDurumu === 'Ödendi' && !v.hesapId && !v.odeyenOrtak){ toast('Ödendiği kasa / banka hesabını seçin; ortak kendi cebinden ödediyse "Kim ödedi"den ortağı, ödenmediyse "Ödenmedi" seçin.', true); return false; }
       if (!(Number(v.belgeTutar) > 0) && belgePB(v) === 'EUR') v.belgeTutar = Number(v.tutar) || 0;
       v.belgeKdv = Math.round((Number(v.belgeTutar)||0)*(Number(v.kdvOrani)||0))/100;
       basitBelgeEur(v, 'belgeTutar', 'tutar');
@@ -16476,7 +16519,7 @@ Dikkat edilmesi gereken 2 nokta:
       return '<div class="block"><div class="block-head"><h3>Bu ay giderler: '+euro(top)+' <span class="muted" style="font-weight:400">(KDV hariç)</span></h3></div><div class="block-body">'+(sirali.length ? sirali.map(function(t){ return '<div class="makine-bar-row"><div class="makine-bar-label">'+esc(t)+'</div><div class="makine-bar-track"><div class="makine-bar-fill" style="width:'+(top?turlar[t]/top*100:0)+'%;background:var(--steel)"></div></div><div class="makine-bar-etiket">'+euro(turlar[t])+'</div></div>'; }).join('') : '<div class="empty">Bu ay gider girilmedi.</div>')+'</div></div>';
     },
     rowFn: function(g){ var yerel = belgePB(g) !== 'EUR' && g.belgeTutar != null; return { title: esc(g.tur)+' · '+(yerel ? pbFmt(g.belgeTutar, belgePB(g))+(g.belgeKdv?' <span class="muted">+KDV '+pbFmt(g.belgeKdv, belgePB(g))+' · ≈ '+euro((Number(g.tutar)||0)+(Number(g.kdvTutar)||0))+'</span>':'') : euro(g.tutar)+(g.kdvTutar?' <span class="muted">+KDV '+euro(g.kdvTutar)+'</span>':''))+' '+durumBadge(g.odemeDurumu)+(g.tekrar==='Evet'?' <span class="pill">aylık</span>':''),
-      sub: esc(g.tarih)+(g.aciklama?' · '+esc(g.aciklama):'')+(g.belgeNo?' · '+esc(g.belgeNo):'')+(g.cariId?' · '+esc(cariAdi(g.cariId)):'')+(g.makineId?' · '+esc(makineAdiById(g.makineId)):'')+(g.hesapId?' · '+esc(hesapAdi(g.hesapId)):'')+(Number(g.donemAy) > 1 ? ' · <span class="pill">'+g.donemAy+' aya dağıtılıyor ('+esc(muhAyAdi(g.donemBaslangic || ayAnahtari(g.tarih)))+' →)</span>' : '') }; }
+      sub: esc(g.tarih)+(g.aciklama?' · '+esc(g.aciklama):'')+(g.belgeNo?' · '+esc(g.belgeNo):'')+(g.cariId?' · '+esc(cariAdi(g.cariId)):'')+(g.makineId?' · '+esc(makineAdiById(g.makineId)):'')+(g.odeyenOrtak?' · <b>'+esc(g.odeyenOrtak)+' kendi cebinden</b>':'')+(g.hesapId?' · '+esc(hesapAdi(g.hesapId)):'')+(Number(g.donemAy) > 1 ? ' · <span class="pill">'+g.donemAy+' aya dağıtılıyor ('+esc(muhAyAdi(g.donemBaslangic || ayAnahtari(g.tarih)))+' →)</span>' : '') }; }
   };
   EK_RENDER.giderler = function(){ crudBolumler('giderler', [GIDER_TANIM]); };
 
@@ -18704,9 +18747,22 @@ Dikkat edilmesi gereken 2 nokta:
     } else if (k === 'gider'){
       var gl = ozetGiderKayitlari().sort(function(a, b){ return (a.tarih || '').localeCompare(b.tarih || ''); });
       var tah = function(v, s){ return v.tahmini ? '<span class="muted">' + s + '</span>' : s; };
-      d = { t: ozetDonemAd() + ' · gider', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz.<br>Faturası gelmeyen <b>maaş</b> ve <b>kira</b>, belgesi girilmemiş aylarda <b>tahmini</b> girer (soluk satırlar): maaş personel kartındaki net maaştan (o ayın bordrosu girilince yerine o geçer), kira Aylık Kapasite\'deki tutardan, başladığı tarihten itibaren (ilk ay kalan gün kadar; Giderler\'de ya da alış faturasında "Kira" türü girilince yerine o geçer). Her ay tam ay sayılır; bu ayın maaşı İK &amp; İzin\'de gelmediği gün, eksik saat ve mesai girildikçe güncellenir.',
+      d = { t: ozetDonemAd() + ' · gider', f: '<b>Giderler</b>, <b>Alış Faturaları</b> ve <b>Bordro Özeti</b>\'ne bu dönemde girilen belgeler, KDV hariç ₺ (bordroda brüt + işveren payı); yatırım (makine, demirbaş, tesisat, sabit kıymet alımı) hariç. Hesap Defteri kullanılmaz.<br><b>Neden KDV hariç:</b> belgeler Virgo Hidrolik adına olduğu için ödenen KDV\'yi Virgo beyannamesinde indirir; satış faturasında alınan KDV\'den düşülür, gider değildir. Nerede beklediği <a href="#" data-ozdetayac="kdv">KDV kartında ›</a>. Fişsiz ya da Virgo adına olmayan belgenin KDV\'si indirilemez: onu KDV oranı 0 ile, ödenen tutarın tamamını yazarak girin; tamamı gider sayılır.<br>Faturası gelmeyen <b>maaş</b> ve <b>kira</b>, belgesi girilmemiş aylarda <b>tahmini</b> girer (soluk satırlar): maaş personel kartındaki net maaştan (o ayın bordrosu girilince yerine o geçer), kira Aylık Kapasite\'deki tutardan, başladığı tarihten itibaren (ilk ay kalan gün kadar; Giderler\'de ya da alış faturasında "Kira" türü girilince yerine o geçer). Her ay tam ay sayılır; bu ayın maaşı İK &amp; İzin\'de gelmediği gün, eksik saat ve mesai girildikçe güncellenir.',
         h: ozetDetayTablo(['Tarih','Belge','Açıklama','Tutar (KDV hariç)'], gl.map(function(v){ return [tah(v, esc(kvTarihTR(v.tarih))), '<a href="#' + escAttr(v.git) + '"' + (v.tahmini ? ' class="muted"' : '') + '>' + esc(v.tur) + '</a>', tah(v, esc(v.aciklama || '')), tah(v, tlEur(v.tl))]; }), ['Toplam', '', '', tlEur(ozetGiderTl())]),
         git: 'giderler', gitAd: 'Giderler' };
+    } else if (k === 'kdv'){ // r375
+      var kv = ozetKdv(), tlK = function(v){ return v > 0.004 ? '₺' + fmt2(v) : '<span class="muted">—</span>'; };
+      if (!kv){ toast('KDV hareketi yok.', true); return; }
+      var kl = kv.l.slice().reverse(), sonK = kv.l[kv.l.length - 1];
+      d = { t: 'KDV · ay ay', f: '<b>Alışta ödenen KDV</b> (alış faturaları, giderler; 191 İndirilecek KDV) gider değildir: belgeler Virgo Hidrolik adına olduğu için Virgo beyannamesinde indirir. ' +
+          '<b>Satışta alınan KDV</b> (kesilen satış faturaları; 391 Hesaplanan KDV) müşteriden tahsil edilir. Her ay devlete yalnız fark ödenir: satıştaki KDV − alıştaki KDV − önceki aydan devreden.<br>' +
+          'Alışta ödenen fazlaysa fark <b>sonraki aya devreder</b>: bu para gider değil, sonraki ayların satış KDV\'sinden geri gelmeyi bekleyen alacaktır (makine gibi büyük alışlarda aylarca sürebilir). Fark artıysa <b>ödenecek KDV</b> olur, ertesi ayın 28\'ine kadar ödenir.<br>' +
+          'Örnek: ₺10.000 + ₺2.000 KDV malzeme alıp ₺50.000 + ₺10.000 KDV satış yaptınız. Devlete ₺10.000 − ₺2.000 = ₺8.000 ödenir. Elde kalan ₺60.000 − ₺12.000 − ₺8.000 = ₺40.000 = satış ₺50.000 − gider ₺10.000 (KDV hariç). ' +
+          'Rakamlar KDV Beyanı sayfasıyla aynı hesaptan gelir.',
+        h: ozetDetayTablo(['Ay', 'Alışta ödenen KDV', 'Satışta alınan KDV', 'Önceki aydan devreden', 'Ödenecek', 'Sonraki aya devreden'],
+          kl.map(function(x){ return [esc(muhAyAdi(x.ay)) + (x.ay === thisMonthKey() ? ' <span class="muted">(bu ay, sürüyor)</span>' : ''), tlK(x.I), tlK(x.H), tlK(x.devreden), x.odenecek > 0.004 ? '<b>₺' + fmt2(x.odenecek) + '</b>' : tlK(0), x.sonrakiDevreden > 0.004 ? '<b>₺' + fmt2(x.sonrakiDevreden) + '</b>' : tlK(0)]; }),
+          ['Toplam', '₺' + fmt2(toplamla(kv.l, function(x){ return x.I; })), '₺' + fmt2(toplamla(kv.l, function(x){ return x.H; })), '', '₺' + fmt2(toplamla(kv.l, function(x){ return x.odenecek; })), '₺' + fmt2(sonK.sonrakiDevreden)]),
+        git: 'kdvbeyan', gitAd: 'KDV Beyanı', git2: 'alisfatura', git2Ad: 'Alış Faturaları' };
     } else if (k === 'kazanc'){
       var kc = toplamla(urunListesi().map(ozetUrunKatki), function(x){ return x.top; }), kg = ozetGiderTl();
       d = { t: ozetDonemAd() + ' · kazanç', f: 'Bu dönemin üretim karşılığı (Üretim Kayıtları × stok kartı fiyatı) − bu dönemin gideri (Giderler + Alış Faturaları + Bordro Özeti, KDV hariç, yatırım hariç; belgesi girilmemiş maaş ve kira tahmini).',
@@ -19661,6 +19717,8 @@ Dikkat edilmesi gereken 2 nokta:
     '656.001':'Kur değerleme zararları', '656.002':'Kur farkı faturası zararları', '656.003':'Çek / senet kur farkı zararları',
     '600.001':'Yurt içi satışlar', '600.002':'Fason işçilik ve hizmet satışları', '601.001':'Mal ihracatı', '601.002':'Hizmet ihracatı', '602.001':'Hurda ve talaş satışları', '710.001':'Hammadde sarfı'
   };
+  // r375: ortağın kendi cebinden ödediği belge: borç ortağa geçer. Hesap Defteri aktarımı ortakları cari kartıyla izler (virgoErpKisiCari); kartı yoksa 336
+  function muhOrtakHesap(ad, pb){ var c = virgoErpKisiCari(ad); return c ? muhCariKod(c.id, '320', pb) : '336'; }
   function muhCariKod(cariId, ana, pb){ var m = state.musteriler.find(function(x){ return x.id === cariId; }); return m ? ana + '.' + muhCariNo(m) + (pb ? '.' + muhPbKod(pb) : '') : ana; }
   // Ödeme / tahsilatın cari döviz kırılımı: bağlı fatura (aynı carinin) varsa onun dövizi; yoksa carinin faturaları tek dövizdeyse o; yoksa cari kartındaki; yoksa belgenin dövizi
   function muhCariPB(cariId, satis, belge, bagli){
@@ -19863,10 +19921,11 @@ Dikkat edilmesi gereken 2 nokta:
     });
     (state.giderler || []).forEach(function(g){
       var odendi = g.odemeDurumu === 'Ödendi', cv = muhCv(g), bt = g.belgeTutar != null && belgePB(g) !== 'EUR' ? Number(g.belgeTutar) || 0 : Number(g.tutar) || 0, bk = g.belgeTutar != null && belgePB(g) !== 'EUR' ? Number(g.belgeKdv) || 0 : Number(g.kdvTutar) || 0;
-      var karsi = odendi ? muhHesapKod(g.hesapId, '100') : (g.cariId ? muhCariKod(g.cariId, '320', belgePB(g)) : '336');
+      // r375: ortak kendi cebinden ödediyse borç ortağa geçer: ortağın carisi (yoksa 336)
+      var karsi = odendi ? (g.odeyenOrtak ? muhOrtakHesap(g.odeyenOrtak, belgePB(g)) : muhHesapKod(g.hesapId, '100')) : (g.cariId ? muhCariKod(g.cariId, '320', belgePB(g)) : '336');
       var gh = muhGiderHesabi(g.tur), dg = giderDonemsellik(g, bt), giderSatir = dg ? dg.ilk.map(function(x){ return S(x.hesap, 'B', x.tutar, cv, x.aciklama); }) : [S(gh, 'B', bt, cv)];
       out.push(muhOtoFis({ id: 'oto-gdr-' + g.id, kaynakAd: 'Gider fişi', kaynakId: g.id, tab: 'giderler', tarih: g.tarih || '', belgeNo: g.belgeNo || '', belge: muhGiderBelgesi(g), tur: odendi ? muhFisTuru(karsi, true) : 'Mahsup', olusturma: g.olusturma,
-        aciklama: (g.tur || 'Gider') + (g.aciklama ? ' · ' + g.aciklama : '') + (g.cariId ? ' · ' + cariAdi(g.cariId) : '') + (belgePB(g) !== 'EUR' ? ' · ' + pbFmt(bt + bk, belgePB(g)) : ''), kur: muhKur(g.tarih, g.kur), satirlar: giderSatir.concat([
+        aciklama: (g.tur || 'Gider') + (g.aciklama ? ' · ' + g.aciklama : '') + (g.cariId ? ' · ' + cariAdi(g.cariId) : '') + (odendi && g.odeyenOrtak ? ' · ' + g.odeyenOrtak + ' kendi cebinden ödedi' : '') + (belgePB(g) !== 'EUR' ? ' · ' + pbFmt(bt + bk, belgePB(g)) : ''), kur: muhKur(g.tarih, g.kur), satirlar: giderSatir.concat([
           S(kdvHesap('191', g.kdvOrani), 'B', bk, cv), S(karsi, 'A', bt + bk, cv)
         ]).filter(function(x){ return Math.abs(Number(x.tl != null ? x.tl : x.eur) || 0) >= 0.005; }) }));
       // Dönemsellik: her ayın payı 180 → gider; yıl sonunda gelecek yılın payları 280 → 180 (yalnız gelmiş tarihler)
@@ -19894,12 +19953,13 @@ Dikkat edilmesi gereken 2 nokta:
           satirlar: muhCekCikisSatirlari(ciroCek, muhCekPortfoy(ciroCek), { hesap: muhCariKod(o.cariId, '320', muhCariPB(o.cariId, false, o, o.alisFaturaId ? (state.alisFaturalari || []).find(function(f){ return f.id === o.alisFaturaId; }) : null)), yon: 'B' }, Number(o.tutar) || 0, okur) }));
         return;
       }
-      var kasa = cekYontemi(o.yontem) ? muhYontemHesabi(o.yontem, true) + '.' + muhPbKod(belgePB(o)) : muhHesapKod(o.hesapId, muhYontemHesabi(o.yontem, true));
+      // r375: ortak kendi cebinden ödediyse tedarikçinin alacağı ortağa geçer: ortağın carisi (yoksa 336)
+      var kasa = o.odeyenOrtak ? muhOrtakHesap(o.odeyenOrtak, belgePB(o)) : cekYontemi(o.yontem) ? muhYontemHesabi(o.yontem, true) + '.' + muhPbKod(belgePB(o)) : muhHesapKod(o.hesapId, muhYontemHesabi(o.yontem, true));
       var oft = o.alisFaturaId ? (state.alisFaturalari || []).find(function(f){ return f.id === o.alisFaturaId; }) : null;
       var ob = muhOdemeBelgesi(o, cekYontemi(o.yontem) && o.cekId ? cekBul(o.cekId) : null);
       var ocv = muhCv(o), obt = belgePB(o) !== 'EUR' ? Number(o.belgeTutar) || 0 : Number(o.tutar) || 0;
       out.push(muhOtoFis({ id: 'oto-odm-' + o.id, kaynakAd: 'Ödeme', kaynakId: o.id, tab: 'kasabanka', tarih: o.tarih || '', belgeNo: ob.no, belge: ob, tur: muhFisTuru(kasa, true), olusturma: o.olusturma,
-        aciklama: 'Ödeme · ' + cariAdi(o.cariId) + ' · ' + (o.yontem || '') + (belgePB(o) !== 'EUR' ? ' · ' + pbFmt(obt, belgePB(o)) : '') + (o.aciklama ? ' · ' + o.aciklama : ''), kur: muhKur(o.tarih, o.kur), satirlar: [
+        aciklama: 'Ödeme · ' + cariAdi(o.cariId) + ' · ' + (o.odeyenOrtak ? o.odeyenOrtak + ' kendi cebinden' : (o.yontem || '')) + (belgePB(o) !== 'EUR' ? ' · ' + pbFmt(obt, belgePB(o)) : '') + (o.aciklama ? ' · ' + o.aciklama : ''), kur: muhKur(o.tarih, o.kur), satirlar: [
           S(muhCariKod(o.cariId, '320', muhCariPB(o.cariId, false, o, oft)), 'B', obt, ocv), S(kasa, 'A', obt, ocv)
         ] }));
     });
@@ -20665,17 +20725,23 @@ Dikkat edilmesi gereken 2 nokta:
     var H = toplamla(Object.keys(h), function(k){ return h[k]; }), I = toplamla(Object.keys(i), function(k){ return i[k]; });
     return { hesaplanan: h, indirilecek: i, H: muhR2(H), I: muhR2(I) };
   }
-  // Ay ay devreden KDV: ilk hareketli aydan itibaren
-  function muhKdvDonem(ay){
-    var ilk = null; muhTumFisler().some(function(f){ if (!muhKdvFisiMi(f) && f.satirlar.some(function(s){ return /^[13]91/.test(s.hesap); })){ ilk = f.tarih.slice(0, 7); return true; } return false; });
-    var devreden = 0, sonuc = null;
-    if (!ilk || ilk > ay) return { H: 0, I: 0, devreden: 0, odenecek: 0, sonrakiDevreden: 0, hesaplanan: {}, indirilecek: {} };
-    for (var a = ilk; a <= ay; a = muhAyEkle(a, 1)){
+  // Ay ay devreden KDV: ilk hareketli aydan itibaren. r375: bütün aylar liste olarak (Özet › KDV kartı da kullanır)
+  var _muhKdvAylar = null;
+  function muhKdvAylar(sonAy){
+    var fl = muhTumFisler(); if (_muhKdvAylar && _muhKdvAylar.fl === fl && _muhKdvAylar.ay === sonAy) return _muhKdvAylar.l;
+    var ilk = null; fl.some(function(f){ if (!muhKdvFisiMi(f) && f.satirlar.some(function(s){ return /^[13]91/.test(s.hesap); })){ ilk = f.tarih.slice(0, 7); return true; } return false; });
+    var devreden = 0, l = [];
+    if (ilk && ilk <= sonAy) for (var a = ilk; a <= sonAy; a = muhAyEkle(a, 1)){
       var k = muhKdvAy(a), net = muhR2(k.H - k.I - devreden);
-      sonuc = Object.assign(k, { devreden: muhR2(devreden), odenecek: net > 0 ? net : 0, sonrakiDevreden: net < 0 ? -net : 0 });
-      devreden = sonuc.sonrakiDevreden;
+      var s = Object.assign(k, { ay: a, devreden: muhR2(devreden), odenecek: net > 0 ? net : 0, sonrakiDevreden: net < 0 ? -net : 0 });
+      l.push(s); devreden = s.sonrakiDevreden;
     }
-    return sonuc;
+    _muhKdvAylar = { fl: fl, ay: sonAy, l: l };
+    return l;
+  }
+  function muhKdvDonem(ay){
+    var l = muhKdvAylar(ay);
+    return l.length ? l[l.length - 1] : { H: 0, I: 0, devreden: 0, odenecek: 0, sonrakiDevreden: 0, hesaplanan: {}, indirilecek: {} };
   }
   function muhKdvBelgeleri(ay){
     var satis = {}, istisna = { matrah: 0, adet: 0 }, alis = {}, tevkifatli = {}, kdv2 = { matrah: 0, kdv: 0, tevkifat: 0, adet: 0 }, ihracKayitli = { matrah: 0, kdv: 0, adet: 0 }, istisnaKod = {};
