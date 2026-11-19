@@ -1055,6 +1055,10 @@
   .muh-detay > td { background:var(--surface-alt); padding:6px 8px 10px; }
   .muh-ic { min-width:0; width:100%; background:var(--surface); }
   .muh-ic td, .muh-ic th { padding:4px 8px; font-size:12px; }
+  /* r374: açılan fişin satır tablosunda yazı sütunları (hesap adı, açıklama) alt satıra geçer; uzun açıklama tek satıra zorlanınca
+     tablo kutudan taşıyor, Kaynak / Borç / Alacak sütunları dışarı itiliyordu. Tutarlar tek satır kalır. */
+  .muh-tablo .muh-ic td:not(.num) { white-space:normal; }
+  .muh-tablo .muh-ic td:nth-child(3) { min-width:160px; }
   .muh-plan tr.muh-sev1 td { font-weight:700; background:var(--steel-soft); }
   .muh-plan tr.muh-sev2 td { font-weight:600; }
   .muh-plan tr.muh-sev3 td:first-child { padding-left:16px; }
@@ -1876,7 +1880,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r373</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r374</div>
     </div>
   </nav>
   <main>
