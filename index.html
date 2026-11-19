@@ -13957,12 +13957,18 @@ Dikkat edilmesi gereken 2 nokta:
       '</tbody></table>' +
       '<details><summary class="muted" style="cursor:pointer">Tahsilatlar (' + o.x.l.length + ')</summary>' + tahsilat + '</details>' +
       '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px"><button class="btn small" data-tdonay="' + escAttr(o.ay) + '"' + (izinVar('ekle') && !kurYok ? '' : ' disabled') + '>Onayla ve kaydet</button>' +
+        '<button class="btn secondary small" data-tdatla="' + escAttr(o.ay) + '"' + (izinVar('ekle') ? '' : ' disabled') + ' title="Bu tahsilatın karşılığını Hesap Defteri\'ne zaten elle girdiyseniz (sevk, geri ödeme): borca dokunmadan dağıtılmış sayılır">Zaten girildi, atla</button>' +
         (o.suruyor ? '<span class="muted">Ay bitmedi: ay sonunu beklemek daha doğru (bu arada firmalara ödenenler ₺ borca eklenir).</span>' : '') +
         (l.length > 1 ? '<span class="muted">Sırada ' + (l.length - 1) + ' ay daha var.</span>' : '') + '</div></div></div>';
   }
-  function tahsilatDagitimKaydet(ay){
+  function tahsilatDagitimKaydet(ay, atla){
     if (!izinVar('ekle')){ toast(izinYokMesaji('ekle'), true); return; }
     var x = tahsilatDagitimAylari().find(function(a){ return a.ay === ay; }); if (!x) return;
+    // "Zaten girildi, atla": karşılığı Hesap Defteri'ne elle girilmiş (sevk, geri ödeme); yalnız bilgi kaydı, borca işlemez
+    if (atla){ onayIste(muhAyAdi(ay) + ' tahsilatı (KDV hariç ' + virgoTl(x.haric) + ') Virgo borcuna dokunmadan dağıtılmış sayılsın mı? Karşılığını Hesap Defteri\'ne zaten girdiyseniz seçin.', 'Atla', function(){
+        kayitEkle('tanimKayitlari', { tur: 'virgo', tarih: x.ay >= thisMonthKey() ? todayISO() : muhAySonu(x.ay), hareket: VIRGO_HAREKET[5], odeyen: TAHSILAT_ODEYEN, kaynak: 'Otomatik', kategori: '', odemeSekli: 'Mahsup', durum: 'Ödendi', paraBirimi: '₺', tutarTuru: 'KDV hariç', tutar: x.haric, kdvOrani: '0', fatura: 'Otomatik', borcPb: VIRGO_BORC_PB[0],
+          tahsilatDagitim: ay, tahsilatIdleri: x.l.map(function(y){ return y.t.id; }), aciklama: muhAyAdi(ay) + ' tahsilatı: karşılığı Hesap Defteri\'ne elle girildi (bilgi)' })
+          .then(function(){ toast('✓ ' + muhAyAdi(ay) + ' tahsilatı atlandı (bilgi kaydı)'); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); }); }); return; }
     var o = tahsilatDagitimOneri(x), kilit = virgoKilitTarihi();
     if (kilit && o.tarih <= kilit){ toast(kvTarihTR(kilit) + ' mutabakatıyla bu tarih dahil önceki kayıtlar kilitli; son mutabakatı silin.', true); return; }
     var ortak = { tur: 'virgo', tarih: o.tarih, hareket: VIRGO_HAREKET[2], odeyen: TAHSILAT_ODEYEN, kaynak: 'Otomatik', kategori: '', odemeSekli: 'Mahsup', durum: 'Ödendi', paraBirimi: '₺', tutarTuru: 'KDV hariç', kdvOrani: '0', fatura: 'Otomatik',
@@ -18965,7 +18971,7 @@ Dikkat edilmesi gereken 2 nokta:
     var host = byId('ozetEkUst'); if (!host) return;
     var u = uyarilariHesapla(), dar = darbogazHesapla().some(function(r){ return r.adet > 0; });
     var td = ''; try { td = tahsilatDagitimHtml(); } catch(e){ renderHatasi('tahsilat dağıtımı', e); } // r376
-    if (!host.dataset.tdBagli){ host.dataset.tdBagli = '1'; host.addEventListener('click', function(e){ var b = e.target.closest('[data-tdonay]'); if (b && !b.disabled) tahsilatDagitimKaydet(b.dataset.tdonay); }); }
+    if (!host.dataset.tdBagli){ host.dataset.tdBagli = '1'; host.addEventListener('click', function(e){ var b = e.target.closest('[data-tdonay]'); if (b && !b.disabled) tahsilatDagitimKaydet(b.dataset.tdonay); var a = e.target.closest('[data-tdatla]'); if (a && !a.disabled) tahsilatDagitimKaydet(a.dataset.tdatla, true); }); }
     // r244: kartlar Özet şeridinde, OEE makine tablosunda; burada yalnız uyarılar ve (iş varsa) operasyon darboğazı
     setHtmlIdle(host, td +
       '<div class="block"><div class="block-head"><h3>Uyarılar ('+u.length+')</h3></div>'+
