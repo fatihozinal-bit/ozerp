@@ -421,12 +421,25 @@
   /* Detayı açık satırda düğmeler ortada asılı kalmasın, üstte dursun */
   .recordrow:has(> .rmain > .rdetail[style*="block"]) { align-items: flex-start; }
   /* Satış faturası detayı: işlem çubuğu, kalem tablosu, sağda toplamlar */
-  .ftr-arac { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid var(--border); }
+  .ftr-arac { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding-bottom:10px; margin-bottom:12px; border-bottom:1px solid var(--border); }
   .ftr-arac .ftr-ayrac { width:1px; align-self:stretch; background:var(--border); margin:0 4px; }
-  .ftr-arac label { font-size:11px; }
+  .ftr-arac .ftr-bosluk { flex:1 1 0; min-width:0; }
+  .ftr-arac .ftr-alan { display:inline-flex; align-items:center; gap:5px; margin:0; font-size:11px; color:var(--ink-soft); }
+  .ftr-arac .ftr-alan select { width:auto; min-width:0; font-size:12px; padding:3px 6px; }
+  /* r379: kalemler solda, toplamlar sağda; dar alanda alt alta */
+  .ftr-govde { display:grid; grid-template-columns:minmax(0, 1fr) minmax(230px, 300px); gap:16px; align-items:start; }
+  .ftr-kalem { width:100%; min-width:0; }
   .ftr-kalem td, .ftr-kalem th { white-space:nowrap; }
-  .ftr-kalem td.ftr-ad { white-space:normal; min-width:160px; }
-  .ftr-toplam { width:auto; min-width:260px; margin:8px 0 0 auto; }
+  .ftr-kalem th.num, .ftr-kalem td.num { width:1%; padding-left:16px; }
+  .ftr-kalem td.ftr-ad { white-space:normal; min-width:180px; }
+  .ftr-kalem .ftr-kod { display:inline-block; margin-right:6px; padding:0 5px; border-radius:3px; background:var(--surface-alt); color:var(--ink-soft); font-size:11px; font-variant-numeric:tabular-nums; }
+  .ftr-toplam-kutu { border:1px solid var(--border); background:var(--surface); padding:6px 2px; }
+  .ftr-alt { display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; margin-top:8px; }
+  .ftr-alt:empty { display:none; }
+  .ftr-alt .belge-akisi { margin-top:0; }
+  @media (max-width: 900px) { .ftr-govde { grid-template-columns:minmax(0, 1fr); } .ftr-toplam-kutu { width:100%; max-width:360px; margin-left:auto; box-sizing:border-box; } }
+  @media (max-width: 600px) { .ftr-kalem td.ftr-ad { min-width:110px; } .ftr-kalem th.num, .ftr-kalem td.num { padding-left:8px; } .ftr-arac .ftr-ayrac, .ftr-arac .ftr-bosluk { display:none; } }
+  .ftr-toplam { width:100%; min-width:0; margin:0; }
   .ftr-toplam td { padding:3px 8px; border:none; }
   .ftr-toplam td:last-child { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .ftr-toplam tr.ftr-genel td { font-weight:700; border-top:2px solid var(--ink); padding-top:6px; }
@@ -1897,7 +1910,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r378</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r379</div>
     </div>
   </nav>
   <main>
@@ -7116,15 +7129,19 @@ Dikkat edilmesi gereken 2 nokta:
       var durumlar = belgeDurumSecenekleri(f.durum), kilit = donemKilitli(f.tarih);
       // Kalem ve toplamlar belgenin kendi para biriminde (yazdırılan faturayla aynı); $ / ₺ faturada € işareti yanlış olurdu
       var PB = belgePB(f), BT = PB !== 'EUR' && f.belgeTutar ? Object.assign({}, f, f.belgeTutar) : f, para = function(x){ return pbFmt(x, PB); }, ayr = !!f.serbest;
+      // r379: kod kalem adının önünde, miktar birimiyle tek sütunda; sayı sütunları içerik kadar dar (kalem adı kalan genişliği alır)
       var kalemSatir = (f.kalemler||[]).map(function(k){ var st = stokKart(k.stokId) || {};
-        return '<tr><td>'+esc(st.kod||'')+'</td><td class="ftr-ad">'+esc(k.ad||st.ad||'')+(k.aciklama?'<div class="muted">'+esc(k.aciklama)+'</div>':'')+'</td><td class="num">'+fmt2(k.miktar)+'</td><td>'+esc(k.birim||st.birim||'')+'</td><td class="num">'+para(k.birimFiyat)+'</td>'+
+        return '<tr><td class="ftr-ad">'+(st.kod?'<span class="ftr-kod">'+esc(st.kod)+'</span>':'')+esc(k.ad||st.ad||'')+(k.aciklama?'<div class="muted">'+esc(k.aciklama)+'</div>':'')+'</td><td class="num">'+fmt2(k.miktar)+' <span class="muted">'+esc(k.birim||st.birim||'')+'</span></td><td class="num">'+para(k.birimFiyat)+'</td>'+
           (ayr?'<td class="num">'+iskMetni(k)+'</td><td class="num">%'+fmt2(k.kdvOrani)+'</td>':'')+'<td class="num">'+para(k.tutar)+'</td></tr>'; }).join('');
       var kdvDag = BT.kdvDagilim && BT.kdvDagilim.length > 1 ? BT.kdvDagilim : null, tevk = Number(BT.tevkifatTutar) || 0;
+      // tek KDV oranlı faturada oran: KDV dağılımı → kalemler (serbest fatura) → faturanın oranı (eski kayıtta "KDV %0" yazmasın)
+      var kdvOranlar = {}; (f.kalemler||[]).forEach(function(k){ if (k.kdvOrani != null && k.kdvOrani !== '') kdvOranlar[Number(k.kdvOrani)] = 1; });
+      var kdvTekOran = BT.kdvDagilim && BT.kdvDagilim.length === 1 ? BT.kdvDagilim[0].oran : (ayr && Object.keys(kdvOranlar).length === 1 ? Object.keys(kdvOranlar)[0] : f.kdvOrani);
       var toplamSatir = [
         Number(f.iskontoOrani) && Number(BT.brutToplam) ? ['Brüt', para(BT.brutToplam)] : null,
         Number(f.iskontoOrani) && Number(BT.brutToplam) ? ['İskonto %'+fmt2(f.iskontoOrani), '−'+para((Number(BT.brutToplam)||0)-(Number(BT.araToplam)||0))] : null,
         ['Ara toplam', para(BT.araToplam)]]
-        .concat(kdvDag ? kdvDag.map(function(d){ return ['KDV %'+fmt2(d.oran)+' <span class="muted">(matrah '+para(d.matrah)+')</span>', para(d.kdv)]; }) : [['KDV %'+fmt2(f.kdvOrani), para(BT.kdvTutar)]])
+        .concat(kdvDag ? kdvDag.map(function(d){ return ['KDV %'+fmt2(d.oran)+' <span class="muted">(matrah '+para(d.matrah)+')</span>', para(d.kdv)]; }) : [['KDV %'+fmt2(kdvTekOran), para(BT.kdvTutar)]])
         .concat(tevk ? [['Fatura toplamı', para((Number(BT.araToplam)||0)+(Number(BT.kdvTutar)||0))], ['KDV tevkifatı ('+esc(f.tevkifatOrani||'')+')', '−'+para(tevk)], ['Ödenecek', para(BT.genelToplam), 'ftr-genel']] : [['Genel toplam', para(BT.genelToplam), 'ftr-genel']])
         .concat(PB !== 'EUR' ? [['€ karşılığı', '≈ €'+fmt2(f.genelToplam), 'ftr-ek']] : [])
         .concat(f.kur ? [['Kur', '1€ = ₺'+fmt2(f.kur), 'ftr-ek']] : [])
@@ -7134,23 +7151,26 @@ Dikkat edilmesi gereken 2 nokta:
       return '<div class="recordrow" data-rid="'+f.id+'"'+(f.durum === 'İptal' ? ' style="opacity:.6"' : '')+'><div class="rmain"><div class="rtitle">'+esc(f.faturaNo)+' · '+esc(musteriAdiById(f.musteriId))+' <span class="badge '+badgeCls+'">'+esc(f.durum)+'</span>'+(faturaRiskBekliyor(f) ? ' '+badgeHtml('risk onayı bekliyor', 'reddedildi') : '')+(kilit ? ' <span title="Kilitli dönem">🔒</span>' : '')+'</div>'+
         '<div class="rsub">'+esc(f.tarih||'')+(f.faturaTipi&&f.faturaTipi!=='Satış'?' · '+esc(f.faturaTipi):'')+(f.resmiFaturaNo?' · e-Belge '+esc(f.resmiFaturaNo):(f.durum==='Kesildi'?' · <span class="muted" title="Resmi fatura no (e-Fatura / e-Arşiv ya da matbu seri-sıra) girilmedi">resmi no girilmedi</span>':''))+' · '+(f.tevkifatTutar?'Ödenecek (tevkifat '+esc(f.tevkifatOrani)+' sonrası)':'Genel toplam')+': '+(belgePB(f) !== 'EUR' && f.belgeTutar ? pbFmt(f.belgeTutar.genelToplam, belgePB(f))+' (≈€'+fmt2(f.genelToplam)+')' : '€'+fmt2(f.genelToplam))+(f.vadeTarihi?' · Vade: '+esc(f.vadeTarihi):'')+faturaOdemeDurumuHtml(f)+(f.yazdirmaSayisi?' · '+f.yazdirmaSayisi+' kez yazdırıldı':'')+'</div>'+
         '<div class="rdetail" id="rdetail-'+f.id+'" style="display:'+(acik?'block':'none')+'">'+
+          // r379: araç çubuğu üç grup — durum seçimleri | çıktılar | (sağda) geçmiş, düzenle, sil; kalemler solda, toplamlar sağda kutuda
           '<div class="ftr-arac">'+
-          '<label class="muted">Durum:</label>'+
-          '<select data-faturadurum="'+f.id+'"'+(durumlar.length < 2 || kilit ? ' disabled' : '')+'>'+durumlar.map(function(d){ return '<option'+(f.durum===d?' selected':'')+'>'+d+'</option>'; }).join('')+'</select>'+
+          '<label class="ftr-alan"><span>Durum</span><select data-faturadurum="'+f.id+'"'+(durumlar.length < 2 || kilit ? ' disabled' : '')+'>'+durumlar.map(function(d){ return '<option'+(f.durum===d?' selected':'')+'>'+d+'</option>'; }).join('')+'</select></label>'+
+          '<label class="ftr-alan"><span>e-Belge</span><select data-ebelge="'+f.id+'">'+['Gönderilmedi','Entegratöre yüklendi','Onaylandı','Reddedildi'].map(function(d){ return '<option'+((f.eBelgeDurumu||'Gönderilmedi')===d?' selected':'')+'>'+d+'</option>'; }).join('')+'</select></label>'+
+          (f.durum === 'Kesildi' ? '<button class="btn secondary small" data-resmino="'+f.id+'" title="e-Arşiv / e-Fatura ile kesilen resmi faturanın numarası ve ETTN\'si">'+(f.resmiFaturaNo ? 'Resmi no: '+esc(f.resmiFaturaNo) : 'Resmi fatura no / ETTN')+'</button>' : '')+
+          '<span class="ftr-ayrac"></span>'+
           '<button class="btn small" data-yazdirftr="'+f.id+'">🖨 Yazdır</button>'+(f.durum !== 'İptal' ? epostaDugmesi('Satış faturası', f) : '')+
           (f.durum !== 'İptal' ? '<button class="btn secondary small" data-proforma="'+f.id+'" title="Vergi belgesi olmayan ön fatura">Proforma</button>' : '')+
-          (f.durum === 'Kesildi' && iadeKaynak && faturaIadeIrsaliyeleri(f, iadeKaynak).length ? '<button class="btn secondary small" data-ftriade="'+f.id+'" title="Müşteriden geri gelen malı bu faturanın irsaliyesine bağlı satış iadesi olarak gir">↩ İade al</button>' : '')+
-          (f.durum === 'Kesildi' ? '<button class="btn secondary small" data-resmino="'+f.id+'" title="e-Arşiv / e-Fatura ile kesilen resmi faturanın numarası ve ETTN\'si">'+(f.resmiFaturaNo ? 'e-Belge: '+esc(f.resmiFaturaNo) : 'Resmi fatura no / ETTN')+'</button>' : '')+
-          '<span class="ftr-ayrac"></span>'+
           '<button class="btn secondary small" data-ubl="'+f.id+'" title="e-Fatura entegratörüne yüklemek için UBL-TR XML taslağı">⇩ UBL-TR XML</button>'+
-          '<label class="muted">e-Belge:</label><select data-ebelge="'+f.id+'">'+['Gönderilmedi','Entegratöre yüklendi','Onaylandı','Reddedildi'].map(function(d){ return '<option'+((f.eBelgeDurumu||'Gönderilmedi')===d?' selected':'')+'>'+d+'</option>'; }).join('')+'</select>'+
+          (f.durum === 'Kesildi' && iadeKaynak && faturaIadeIrsaliyeleri(f, iadeKaynak).length ? '<button class="btn secondary small" data-ftriade="'+f.id+'" title="Müşteriden geri gelen malı bu faturanın irsaliyesine bağlı satış iadesi olarak gir">↩ İade al</button>' : '')+
+          '<span class="ftr-bosluk"></span>'+
+          '<button class="btn secondary small" data-gecmis="'+f.id+'">İşlem geçmişi</button>'+
           (f.durum !== 'İptal' && !kilit ? '<button class="btn secondary small" data-ftredit="'+f.id+'">Düzenle</button>' : '')+
           (f.durum === 'Taslak' && !kilit ? '<button class="btn danger" data-ftrdel="'+f.id+'">Sil</button>' : '')+
           '</div>'+iptalNotuHtml(f)+faturaRiskHtml(f)+
-          '<div class="tablewrap"><table class="ftr-kalem"><thead><tr><th>Kod</th><th>Kalem</th><th class="num">Miktar</th><th>Birim</th><th class="num">Birim fiyat</th>'+(ayr?'<th class="num">İsk.</th><th class="num">KDV</th>':'')+'<th class="num">Tutar</th></tr></thead><tbody>'+kalemSatir+'</tbody></table></div>'+
-          '<table class="ftr-toplam"><tbody>'+toplamSatir+'</tbody></table>'+
-          (f.not_?'<div class="muted" style="margin-top:6px">Not: '+esc(f.not_)+'</div>':'')+
-          belgeAkisiHtml({siparisId: f.siparisId})+gecmisButonu(f.id)+
+          '<div class="ftr-govde">'+
+            '<div class="tablewrap ftr-kalem-kutu"><table class="ftr-kalem"><thead><tr><th>Kalem</th><th class="num">Miktar</th><th class="num">Birim fiyat</th>'+(ayr?'<th class="num">İsk.</th><th class="num">KDV</th>':'')+'<th class="num">Tutar</th></tr></thead><tbody>'+kalemSatir+'</tbody></table></div>'+
+            '<div class="ftr-toplam-kutu"><table class="ftr-toplam"><tbody>'+toplamSatir+'</tbody></table></div>'+
+          '</div>'+
+          '<div class="ftr-alt">'+(f.not_?'<div class="muted">Not: '+esc(f.not_)+'</div>':'')+belgeAkisiHtml({siparisId: f.siparisId})+'</div>'+
         '</div></div>'+
         '<div class="ractions">'+(tahsilKalan && f.durum === 'Kesildi' && (tahsilKalan[f.id]||0) > 0.01 ? tahsilDugmesi(f.id) : '')+'<button class="btn secondary small" data-detoggle="'+f.id+'">'+(acik?'Kapat':'Detay')+'</button></div></div>';
     }).join('');
