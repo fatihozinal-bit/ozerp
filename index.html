@@ -1323,6 +1323,44 @@
   .vg-tablo td:first-child { font-weight:500; white-space:nowrap; }
   .vg-tablo tr.kv-alt td { background:var(--steel-soft) !important; font-weight:600; border-top:2px solid var(--steel); border-bottom:0; }
   .vg-tablo .neg { color:var(--bad); } .vg-tablo .pos { color:var(--good); }
+  /* r381: Özet › Sevkiyat & fatura */
+  #ozetSevkFatura { scroll-margin-top:90px; } #ozetSevkFatura.flash { animation: flashbg 1.6s ease-out; }
+  .sf-durum { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .sf-durum-oge { display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:7px 12px; border:1px solid var(--border); border-left:3px solid var(--steel); border-radius:4px; background:var(--surface); font:inherit; font-size:11.5px; color:var(--ink-soft); text-align:left; cursor:pointer; }
+  .sf-durum-oge b { font-size:13px; color:var(--ink); font-weight:600; }
+  .sf-durum-oge:hover { background:var(--surface-alt); }
+  .sf-durum-oge.sf-bekle { border-left-color:var(--warn); } .sf-durum-oge.sf-gec { border-left-color:var(--bad); } .sf-durum-oge.sf-tamam { border-left-color:var(--good); cursor:default; }
+  .sf-durum-oge.sf-taslak, .sf-durum-oge.sf-bilgi { border-left-color:var(--steel); } .sf-durum-oge.sf-acik { border-left-color:var(--accent); }
+  table.sf-tablo { width:100%; border:1px solid var(--border); }
+  table.sf-tablo > thead > tr > th { background:var(--surface-alt); color:var(--ink); font-weight:600; white-space:nowrap; }
+  table.sf-tablo > tbody > tr > td { vertical-align:top; }
+  table.sf-tablo td.num { white-space:nowrap; font-variant-numeric:tabular-nums; }
+  table.sf-tablo > tbody > tr.sf-ay { cursor:pointer; }
+  table.sf-tablo > tbody > tr.sf-ay > td:first-child { white-space:nowrap; font-weight:500; }
+  table.sf-tablo > tbody > tr.sf-ay:hover > td { background:var(--accent-soft); }
+  table.sf-tablo > tbody > tr.sf-ay.secili > td { background:color-mix(in srgb, var(--accent-soft) 60%, transparent); }
+  table.sf-tablo > tbody > tr.sf-ay.acik > td { border-bottom-color:transparent; font-weight:600; }
+  .sf-ok { display:inline-block; width:12px; color:var(--ink-soft); }
+  .sf-kirilim { font-size:11px; color:var(--ink-soft); font-weight:400; margin-top:2px; }
+  .sf-kirilim > div { display:flex; justify-content:flex-end; gap:6px; } .sf-kirilim span { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  table.sf-tablo > tbody > tr.sf-detay > td { padding:2px 8px 14px 26px; background:var(--surface); }
+  table.sf-tablo > tbody > tr.sf-toplam > td { background:var(--steel-soft); font-weight:600; border-top:2px solid var(--steel); }
+  table.sf-ic { width:100%; border:1px solid var(--border); font-size:12px; }
+  table.sf-ic th { background:var(--surface-alt); white-space:nowrap; }
+  table.sf-ic td { vertical-align:top; }
+  table.sf-ic td:first-child { white-space:nowrap; }
+  table.sf-ic tr.sf-eksik > td:first-child { box-shadow:inset 3px 0 0 var(--warn); }
+  table.sf-ic tr.sf-ayrik > td { background:color-mix(in srgb, var(--surface-alt) 45%, transparent); }
+  table.sf-ic tr.sf-iade > td { color:var(--ink-soft); }
+  td.sf-urunler { min-width:200px; }
+  .sf-urun { display:flex; gap:10px; justify-content:space-between; align-items:baseline; }
+  .sf-urun span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px; } .sf-urun b { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .sf-urun em { font-style:normal; font-weight:400; font-size:10.5px; color:var(--warn); white-space:nowrap; }
+  .sf-not { font-size:10.5px; }
+  .sf-d { display:inline-block; padding:1px 7px; border-radius:9px; font-size:11px; white-space:nowrap; margin:1px 0; }
+  .sf-d.sf-bekle { background:var(--warn-soft); color:var(--warn); } .sf-d.sf-gec { background:var(--bad-soft); color:var(--bad); }
+  .sf-d.sf-tamam { background:var(--good-soft); color:var(--good); } .sf-d.sf-acik { background:var(--accent-soft); color:var(--accent); }
+  .sf-d.sf-taslak, .sf-d.sf-bilgi { background:var(--steel-soft); color:var(--steel); }
   #printArea .vg-dokum-kagit table, .oniz-kagit .vg-dokum-kagit table { width:100%; border-collapse:collapse; font-size:10.5px; margin-bottom:8px; }
   #printArea .vg-dokum-kagit th, .oniz-kagit .vg-dokum-kagit th { background:#eef1f5; text-align:left; padding:3px 5px; border-bottom:1px solid #999; }
   #printArea .vg-dokum-kagit td, .oniz-kagit .vg-dokum-kagit td { padding:2px 5px; border-bottom:1px solid #ddd; vertical-align:top; }
@@ -1910,7 +1948,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r380</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r381</div>
     </div>
   </nav>
   <main>
@@ -1963,6 +2001,7 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
           </div>
         </div>
       </div>
+      <div class="block" id="ozetSevkFatura" hidden></div>
       <div id="ozetVirgoBorc"></div>
       <div id="ozetHesapDefteri" hidden><div class="block-head" style="background:none;border:0;padding:14px 0 6px"><h3 style="font-size:16px">Ortaklar ve hesap defteri (Virgo dönemi)</h3></div><div id="virgoIcerik"></div></div>
       <div class="block" id="ozetAnaliz"></div>
@@ -4489,7 +4528,8 @@ Dikkat edilmesi gereken 2 nokta:
   // Seçilebilecek aylar: ilk üretim / Virgo kaydının ayından bu aya (yeniden eskiye)
   function ozetAylar(){
     var ilk = thisMonthKey();
-    ozetUretimHam().concat(state.giderler || [], state.alisFaturalari || []).forEach(function(k){ var a = String(k.tarih || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(a) && a < ilk) ilk = a; });
+    // r381: sevk ve satış faturası olan aylar da seçilebilir (Sevkiyat & fatura bölümü)
+    ozetUretimHam().concat(state.giderler || [], state.alisFaturalari || [], state.sevkiyatlar || [], state.faturalar || []).forEach(function(k){ var a = String(k.tarih || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(a) && a < ilk) ilk = a; });
     var l = [], a = thisMonthKey(); while (a >= ilk && l.length < 120){ l.push(a); a = KV_MODEL.ayEkle(a, -1); } return l;
   }
   // r345: Özet yalnız ERP'den beslenir: Üretim Kayıtları (Hesap Defteri'nin aktarılmamış eski Virgo üretim girişleri girmez)
@@ -4919,6 +4959,7 @@ Dikkat edilmesi gereken 2 nokta:
     document.getElementById('ozetAyEtiket').innerHTML = '<select id="ozetDonemSec" title="Özet dönemi">' + aylar.map(function(a){ return '<option value="' + a + '"' + (a === donem ? ' selected' : '') + '>' + esc(new Date(Number(a.slice(0, 4)), Number(a.slice(5, 7)) - 1, 1).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })) + (a === thisMonthKey() ? ' (bu ay)' : '') + '</option>'; }).join('') +
       '<option value="genel"' + (donem === 'genel' ? ' selected' : '') + '>Genel toplam (başlangıçtan bugüne)</option></select>';
     var donemYazi = ozetGenel() ? 'başlangıçtan bugüne' : ozetBuAy() ? 'bugüne kadar' : 'ay toplamı';
+    var sfv = null; try { if (sevkFaturaGorunur()) sfv = sevkFaturaVerisi(); } catch(e){ renderHatasi('Sevkiyat & fatura', e); } // r381
     var cards = [
       {label:'Üretilen (adet)', value: fmt(toplamUretim), cls:'', detay:'uretim', sub: ozetUretimKirilim().map(function(x){ return '<div class="oz-kirilim"><span title="' + escAttr(x.ad) + '">' + esc(x.ad) + '</span><b>' + fmt(x.adet) + '</b></div>'; }).join('')},
       // r273: gerçekleşen (bugüne kadar) + ay sonu tahmini; r345: hepsi ERP'den (Üretim Kayıtları × stok kartı fiyatı, Giderler + Alış Faturaları)
@@ -4932,6 +4973,8 @@ Dikkat edilmesi gereken 2 nokta:
       {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'}
     ]);
     // r370: € borç (makine): MS Mekanik Sanatlar faturalarının fatura günü kuruyla € karşılığı − € borç ödemeleri; tıklayınca ayrıntı
+    // r381: üretilenin yanında sevk edilen (dönemin adedi, fatura ₺, faturalanmayan); tıklayınca Sevkiyat & fatura bölümü
+    try { var sfk = sfOzetKart(sfv); if (sfk) cards.splice(1, 0, sfk); } catch(e){ renderHatasi('Sevk kartı', e); }
     if (sekmeIzinli('virgo')) try { var eb = virgoIkiBorc(), ebKur = virgoGunKuru(todayISO());
       cards.push({ label: '€ borç (makine)', value: virgoEur(eb.eur.eur), cls: 'accent', detay: 'eurborc', sub: virgoEurCariler().length ? 'ödenen ' + virgoEur(eb.eurOdenen.eur) + (ebKur ? ' · ≈ ₺' + fmt(eb.eur.eur * ebKur) + ' bugünkü kurla' : '') : 'MS Mekanik Sanatlar cari kartı bulunamadı — tıklayıp seçin' });
     } catch(e){ renderHatasi('€ borç', e); }
@@ -4952,8 +4995,234 @@ Dikkat edilmesi gereken 2 nokta:
     try { renderOzetDonemSerit(); } catch(e){ renderHatasi('dönem şeridi', e); }
     renderOzetTrendGrafik();
     try { renderOzetVirgoBorc(); } catch(e){ renderHatasi('Virgo borcu', e); }
+    try { renderOzetSevkFatura(sfv); } catch(e){ renderHatasi('Sevkiyat & fatura', e); }
     renderOzetAnaliz();
     // r366: Yönetim panosu Özet'ten kaldırıldı
+  }
+
+  // ---------- r381: Özet › Sevkiyat & fatura ----------
+  // Fatura kesilmeye başlanınca Özet'te ay ay: sevk edilen adet (ürün ürün), her gönderimin faturası (no, KDV hariç ₺, tahsilat durumu)
+  // ve "ne oldu, ne bitti" şeridi (faturalanmamış sevk, taslak fatura, açık alacak, sevk bekleyen sipariş, tamamlanan).
+  // Gönderim: Sevkiyat & İrsaliye'deki sipariş sevkleri, İrsaliyeler'deki "Satış sevk irsaliyesi (siparişsiz)" ve "irsaliye yerine geçer" işaretli satış faturası.
+  // Fatura → gönderim: faturada seçilen irsaliyeler (önce kalemin kaynak irsaliyesi, sonra ürün ürün sırayla); siparişten kesilen faturada
+  // o siparişin sevkleri ürün ürün eskiden yeniye. Tutar: faturanın KDV hariç ₺ tutarı kalemlere tutarları oranında dağıtılır (iskonto ve
+  // döviz kuru dahil), gönderime düşen adet kadarı yazılır. Gönderime bağlanamayan kısım (sevkten önce faturalanan adet, irsaliyesiz /
+  // hizmet faturası) fatura tarihinin ayında ayrı satırdır; böylece ayların fatura toplamı kesilen faturaların toplamına eşittir.
+  var _sfAcikAy = null; // { 'YYYY-MM': true/false } — elle açılıp kapanan aylar (null: varsayılan)
+  function sevkFaturaGorunur(){ return sekmeIzinli('sevkiyat') || sekmeIzinli('faturalar') || sekmeIzinli('irsaliyeler'); }
+  function sfAnahtar(k){ return k.stokId || ('ad:' + String(k.ad || '').trim()); }
+  function sfUrunAdi(k){ var st = k.stokId ? stokKart(k.stokId) : null; return String(k.ad || (st && st.ad) || '—'); }
+  function sfFaturaTL(f){ return belgeTL(f, 'araToplam', 'araToplam'); }
+  // Kesilmiş faturanın tahsil edilmemiş kısmı ₺ (fatura günü kuruyla; KDV dahil)
+  function sfAcikTL(f, kalanlar){
+    var k = kalanlar[f.id] || 0, g = Number(f.genelToplam) || 0;
+    return g > 0.005 ? belgeTL(f, 'genelToplam', 'genelToplam') * Math.min(1, k / g) : 0;
+  }
+  function sevkFaturaVerisi(){
+    var gonderimler = [], gid = {}, ayrik = [];
+    function gEkle(g, kalemler){
+      g.kalemler = (kalemler || []).map(function(k){ return { k: sfAnahtar(k), ad: sfUrunAdi(k), miktar: Number(k.miktar) || 0, ftr: 0, tl: 0 }; }).filter(function(x){ return x.miktar > 0; });
+      g.miktar = toplamla(g.kalemler, function(x){ return x.miktar; }); g.ftr = 0; g.tl = 0; g.fat = [];
+      gonderimler.push(g); gid[g.id] = g;
+    }
+    (state.sevkiyatlar || []).forEach(function(i){ if (i.durum === 'İptal') return;
+      gEkle({ id: i.id, tab: 'sevkiyat', git: i.id, no: i.irsaliyeNo, tarih: i.tarih, cariId: i.musteriId, siparisId: i.siparisId }, i.kalemler); });
+    (state.irsaliyeler || []).forEach(function(i){ if (i.durum === 'İptal' || !irsaliyeTipi(i.tip).faturaSatis) return;
+      gEkle({ id: i.id, tab: 'irsaliyeler', git: i.id, no: i.resmiNo || i.no, tarih: i.tarih, cariId: i.cariId, faturaId: i.faturaId || '' }, i.kalemler); });
+    var fatlar = (state.faturalar || []).filter(function(f){ return f.durum !== 'İptal'; }).sort(function(a, b){ return String(a.tarih || '').localeCompare(String(b.tarih || '')) || String(a.faturaNo || '').localeCompare(String(b.faturaNo || '')); });
+    fatlar.forEach(function(f){ if (f.irsaliyeYerine) gEkle({ id: 'f:' + f.id, tab: 'faturalar', git: f.id, no: f.faturaNo, tarih: f.tarih, cariId: f.musteriId, irsaliyeYerine: true }, f.kalemler); });
+    gonderimler.sort(function(a, b){ return String(a.tarih || '').localeCompare(String(b.tarih || '')) || String(a.no || '').localeCompare(String(b.no || '')); });
+    function bagla(g, f, q, tl){ var b = g.fat.filter(function(x){ return x.f === f; })[0]; if (!b){ b = { f: f, miktar: 0, tl: 0 }; g.fat.push(b); } b.miktar += q; b.tl += tl; g.ftr += q; g.tl += tl; }
+    // irsaliyesi belli faturalar önce dağıtılır; siparişten kesilenler kalan sevklere eskiden yeniye düşer
+    var irsBagli = {}; gonderimler.forEach(function(g){ if (g.faturaId) irsBagli[g.faturaId] = 1; });
+    var belli = function(f){ return !!(f.irsaliyeYerine || (f.irsaliyeIdleri || []).length || irsBagli[f.id]); };
+    fatlar.filter(belli).concat(fatlar.filter(function(f){ return !belli(f); })).forEach(function(f){
+      var mat = sfFaturaTL(f);
+      var kl = (f.kalemler || []).map(function(k){ var m = Number(k.miktar) || 0; return { k: sfAnahtar(k), ad: sfUrunAdi(k), miktar: m, kalan: m, t: Math.abs(Number(k.tutar) || m * (Number(k.birimFiyat) || 0)), kaynak: k.kaynakIrsaliyeId || '' }; });
+      var topT = toplamla(kl, function(x){ return x.t; });
+      kl.forEach(function(x){ x.tl = topT > 0 ? mat * x.t / topT : (kl.length ? mat / kl.length : 0); });
+      var adaylar;
+      if (f.irsaliyeYerine) adaylar = [gid['f:' + f.id]];
+      else if (belli(f)) adaylar = gonderimler.filter(function(g){ return (f.irsaliyeIdleri || []).indexOf(g.id) > -1 || g.faturaId === f.id; });
+      else if (f.siparisId) adaylar = gonderimler.filter(function(g){ return g.siparisId === f.siparisId; });
+      else adaylar = [];
+      adaylar = adaylar.filter(Boolean);
+      var dagit = function(x, liste){
+        liste.forEach(function(g){ g.kalemler.forEach(function(gk){
+          if (x.kalan <= 1e-9 || gk.k !== x.k) return;
+          var bos = gk.miktar - gk.ftr; if (bos <= 1e-9) return;
+          var q = Math.min(bos, x.kalan), tl = x.tl * q / x.miktar;
+          gk.ftr += q; gk.tl += tl; x.kalan -= q; bagla(g, f, q, tl);
+        }); });
+      };
+      kl.forEach(function(x){ if (!(x.miktar > 0)) return; if (x.kaynak && gid[x.kaynak]) dagit(x, [gid[x.kaynak]]); dagit(x, adaylar); });
+      // gönderime düşmeyen: kalan adet (sevkten önce faturalanan) ve adetsiz kalem (nakliye, hizmet)
+      var artanAdet = toplamla(kl, function(x){ return x.miktar > 0 ? x.kalan : 0; });
+      var artanTl = toplamla(kl, function(x){ return x.miktar > 0 ? x.tl * x.kalan / x.miktar : x.tl; });
+      if (artanAdet <= 1e-9 && Math.abs(artanTl) <= 0.005) return;
+      var bagli = adaylar.filter(function(g){ return g.fat.some(function(b){ return b.f === f; }); });
+      if (bagli.length && artanAdet <= 1e-9){ bagla(bagli[0], f, 0, artanTl); bagli[0].ekTl = (bagli[0].ekTl || 0) + artanTl; return; } // ek kalem gönderimin faturasında kalır
+      ayrik.push({ f: f, tarih: f.tarih, cariId: f.musteriId, miktar: artanAdet, tl: artanTl, sevkOncesi: artanAdet > 1e-9 && !!(f.siparisId || adaylar.length),
+        kalemler: kl.filter(function(x){ return x.miktar > 0 ? x.kalan > 1e-9 : Math.abs(x.tl) > 0.005; }).map(function(x){ return { ad: x.ad, miktar: x.miktar > 0 ? x.kalan : 0 }; }) });
+    });
+    var iadeler = (state.satisIadeleri || []).map(function(x){
+      var kl = (x.kalemler || []).map(function(k){ return { ad: sfUrunAdi(k), miktar: Number(k.miktar) || 0 }; }).filter(function(k){ return k.miktar > 0; });
+      return { id: x.id, no: x.no, tarih: x.tarih, cariId: x.cariId, kalemler: kl, miktar: toplamla(kl, function(k){ return k.miktar; }) };
+    }).filter(function(x){ return x.miktar > 0; });
+    var aylar = {};
+    var ay = function(t){ var a = String(t || '').slice(0, 7); return aylar[a] = aylar[a] || { ay: a, g: [], ayrik: [], iade: [], sevk: 0, ftr: 0, tl: 0, kesilen: 0, kesilenN: 0, iadeAdet: 0, urun: {} }; };
+    gonderimler.forEach(function(g){ var A = ay(g.tarih); A.g.push(g); A.sevk += g.miktar; A.ftr += g.ftr; A.tl += g.tl; g.kalemler.forEach(function(gk){ A.urun[gk.ad] = (A.urun[gk.ad] || 0) + gk.miktar; }); });
+    ayrik.forEach(function(x){ var A = ay(x.tarih); A.ayrik.push(x); A.tl += x.tl; });
+    fatlar.forEach(function(f){ var A = ay(f.tarih); A.kesilen += sfFaturaTL(f); A.kesilenN++; });
+    iadeler.forEach(function(x){ var A = ay(x.tarih); A.iade.push(x); A.iadeAdet += x.miktar; });
+    var liste = Object.keys(aylar).filter(function(a){ return /^\d{4}-\d{2}$/.test(a); }).sort().reverse().map(function(a){ return aylar[a]; });
+    // ne oldu, ne bitti (bugün itibarıyla, dönemden bağımsız)
+    var kalanlar = faturaKalanlari(), bugun = todayISO();
+    var faturasiz = gonderimler.filter(function(g){ return g.miktar - g.ftr > 1e-6; });
+    var taslak = fatlar.filter(function(f){ return f.durum !== 'Kesildi'; });
+    var acik = fatlar.filter(function(f){ return f.durum === 'Kesildi' && (kalanlar[f.id] || 0) > 0.01; });
+    var acikSip = (state.siparisler || []).filter(siparisAcikMi).map(function(s){ return { s: s, kalan: toplamla(s.kalemler || [], siparisKalanMiktar) }; }).filter(function(x){ return x.kalan > 1e-6; });
+    var tamam = gonderimler.filter(function(g){ return g.miktar - g.ftr <= 1e-6 && g.fat.length && g.fat.every(function(b){ return b.f.durum === 'Kesildi' && (kalanlar[b.f.id] || 0) <= 0.01; }); });
+    return { gonderimler: gonderimler, aylar: liste, ayHarita: aylar, ayrik: ayrik, kalanlar: kalanlar,
+      durum: { faturasiz: faturasiz, faturasizAdet: toplamla(faturasiz, function(g){ return g.miktar - g.ftr; }), taslak: taslak, taslakTl: toplamla(taslak, sfFaturaTL),
+        acik: acik, acikTl: toplamla(acik, function(f){ return sfAcikTL(f, kalanlar); }), gecikmis: acik.filter(function(f){ return f.vadeTarihi && f.vadeTarihi < bugun; }),
+        acikSip: acikSip, sevkBekleyen: toplamla(acikSip, function(x){ return x.kalan; }), tamam: tamam } };
+  }
+  // Seçilen Özet dönemi (ay ya da genel toplam) için sevk / fatura toplamı — Özet kartı
+  function sfDonemToplam(v){
+    var l = ozetGenel() ? v.aylar.filter(function(a){ return a.ay <= thisMonthKey(); }) : v.aylar.filter(function(a){ return a.ay === ozetDonem(); });
+    return { n: toplamla(l, function(a){ return a.g.length; }), sevk: toplamla(l, function(a){ return a.sevk; }), ftr: toplamla(l, function(a){ return a.ftr; }), tl: toplamla(l, function(a){ return a.tl; }),
+      faturasiz: toplamla(l, function(a){ return a.sevk - a.ftr; }) };
+  }
+  function sfOzetKart(v){
+    if (!v || !v.aylar.length) return null;
+    var d = sfDonemToplam(v);
+    return { label: 'Sevk edilen (adet)', value: fmt(d.sevk), cls: '', detay: 'sevk',
+      sub: (d.n ? d.n + ' gönderim' : 'bu dönem sevk yok') + '<span class="yetki-maliyet"> · fatura ₺' + fmt(d.tl) + ' <span class="muted">(KDV hariç)</span></span>' +
+        (d.faturasiz > 1e-6 ? '<br><span class="neg">' + fmt2(d.faturasiz) + ' adet faturalanmadı</span>' : (d.n ? '<br><span class="pos">hepsi faturalandı</span>' : '')) };
+  }
+  function sfTl(v, kalin){ var s = '₺' + fmt(v); return kalin ? '<b>' + s + '</b>' : s; }
+  function sfUrunSatirlari(kalemler, ftrGoster){
+    var m = {}, sira = [];
+    kalemler.forEach(function(k){ if (!m[k.ad]){ m[k.ad] = { ad: k.ad, miktar: 0, ftr: 0 }; sira.push(m[k.ad]); } m[k.ad].miktar += k.miktar; m[k.ad].ftr += k.ftr || 0; });
+    return sira.map(function(x){ var eksik = ftrGoster && x.miktar - x.ftr > 1e-6;
+      return '<div class="sf-urun"><span title="' + escAttr(x.ad) + '">' + esc(x.ad) + '</span><b>' + fmt2(x.miktar) + (eksik ? ' <em title="Bu üründen faturalanan adet">' + (x.ftr > 1e-6 ? '(' + fmt2(x.ftr) + ' faturalı)' : '(faturasız)') + '</em>' : '') + '</b></div>'; }).join('');
+  }
+  function sfFaturaChip(f, ekBilgi){
+    var ip = f.faturaNo + ' · ' + kvTarihTR(f.tarih) + (f.resmiFaturaNo ? ' · e-Belge ' + f.resmiFaturaNo : '') + '\nFaturanın tamamı: ₺' + fmt2(sfFaturaTL(f)) + ' KDV hariç, ₺' + fmt2(belgeTL(f, 'genelToplam', 'genelToplam')) + ' genel toplam' + (ekBilgi || '');
+    return '<span class="chip" data-git="faturalar|' + escAttr(f.id) + '" title="' + escAttr(ip) + '">' + esc(f.faturaNo) + (f.durum !== 'Kesildi' ? ' <span class="muted">taslak</span>' : '') + '</span>';
+  }
+  function sfOdemeDurum(fatlar, kalanlar){
+    var bugun = todayISO();
+    if (fatlar.some(function(f){ return f.durum !== 'Kesildi'; })) return '<span class="sf-d sf-taslak" title="Fatura taslak: durumu Kesildi yapılınca alacak oluşur">fatura taslak</span>';
+    var acik = fatlar.filter(function(f){ return (kalanlar[f.id] || 0) > 0.01; });
+    if (!acik.length) return '<span class="sf-d sf-tamam">✓ tahsil edildi</span>';
+    var gec = acik.filter(function(f){ return f.vadeTarihi && f.vadeTarihi < bugun; }), vade = acik.map(function(f){ return f.vadeTarihi; }).filter(Boolean).sort()[0];
+    var tl = toplamla(acik, function(f){ return sfAcikTL(f, kalanlar); });
+    return gec.length ? '<span class="sf-d sf-gec" title="Vade ' + escAttr(kvTarihTR(vade)) + '">vadesi geçti · ' + gunFarki(vade, bugun) + ' gün<span class="yetki-maliyet"> · ₺' + fmt(tl) + '</span></span>'
+      : '<span class="sf-d sf-acik">tahsilat bekliyor' + (vade ? ' · vade ' + esc(kvTarihTR(vade)) : '') + '<span class="yetki-maliyet"> · ₺' + fmt(tl) + '</span></span>';
+  }
+  function sfGonderimDurum(g, kalanlar){
+    var eksik = g.miktar - g.ftr;
+    if (!g.fat.length) return '<span class="sf-d sf-bekle">faturalanmadı</span>';
+    return (eksik > 1e-6 ? '<span class="sf-d sf-bekle">' + fmt2(eksik) + ' adet faturalanmadı</span> ' : '') + sfOdemeDurum(g.fat.map(function(b){ return b.f; }), kalanlar);
+  }
+  function sfAyDetayHtml(A, v){
+    var satir = [];
+    A.g.forEach(function(g){
+      var gitTab = sekmeIzinli(g.tab) ? g.tab : '';
+      satir.push({ t: g.tarih, h: '<tr' + (g.miktar - g.ftr > 1e-6 ? ' class="sf-eksik"' : '') + '><td>' + esc(kvTarihTR(g.tarih)) + '</td>' +
+        '<td>' + (gitTab ? '<span class="chip" data-git="' + gitTab + '|' + escAttr(g.git) + '" title="Belgeyi aç">' + esc(g.no || '—') + '</span>' : esc(g.no || '—')) + (g.irsaliyeYerine ? '<div class="muted sf-not">irsaliyeli fatura</div>' : '') + '</td>' +
+        '<td>' + esc(cariAdi(g.cariId)) + '</td>' +
+        '<td class="sf-urunler">' + sfUrunSatirlari(g.kalemler, true) + '</td>' +
+        '<td>' + (g.fat.length ? g.fat.map(function(b){ return sfFaturaChip(b.f, '\nBu gönderime düşen: ' + fmt2(b.miktar) + ' adet · ₺' + fmt2(b.tl)); }).join(' ') : '<span class="muted">—</span>') + '</td>' +
+        '<td class="num yetki-maliyet">' + (g.fat.length ? sfTl(g.tl, true) + (g.ekTl ? '<div class="muted sf-not" title="Adetsiz kalem (nakliye, hizmet vb.)">ek kalem ₺' + fmt(g.ekTl) + ' dahil</div>' : '') : '<span class="muted">—</span>') + '</td>' +
+        '<td>' + sfGonderimDurum(g, v.kalanlar) + '</td></tr>' });
+    });
+    A.ayrik.forEach(function(x){
+      satir.push({ t: x.tarih, h: '<tr class="sf-ayrik"><td>' + esc(kvTarihTR(x.tarih)) + '</td><td><span class="muted">' + (x.sevkOncesi ? 'sevk yok' : 'irsaliyesiz') + '</span></td>' +
+        '<td>' + esc(cariAdi(x.cariId)) + '</td><td class="sf-urunler">' + x.kalemler.map(function(k){ return '<div class="sf-urun"><span title="' + escAttr(k.ad) + '">' + esc(k.ad) + '</span>' + (k.miktar ? '<b>' + fmt2(k.miktar) + '</b>' : '') + '</div>'; }).join('') + '</td>' +
+        '<td>' + sfFaturaChip(x.f) + '</td><td class="num yetki-maliyet">' + sfTl(x.tl, true) + '</td>' +
+        '<td>' + (x.sevkOncesi ? '<span class="sf-d sf-bekle" title="Fatura kesildi, mal henüz sevk edilmedi (sevk edilince irsaliye bu faturaya bağlanır)">sevk edilmeden faturalandı</span> ' : '<span class="sf-d sf-bilgi" title="Gönderime bağlı olmayan fatura (hizmet, fason işçilik, ek kalem)">irsaliyesiz fatura</span> ') + sfOdemeDurum([x.f], v.kalanlar) + '</td></tr>' });
+    });
+    A.iade.forEach(function(x){
+      var gitTab = sekmeIzinli('satisiade') ? 'satisiade' : '';
+      satir.push({ t: x.tarih, h: '<tr class="sf-iade"><td>' + esc(kvTarihTR(x.tarih)) + '</td><td>' + (gitTab ? '<span class="chip" data-git="satisiade|' + escAttr(x.id) + '">' + esc(x.no || 'iade') + '</span>' : esc(x.no || 'iade')) + '</td>' +
+        '<td>' + esc(cariAdi(x.cariId)) + '</td><td class="sf-urunler">' + x.kalemler.map(function(k){ return '<div class="sf-urun"><span title="' + escAttr(k.ad) + '">' + esc(k.ad) + '</span><b class="neg">−' + fmt2(k.miktar) + '</b></div>'; }).join('') + '</td>' +
+        '<td></td><td class="num yetki-maliyet"></td><td><span class="sf-d sf-gec">↩ satış iadesi</span></td></tr>' });
+    });
+    satir.sort(function(a, b){ return String(a.t || '').localeCompare(String(b.t || '')); });
+    var not = Math.abs(A.kesilen - A.tl) > 0.5 ? '<div class="helper">Bu ay kesilen faturaların toplamı (fatura tarihine göre, muhasebe / KDV ile aynı): <b class="yetki-maliyet">₺' + fmt(A.kesilen) + '</b> · ' + A.kesilenN + ' fatura. Farkı: önceki ayın sevkine bu ay kesilen ya da bu ayın sevkine sonraki ay kesilen faturalar.</div>' : '';
+    return '<div class="tablewrap"><table class="sf-ic"><thead><tr><th>Tarih</th><th>İrsaliye</th><th>Müşteri</th><th>Ürün · adet</th><th>Fatura</th><th class="num yetki-maliyet">Tutar (KDV hariç)</th><th>Durum</th></tr></thead><tbody>' +
+      satir.map(function(x){ return x.h; }).join('') + '</tbody></table></div>' + not;
+  }
+  function sfDurumSeritHtml(v){
+    var d = v.durum, o = [];
+    var oge = function(cls, baslik, deger, ip, data){ return '<button type="button" class="sf-durum-oge ' + cls + '"' + (data || '') + ' title="' + escAttr(ip) + '"><span>' + baslik + '</span><b>' + deger + '</b></button>'; };
+    o.push(d.faturasiz.length ? oge('sf-bekle', 'Sevk edildi, faturalanmadı', fmt2(d.faturasizAdet) + ' adet · ' + d.faturasiz.length + ' gönderim', 'Faturası kesilmemiş gönderimlerin olduğu aylar açılır. Faturalamak için: Satış Faturaları › Yeni fatura (siparişten) ya da irsaliyeden "Faturala".', ' data-sfac="faturasiz"')
+      : oge('sf-tamam', 'Sevk edildi, faturalanmadı', 'yok ✓', 'Bütün gönderimler faturalandı.', ''));
+    if (d.taslak.length) o.push(oge('sf-taslak', 'Taslak fatura (kesilmedi)', d.taslak.length + ' fatura<span class="yetki-maliyet"> · ₺' + fmt(d.taslakTl) + '</span>', 'Durumu Taslak olan faturalar: e-Arşiv / e-Fatura ile kesilince durumunu Kesildi yapın; alacak o zaman oluşur.', sekmeIzinli('faturalar') ? ' data-sfgit="faturalar"' : ''));
+    o.push(d.acik.length ? oge(d.gecikmis.length ? 'sf-gec' : 'sf-acik', 'Tahsil edilmedi', '<span class="yetki-maliyet">₺' + fmt(d.acikTl) + ' · </span>' + d.acik.length + ' fatura' + (d.gecikmis.length ? ' · ' + d.gecikmis.length + ' vadesi geçti' : ''), 'Kesilmiş, tahsilatı tamamlanmamış faturalar (KDV dahil, fatura günü kuruyla ₺).', sekmeIzinli('carihesap') ? ' data-sfgit="carihesap"' : '')
+      : oge('sf-tamam', 'Tahsil edilmedi', 'yok ✓', 'Kesilen bütün faturalar tahsil edildi.', ''));
+    if (d.acikSip.length) o.push(oge('sf-bilgi', 'Siparişte sevk bekleyen', fmt2(d.sevkBekleyen) + ' adet · ' + d.acikSip.length + ' sipariş', d.acikSip.map(function(x){ return x.s.siparisNo + ' · ' + musteriAdiById(x.s.musteriId) + ': ' + fmt2(x.kalan) + ' adet'; }).join('\n'), sekmeIzinli('siparisler') ? ' data-sfgit="siparisler"' : ''));
+    if (d.tamam.length) o.push(oge('sf-tamam', 'Bitti', d.tamam.length + ' gönderim', 'Faturası kesilmiş ve tahsil edilmiş gönderimler.', ''));
+    return '<div class="sf-durum">' + o.join('') + '</div>';
+  }
+  function renderOzetSevkFatura(v, zorla){ // zorla: tıklamayla yeniden çizim (odaktaki düğme setHtmlIdle'ı durdurmasın)
+    var host = byId('ozetSevkFatura'); if (!host) return;
+    if (!v || !v.aylar.length){ host.hidden = true; setHtmlIdle(host, ''); return; }
+    host.hidden = false;
+    var secAy = ozetGenel() ? '' : ozetDonem(), acik = _sfAcikAy || {};
+    var varsayilanAcik = function(a){ return secAy ? a === secAy : a === v.aylar[0].ay; };
+    var acikMi = function(a){ return acik[a] != null ? acik[a] : varsayilanAcik(a); };
+    var tp = { g: 0, sevk: 0, ftr: 0, tl: 0, iade: 0 }, iadeVar = v.aylar.some(function(a){ return a.iadeAdet > 0; });
+    var kolon = 6 + (iadeVar ? 1 : 0);
+    var govde = v.aylar.map(function(A){
+      tp.g += A.g.length; tp.sevk += A.sevk; tp.ftr += A.ftr; tp.tl += A.tl; tp.iade += A.iadeAdet;
+      var eksik = A.sevk - A.ftr, ac = acikMi(A.ay);
+      var urunler = Object.keys(A.urun).sort(function(a, b){ return A.urun[b] - A.urun[a]; });
+      return '<tr class="sf-ay' + (ac ? ' acik' : '') + (A.ay === secAy ? ' secili' : '') + '" data-sfay="' + A.ay + '" title="Gönderimleri ' + (ac ? 'gizlemek' : 'görmek') + ' için tıklayın">' +
+        '<td><span class="sf-ok">' + (ac ? '▾' : '▸') + '</span> ' + esc(muhAyAdi(A.ay)) + (A.ay === thisMonthKey() ? ' <span class="muted">(sürüyor)</span>' : '') + '</td>' +
+        '<td class="num">' + (A.g.length || '<span class="muted">—</span>') + '</td>' +
+        '<td class="num"><b>' + fmt2(A.sevk) + '</b>' + (urunler.length > 1 ? '<div class="sf-kirilim">' + urunler.slice(0, 4).map(function(ad){ return '<div><span title="' + escAttr(ad) + '">' + esc(ad) + '</span> ' + fmt2(A.urun[ad]) + '</div>'; }).join('') + (urunler.length > 4 ? '<div class="muted">+' + (urunler.length - 4) + ' ürün</div>' : '') + '</div>' : (urunler.length ? '<div class="sf-kirilim"><div><span title="' + escAttr(urunler[0]) + '">' + esc(urunler[0]) + '</span></div></div>' : '')) + '</td>' +
+        '<td class="num">' + fmt2(A.ftr) + '</td>' +
+        '<td class="num">' + (eksik > 1e-6 ? '<span class="neg">' + fmt2(eksik) + '</span>' : (A.sevk ? '<span class="pos">✓</span>' : '<span class="muted">—</span>')) + '</td>' +
+        (iadeVar ? '<td class="num">' + (A.iadeAdet ? '<span class="neg">−' + fmt2(A.iadeAdet) + '</span>' : '<span class="muted">—</span>') + '</td>' : '') +
+        '<td class="num yetki-maliyet" title="' + escAttr('Bu ayın gönderimlerine düşen fatura tutarı + bu ay kesilen irsaliyesiz faturalar\nFatura tarihine göre bu ay kesilen: ₺' + fmt2(A.kesilen) + ' (' + A.kesilenN + ' fatura)') + '"><b>₺' + fmt(A.tl) + '</b></td></tr>' +
+        (ac ? '<tr class="sf-detay"><td colspan="' + kolon + '">' + sfAyDetayHtml(A, v) + '</td></tr>' : '');
+    }).join('');
+    var bilgi = 'Ay ay: sevk edilen adet (irsaliye tarihine göre; ürün kırılımı altta), faturalanan adet, faturalanmayan adet ve fatura tutarı (KDV hariç ₺). Aya tıklayınca o ayın her gönderimi: irsaliye, ürün / adet, kesilen fatura ve bu gönderime düşen tutarı, tahsilat durumu.\n' +
+      'Gönderim: Sevkiyat & İrsaliye\'deki sipariş sevkleri, İrsaliyeler\'deki satış sevk irsaliyeleri ve "irsaliye yerine geçer" işaretli faturalar. Fatura gönderime faturada seçilen irsaliyeden; siparişten kesilen faturada o siparişin sevklerine ürün ürün eskiden yeniye bağlanır. Bir fatura birkaç gönderimi kapsıyorsa tutarı adetlerine göre bölünür.\n' +
+      'Sevkten önce kesilen ya da irsaliyesiz (hizmet, fason işçilik) faturalar fatura ayında ayrı satırdır. Üstteki şerit bugün itibarıyla ne bitti, ne bekliyor.';
+    var html = '<div class="block-head"><h3>Sevkiyat &amp; fatura (ay ay) ' + infoIco(bilgi) + '</h3><div class="bh-actions">' +
+      (sekmeIzinli('sevkiyat') ? '<button type="button" class="btn secondary small" data-sfgit="sevkiyat">Sevkiyat</button>' : '') +
+      (sekmeIzinli('faturalar') ? '<button type="button" class="btn secondary small" data-sfgit="faturalar">Satış faturaları</button>' : '') + '</div></div>' +
+      '<div class="block-body">' + sfDurumSeritHtml(v) +
+      '<div class="tablewrap"><table class="sf-tablo"><thead><tr><th>Ay</th><th class="num">Gönderim</th><th class="num">Sevk edilen (adet)</th><th class="num">Faturalanan</th><th class="num">Faturalanmayan</th>' + (iadeVar ? '<th class="num">İade</th>' : '') + '<th class="num yetki-maliyet">Fatura (KDV hariç)</th></tr></thead><tbody>' +
+        govde + '<tr class="sf-toplam"><td>Toplam</td><td class="num">' + tp.g + '</td><td class="num">' + fmt2(tp.sevk) + '</td><td class="num">' + fmt2(tp.ftr) + '</td><td class="num">' + (tp.sevk - tp.ftr > 1e-6 ? fmt2(tp.sevk - tp.ftr) : '✓') + '</td>' + (iadeVar ? '<td class="num">−' + fmt2(tp.iade) + '</td>' : '') + '<td class="num yetki-maliyet">₺' + fmt(tp.tl) + '</td></tr>' +
+      '</tbody></table></div></div>';
+    if (zorla){ host.innerHTML = html; host.__sonHtml = html; } else setHtmlIdle(host, html);
+    if (host.dataset.bagli) return; host.dataset.bagli = '1';
+    host.addEventListener('click', function(e){
+      if (e.target.closest('[data-git]')) return; // belge çipi: genel dinleyici açar
+      var gt = e.target.closest('[data-sfgit]'); if (gt){ gitSekme(gt.dataset.sfgit); return; }
+      var fa = e.target.closest('[data-sfac]');
+      if (fa){ var vv = sevkFaturaVerisi(), m = {}; vv.durum.faturasiz.forEach(function(g){ m[String(g.tarih || '').slice(0, 7)] = true; }); _sfAcikAy = {}; vv.aylar.forEach(function(a){ _sfAcikAy[a.ay] = !!m[a.ay]; }); renderOzetSevkFatura(vv, true); return; }
+      var tr = e.target.closest('tr[data-sfay]'); if (!tr) return;
+      var a = tr.dataset.sfay, v2 = sevkFaturaVerisi();
+      if (!_sfAcikAy){ _sfAcikAy = {}; }
+      _sfAcikAy[a] = !tr.classList.contains('acik');
+      renderOzetSevkFatura(v2, true);
+    });
+  }
+  // Özet kartından: dönemin ayı açılır, bölüme kaydırılır
+  function sevkFaturaGoster(){
+    var host = byId('ozetSevkFatura'); if (!host) return;
+    if (host.style.display === 'none'){ toast('Sevkiyat & fatura bölümü Özet düzeninde gizli (⚙ Özeti düzenle).', true); return; }
+    var v = sevkFaturaVerisi(); if (!ozetGenel()){ _sfAcikAy = _sfAcikAy || {}; _sfAcikAy[ozetDonem()] = true; }
+    renderOzetSevkFatura(v, true);
+    try { host.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch(e){}
+    host.classList.remove('flash'); void host.offsetWidth; host.classList.add('flash');
   }
 
   function renderFormSelects(){
@@ -18951,6 +19220,7 @@ Dikkat edilmesi gereken 2 nokta:
   function eurTl(v){ return (v < 0 ? '−€' : '€')+fmt(Math.abs(v))+(tl(v) ? ' <span class="muted">(₺'+fmt(tl(v))+')</span>' : ''); }
   function ozetDetay(k){
     if (k === 'eurborc'){ virgoEurBorcDetay(); return; } // r370
+    if (k === 'sevk'){ sevkFaturaGoster(); return; } // r381
     var bugun = todayISO(), ay = thisMonthKey(), d = null;
     var sabit = calcSabitGider(), saatM = calcSaatMaliyeti(), kapasite = state.config ? Number(state.config.aylikMakineSaati)||0 : 0;
     if (k === 'uretim'){
@@ -25548,7 +25818,7 @@ Dikkat edilmesi gereken 2 nokta:
   // yukarı / aşağı taşınır; her blok tek tek gizlenebilir. Ayar kullanıcıya özel, bu tarayıcıda saklanır.
   // Bölümler kendi kaplarında yeniden çizildiği için düzen her çizimden sonra (MutationObserver) yeniden uygulanır.
   var OZET_DUZEN_KEY = 'ozerp_ozet_duzen_v1';
-  var OZET_BOLUM_AD = { ozetAnaliz: 'Üretim analizi (makine / operatör / ürün)', ozetDonemSerit: 'Dönem şeridi (bugün, hafta, ay: adet ve ₺)', ozetCards: 'Kartlar (üretim, katkı, iş emri, fire, duruş…)', ozetIzgara: 'Makineler, ürün katkısı, uyarılar, trend', ozetPano: 'Yönetim panosu (grafikler)', ozetVirgoBorc: 'Virgo\'ya borç (kalan borç, ödemeler, ay ay)', ozetHesapDefteri: 'Ortaklar ve hesap defteri' };
+  var OZET_BOLUM_AD = { ozetAnaliz: 'Üretim analizi (makine / operatör / ürün)', ozetDonemSerit: 'Dönem şeridi (bugün, hafta, ay: adet ve ₺)', ozetCards: 'Kartlar (üretim, katkı, iş emri, fire, duruş…)', ozetIzgara: 'Makineler, ürün katkısı, uyarılar, trend', ozetPano: 'Yönetim panosu (grafikler)', ozetSevkFatura: 'Sevkiyat & fatura (ay ay sevk edilen adet, gönderim başına fatura, tahsilat)', ozetVirgoBorc: 'Virgo\'ya borç (kalan borç, ödemeler, ay ay)', ozetHesapDefteri: 'Ortaklar ve hesap defteri' };
   function ozetDuzen(){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); return t[aktifKullaniciId() || '-'] || { sira: [], gizli: [] }; } catch(e){ return { sira: [], gizli: [] }; } }
   function ozetDuzenYaz(d){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); t[aktifKullaniciId() || '-'] = d; localStorage.setItem(OZET_DUZEN_KEY, JSON.stringify(t)); } catch(e){} }
   function ozetBlokAdi(b){ var h = b.querySelector('.block-head h3'); if (!h) return ''; var k = h.cloneNode(true); k.querySelectorAll('.info-ico, button, select').forEach(function(x){ x.remove(); }); return k.textContent.replace(/\s*\(\d[\d.]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim(); }
