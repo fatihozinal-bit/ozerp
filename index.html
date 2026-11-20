@@ -1331,7 +1331,7 @@
   .oz-iki-s b { font-size:clamp(11px, 11.5cqw, 16px); font-weight:700; font-variant-numeric:tabular-nums; }
   .oz-iki-s[data-ozetdetay]:hover span { text-decoration:underline; color:var(--ink); }
   .oz-iki-not { margin-top:10px; font-size:12px; line-height:1.5; color:var(--ink-soft); display:flex; flex-direction:column; gap:4px; } .oz-iki-not b { color:var(--ink); }
-  /* r383: Özet › Takvim (vergi / SGK son günleri, ay sonu kayıtları, vadeler, hatırlatmalar) */
+  /* r384: Özet › Takvim (vergi / SGK son günleri, ay sonu kayıtları, vadeler, hatırlatmalar) */
   #ozetTakvim { scroll-margin-top:90px; }
   .tk-blok .block-head { flex-wrap:wrap; gap:6px; }
   .tk-ust { align-items:center; gap:4px; }
@@ -2008,7 +2008,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r383</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r384</div>
     </div>
   </nav>
   <main>
@@ -4992,7 +4992,7 @@ Dikkat edilmesi gereken 2 nokta:
     return { label: ode ? 'KDV · ödenecek' : 'KDV · devreden', value: '₺' + fmt(ode ? k.odenecek : k.devreden), cls: (ode ? '' : 'accent') + ' yetki-maliyet', detay: 'kdv',
       sub: 'alışta ödenen ₺' + fmt(k.I) + ' · satışta alınan ₺' + fmt(k.H) + ac + (ode ? '' : '<br>gider değil, satış KDV\'sinden geri gelir') };
   }
-  // r383: Kasa & banka kartı: Kasa & Banka › Hesaplar'daki hesapların bakiyesi (hesabın para biriminde; ₺ karşılığı o günün kuruyla).
+  // r384: Kasa & banka kartı: Kasa & Banka › Hesaplar'daki hesapların bakiyesi (hesabın para biriminde; ₺ karşılığı o günün kuruyla).
   // Bu ay ya da genel toplam seçiliyken şu anki bakiye (Kasa & Banka sayfasıyla aynı hesap); geçmiş bir ay seçiliyse o ayın son günündeki bakiye.
   // Nakit = kasa + banka + POS; kredi kartı borcu ayrı gösterilir, nakde katılmaz.
   function ozetKasa(){
@@ -5052,7 +5052,7 @@ Dikkat edilmesi gereken 2 nokta:
       {label:'Kazanç', value: tlY(kazanc), cls:(kazanc < -0.004 ? 'bad' : 'good isaretli')+' yetki-maliyet', detay:'kazanc', sub: donemYazi + (kur ? ' · ' + eurYazi(kazanc) : '')}
     ].concat(ozetBuAy() ? [ // ay sonu tahmini yalnız içinde bulunulan ayda
       {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)}] : [],
-      (function(){ try { var ks = ozetKasaKart(); return ks ? [ks] : []; } catch(e){ renderHatasi('Kasa kartı', e); return []; } })(), // r383
+      (function(){ try { var ks = ozetKasaKart(); return ks ? [ks] : []; } catch(e){ renderHatasi('Kasa kartı', e); return []; } })(), // r384
       (function(){ try { var kk = ozetKdvKart(); return kk ? [kk] : []; } catch(e){ renderHatasi('KDV kartı', e); return []; } })(), [
       // r377: Açık iş emri, Plansız duruş ve Açık alacak kartları kullanıcı isteğiyle Özet'ten kaldırıldı (sayfaları duruyor)
       {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'}
@@ -16913,7 +16913,7 @@ Dikkat edilmesi gereken 2 nokta:
     });
   }
 
-  // ---------- r383: Takvim (Özet › Uyarılar'ın altında) ----------
+  // ---------- r384: Takvim (Özet › Uyarılar'ın altında) ----------
   // Vergi / SGK beyan ve ödeme son günleri, ay sonu kayıtları (bordro, kira faturası, tahsilatın Virgo borcuna dağıtımı), muhasebe dönem sonu
   // (KDV mahsubu, e-Defter beratı), vadeler (alış / satış faturası, çek / senet, kredi taksidi) ve elle eklenen hatırlatmalar ay takviminde.
   // Her işin sabit anahtarı var (kdv:2026-10, bordro:2026-10, hat:<id>:2026-11-05). "Yapıldı" işareti tanimKayitlari'nda tutulur:
@@ -19688,7 +19688,7 @@ Dikkat edilmesi gereken 2 nokta:
     try { var _fd = fireDuzeltAdaylar(); if (_fd.length) ekle('uyari', 'Firesi iyi adetten düşülmemiş ' + _fd.length + ' üretim kaydı var — Üretim Kayıtları', 'kayitlar', ''); } catch(e){}
     try { muhUyarilar(ekle); } catch(e){}
     try { vergiUyarilari(ekle); } catch(e){}
-    try { takvimUyarilari(ekle); } catch(e){ renderHatasi('takvim uyarıları', e); } // r383
+    try { takvimUyarilari(ekle); } catch(e){ renderHatasi('takvim uyarıları', e); } // r384
     try { kirilimUyarilari(ekle); } catch(e){}
     var kap = sinirliDepo() ? dbDocSayilari().toplam / DB_KAPASITE : 0;
     if (kap >= 0.7) ekle(kap >= 0.9 ? 'kritik' : 'uyari', 'Veritabanı doluluğu %'+fmt(kap*100)+' — eski kayıtları arşivleyin (Sistem > Veri & Yedek)', 'veri', '');
@@ -19704,7 +19704,7 @@ Dikkat edilmesi gereken 2 nokta:
     var m = modalAc({ title: 'Uyarı merkezi ('+u.length+')', kaydetYok: true, genislik: 'orta', html: u.length ? u.map(uyariSatirHtml).join('') : '<div class="empty">Uyarı yok 🎉</div>',
       onOpen: function(el, kapat){ el.querySelectorAll('[data-uyari]').forEach(function(r){ r.addEventListener('click', function(){ kapat(); uyariAc(r.dataset.uyari); }); }); } });
   }
-  // Uyarı satırına tıklayınca: kayıt / sayfa; r383: takvim uyarısı (ozet|takvim:GÜN) Özet › Takvim'de o günü açar
+  // Uyarı satırına tıklayınca: kayıt / sayfa; r384: takvim uyarısı (ozet|takvim:GÜN) Özet › Takvim'de o günü açar
   function uyariAc(deger){
     var p = String(deger || '').split('|');
     if (/^takvim:\d{4}-\d{2}-\d{2}$/.test(p[1] || '')){ takvimGoster(p[1].slice(7)); return; }
@@ -19856,7 +19856,7 @@ Dikkat edilmesi gereken 2 nokta:
       du.forEach(function(x){ gr[x.neden] = (gr[x.neden]||0) + durusSuresi(x); });
       d = { t: ozetDonemAd() + ' · plansız duruş', f: 'Duruşlar sayfasındaki bu dönemdeki kayıtların süreleri toplanır. "'+PLANLI_DURUSLAR.join('" ve "')+'" planlı sayılır, dahil edilmez.',
         h: ozetDetayTablo(['Neden','Süre'], Object.keys(gr).map(function(n){ return [esc(n), sureStrOlustur(gr[n])]; }), ['Toplam', sureStrOlustur(toplamla(du, durusSuresi))]), git: 'duruslar', gitAd: 'Duruşlar' };
-    } else if (k === 'kasa'){ // r383
+    } else if (k === 'kasa'){ // r384
       var ks = ozetKasa(), notlar = [];
       var satK = ks.l.map(function(x){ return [esc(x.h.ad) + (x.h.banka ? ' <span class="muted">' + esc(x.h.banka) + '</span>' : ''), esc(x.tur) + (x.kart ? ' <span class="muted">(nakde katılmaz)</span>' : ''), pbFmt(x.bakiye, x.pb), x.kurYok ? '<span class="neg">kur yok</span>' : tlEur(x.tl)]; });
       ks.l.forEach(function(x){ var e = kasaEksiGunu(x.h); if (e) notlar.push('⚠ <b>' + esc(x.h.ad) + '</b> ' + kvTarihTR(e.tarih) + ' günü eksiye düştü (' + pbFmt(e.bakiye, x.pb) + '): kasa eksi bakiye veremez; eksik tahsilat / ortaktan alınan para girilmemiş olabilir.'); });
@@ -19958,7 +19958,7 @@ Dikkat edilmesi gereken 2 nokta:
     var td = ''; try { td = tahsilatDagitimHtml(); } catch(e){ renderHatasi('tahsilat dağıtımı', e); } // r376
     if (!host.dataset.tdBagli){ host.dataset.tdBagli = '1'; host.addEventListener('click', function(e){ var b = e.target.closest('[data-tdonay]'); if (b && !b.disabled) tahsilatDagitimKaydet(b.dataset.tdonay); var a = e.target.closest('[data-tdatla]'); if (a && !a.disabled) tahsilatDagitimKaydet(a.dataset.tdatla, true); }); }
     // r244: kartlar Özet şeridinde, OEE makine tablosunda; burada yalnız uyarılar ve (iş varsa) operasyon darboğazı
-    // r383: uyarıların altında takvim; darboğaz takvimin altında kendi kabında
+    // r384: uyarıların altında takvim; darboğaz takvimin altında kendi kabında
     setHtmlIdle(host, td +
       '<div class="block"><div class="block-head"><h3>Uyarılar ('+u.length+')</h3></div>'+
         '<div class="block-body">'+(u.length ? ozetIlkN('uyari', u, 4, uyariSatirHtml, 'uyarı') : '<div class="empty">Uyarı yok.</div>')+'</div></div>');
