@@ -1880,7 +1880,7 @@
     table.mk input:not([type=checkbox]):not([type=radio]), table.mk select { min-height:40px !important; }
   }
   @media print { .form-alt-toplam, .ek-ac-btn { display:none !important; } }
-  /* ===== r388: Geniş ekran düzeni =====
+  /* ===== r389: Geniş ekran düzeni =====
      Sayfa ekranın tamamını kullanır (önceden 1560 px'te kesiliyordu); açılır pencereler daha geniş açılır ve içlerindeki tablo
      tek satıra sığana kadar genişler (en çok ekranın %96'sı; ölçüm JS'te: pencereyiIcerigeGoreGenislet). Tarih, tutar, kod,
      sayı + birim gibi kısa değerler alt satıra bölünmez ("2026-11-" / "15", "–" / "₺1.200" olmaz); yer gerçekten yetmezse
@@ -2043,7 +2043,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r388</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r389</div>
     </div>
   </nav>
   <main>
@@ -2915,7 +2915,7 @@ Dikkat edilmesi gereken 2 nokta:
       return '<td><input type="text" data-ffc="'+c.key+'" value="'+escAttr(v == null ? '' : v)+'" placeholder="'+escAttr(c.placeholder || '')+'"'+(c.list ? ' list="'+c.list+'" autocomplete="off"' : '')+(c.width ? ' style="width:'+c.width+'"' : '')+'></td>';
     }).join('')+'<td><button type="button" class="kf-sil" data-fftsil="1" title="Satırı sil" aria-label="Satırı sil">×</button></td></tr>';
   }
-  // r388: açılır pencere tek kutuyu paylaşır; önceki formun genişlik / sütun düzeni (wide: çok sütunlu alan ızgarası, genis, orta, tam)
+  // r389: açılır pencere tek kutuyu paylaşır; önceki formun genişlik / sütun düzeni (wide: çok sütunlu alan ızgarası, genis, orta, tam)
   // ve canlı önizleme kutusu (openForm onInput) sonraki pencereye geçmesin. Kendi düzenini kuran pencere açılmadan önce çağırır.
   var _pencereEnGenis = 0; // açık pencerenin içeriğe göre ulaştığı genişlik (pencereyiIcerigeGoreGenislet)
   function formKutusuSifirla(){
@@ -9128,7 +9128,7 @@ Dikkat edilmesi gereken 2 nokta:
   })();
   EK_HER_ZAMAN.push(duzenlemeUyarisi);
 
-  // r388: tablolarda bölünmemesi gereken kısa değerler (tarih, saat, tutar, oran, kod, sayı + birim, tek kelime) .tek-satir alır:
+  // r389: tablolarda bölünmemesi gereken kısa değerler (tarih, saat, tutar, oran, kod, sayı + birim, tek kelime) .tek-satir alır:
   // geniş ekranda alt satıra kırılmaz; yer yetmezse yalnız uzun açıklamalar kırılır. Sabit düzenli (table-layout: fixed)
   // tablolar hariç (orada hücre genişliği bilerek eşit). Sayfa, pencere ya da tablo yeniden çizildikçe eklenen hücreler işaretlenir.
   var TEK_SATIR_KALIP = /^(?:\S{1,40}|[−–+-]?\s?[€₺$%]?\s?[\d.,]+\s?(?:%|€|₺|\$|adet|ad|kg|gr|g|sa|saat|dk|sn|gün|hafta|ay|yıl|m|mm|cm|m²|m2|lt|ton|TL|EUR|USD|kez|kişi|kalem|kayıt|hareket|fiş|fatura|belge)?\.?|\d{1,4}[.\/-]\d{1,2}[.\/-]\d{1,4}\s+\d{1,2}:\d{2}(?::\d{2})?|\d{1,2}[.\/]\d{1,2}\s+\S{2,4}|[€₺$]\s?[\d.,]+\s+[≈=]\s+[€₺$]\s?[\d.,]+)$/;
@@ -9164,7 +9164,7 @@ Dikkat edilmesi gereken 2 nokta:
     }).observe(document.body, { childList: true, subtree: true, characterData: true });
     hucreleriIsaretle(document.body);
   })();
-  // r388: orta / genis / wide pencere, içindeki tablo tek satıra sığacak kadar genişler (üst sınır CSS'te: en çok ekranın %96'sı).
+  // r389: orta / genis / wide pencere, içindeki tablo tek satıra sığacak kadar genişler (üst sınır CSS'te: en çok ekranın %96'sı).
   // Genişliği yalnız tablolar belirler; uzun açıklama metni pencereyi uzatmaz, pencerenin genişliğinde satırlara dağılır.
   // Pencere açıkken içerik yeniden çizilse de daralmaz (zıplamasın); yeni pencere açılınca sıfırlanır (formKutusuSifirla).
   function pencereyiIcerigeGoreGenislet(){
@@ -9193,7 +9193,7 @@ Dikkat edilmesi gereken 2 nokta:
     new MutationObserver(iste).observe(byId('formOverlay'), { attributes: true, attributeFilter: ['class'] });
     window.addEventListener('resize', iste);
   })();
-  // r388: Özet kartları en az ~210 px genişlikte; hepsi bir satıra sığmazsa satırlar dengeli bölünür (10 kart → 5 + 5, 9 + 1 değil)
+  // r389: Özet kartları en az ~210 px genişlikte; hepsi bir satıra sığmazsa satırlar dengeli bölünür (10 kart → 5 + 5, 9 + 1 değil)
   (function(){
     var el = byId('ozetCards'); if (!el || !window.ResizeObserver) return;
     function ozetKartSutunu(){
