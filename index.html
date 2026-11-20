@@ -1956,7 +1956,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r382</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r383</div>
     </div>
   </nav>
   <main>
@@ -4983,12 +4983,22 @@ Dikkat edilmesi gereken 2 nokta:
     // r370: € borç (makine): MS Mekanik Sanatlar faturalarının fatura günü kuruyla € karşılığı − € borç ödemeleri; tıklayınca ayrıntı
     // r382: gelir ve kazanç iki ölçüyle: üretime göre (üretim karşılığı) ve faturaya göre (kesilen fatura − iade); gider ikisinden de düşülür
     var fg = null; try { if (sekmeIzinli('faturalar')) fg = ozetFaturaGelir(); } catch(e){ renderHatasi('Fatura geliri', e); }
+    var ese = null; if (fg) try { ese = eslesmeDonem(uretimFaturaEslesme()); } catch(e){ renderHatasi('Üretim / fatura eşleştirme', e); } // r383
+    var esAlt = function(){
+      if (!ese) return '';
+      var ref = ozetGenel() ? thisMonthKey() : ozetDonem(), dis = Object.keys(ese.F.kaynak).filter(function(a){ return ozetGenel() ? false : a !== ozetDonem(); }).sort(), l = [];
+      if (dis.length) l.push('<span title="Bu dönem kesilen faturaların önceki aylarda üretilen mala düşen kısmı">faturada ' + dis.map(function(a){ return esc(ayAdiKisa(a, ref)) + ' üretimi ₺' + fmt(ese.F.kaynak[a]); }).join(', ') + '</span>');
+      if (ese.U.fatsiz > 0.5) l.push('<span title="' + escAttr(fmt(ese.U.fatsizAdet) + ' adet; stok kartı fiyatıyla') + '">' + (ozetGenel() ? 'faturalanmamış üretim' : esc(ayAdiKisa(ozetDonem(), ref)) + ' üretiminden faturalanmayan') + ' ₺' + fmt(ese.U.fatsiz) + '</span>');
+      else if (ese.U.uTl > 0.5){ var sonra = ozetGenel() ? [] : Object.keys(ese.U.fAylar).filter(function(b){ return b > ozetDonem(); }).sort();
+        l.push('<span class="pos">' + (ozetGenel() ? 'üretimin hepsi faturalandı' : 'bu ayın üretimi faturalandı' + (sonra.length ? ' (' + sonra.map(function(b){ return esc(ayAdiKisa(b, ref)); }).join(', ') + ' faturasıyla)' : '')) + '</span>'); }
+      return l.join('<br>');
+    };
     if (fg){
       var kazF = fg.net - gider, fark = toplamCiro - fg.net, isr = function(v){ return v < -0.004 ? 'neg' : 'pos'; };
       cards = cards.map(function(c){
         if (c.detay === 'ciro') return { label: 'Gelir (KDV hariç)', cls: 'yetki-maliyet oz-iki-kart', detay: 'ciro',
           value: ozetIkiSatir([{ ad: 'Üretim', v: '₺' + fmt(toplamCiro), d: 'ciro', ip: 'Üretime göre: bu dönem üretilen adet × stok kartı fiyatı (üretim karşılığı)' }, { ad: 'Fatura', v: '₺' + fmt(fg.net), d: 'fatura', ip: 'Faturaya göre: bu dönem kesilen satış faturaları (KDV hariç) − satış iadeleri' }]),
-          sub: '<span title="' + escAttr(fark > 0.5 ? 'Bu dönem üretilip henüz faturalanmayan iş (stokta / sevk bekleyen) ve fiyat farkı' : fark < -0.5 ? 'Önceki dönemde üretilip bu dönem faturalanan iş ve fiyat farkı' : '') + '">' + (Math.abs(fark) < 0.5 ? 'üretim = fatura' : fark > 0 ? 'üretim ₺' + fmt(fark) + ' önde' : 'fatura ₺' + fmt(-fark) + ' önde') + '</span>' + (fg.taslakTl > 0.5 ? '<br><span title="Taslak faturalar kesilince faturaya göre gelire girer">+ taslak ₺' + fmt(fg.taslakTl) + '</span>' : '') };
+          sub: (ese ? esAlt() : '<span>' + (Math.abs(fark) < 0.5 ? 'üretim = fatura' : fark > 0 ? 'üretim ₺' + fmt(fark) + ' önde' : 'fatura ₺' + fmt(-fark) + ' önde') + '</span>') + (fg.taslakTl > 0.5 ? '<br><span title="Taslak faturalar kesilince faturaya göre gelire girer">+ taslak ₺' + fmt(fg.taslakTl) + '</span>' : '') };
         if (c.detay === 'kazanc') return { label: 'Kazanç', cls: (kazanc < -0.004 && kazF < -0.004 ? 'bad' : kazanc >= -0.004 && kazF >= -0.004 ? 'good' : 'accent') + ' yetki-maliyet oz-iki-kart', detay: 'kazanc',
           value: ozetIkiSatir([{ ad: 'Üretim', v: tlY(kazanc), cls: isr(kazanc), d: 'kazanc', ip: 'Üretime göre kazanç: üretim karşılığı − gider' }, { ad: 'Fatura', v: tlY(kazF), cls: isr(kazF), d: 'kazanc', ip: 'Faturaya göre kazanç: kesilen fatura − iade − gider' }]),
           sub: donemYazi };
@@ -5124,6 +5134,66 @@ Dikkat edilmesi gereken 2 nokta:
     var iTl = function(i){ return muhR2((Number(i.araToplam) || 0) * muhKur(i.tarih, i.kur)); };
     var tl = toplamla(kes, sfFaturaTL), itl = toplamla(iad, iTl);
     return { kes: kes, tas: tas, iad: iad, iTl: iTl, tl: tl, iadeTl: itl, taslakTl: toplamla(tas, sfFaturaTL), net: tl - itl };
+  }
+  // r383: kesilen fatura hangi ayın üretimi? Ürün ürün, faturadaki adet fatura tarihine kadar üretilmiş ve henüz faturalanmamış EN ESKİ
+  // üretimden düşülür. Kasım'da kesilen fatura Ekim'de üretilen malı da kapsıyorsa o kısım Ekim üretimine yazılır; böylece "Kasım
+  // faturası = Ekim üretimi ₺… + Kasım üretimi ₺…" ve "Kasım üretiminden faturalanmayan ₺…" görünür. Fatura tarihinden önce üretim
+  // kaydı kalmayan adet "üretim kaydı yok" (ERP öncesi üretim / stoktan); stok kartsız, adetsiz ya da mamul olmayan kalem (hizmet,
+  // nakliye, işçilik) "hizmet / diğer". Üretim tarafı stok kartı fiyatıyla (üretim karşılığı), fatura tarafı faturadaki gerçek fiyatla.
+  function uretimFaturaEslesme(){
+    var sidM = {}, sid = function(id){ if (!(id in sidM)) sidM[id] = urunStokId(id) || id; return sidM[id]; };
+    var uAy = {}, fAy = {}, urunler = {};
+    var UA = function(a){ return uAy[a] = uAy[a] || { ay: a, uAdet: 0, uTl: 0, fAdet: 0, fTl: 0, fUTl: 0, fAylar: {} }; };
+    var FA = function(a){ return fAy[a] = fAy[a] || { ay: a, tl: 0, kaynak: {}, kayitsiz: 0, diger: 0, iade: 0 }; };
+    var gun = {}; // ürün → tarih → adet (son operasyon / mamul girişi; Özet'in üretilen adediyle aynı kayıtlar)
+    ozetUretimHam().forEach(function(k){ if (!k.tarih || !k.urunId || !sonOperasyonKaydiMi(k)) return; var a = Number(k.adet) || 0; if (a <= 0) return; var g = gun[sid(k.urunId)] = gun[sid(k.urunId)] || {}; g[k.tarih] = (g[k.tarih] || 0) + a; });
+    urunListesi().forEach(function(u){
+      var key = sid(u.id); if (urunler[key]) return;
+      var fiyat = ozetUrunFiyat(u).fiyat, g = gun[key] || {};
+      var l = Object.keys(g).sort().map(function(t){ return { tarih: t, adet: g[t], kalan: g[t] }; });
+      l.forEach(function(x){ var A = UA(x.tarih.slice(0, 7)); A.uAdet += x.adet; A.uTl += x.adet * fiyat; });
+      urunler[key] = { fiyat: fiyat, l: l };
+    });
+    (state.faturalar || []).filter(function(f){ return f.durum === 'Kesildi' && f.tarih; })
+      .sort(function(a, b){ return String(a.tarih).localeCompare(String(b.tarih)) || String(a.faturaNo || '').localeCompare(String(b.faturaNo || '')); })
+      .forEach(function(f){
+        var F = FA(f.tarih.slice(0, 7));
+        sfFaturaKalemTL(f).forEach(function(x){
+          F.tl += x.tl;
+          var U = x.stokId ? urunler[sid(x.stokId)] : null;
+          if (!U || !(x.miktar > 0)){ F.diger += x.tl; return; }
+          var kalan = x.miktar;
+          U.l.forEach(function(p){
+            if (kalan <= 1e-9 || p.kalan <= 1e-9 || p.tarih > f.tarih) return;
+            var q = Math.min(kalan, p.kalan), tl = x.tl * q / x.miktar, a = p.tarih.slice(0, 7), A = UA(a);
+            p.kalan -= q; kalan -= q;
+            A.fAdet += q; A.fTl += tl; A.fUTl += q * U.fiyat; A.fAylar[F.ay] = (A.fAylar[F.ay] || 0) + tl;
+            F.kaynak[a] = (F.kaynak[a] || 0) + tl;
+          });
+          if (kalan > 1e-9) F.kayitsiz += x.tl * kalan / x.miktar;
+        });
+      });
+    (state.satisIadeleri || []).forEach(function(i){ if (!(Number(i.araToplam) > 0) || !i.tarih) return; FA(i.tarih.slice(0, 7)).iade += muhR2(Number(i.araToplam) * muhKur(i.tarih, i.kur)); });
+    return { uretim: uAy, fatura: fAy };
+  }
+  // Seçili Özet dönemi için eşleştirme toplamı (ay ya da genel toplam: bugüne kadarki aylar)
+  function eslesmeDonem(E){
+    var icinde = function(a){ return ozetGenel() ? a <= thisMonthKey() : a === ozetDonem(); };
+    var U = { uAdet: 0, uTl: 0, fAdet: 0, fTl: 0, fUTl: 0, fAylar: {} }, F = { tl: 0, kaynak: {}, kayitsiz: 0, diger: 0, iade: 0 };
+    Object.keys(E.uretim).filter(icinde).forEach(function(a){ var x = E.uretim[a]; ['uAdet', 'uTl', 'fAdet', 'fTl', 'fUTl'].forEach(function(k){ U[k] += x[k]; }); Object.keys(x.fAylar).forEach(function(b){ U.fAylar[b] = (U.fAylar[b] || 0) + x.fAylar[b]; }); });
+    Object.keys(E.fatura).filter(icinde).forEach(function(a){ var x = E.fatura[a]; ['tl', 'kayitsiz', 'diger', 'iade'].forEach(function(k){ F[k] += x[k]; }); Object.keys(x.kaynak).forEach(function(b){ F.kaynak[b] = (F.kaynak[b] || 0) + x.kaynak[b]; }); });
+    U.fatsiz = Math.max(0, U.uTl - U.fUTl); U.fatsizAdet = Math.max(0, U.uAdet - U.fAdet);
+    return { U: U, F: F, icinde: icinde };
+  }
+  function ayAdiKisa(a, ref){ return MUH_AY_ADI[Number(a.slice(5, 7)) - 1] + (ref && a.slice(0, 4) === ref.slice(0, 4) ? '' : ' ' + a.slice(0, 4)); }
+  // Faturanın kaynağı tablosu: dönemde kesilen faturalar hangi ayın üretimi (+ üretim kaydı yok, hizmet / diğer, − iade)
+  function eslesmeKaynakTablo(ed){
+    var F = ed.F, ref = ozetGenel() ? thisMonthKey() : ozetDonem();
+    var sat = Object.keys(F.kaynak).sort().map(function(a){ return [esc(ayAdiKisa(a, ref)) + ' üretimi' + (!ozetGenel() && a === ozetDonem() ? ' <span class="muted">(bu ay)</span>' : ''), tlEur(F.kaynak[a])]; });
+    if (F.kayitsiz > 0.5) sat.push(['Üretim kaydı olmayan ürün <span class="muted">(ERP öncesi üretim / stoktan)</span>', tlEur(F.kayitsiz)]);
+    if (F.diger > 0.5) sat.push(['Hizmet, nakliye, işçilik ve diğer kalemler', tlEur(F.diger)]);
+    if (F.iade > 0.5) sat.push(['− Satış iadesi', tlEur(-F.iade)]);
+    return ozetDetayTablo(['Bu dönem kesilen faturalar nereden geliyor', 'Tutar (KDV hariç)'], sat, ['Faturaya göre gelir', tlEur(F.tl - F.iade)]);
   }
   // Kartta iki satır (üretime göre / faturaya göre); her satır kendi ayrıntısını açar
   function ozetIkiSatir(l){
@@ -19296,7 +19366,13 @@ Dikkat edilmesi gereken 2 nokta:
         f: '<b>Üretime göre</b> = bu dönemin üretim karşılığı (Üretim Kayıtları × stok kartı fiyatı) − gider. <b>Faturaya göre</b> = bu dönem kesilen satış faturaları (KDV hariç ₺, fatura tarihine göre; taslaklar kesilince girer) − satış iadeleri − gider. ' +
           'Gider ikisinde de aynıdır: Giderler + Alış Faturaları + Bordro Özeti, KDV hariç, yatırım hariç; belgesi girilmemiş maaş ve kira tahmini.',
         h: ozetDetayTablo(['Hesap', 'Üretime göre', 'Faturaya göre'], [['Gelir (KDV hariç)', lnk('ciro', tlEur(kc2)), lnk('fatura', tlEur(fk.net))], ['− Gider', lnk('gider', tlEur(-kg2)), lnk('gider', tlEur(-kg2))]], ['Kazanç', tlEur(kc2 - kg2), tlEur(fk.net - kg2)]) +
-          '<div class="oz-iki-not"><div><b>Fark ' + tlEur(fr) + '</b> ' + (Math.abs(fr) < 0.5 ? '— üretilen kadar faturalandı.' : fr > 0 ? '— bu dönem üretilip henüz faturalanmayan (stokta / sevk bekleyen) iş; fiyat farkı da buraya düşer.' : '— önceki dönemde üretilip bu dönem faturalanan iş; fiyat farkı da buraya düşer.') + (fk.taslakTl > 0.5 ? ' Taslak fatura ₺' + fmt(fk.taslakTl) + ' kesilince faturaya göre kazanca girer.' : '') + '</div>' +
+          (function(){ var ed = eslesmeDonem(uretimFaturaEslesme()), ref = ozetGenel() ? thisMonthKey() : ozetDonem();
+            return '<div style="height:10px"></div>' + eslesmeKaynakTablo(ed) +
+              '<div class="oz-iki-not"><div><b>Neden farklı (' + tlEur(fr) + '):</b> Üretim sütunu ' + (ozetGenel() ? 'bugüne kadarki' : 'yalnız bu ayın') + ' üretimi; Fatura sütunu ' + (ozetGenel() ? 'bugüne kadar' : 'bu ay') + ' kesilen faturalar. Fatura başka ayın üretimini de kapsıyorsa (yukarıdaki tablo) ya da ' + (ozetGenel() ? 'üretimin bir kısmı' : 'bu ayın üretimi') + ' henüz faturalanmadıysa ikisi ayrışır. ' +
+                (ed.U.fatsiz > 0.5 ? (ozetGenel() ? 'Faturalanmamış üretim' : esc(ayAdiKisa(ozetDonem(), ref)) + ' üretiminden faturalanmayan') + ': <b>₺' + fmt(ed.U.fatsiz) + '</b> (' + fmt(ed.U.fatsizAdet) + ' adet, stok kartı fiyatıyla). ' : '') +
+                (Math.abs(ed.U.fTl - ed.U.fUTl) > 0.5 ? 'Faturalanan kısımda fatura fiyatı ile stok kartı fiyatı farkı: ₺' + fmt(ed.U.fTl - ed.U.fUTl) + '. ' : '') +
+                (fk.taslakTl > 0.5 ? 'Taslak fatura ₺' + fmt(fk.taslakTl) + ' kesilince faturaya göre kazanca girer.' : '') + '</div>'; })() +
+          '<div class="oz-iki-not" style="margin-top:6px">' +
           '<div><b>Üretime göre:</b> fabrikanın bu dönem ne iş çıkardığı; ay ay verim ve performans buna bakılarak izlenir, faturanın gecikmesinden etkilenmez.</div>' +
           '<div><b>Faturaya göre:</b> resmi gelir; KDV, geçici vergi ve kurumlar vergisi bunun üzerinden hesaplanır, tahsilat da faturadan doğar.</div>' +
           '<div>İkisi zamanla birbirine yaklaşır. Üretim sürekli öndeyse faturalanmayan mal birikiyor demektir: Özet › Sevkiyat &amp; fatura.</div></div>',
@@ -19314,8 +19390,20 @@ Dikkat edilmesi gereken 2 nokta:
       var urSat = urSira.map(function(key){ var r = ur[key], fk2 = r.uT - r.fT; return [esc(r.ad), r.uA ? fmt(r.uA) : '—', r.fA ? fmt2(r.fA) : '—', r.uT ? tlEur(r.uT) : '—', r.fT ? tlEur(r.fT) : '—', Math.abs(fk2) < 0.5 ? '—' : tlEur(fk2)]; });
       d = { t: ozetDonemAd() + ' · faturaya göre gelir',
         f: 'Bu dönemde <b>kesilen</b> satış faturalarının KDV hariç tutarı (fatura tarihine göre ₺; döviz faturası fatura günü kuruyla) − satış iadeleri. Taslak faturalar kesilince girer; muhasebe fişi, KDV Beyanı ve BA/BS ile aynı ölçü.<br>' +
-          'Alttaki tablo ürün ürün bu dönem üretileni ve faturalananı karşılaştırır. Fark: bu dönem üretilip henüz faturalanmayan (stokta / sevk bekleyen), önceki dönemde üretilip bu dönem faturalanan ve fiyat farkı (üretim karşılığı stok kartı fiyatıyla, fatura gerçek fiyatla). Adetsiz kalemler (nakliye, hizmet) kendi adıyla görünür.',
+          '<b>Nereden geliyor</b> tablosu: faturadaki her ürünün adedi, fatura tarihine kadar üretilmiş ve henüz faturalanmamış en eski üretimden düşülür; Kasım\'da kesilen fatura Ekim üretimini de kapsıyorsa o kısım Ekim üretimi yazılır. Fatura tarihinden önce üretim kaydı kalmayan adet "üretim kaydı olmayan ürün"dür (ERP öncesi üretim / stoktan).<br>' +
+          'Ürün ürün tablosu bu dönem üretileni ve faturalananı karşılaştırır. Fark: bu dönem üretilip henüz faturalanmayan (stokta / sevk bekleyen), önceki dönemde üretilip bu dönem faturalanan ve fiyat farkı (üretim karşılığı stok kartı fiyatıyla, fatura gerçek fiyatla). Adetsiz kalemler (nakliye, hizmet) kendi adıyla görünür.',
         h: ozetDetayTablo(['Tarih', 'Belge', 'Müşteri', 'Tutar (KDV hariç)', 'Tahsilat'], fsat, ['Toplam', fd.kes.length + ' fatura' + (fd.iad.length ? ' · ' + fd.iad.length + ' iade' : ''), '', tlEur(fd.net), '']) +
+          (function(){ // r383: faturanın hangi ayın üretimi olduğu ve üretim ay ay ne kadarı faturalandı
+            var E = uretimFaturaEslesme(), ed = eslesmeDonem(E), ref = thisMonthKey();
+            var aylar = Object.keys(E.uretim).filter(function(a){ return a <= thisMonthKey() && E.uretim[a].uTl > 0.5; }).sort().reverse();
+            var t = '<div style="height:10px"></div>' + eslesmeKaynakTablo(ed);
+            if (aylar.length) t += '<div style="height:10px"></div><div class="muted" style="font-size:11.5px;margin-bottom:4px">Üretim ay ay: ne kadarı, hangi ayın faturasıyla faturalandı (bütün aylar)</div>' +
+              ozetDetayTablo(['Üretim ayı', 'Üretilen adet', 'Faturalanan adet', 'Üretim karşılığı', 'Faturalanan (fatura fiyatıyla)', 'Faturalanmayan (stok fiyatıyla)', 'Faturalandığı ay'],
+                aylar.map(function(a){ var x = E.uretim[a], fs = Math.max(0, x.uTl - x.fUTl);
+                  return [esc(muhAyAdi(a)) + (ed.icinde(a) ? ' <span class="muted">(seçili)</span>' : ''), fmt(x.uAdet), fmt2(x.fAdet), tlEur(x.uTl), x.fTl > 0.5 ? tlEur(x.fTl) : '—', fs > 0.5 ? '<span class="neg">' + tlEur(fs) + '</span>' : '<span class="pos">✓</span>',
+                    Object.keys(x.fAylar).sort().map(function(b){ return esc(ayAdiKisa(b, ref)) + ' ₺' + fmt(x.fAylar[b]); }).join(', ') || '—']; }),
+                ['Toplam', fmt(toplamla(aylar, function(a){ return E.uretim[a].uAdet; })), fmt2(toplamla(aylar, function(a){ return E.uretim[a].fAdet; })), tlEur(toplamla(aylar, function(a){ return E.uretim[a].uTl; })), tlEur(toplamla(aylar, function(a){ return E.uretim[a].fTl; })), tlEur(toplamla(aylar, function(a){ return Math.max(0, E.uretim[a].uTl - E.uretim[a].fUTl); })), '']);
+            return t; })() +
           (fd.tas.length ? '<div style="height:10px"></div><div class="muted" style="font-size:11.5px;margin-bottom:4px">Taslak faturalar — kesilince faturaya göre gelire girer:</div>' + ozetDetayTablo(['Tarih', 'Fatura', 'Müşteri', 'Tutar (KDV hariç)'], fd.tas.map(function(f){ return [esc(kvTarihTR(f.tarih)), '<a href="#faturalar/' + escAttr(f.id) + '">' + esc(f.faturaNo) + '</a>', esc(musteriAdiById(f.musteriId)), tlEur(sfFaturaTL(f))]; }), ['Toplam', '', '', tlEur(fd.taslakTl)]) : '') +
           (urSat.length ? '<div style="height:10px"></div><div class="muted" style="font-size:11.5px;margin-bottom:4px">Ürün ürün: üretilen ve faturalanan</div>' + ozetDetayTablo(['Ürün', 'Üretilen adet', 'Faturalanan adet', 'Üretim karşılığı', 'Fatura tutarı', 'Fark (üretim − fatura)'], urSat,
             ['Toplam', '', '', tlEur(toplamla(urSira, function(key){ return ur[key].uT; })), tlEur(toplamla(urSira, function(key){ return ur[key].fT; })), tlEur(toplamla(urSira, function(key){ return ur[key].uT - ur[key].fT; }))]) : ''),
