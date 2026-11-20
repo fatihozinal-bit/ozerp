@@ -2008,7 +2008,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r386</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r387</div>
     </div>
   </nav>
   <main>
@@ -13201,6 +13201,62 @@ Dikkat edilmesi gereken 2 nokta:
       function(f){ return (f.faturaNo||f.no)+' · kalan '+(belgePB(f) !== 'EUR' ? pbFmt(alisKalanBelge(f), belgePB(f)) : euro(alisKalan(f)))+(f.vadeTarihi ? ' · vade '+f.vadeTarihi : ''); }, bos);
   }
   function odemeFaturaUyumsuz(o){ var f = o.alisFaturaId ? (state.alisFaturalari||[]).find(function(x){ return x.id === o.alisFaturaId; }) : null; return f && f.tedarikciId !== o.cariId ? f : null; }
+  // r387: alış faturalarının ödemeleri fatura tarihine çekilir ("her fatura kesildiği gün ödenmiş gibi"). Ödemenin hangi faturayı
+  // kapattığı cari dağıtımından (bağlı fatura ya da en eski açık fatura); tek faturayı kapatan ödemenin tarihi o faturanın tarihi olur ve
+  // faturaya bağlanır. Birden çok faturayı kapatan ödeme fatura başına bölünür (her parça kendi faturasının tarihiyle); faturaya düşmeyen
+  // artan kısım eski tarihle kalır. Çek / senetle ödeme bölünmez (en son faturanın tarihi). Kilitli dönem atlanır.
+  function odemeFaturaTarihPlani(){
+    var d = cariDagitim('Alış'), g = {};
+    d.dagilim.forEach(function(x){ var o = x.o; if (!o || !o.id) return; var r = pbOraniTarihte(belgePB(x.f), o) || 0;
+      (g[o.id] = g[o.id] || { o: o, l: [] }).l.push({ f: x.f, tl: x.miktar * r }); });
+    var plan = [];
+    Object.keys(g).forEach(function(id){
+      var o = g[id].o, l = g[id].l.sort(function(a, b){ return String(a.f.tarih || '').localeCompare(String(b.f.tarih || '')); }), top = odemeTL(o);
+      if (!(top > 0.004)) return;
+      var kilit = donemKilitli(o.tarih) || l.some(function(x){ return donemKilitli(x.f.tarih); });
+      var cek = cekYontemi(o.yontem) || !!o.cekId, bt = Number(o.belgeTutar != null && o.belgeTutar !== '' ? o.belgeTutar : o.tutar) || 0;
+      var parca = [], kalanB = bt;
+      if (l.length === 1 || cek){ var f = l[l.length - 1].f, dagTl = toplamla(l, function(x){ return x.tl; }), artan = top - dagTl;
+        if (artan > 0.5 && !cek){ var b1 = muhR2(bt * dagTl / top); parca.push({ f: f, belge: b1 }); kalanB = muhR2(bt - b1); }
+        else { parca.push({ f: f, belge: bt, hepsi: true }); kalanB = 0; } }
+      else l.forEach(function(x){ var b = muhR2(bt * x.tl / top); parca.push({ f: x.f, belge: b }); kalanB = muhR2(kalanB - b); });
+      // yuvarlama artığı son parçaya; gerçek artan (faturaya düşmeyen) eski tarihle kalır
+      if (Math.abs(kalanB) < 0.05 && parca.length && !parca[parca.length - 1].hepsi){ parca[parca.length - 1].belge = muhR2(parca[parca.length - 1].belge + kalanB); kalanB = 0; }
+      var degisir = parca.length > 1 || kalanB > 0.004 || parca[0].f.tarih !== o.tarih || o.alisFaturaId !== parca[0].f.id;
+      if (!degisir) return;
+      plan.push({ o: o, parca: parca, kalanB: kalanB, kilit: kilit, cek: cek && l.length > 1 });
+    });
+    return plan.sort(function(a, b){ return String(a.parca[0].f.tarih || '').localeCompare(String(b.parca[0].f.tarih || '')); });
+  }
+  function odemeFaturaTarihFormu(){
+    if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
+    if (!izinVar('duzenle')){ toast(izinYokMesaji('duzenle'), true); return; }
+    var plan = odemeFaturaTarihPlani(), uygun = plan.filter(function(p){ return !p.kilit; });
+    var pf = function(o, x){ return pbFmt(x, belgePB(o)); };
+    var satir = function(p, i){ var o = p.o;
+      return '<tr' + (p.kilit ? ' class="muted"' : '') + '><td><input type="checkbox" data-oft="' + i + '"' + (p.kilit ? ' disabled' : ' checked') + ' style="width:auto"></td><td>' + esc(cariAdi(o.cariId)) + '</td><td>' + esc(kvTarihTR(o.tarih)) + '</td><td class="num">' + pf(o, o.belgeTutar != null && o.belgeTutar !== '' ? o.belgeTutar : o.tutar) + '</td><td>' +
+        p.parca.map(function(x){ return '<b>' + esc(kvTarihTR(x.f.tarih)) + '</b> · ' + esc(x.f.faturaNo || x.f.no || '') + (p.parca.length > 1 || p.kalanB > 0.004 ? ' · ' + pf(o, x.belge) : ''); }).join('<br>') +
+        (p.kalanB > 0.004 ? '<br><span class="muted">faturaya düşmeyen ' + pf(o, p.kalanB) + ' eski tarihte kalır</span>' : '') + (p.parca.length > 1 ? '<br><span class="muted">' + p.parca.length + ' ödemeye bölünür</span>' : '') +
+        (p.cek ? '<br><span class="muted">çek / senet: bölünmez, son faturanın tarihi</span>' : '') + (p.kilit ? '<br><span class="neg">kilitli dönem: atlanır</span>' : '') + '</td></tr>'; };
+    var html = plan.length ? '<p class="muted" style="margin-top:0">Her ödeme kapattığı alış faturasının tarihine çekilir (fatura hangi gün kesildiyse o gün ödenmiş sayılır) ve o faturaya bağlanır. Birden çok faturayı kapatan ödeme fatura başına bölünür. ₺ dışı ödemenin € karşılığı yeni tarihin kuruyla hesaplanır. Kasa / banka bakiyesi de yeni tarihlere göre değişir.</p>' +
+      '<div class="tablewrap"><table><thead><tr><th></th><th>Cari</th><th>Ödeme tarihi</th><th class="num">Tutar</th><th>Yeni tarih · fatura</th></tr></thead><tbody>' + plan.map(satir).join('') + '</tbody></table></div>'
+      : '<div class="empty">Değişecek ödeme yok: bütün ödemeler zaten kapattıkları faturanın tarihinde.</div>';
+    modalAc({ title: 'Ödeme tarihlerini fatura tarihine çek', genislik: 'genis', html: html, kaydetYok: !uygun.length, kaydetEtiket: 'Seçilenleri uygula', onSave: function(el){
+      var sec = plan.filter(function(p, i){ var c = el.querySelector('[data-oft="' + i + '"]'); return c && c.checked && !p.kilit; });
+      if (!sec.length){ toast('Ödeme seçilmedi.', true); return false; }
+      var isler = [];
+      sec.forEach(function(p){ var o = p.o, ilk = true;
+        var yap = function(x, belge, tarih, faturaId){ var v = Object.assign({}, o, { tarih: tarih, alisFaturaId: faturaId });
+          if (belgePB(o) === 'EUR'){ v.belgeTutar = belge; v.tutar = belge; } else v.belgeTutar = belge;
+          basitBelgeEur(v, 'belgeTutar', 'tutar'); delete v.id; return v; };
+        p.parca.forEach(function(x){ var v = yap(x, x.belge, x.f.tarih, x.f.id);
+          if (ilk){ ilk = false; isler.push(kayitGuncelle('odemeler', o.id, { tarih: v.tarih, alisFaturaId: v.alisFaturaId, belgeTutar: v.belgeTutar, tutar: v.tutar, kur: v.kur || 0, dovizKuru: v.dovizKuru || 0 })); }
+          else { delete v.olusturma; delete v.olusturan; v.aciklama = [o.aciklama, 'bölünen ödeme'].filter(Boolean).join(' · '); isler.push(kayitEkle('odemeler', v)); } });
+        if (p.kalanB > 0.004){ var k = yap(null, p.kalanB, o.tarih, ''); delete k.olusturma; delete k.olusturan; k.aciklama = [o.aciklama, 'bölünen ödemenin faturaya düşmeyen kısmı'].filter(Boolean).join(' · '); isler.push(kayitEkle('odemeler', k)); }
+      });
+      Promise.all(isler).then(function(){ toast('✓ ' + sec.length + ' ödeme fatura tarihine çekildi'); }).catch(function(e){ toast('Bir kısmı kaydedilemedi: ' + dbErrMsg(e), true); });
+    } });
+  }
   var ODEME_TANIM = {
     key: 'odeme', collection: 'odemeler', state: 'odemeler', listeBaslik: 'Ödemeler (tedarikçi / fasoncu)', yeniEtiket: '+ Ödeme',
     fields: function(v){ return [
@@ -14189,7 +14245,8 @@ Dikkat edilmesi gereken 2 nokta:
   // Sayfa araç çubuğu: para birimi görünümü, Excel, yazdır (r246: Aylık kazanç bloğundan taşındı)
   function virgoAracHtml(){ var g = virgoPbGorunum();
     return '<div class="vg-arac"><label class="muted" style="margin:0">Tutarlar</label><select data-virgopb="1" title="Sayfadaki tutarlar">' + [['₺', 'Yalnız ₺'], ['ikisi', '₺ + €'], ['€', 'Yalnız €']].map(function(x){ return '<option value="' + x[0] + '"' + (g === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>' +
-      '<button class="btn secondary small" data-virgoexcel="1">⇩ Excel</button><button class="btn secondary small" data-virgoyazdir="1">Yazdır</button></div>'; }
+      '<button class="btn secondary small" data-virgoexcel="1">⇩ Excel</button><button class="btn secondary small" data-virgoyazdir="1">Yazdır</button>' +
+      (izinVar('duzenle') ? '<button class="btn secondary small" data-odemefattarih="1" title="Alış faturalarının ödemeleri, faturanın kesildiği güne çekilir (önizleme açılır, onaylayınca kaydedilir)">Ödemeleri fatura tarihine çek</button>' : '') + '</div>'; }
   function virgoKartlar(){
     // r222: dört ana kart (kalan borç, üretim, geri ödenen, kazanç); Virgo ₺ fatura, elimizdeki para, ödenecek ve son mutabakat yalnız varsa
     var t = virgoToplam(), kur = virgoGunKuru(todayISO());
@@ -15550,6 +15607,7 @@ Dikkat edilmesi gereken 2 nokta:
         if (e.target.closest('[data-verpaktar]')){ virgoErpAktarFormu(); return; }
         if (e.target.closest('[data-vsag-kaldir]')){ virgoSaglamaKaldir(); return; }
         if (e.target.closest('[data-virgoyazdir]')){ virgoYazdir(); return; }
+        if (e.target.closest('[data-odemefattarih]')){ odemeFaturaTarihFormu(); return; } // r387
         var opb = e.target.closest('[data-vortakpb]');
         if (opb){ configWrite({ virgoOrtakPb: opb.dataset.vortakpb }).then(function(){ var el = byId('virgoAlt'); if (el) el.__sonHtml = null; EK_RENDER.virgo(); }).catch(function(err){ toast('Kaydedilemedi: ' + dbErrMsg(err), true); }); return; }
         var vs = e.target.closest('[data-vsekmesec]');
