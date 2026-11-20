@@ -1877,6 +1877,38 @@
     table.mk input:not([type=checkbox]):not([type=radio]), table.mk select { min-height:40px !important; }
   }
   @media print { .form-alt-toplam, .ek-ac-btn { display:none !important; } }
+  /* ===== r388: Geniş ekran düzeni =====
+     Sayfa ekranın tamamını kullanır (önceden 1560 px'te kesiliyordu); açılır pencereler daha geniş açılır ve içlerindeki tablo
+     tek satıra sığana kadar genişler (en çok ekranın %96'sı; ölçüm JS'te: pencereyiIcerigeGoreGenislet). Tarih, tutar, kod,
+     sayı + birim gibi kısa değerler alt satıra bölünmez ("2026-11-" / "15", "–" / "₺1.200" olmaz); yer gerçekten yetmezse
+     yalnız uzun açıklamalar alt satıra geçer. Kısa değerli hücreler JS'te işaretlenir (.tek-satir, hucreleriIsaretle).
+     Telefon düzeni değişmez. */
+  main { max-width: 2400px; }
+  @media (min-width: 768px) {
+    td.num, th.num, .tek-satir { white-space: nowrap; }
+  }
+  /* Telefonda yalnız yana kaydırılabilen tablolarda (kart görünümlü kalem tabloları hariç) */
+  @media (max-width: 767px) {
+    .tablewrap table:not(.mk) :is(td, th):is(.num, .tek-satir) { white-space: nowrap; }
+  }
+  @media (min-width: 601px) {
+    #formBox { max-width: 560px; }
+    #formBox.wide { width: min(1320px, 96vw); max-width: min(1720px, 96vw); }
+    #formBox.orta { width: min(760px, 96vw); max-width: min(1440px, 96vw); }
+    #formBox.genis { width: min(1040px, 96vw); max-width: min(1720px, 96vw); }
+    #formBox.tam { width: 96vw; max-width: min(1800px, 96vw); }
+    #formBox.tam:has(.oz-detay) { max-width: min(1800px, 96vw); }
+  }
+  /* Form ızgarasında yan yana iki kutulu alan (tarih + saat gibi) kendi hücresinde kalır, yandaki alanın altına girmez */
+  .grid2 > .field > div[style*="display:flex"] > input:not([type=checkbox]):not([type=radio]) { flex: 1 1 0; min-width: 0; }
+  .grid2 > .field > div[style*="display:flex"] > input[type=time] { flex: 0 1 112px; }
+  @media (min-width: 768px) { .grid2 > .field.ir-sevk { grid-column: span 2; } }
+  /* Operatör ekranı: geniş ekranda makine / iş emri kartları adı tek satıra sığacak genişlikte */
+  @media (min-width: 1100px) { .op-grid, .op-iri .op-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); } }
+  /* Tablo görünümü: geniş ekranda uzun ad / açıklama hücreleri daha geç kısalır (…) */
+  @media (min-width: 1600px) { .tg-tablo td { max-width: 460px; } }
+  /* Özet kartları: kart başına en az ~210 px; sığmayınca satırlar dengeli bölünür (sütun sayısı JS'te: ozetKartSutunu) */
+  @media (min-width: 981px) { .cards.ozet-kpi { grid-auto-flow: row; grid-template-columns: repeat(var(--kpi-sutun, 8), minmax(0, 1fr)); } }
 </style>
 </head>
 <body>
@@ -2008,7 +2040,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r387</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r388</div>
     </div>
   </nav>
   <main>
@@ -2879,6 +2911,15 @@ Dikkat edilmesi gereken 2 nokta:
       if (c.type === 'hesap') return '<td class="num ff-hesap" data-ffh="'+c.key+'"'+(c.width ? ' style="min-width:'+c.width+'"' : '')+'></td>'; // r299: satırdan hesaplanan, kayda yazılmaz
       return '<td><input type="text" data-ffc="'+c.key+'" value="'+escAttr(v == null ? '' : v)+'" placeholder="'+escAttr(c.placeholder || '')+'"'+(c.list ? ' list="'+c.list+'" autocomplete="off"' : '')+(c.width ? ' style="width:'+c.width+'"' : '')+'></td>';
     }).join('')+'<td><button type="button" class="kf-sil" data-fftsil="1" title="Satırı sil" aria-label="Satırı sil">×</button></td></tr>';
+  }
+  // r388: açılır pencere tek kutuyu paylaşır; önceki formun genişlik / sütun düzeni (wide: çok sütunlu alan ızgarası, genis, orta, tam)
+  // ve canlı önizleme kutusu (openForm onInput) sonraki pencereye geçmesin. Kendi düzenini kuran pencere açılmadan önce çağırır.
+  var _pencereEnGenis = 0; // açık pencerenin içeriğe göre ulaştığı genişlik (pencereyiIcerigeGoreGenislet)
+  function formKutusuSifirla(){
+    var box = document.getElementById('formBox'), titleEl = document.getElementById('formTitle'), canliEl = document.getElementById('formCanli');
+    _pencereEnGenis = 0;
+    if (box){ box.classList.remove('wide', 'genis', 'orta', 'tam'); box.style.width = ''; }
+    if (canliEl && titleEl){ var basK = canliEl.parentNode; basK.parentNode.insertBefore(titleEl, basK); basK.remove(); }
   }
   function openForm(opts){
     // opts: {title, fields:[{key,label,type,options,placeholder}], values:{}, onSave: function(values){...}}
@@ -5675,6 +5716,7 @@ Dikkat edilmesi gereken 2 nokta:
     var saveBtn = document.getElementById('formKaydet');
     var cancelBtn = document.getElementById('formIptal');
     if (!overlay || !titleEl || !fieldsEl || !saveBtn || !cancelBtn) return;
+    formKutusuSifirla();
     titleEl.textContent = 'Üretim kaydını düzenle';
     var girenKaynagi = (state.kullanicilar && state.kullanicilar.length) ? state.kullanicilar : state.personel;
     var acikIsEmirleri = state.isemirleri.filter(function(ie){
@@ -6520,9 +6562,7 @@ Dikkat edilmesi gereken 2 nokta:
     if (!overlay || !titleEl || !fieldsEl || !saveBtn || !cancelBtn) return;
     titleEl.textContent = opts.title;
     var formBox = byId('formBox');
-    formBox.classList.remove('wide','genis','orta'); formBox.classList.add('tam');
-    var canliEl = byId('formCanli');
-    if (canliEl){ var basK = canliEl.parentNode; basK.parentNode.insertBefore(titleEl, basK); basK.remove(); }
+    formKutusuSifirla(); formBox.classList.add('tam');
     var init = Object.assign({}, opts.initial || {});
     var cariEtiket = opts.cariEtiket || 'Müşteri';
     // En erken teslim satırı yalnız satış teklifi (teslim süresi) ve satış siparişinde (termin) çıkar
@@ -8205,6 +8245,7 @@ Dikkat edilmesi gereken 2 nokta:
     var saveBtn = document.getElementById('formKaydet');
     var cancelBtn = document.getElementById('formIptal');
     if (!overlay || !titleEl || !fieldsEl || !saveBtn || !cancelBtn) return;
+    formKutusuSifirla();
     titleEl.textContent = 'İş emrini düzenle: '+ie.isEmriNo;
     var draft = (ie.gerekliOperasyonlar && ie.gerekliOperasyonlar.length)
       ? OPERASYONLAR.map(function(o){ return ie.gerekliOperasyonlar.indexOf(o) > -1; })
@@ -9035,9 +9076,9 @@ Dikkat edilmesi gereken 2 nokta:
   function modalAc(opts){
     var overlay = byId('formOverlay'), titleEl = byId('formTitle'), fieldsEl = byId('formFields');
     var saveBtn = byId('formKaydet'), cancelBtn = byId('formIptal'), box = byId('formBox');
+    formKutusuSifirla();
     titleEl.textContent = opts.title || '';
     fieldsEl.innerHTML = opts.html || '';
-    box.classList.remove('genis','orta','tam');
     if (opts.genislik) box.classList.add(opts.genislik);
     saveBtn.textContent = opts.kaydetEtiket || 'Kaydet';
     saveBtn.style.display = opts.kaydetYok ? 'none' : '';
@@ -9045,7 +9086,7 @@ Dikkat edilmesi gereken 2 nokta:
     overlay.classList.add('open');
     function cleanup(){
       overlay.classList.remove('open');
-      box.classList.remove('genis','orta');
+      box.classList.remove('genis','orta','tam','wide');
       saveBtn.textContent = 'Kaydet'; saveBtn.style.display = ''; cancelBtn.textContent = 'İptal';
       saveBtn.removeEventListener('click', onSave);
       cancelBtn.removeEventListener('click', onCancel);
@@ -9067,7 +9108,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // openForm (base) kapanırken genişlik sınıfı kalmasın
   var _openFormAsil = openForm;
-  openForm = function(o){ var box = byId('formBox'); if (box) box.classList.remove('genis','orta','tam'); var sb = byId('formKaydet'); if (sb){ sb.style.display=''; sb.textContent='Kaydet'; } if (!formYetkisi(o)) return; duzenlemeBasla(o); return _openFormAsil(o); };
+  openForm = function(o){ formKutusuSifirla(); var sb = byId('formKaydet'); if (sb){ sb.style.display=''; sb.textContent='Kaydet'; } if (!formYetkisi(o)) return; duzenlemeBasla(o); return _openFormAsil(o); };
   var _openKalemFormAsil = openKalemForm;
   openKalemForm = function(o){ if (!formYetkisi(o)) return; duzenlemeBasla(o); return _openKalemFormAsil(o); };
   // Form kapanınca düzenleme kaydı bırakılır (kaydetme, form kapanmadan önce çağrıldığı için çakışma kontrolü yapılmış olur)
@@ -9077,6 +9118,83 @@ Dikkat edilmesi gereken 2 nokta:
       .observe(ov, { attributes: true, attributeFilter: ['class'] });
   })();
   EK_HER_ZAMAN.push(duzenlemeUyarisi);
+
+  // r388: tablolarda bölünmemesi gereken kısa değerler (tarih, saat, tutar, oran, kod, sayı + birim, tek kelime) .tek-satir alır:
+  // geniş ekranda alt satıra kırılmaz; yer yetmezse yalnız uzun açıklamalar kırılır. Sabit düzenli (table-layout: fixed)
+  // tablolar hariç (orada hücre genişliği bilerek eşit). Sayfa, pencere ya da tablo yeniden çizildikçe eklenen hücreler işaretlenir.
+  var TEK_SATIR_KALIP = /^(?:\S{1,40}|[−–+-]?\s?[€₺$%]?\s?[\d.,]+\s?(?:%|€|₺|\$|adet|ad|kg|gr|g|sa|saat|dk|sn|gün|hafta|ay|yıl|m|mm|cm|m²|m2|lt|ton|TL|EUR|USD|kez|kişi|kalem|kayıt|hareket|fiş|fatura|belge)?\.?|\d{1,4}[.\/-]\d{1,2}[.\/-]\d{1,4}\s+\d{1,2}:\d{2}(?::\d{2})?|\d{1,2}[.\/]\d{1,2}\s+\S{2,4}|[€₺$]\s?[\d.,]+\s+[≈=]\s+[€₺$]\s?[\d.,]+)$/;
+  function hucreleriIsaretle(kok){
+    if (!kok || !kok.querySelectorAll) return;
+    var liste = kok.matches && kok.matches('td, th') ? [kok] : kok.querySelectorAll('td, th'), sabit = new Map();
+    for (var i = 0; i < liste.length; i++){
+      var c = liste[i], m = c.textContent;
+      if (m.length > 120) { if (c.classList.contains('tek-satir')) c.classList.remove('tek-satir'); continue; }
+      m = m.replace(/\s+/g, ' ').trim();
+      // sütun başlığı: kısa başlık da ("Kalite kontrol", "KDV hariç (€)", "Birim fiyat (€) — maliyet") tek satır
+      var tek = !!m && m.length <= 40 && (TEK_SATIR_KALIP.test(m) || (c.tagName === 'TH' && m.length <= 28)) && !(c.childElementCount && c.querySelector('input, select, textarea, table, br, p, ul, ol, div'));
+      if (tek){
+        var t = c.closest('table');
+        if (t){ if (!sabit.has(t)) sabit.set(t, getComputedStyle(t).tableLayout === 'fixed'); if (sabit.get(t)) tek = false; }
+      }
+      if (tek !== c.classList.contains('tek-satir')) c.classList.toggle('tek-satir', tek);
+    }
+  }
+  (function(){
+    if (!window.MutationObserver) return;
+    var bekleyen = [], plan = 0;
+    function calis(){ plan = 0; var l = bekleyen; bekleyen = []; for (var i = 0; i < l.length; i++) if (l[i].isConnected) hucreleriIsaretle(l[i]); }
+    new MutationObserver(function(kayitlar){
+      for (var i = 0; i < kayitlar.length; i++){
+        var k = kayitlar[i], h = k.target;
+        // hücrenin metni değiştiyse hücre, yeni düğüm eklendiyse eklenen düğüm yeniden değerlendirilir
+        if (h.nodeType === 3) h = h.parentNode;
+        if (h && h.closest){ var td = h.closest('td, th'); if (td) bekleyen.push(td); }
+        for (var j = 0; j < k.addedNodes.length; j++){ var n = k.addedNodes[j]; if (n.nodeType === 1 && (n.tagName === 'TD' || n.tagName === 'TH' || n.querySelector('td, th'))) bekleyen.push(n); }
+      }
+      if (bekleyen.length && !plan) plan = requestAnimationFrame(calis);
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    hucreleriIsaretle(document.body);
+  })();
+  // r388: orta / genis / wide pencere, içindeki tablo tek satıra sığacak kadar genişler (üst sınır CSS'te: en çok ekranın %96'sı).
+  // Genişliği yalnız tablolar belirler; uzun açıklama metni pencereyi uzatmaz, pencerenin genişliğinde satırlara dağılır.
+  // Pencere açıkken içerik yeniden çizilse de daralmaz (zıplamasın); yeni pencere açılınca sıfırlanır (formKutusuSifirla).
+  function pencereyiIcerigeGoreGenislet(){
+    var ov = byId('formOverlay'), box = byId('formBox'), f = byId('formFields');
+    if (!ov || !box || !f) return;
+    if (!ov.classList.contains('open') || window.innerWidth <= 600 || !/(^|\s)(orta|genis|wide)(\s|$)/.test(box.className)){ if (box.style.width) box.style.width = ''; return; }
+    box.style.width = ''; // temel genişlik (CSS) üzerinden ölçülür; aynı karede yeniden yazıldığı için titreme olmaz
+    // offsetWidth: açılış animasyonundaki ölçek (scale) ölçümü kısaltmasın diye dönüşümsüz yerleşim genişliği
+    var temel = box.offsetWidth, gerek = 0;
+    f.querySelectorAll('table').forEach(function(t){
+      if (!t.getClientRects().length || (t.parentElement && t.parentElement.closest('table'))) return;
+      var ek = temel - t.parentElement.offsetWidth, eski = t.getAttribute('style');
+      t.style.width = 'max-content'; t.style.minWidth = '0'; t.style.maxWidth = 'none';
+      var w = t.offsetWidth;
+      if (eski == null) t.removeAttribute('style'); else t.setAttribute('style', eski);
+      gerek = Math.max(gerek, Math.ceil(w + ek + 2));
+    });
+    _pencereEnGenis = Math.max(_pencereEnGenis, gerek);
+    if (_pencereEnGenis > temel + 1) box.style.width = _pencereEnGenis + 'px';
+  }
+  (function(){
+    var f = byId('formFields'), plan = 0; if (!f || !window.MutationObserver) return;
+    function calis(){ plan = 0; pencereyiIcerigeGoreGenislet(); }
+    function iste(){ if (!plan) plan = requestAnimationFrame(calis); }
+    new MutationObserver(iste).observe(f, { childList: true, subtree: true });
+    new MutationObserver(iste).observe(byId('formOverlay'), { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('resize', iste);
+  })();
+  // r388: Özet kartları en az ~210 px genişlikte; hepsi bir satıra sığmazsa satırlar dengeli bölünür (10 kart → 5 + 5, 9 + 1 değil)
+  (function(){
+    var el = byId('ozetCards'); if (!el || !window.ResizeObserver) return;
+    function ozetKartSutunu(){
+      var n = el.children.length, w = el.clientWidth; if (!n || !w) return;
+      var sigan = Math.max(1, Math.floor((w + 6) / (210 + 6))), satir = Math.ceil(n / sigan), c = Math.ceil(n / satir);
+      if (el.style.getPropertyValue('--kpi-sutun') !== String(c)) el.style.setProperty('--kpi-sutun', c);
+    }
+    new ResizeObserver(ozetKartSutunu).observe(el);
+    new MutationObserver(ozetKartSutunu).observe(el, { childList: true });
+  })();
 
   // ---------- Açılır pencere davranışları (bütün formlar tek overlay'i kullanır) ----------
   // × ve Esc kapatır; Ctrl/Cmd+Enter kaydeder; dışarı tıklamak ya da Esc, girilmiş veriyi sormadan silmez;
@@ -23507,7 +23625,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<div class="field"><label>İrsaliye çeşidi</label><select id="irTip"' + (mevcut ? ' disabled' : '') + '>' + IRSALIYE_TIPLERI.map(function(x){ return '<option' + (x.ad === d.tip ? ' selected' : '') + '>' + esc(x.ad) + '</option>'; }).join('') + '</select><span class="field-hint">' + esc(t.yon) + (t.stoksuz ? ' · stoğa işlenmez (demirbaş / takım gidişi)' : '') + '</span></div>' +
         (t.cari ? '<div class="field"><label>Cari</label><select id="irCari"><option value="">Seçin</option>' + state.musteriler.filter(irsCariFiltre(t)).map(function(m){ return '<option value="' + m.id + '"' + (m.id === d.cariId ? ' selected' : '') + '>' + esc((m.kod ? m.kod + ' · ' : '') + m.ad) + '</option>'; }).join('') + '</select></div>' : '<div></div>') +
         '<div class="field"><label>Düzenleme tarihi</label><input type="date" id="irTarih" value="' + escAttr(d.tarih) + '"></div>' +
-        '<div class="field"><label>Fiili sevk tarihi / saati</label><div style="display:flex;gap:6px"><input type="date" id="irSevkT" value="' + escAttr(d.sevkTarihi || '') + '"><input type="time" id="irSevkS" value="' + escAttr(d.sevkSaati || '') + '"></div></div>' +
+        '<div class="field ir-sevk"><label>Fiili sevk tarihi / saati</label><div style="display:flex;gap:6px"><input type="date" id="irSevkT" value="' + escAttr(d.sevkTarihi || '') + '"><input type="time" id="irSevkS" value="' + escAttr(d.sevkSaati || '') + '"></div></div>' +
         (t.yon !== 'Giriş' && !t.stoksuz ? '<div class="field"><label>Çıkan depo</label>' + depoSec('irKDepo', d.kaynakDepo, 'stok kartının varsayılanı') + '</div>' : '') +
         (t.yon !== 'Çıkış' && !t.stoksuz ? '<div class="field"><label>Giren depo</label>' + depoSec('irHDepo', d.hedefDepo, 'stok kartının varsayılanı') + '</div>' : '') +
         '<div class="field" style="grid-column:1 / -1"><label>' + (t.yon === 'Giriş' ? 'Malın geldiği adres' : 'Sevk / teslim adresi') + '</label><input type="text" id="irAdres" value="' + escAttr(d.adres || '') + '" style="width:100%"></div>' +
