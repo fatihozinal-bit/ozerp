@@ -2008,7 +2008,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r384</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r385</div>
     </div>
   </nav>
   <main>
@@ -15302,24 +15302,62 @@ Dikkat edilmesi gereken 2 nokta:
     return Promise.all(p).catch(function(e){ toast('Stok hareketi yazılamadı: ' + dbErrMsg(e), true); });
   }
   var _virgoDuzenlenen = null;
-  function virgoSevkYeni(){ crudYeni(VIRGO_TANIM, { hareket: VIRGO_HAREKET[6], sevkKarsilik: VIRGO_SEVK_KARSILIK[0], kategori: '', kdvOrani: '0', paraBirimi: '₺', odeyen: '' }); }
-  // r268: nakde dönüş — ay ay üretilen, sevk edilen, karşılığı (borçtan düşen / para gelen), stokta bekleyen (birikimli) ve planlanan sevk (Ödenecek)
+  // r385: nakde dönüş satış faturalarından (ilk giren ilk çıkar). Elle sevk girişi kalktı: satış faturası kesilince stok zaten düşer.
+  // Ürün ürün, faturadaki adet fatura tarihine kadar üretilmiş ve henüz çıkmamış EN ESKİ üretimden düşülür (önce Ekim, sonra Kasım);
+  // stokta kalan adet hep en son ayların üretimidir. Değerler Virgo fiyatıyla (üretim karşılığı); fatura tutarı faturadaki fiyatla, KDV hariç.
+  function virgoNakdeVerisi(){
+    var lot = {}, aylar = {}, faturaAy = {}, kayitsiz = { adet: 0, tl: 0 };
+    var AL = function(ay){ return aylar[ay] || (aylar[ay] = { ay: ay, uAdet: 0, uTl: 0, cAdet: 0, cTl: 0, kAdet: 0, kTl: 0, fAdet: 0, fTl: 0, nereye: {} }); };
+    var anahtar = function(id){ var vu = virgoUrun(id); return (vu && vu.stokId) || urunStokId(id) || id; };
+    virgoUretimKayitlari().forEach(function(u){
+      if (u.araOp || !u.urunId) return; var adet = Number(u.adet) || 0; if (adet <= 0) return;
+      var a = virgoUretimAralik(u), tl = virgoUretimTl(u), key = anahtar(u.urunId);
+      virgoUretimParcalar(u).forEach(function(p){
+        var q = adet * p.oran; if (q <= 1e-9) return;
+        (lot[key] = lot[key] || []).push({ tarih: a.bas.slice(0, 7) === p.ay ? a.bas : p.ay + '-01', ay: p.ay, adet: q, kalan: q, birim: tl / adet });
+        var A = AL(p.ay); A.uAdet += q; A.uTl += tl * p.oran;
+      });
+    });
+    Object.keys(lot).forEach(function(k){ lot[k].sort(function(a, b){ return a.tarih.localeCompare(b.tarih); }); });
+    var virgoStok = {}; virgoUrunler().forEach(function(u){ if (u.stokId) virgoStok[u.stokId] = 1; });
+    (state.faturalar || []).filter(function(f){ return f.durum === 'Kesildi' && /^\d{4}-\d{2}-\d{2}/.test(f.tarih || ''); })
+      .sort(function(a, b){ return String(a.tarih).localeCompare(String(b.tarih)) || String(a.faturaNo || '').localeCompare(String(b.faturaNo || '')); })
+      .forEach(function(f){
+        var fay = f.tarih.slice(0, 7);
+        sfFaturaKalemTL(f).forEach(function(x){
+          if (!x.stokId || !(x.miktar > 0)) return;
+          var key = urunStokId(x.stokId) || x.stokId, L = lot[key]; if (!L && !virgoStok[key]) return; // Virgo ürünü değil
+          var F = AL(fay); F.fAdet += x.miktar; F.fTl += x.tl; faturaAy[fay] = 1;
+          var kalan = x.miktar;
+          (L || []).forEach(function(p){
+            if (kalan <= 1e-9 || p.kalan <= 1e-9 || p.tarih > f.tarih) return;
+            var q = Math.min(kalan, p.kalan), A = AL(p.ay); p.kalan -= q; kalan -= q;
+            A.cAdet += q; A.cTl += q * p.birim; A.nereye[fay] = (A.nereye[fay] || 0) + q;
+          });
+          if (kalan > 1e-9){ kayitsiz.adet += kalan; kayitsiz.tl += x.tl * kalan / x.miktar; }
+        });
+      });
+    Object.keys(lot).forEach(function(k){ lot[k].forEach(function(p){ if (p.kalan > 1e-9){ var A = AL(p.ay); A.kAdet += p.kalan; A.kTl += p.kalan * p.birim; } }); });
+    return { l: Object.keys(aylar).sort().map(function(k){ return aylar[k]; }), kayitsiz: kayitsiz };
+  }
   function virgoNakdeHtml(){
-    var kl = virgoKayitlari(); if (!kl.length && !virgoUretimKayitlari().length) return '';
-    var aylar = {}, al = function(ay){ return aylar[ay] || (aylar[ay] = { ay: ay, uAdet: 0, uTl: 0, sAdet: 0, mahsup: 0, para: 0, pAdet: 0, pTl: 0 }); };
-    virgoAylar().forEach(function(a){ var x = al(a.ay); x.uAdet = a.adet; x.uTl = a.gelir.tl; });
-    kl.forEach(function(v){ if (!virgoSevkMi(v) || !/^\d{4}-\d{2}/.test(v.tarih || '')) return; var n = virgoNorm(v), x = al(v.tarih.slice(0, 7)), adet = (v.sevkKalemler || []).reduce(function(a, k){ return a + (Number(k.adet) || 0); }, 0);
-      if (!n.odendi){ x.pAdet += adet; x.pTl += n.tl; return; }
-      x.sAdet += adet; if (n.tip === 'sevkPara') x.para += n.tl; else x.mahsup += n.tl; });
-    var l = Object.keys(aylar).sort().map(function(k){ return aylar[k]; }), bA = 0, bT = 0, t = { uAdet: 0, uTl: 0, sAdet: 0, mahsup: 0, para: 0, pAdet: 0, pTl: 0 };
-    l.forEach(function(x){ bA += x.uAdet - x.sAdet; bT += x.uTl - x.mahsup - x.para; x.bA = bA; x.bT = bT; Object.keys(t).forEach(function(k){ t[k] += x[k]; }); });
+    if (!virgoKayitlari().length && !virgoUretimKayitlari().length) return '';
+    var d = virgoNakdeVerisi(), l = d.l, t = { uAdet: 0, uTl: 0, cAdet: 0, cTl: 0, kAdet: 0, kTl: 0, fAdet: 0, fTl: 0 }, ref = thisMonthKey();
+    l.forEach(function(x){ Object.keys(t).forEach(function(k){ t[k] += x[k]; }); });
     var tl = function(v, kalin){ if (Math.abs(v) < 0.5) return '<span class="muted">—</span>'; var y = virgoTl(v); return kalin ? '<b>' + y + '</b>' : y; };
-    var ad = function(v){ return Math.abs(v) < 0.5 ? '<span class="muted">—</span>' : fmt(v); };
-    var satir = function(x, son){ return '<tr' + (son ? ' class="kv-alt"' : '') + '><td>' + (son ? '<b>Toplam</b>' : esc(muhAyAdi(x.ay))) + '</td><td class="num">' + ad(x.uAdet) + '</td><td class="num">' + tl(x.uTl) + '</td><td class="num">' + ad(x.sAdet) + '</td><td class="num">' + tl(x.mahsup) + '</td><td class="num">' + tl(x.para) + '</td>' +
-      '<td class="num">' + ad(x.bA) + '</td><td class="num' + (x.bT > 0.5 ? ' neg' : '') + '">' + tl(x.bT, true) + '</td><td class="num muted">' + (x.pAdet ? fmt(x.pAdet) + ' · ' + virgoTl(x.pTl) : '—') + '</td></tr>'; };
-    return '<div class="block"><div class="block-head"><h3>Nakde dönüş ' + infoIco('Üretilen parça stoğa girer; Virgo\'ya sevk edilince stoktan düşer ve karşılığı ya Virgo borcundan düşer (mahsup) ya da para olarak gelir. Stokta bekleyen = o ay sonuna kadar üretilen − sevk edilen (birikimli); bekleyen değer = üretim karşılığı − sevklerin karşılığı, yani henüz nakde / mahsuba dönmemiş üretim. Planlanan: "Ödenecek" durumuyla girilen ileri tarihli sevkler, toplamlara girmez. Sevki "+ Sevk gir" ile girin.') + '</h3><div class="bh-actions"><button class="btn small" data-vsevkgir="1">+ Sevk gir</button></div></div>' +
-      '<div class="block-body tablewrap"><table><thead><tr><th>Ay</th><th class="num">Üretilen</th><th class="num">Üretim karşılığı</th><th class="num">Sevk edilen</th><th class="num">Borçtan düşen</th><th class="num">Para gelen</th><th class="num">Stokta bekleyen</th><th class="num">Bekleyen değer</th><th class="num">Planlanan sevk</th></tr></thead><tbody>' +
-      (l.length ? l.map(function(x){ return satir(x); }).join('') + satir(Object.assign({ bA: bA, bT: bT }, t), true) : '<tr><td colspan="9" class="empty">Henüz üretim ya da sevk yok.</td></tr>') + '</tbody></table></div></div>';
+    var ad = function(v, kalin){ if (Math.abs(v) < 0.5) return '<span class="muted">—</span>'; return kalin ? '<b>' + fmt(Math.round(v)) + '</b>' : fmt(Math.round(v)); };
+    var nereye = function(x){ var k = Object.keys(x.nereye || {}).sort(); return k.length ? '<div class="muted" style="font-size:11px">' + k.map(function(a){ return esc(ayAdiKisa(a, ref)) + ' faturası ' + fmt(Math.round(x.nereye[a])); }).join(', ') + '</div>' : ''; };
+    var satir = function(x, son){ return '<tr' + (son ? ' class="kv-alt"' : '') + '><td>' + (son ? '<b>Toplam</b>' : esc(muhAyAdi(x.ay))) + '</td><td class="num">' + ad(x.uAdet, son) + '</td><td class="num">' + tl(x.uTl, son) + '</td>' +
+      '<td class="num">' + ad(x.cAdet, son) + (son ? '' : nereye(x)) + '</td><td class="num">' + tl(x.cTl, son) + '</td>' +
+      '<td class="num">' + ad(x.kAdet, true) + '</td><td class="num">' + tl(x.kTl, true) + '</td>' +
+      '<td class="num">' + (x.fAdet > 0.5 ? fmt(Math.round(x.fAdet)) + ' · ' + virgoTl(x.fTl) : '<span class="muted">—</span>') + '</td></tr>'; };
+    var kalanAy = l.filter(function(x){ return x.kAdet > 0.5; }).map(function(x){ return esc(ayAdiKisa(x.ay, ref)) + ' üretiminden ' + fmt(Math.round(x.kAdet)); });
+    var not = (kalanAy.length ? 'Stokta kalan: ' + kalanAy.join(', ') + ' adet.' : (t.uAdet > 0.5 ? 'Üretimin hepsi faturayla çıktı.' : '')) +
+      (d.kayitsiz.adet > 0.5 ? ' Faturalarda fatura tarihinden önce üretim kaydı olmayan ' + fmt(Math.round(d.kayitsiz.adet)) + ' adet var (' + virgoTl(d.kayitsiz.tl) + '; ERP öncesi stok ya da sonradan girilen üretim).' : '');
+    return '<div class="block"><div class="block-head"><h3>Nakde dönüş ' + infoIco('Üretilen parça stoğa girer; satış faturası kesilince stoktan düşer. İlk giren ilk çıkar: faturadaki adet, fatura tarihine kadar üretilmiş ve henüz çıkmamış en eski üretimden düşülür (önce Ekim, sonra Kasım). Böylece stokta kalan adet hep en son ayların üretimidir. Faturayla çıkan / stokta kalan değeri Virgo fiyatıyla (üretim karşılığı); "Bu ay kesilen fatura" faturadaki fiyatla, KDV hariç. Elle sevk girişi gerekmez; veriler Satış Faturaları\'ndan gelir.') + '</h3></div>' +
+      '<div class="block-body tablewrap"><table><thead><tr><th>Üretim ayı</th><th class="num">Üretilen</th><th class="num">Üretim karşılığı</th><th class="num">Faturayla çıkan</th><th class="num">Çıkan değeri</th><th class="num">Stokta kalan</th><th class="num">Kalan değeri</th><th class="num">Bu ay kesilen fatura</th></tr></thead><tbody>' +
+      (l.length ? l.map(function(x){ return satir(x); }).join('') + satir(t, true) : '<tr><td colspan="8" class="empty">Henüz üretim ya da satış faturası yok.</td></tr>') + '</tbody></table>' +
+      (not ? '<p class="muted" style="font-size:12px;margin:8px 0 0">' + not + '</p>' : '') + '</div></div>';
   }
   var VIRGO_TANIM = {
     key: 'virgo', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'virgo'; }, listeBaslik: 'Ortaklar hareketleri', yeniEtiket: '+ Hareket', katli: true,
@@ -15484,7 +15522,6 @@ Dikkat edilmesi gereken 2 nokta:
           host.querySelectorAll('[data-valinanic="' + va.dataset.valinan + '"]').forEach(function(r){ r.style.display = ac ? '' : 'none'; }); return; }
         var vd = e.target.closest('[data-vd]'); if (vd){ virgoDetayAc(vd.dataset.vd); return; }
         var vz = e.target.closest('[data-vduzelt]'); if (vz){ virgoKayitAc(vz.dataset.vduzelt); return; }
-        if (e.target.closest('[data-vsevkgir]')){ virgoSevkYeni(); return; }
         if (e.target.closest('[data-vodemegir]')){ crudYeni(VIRGO_TANIM, { hareket: VIRGO_HAREKET[2], kategori: '', kdvOrani: '0', paraBirimi: '₺' }); return; }
         if (e.target.closest('[data-vdokum]')){ var sel = host.querySelector('[data-vdokumay]'); if (sel && sel.value) virgoAyDokum(sel.value); return; }
         var kb = e.target.closest('[data-vkopya]');
@@ -15635,7 +15672,7 @@ Dikkat edilmesi gereken 2 nokta:
     var l = virgoUrunler(), kul = {}, kur = virgoGunKuru(todayISO());
     virgoUretimKayitlari().forEach(function(u){ var k = kul[u.urunId] || (kul[u.urunId] = { adet: 0, tutar: 0, tl: 0 }); k.adet += Number(u.adet) || 0; k.tutar += Number(u.tutar) || 0; k.tl += virgoUretimTl(u); });
     return '<div class="block"><div class="block-head"><h3>Ürünler ve fiyatlar (adet başı, KDV hariç) ' + infoIco('Virgo\'yla anlaştığınız parça başı fiyat, ₺ (gerekirse €); € karşılığı arka planda TCMB kuruyla hesaplanır. Üretim Girişi\'nde bu ürün (aynı stok kartı) seçilince karşılığı bu fiyatla, üretim gününün kuruyla hesaplanır (bilgi; borçtan düşmez). Yeni yazılan ürün aynı adlı stok kartına bağlanır, yoksa Mamul kartı açılır. Fiyatı değiştirirseniz aktarılmış eski Virgo girişleri kendi fiyatıyla kalır; Üretim Girişi\'nden girilenlerin hepsi güncel fiyatla görünür. Öbür para birimindeki karşılığı bugünkü kurla bilgi içindir. Üretim girilmiş ürün silinemez.') + '</h3>' +
-      '<div class="bh-actions"><button class="btn secondary small" data-virgoexcel="1" title="Virgo hesabı ve üretimin hepsi tek Excel dosyasında">⇩ Excel</button><button class="btn secondary small" data-vsevk="1" title="Satılan / teslim edilen parçayı stoktan düşer (Stok Hareketleri › Satış / sevk fişi)">− Satış / sevk</button><button class="btn secondary small" data-vurunekle="1">+ Ürün</button><button class="btn small" data-vurunkaydet="1">Kaydet</button></div></div><div class="block-body">' +
+      '<div class="bh-actions"><button class="btn secondary small" data-virgoexcel="1" title="Virgo hesabı ve üretimin hepsi tek Excel dosyasında">⇩ Excel</button><button class="btn secondary small" data-vurunekle="1">+ Ürün</button><button class="btn small" data-vurunkaydet="1">Kaydet</button></div></div><div class="block-body">' +
       '<div class="tablewrap"><table class="vg-tablo"><thead><tr><th>Ürün</th><th class="num">Fiyat / adet</th><th>Para birimi</th><th class="num">Karşılığı (bugünkü kur)</th><th class="num">Toplam üretilen</th><th class="num">Toplam karşılığı</th><th></th></tr></thead><tbody id="vUrunGovde">' +
         l.map(function(u){ return virgoUrunSatir(u, kul[u.id] || { adet: 0, tutar: 0, tl: 0 }, kur); }).join('') +
         (l.length ? '' : virgoUrunSatir({ id: '', ad: '', fiyat: '', pb: '₺' }, { adet: 0, tutar: 0, tl: 0 }, kur)) +
@@ -16241,7 +16278,6 @@ Dikkat edilmesi gereken 2 nokta:
       if (a.dataset.vanalizay) virgoAnalizAy = a.value; else virgoAnalizGrup = a.value;
       var ak2 = byId('virgoAnalizKutu'); if (ak2) ak2.innerHTML = virgoAnalizHtml(); });
     host.addEventListener('click', function(e){
-      if (e.target.closest('[data-vsevk]')){ virgoSevkYeni(); return; } // r268: sevk Virgo hesabına bağlı girilir (stoktan düşer, karşılığı işlenir)
       if (e.target.closest('[data-vurunekle]')){ var g = byId('vUrunGovde'); if (g){ g.insertAdjacentHTML('beforeend', virgoUrunSatir({ id: '', ad: '', fiyat: '', pb: '₺' }, { adet: 0, tutar: 0, tl: 0 }, virgoGunKuru(todayISO()))); var i = g.querySelector('tr:last-child [data-vstok]'); if (i) i.focus(); } return; }
       var sil = e.target.closest('[data-vurunsil]'); if (sil){ sil.closest('tr').remove(); return; }
       if (!e.target.closest('[data-vurunkaydet]')) return;
