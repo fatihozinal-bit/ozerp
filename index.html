@@ -1910,7 +1910,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r379</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r380</div>
     </div>
   </nav>
   <main>
@@ -2204,7 +2204,7 @@ Dikkat edilmesi gereken 2 nokta:
           </div>
           <div class="field"><label>Açıklama (opsiyonel)</label><input type="text" id="fNot" style="width:100%"></div>
           <div id="fOnizleme"></div>
-          <button class="btn" id="fKaydet">Fatura oluştur</button> <button class="btn secondary" id="fEditorde" title="Siparişin faturalanacak kalemlerini kalem bazında KDV, ihracat, istisna gibi seçeneklerle editörde açar">Detaylı editörde aç</button>
+          <button class="btn" id="fKaydet">Fatura oluştur</button> <button class="btn secondary" id="fEditorde" title="Siparişin faturalanacak kalemlerini kalem bazında KDV, ihracat, istisna gibi seçeneklerle editörde açar">Detaylı editörde aç</button> <button class="btn secondary" id="fStoktan" title="Siparişe bağlı olmadan fatura: kalemler stok kartlarından (üretimden giren mamul dahil) seçilir">Stoktan / siparişsiz fatura</button>
           <div class="helper" id="fMsg"></div>
         </div>
       </div>
@@ -6988,7 +6988,8 @@ Dikkat edilmesi gereken 2 nokta:
     if (cur) sel.value = cur;
     var s = state.siparisler.find(function(x){ return x.id===sel.value; });
     var prev = document.getElementById('fOnizleme');
-    if (!s){ prev.innerHTML = ''; document.getElementById('fKaydet').disabled = false; return; }
+    // r380: siparişsiz üretilen / stoktaki ürün bu formda görünmez — yol gösterilir
+    if (!s){ prev.innerHTML = '<div class="helper" style="margin-top:6px">Faturalanacak sipariş yok. Siparişe bağlı olmayan, stoktaki ürünü (üretimden giren mamul dahil) faturalamak için <b>Stoktan / siparişsiz fatura</b> düğmesini kullanın.</div>'; document.getElementById('fKaydet').disabled = false; return; }
     var kapsam = document.getElementById('fKapsam').value;
     var satir = siparisFaturaKalemleri(s, kapsam);
     // Sipariş satırlarında tek KDV oranı varsa hızlı fatura o oranla gelir (karışık oranlı sipariş Satış Faturaları editöründen kesilir)
@@ -7010,8 +7011,8 @@ Dikkat edilmesi gereken 2 nokta:
     if (fTipEl && !fTipEl.dataset.elle) fTipEl.value = s.musteriMalzemesi === 'Evet' ? 'Fason işçilik' : 'Satış';
     var hic = brut <= 0;
     var ipucu = hic ? (kapsam === 'sevk' && siparisFaturalanmamisVar(s)
-        ? '<div class="helper neg" style="margin-top:6px">Sevk edilip faturalanmamış miktar yok. Sevk beklemeden faturalamak için "Faturalanacak" seçimini değiştirin.</div>'
-        : '<div class="helper neg" style="margin-top:6px">Bu siparişin tamamı faturalandı.</div>') : '';
+        ? '<div class="helper neg" style="margin-top:6px">Sevk edilip faturalanmamış miktar yok. Sevk beklemeden faturalamak için "Faturalanacak" seçimini değiştirin; siparişe bağlı olmayan stoktaki ürün için <b>Stoktan / siparişsiz fatura</b>.</div>'
+        : '<div class="helper neg" style="margin-top:6px">Bu siparişin tamamı faturalandı. Siparişe bağlı olmayan stoktaki ürün için <b>Stoktan / siparişsiz fatura</b>.</div>') : '';
     prev.innerHTML = '<div class="tablewrap"><table><thead><tr><th>Kalem</th><th class="num">Sipariş</th><th class="num">Sevk edilen</th><th class="num">Önceden faturalanan</th><th class="num">Bu fatura</th><th class="num">B.Fiyat</th><th class="num">Tutar</th></tr></thead><tbody>'+
       satir.map(function(x){ return '<tr'+(x.q > 0 ? '' : ' style="opacity:.5"')+'><td>'+esc(x.k.ad)+'</td><td class="num">'+fmt2(x.sip)+'</td><td class="num">'+fmt2(x.sevk)+'</td><td class="num">'+fmt2(x.ftr)+'</td><td class="num"><b>'+fmt2(x.q)+'</b></td><td class="num">€'+fmt2(x.k.birimFiyat)+'</td><td class="num">€'+fmt2(x.tutar)+'</td></tr>'; }).join('')+
       '</tbody></table></div><div style="margin-top:8px">'+(fq.pb !== 'EUR' ? '<span class="muted">Sipariş fiyatları € · fatura '+fq.pb+' (1 € = '+FS+fmt2(fq.q)+')</span><br>' : '')+(iskonto?'Brüt: '+FS+fmt2(brut*fq.q)+' · İskonto %'+fmt2(iskonto)+' · ':'')+'Ara toplam: '+FS+fmt2(araToplam*fq.q)+' · KDV (%'+fmt2(kdv)+'): '+FS+fmt2(kdvTutar*fq.q)+(tevkTutar ? ' · Fatura toplamı: '+FS+fmt2((araToplam+kdvTutar)*fq.q)+' · KDV tevkifatı ('+esc(tevk)+'): −'+FS+fmt2(tevkTutar*fq.q)+' · <strong>Ödenecek: '+FS+fmt2((araToplam+kdvTutar-tevkTutar)*fq.q)+'</strong>' : ' · <strong>Genel toplam: '+FS+fmt2((araToplam+kdvTutar)*fq.q)+'</strong>')+'</div>'+ipucu;
@@ -7031,6 +7032,7 @@ Dikkat edilmesi gereken 2 nokta:
   document.getElementById('fKapsam').addEventListener('change', renderFaturaForm);
   document.getElementById('fTevkifat').addEventListener('change', renderFaturaForm);
   document.getElementById('fSerbestBtn').addEventListener('click', function(){ satisFaturaEditor(); });
+  document.getElementById('fStoktan').addEventListener('click', function(){ satisFaturaEditor(); });
   document.getElementById('fEditorde').addEventListener('click', function(){
     var s = state.siparisler.find(function(x){ return x.id === document.getElementById('fSiparis').value; }); if (!s){ toast('Sipariş seçin.', true); return; }
     var satir = siparisFaturaKalemleri(s, document.getElementById('fKapsam').value).filter(function(x){ return x.q > 0.0001; });
@@ -21924,7 +21926,13 @@ Dikkat edilmesi gereken 2 nokta:
   // ---------- Ortak kalem editörü ----------
   // o: { kalemler, satis (true: satış fiyatı / false: maliyet), gtip, gider, kdvVarsayilan, kdvKilit (istisna: KDV 0) }
   function kalemSatirHtml(k, i, o){
-    var stokOpt = '<option value="">— serbest kalem —</option>' + state.stok.filter(function(s){ return s.tip !== 'Müşteri Malı' || !o.satis; }).map(function(s){ return '<option value="' + s.id + '"' + (k.stokId === s.id ? ' selected' : '') + '>' + esc((s.kod ? s.kod + ' · ' : '') + s.ad) + '</option>'; }).join('');
+    // r380: satışta stokta olan kartlar üstte ve miktarıyla (üretimden giren mamul hemen bulunur); kayıttaki seçili kart her zaman listede
+    var stokOptEl = function(s){ var m = Number(s.miktar) || 0; return '<option value="' + s.id + '"' + (k.stokId === s.id ? ' selected' : '') + '>' + esc((s.kod ? s.kod + ' · ' : '') + s.ad + (o.satis && m > 0 ? ' — stok ' + fmt2(m) + ' ' + (s.birim || '') : '')) + '</option>'; };
+    var stokL = state.stok.filter(function(s){ return s.tip !== 'Müşteri Malı' || !o.satis || s.id === k.stokId; });
+    var stokOpt = '<option value="">— serbest kalem —</option>' + (o.satis
+      ? (function(){ var ad = function(a, b){ return String(a.kod || a.ad || '').localeCompare(String(b.kod || b.ad || ''), 'tr'); }, var_ = stokL.filter(function(s){ return (Number(s.miktar) || 0) > 0; }).sort(ad), yok = stokL.filter(function(s){ return !((Number(s.miktar) || 0) > 0); }).sort(ad);
+          return (var_.length ? '<optgroup label="Stokta olanlar">' + var_.map(stokOptEl).join('') + '</optgroup>' : '') + (yok.length ? '<optgroup label="' + (var_.length ? 'Stokta olmayanlar' : 'Stok kartları') + '">' + yok.map(stokOptEl).join('') + '</optgroup>' : ''); })()
+      : stokL.map(stokOptEl).join(''));
     return '<tr data-ke="' + i + '"><td><select data-kf="stokId" style="min-width:150px">' + stokOpt + '</select><input type="text" data-kf="ad" value="' + escAttr(k.ad || '') + '" placeholder="açıklama" style="margin-top:3px"></td>' +
       (o.gider ? '<td><select data-kf="giderTuru">' + GIDER_TURLERI.map(function(g){ return '<option' + ((k.giderTuru || o.gider) === g ? ' selected' : '') + '>' + g + '</option>'; }).join('') + '</select></td>' : '') +
       (o.gtip ? '<td><input type="text" data-kf="gtip" value="' + escAttr(k.gtip || '') + '" placeholder="12 hane" style="max-width:110px"></td>' : '') +
