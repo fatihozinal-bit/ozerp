@@ -1331,6 +1331,58 @@
   .oz-iki-s b { font-size:clamp(11px, 11.5cqw, 16px); font-weight:700; font-variant-numeric:tabular-nums; }
   .oz-iki-s[data-ozetdetay]:hover span { text-decoration:underline; color:var(--ink); }
   .oz-iki-not { margin-top:10px; font-size:12px; line-height:1.5; color:var(--ink-soft); display:flex; flex-direction:column; gap:4px; } .oz-iki-not b { color:var(--ink); }
+  /* r383: Özet › Takvim (vergi / SGK son günleri, ay sonu kayıtları, vadeler, hatırlatmalar) */
+  #ozetTakvim { scroll-margin-top:90px; }
+  .tk-blok .block-head { flex-wrap:wrap; gap:6px; }
+  .tk-ust { align-items:center; gap:4px; }
+  .tk-ay { background:none; border:0; font:inherit; font-size:12.5px; font-weight:600; color:var(--ink); min-width:96px; text-align:center; cursor:pointer; padding:2px 4px; border-radius:4px; }
+  .tk-ay:hover { background:var(--surface-alt); }
+  .tk-ozet { font-size:12px; color:var(--ink-soft); margin-bottom:8px; } .tk-ozet b { color:var(--ink); }
+  .tk-izgara { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; margin-bottom:12px; }
+  .tk-hb { font-size:10.5px; color:var(--ink-soft); text-align:center; }
+  .tk-gun { display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start; min-height:40px; padding:3px 5px; border:1px solid var(--border); border-radius:4px; background:var(--surface); color:var(--ink); font:inherit; font-size:12px; line-height:1.2; cursor:pointer; text-align:left; min-width:0; }
+  .tk-gun:hover { border-color:var(--accent); }
+  .tk-gun.bos { visibility:hidden; }
+  .tk-gun.hs { background:var(--surface-alt); color:var(--ink-soft); }
+  .tk-gun.tatil .tk-no { color:var(--bad); font-weight:600; }
+  .tk-gun.bugun { box-shadow:inset 0 0 0 2px var(--ink); }
+  .tk-gun.secili { border-color:var(--accent); background:var(--accent-soft); }
+  .tk-rozet { align-self:flex-end; font-size:10.5px; font-weight:700; line-height:1; padding:2px 5px; border-radius:8px; }
+  .tk-rozet.gec { background:var(--bad); color:#fff; }
+  .tk-rozet.yakin { background:var(--warn-soft); color:var(--warn); box-shadow:inset 0 0 0 1px var(--warn-strong); }
+  .tk-rozet.acik { background:var(--accent-soft); color:var(--accent); }
+  .tk-rozet.vade { background:var(--steel-soft); color:var(--steel); }
+  .tk-rozet.tamam { background:var(--good-soft); color:var(--good); }
+  .tk-liste-bas { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; font-size:12.5px; padding:4px 0; border-bottom:1px solid var(--border); }
+  .tk-liste-bas a { font-size:11.5px; color:var(--accent); }
+  .tk-once { margin-bottom:12px; }
+  .tk-satir { display:flex; gap:8px; align-items:flex-start; padding:7px 0; border-bottom:1px dashed var(--border); font-size:12.5px; }
+  .tk-satir:last-child { border-bottom:0; }
+  .tk-satir input[type=checkbox] { width:16px; height:16px; margin:1px 0 0; flex-shrink:0; cursor:pointer; accent-color:var(--good); }
+  .tk-satir input[type=checkbox]:disabled { cursor:default; }
+  .tk-vade { width:16px; flex-shrink:0; text-align:center; font-size:11px; color:var(--steel); font-weight:600; }
+  .tk-tarih { width:62px; flex-shrink:0; font-size:11.5px; color:var(--ink-soft); white-space:nowrap; } .tk-tarih b { color:var(--ink); font-weight:600; }
+  .tk-ic { flex:1; min-width:0; }
+  .tk-bas a, .tk-bas > span:first-child { color:var(--ink); font-weight:600; text-decoration:none; }
+  .tk-bas a:hover { color:var(--accent); text-decoration:underline; }
+  .tk-alt { font-size:11.5px; color:var(--ink-soft); margin-top:1px; overflow-wrap:anywhere; }
+  .tk-durum { flex-shrink:0; font-size:11px; font-weight:600; padding:1px 7px; border-radius:9px; white-space:nowrap; }
+  .tk-durum.gec { background:var(--bad-soft); color:var(--bad); }
+  .tk-durum.yakin { background:var(--warn-soft); color:var(--warn); }
+  .tk-durum.acik { background:var(--surface-alt); color:var(--ink-soft); }
+  .tk-durum.tamam { background:var(--good-soft); color:var(--good); }
+  .tk-satir.yapildi .tk-bas a, .tk-satir.yapildi .tk-bas > span:first-child { color:var(--ink-soft); font-weight:500; text-decoration:line-through; }
+  .tk-grup { font-size:11.5px; font-weight:600; color:var(--steel); margin:12px 0 4px; border-bottom:1px solid var(--border); padding-bottom:2px; }
+  .tk-ayar { display:flex; gap:8px; align-items:flex-start; padding:5px 0; font-size:12.5px; cursor:pointer; }
+  .tk-ayar input { width:16px; height:16px; margin:2px 0 0; flex-shrink:0; }
+  @media (max-width:600px){
+    .tk-gun { min-height:34px; padding:2px 3px; font-size:11px; }
+    .tk-rozet { font-size:9.5px; padding:1px 4px; }
+    .tk-satir { flex-wrap:wrap; }
+    .tk-tarih { width:auto; }
+    .tk-ic { flex-basis:calc(100% - 24px); order:3; padding-left:24px; }
+    .tk-durum { margin-left:auto; }
+  }
   /* r381: Özet › Sevkiyat & fatura */
   #ozetSevkFatura { scroll-margin-top:90px; } #ozetSevkFatura.flash { animation: flashbg 1.6s ease-out; }
   .sf-durum { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
@@ -1956,7 +2008,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r382</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r383</div>
     </div>
   </nav>
   <main>
@@ -1998,6 +2050,8 @@ OEE = Kullanılabilirlik × Performans × Kalite; hücrenin üzerine gelince ayr
         </div>
         <div class="ozet-kol">
           <div id="ozetEkUst"></div>
+          <div id="ozetTakvim"></div>
+          <div id="ozetDarbogaz"></div>
           <div class="block">
             <div class="block-head"><h3>Aylık üretim (son 6 ay) <span class="info-ico" tabindex="0">!<span class="info-bubble">Son operasyon (mamul) adetleri ürün ürün üst üste. Çubuğun üzerine gelince ürün kırılımı ve ₺ karşılığı görünür. Birkaç günü kapsayan kayıt günlere eşit bölünür.</span></span></h3></div>
             <div class="block-body" id="ozetTrendGrafik"></div>
@@ -4938,6 +4992,28 @@ Dikkat edilmesi gereken 2 nokta:
     return { label: ode ? 'KDV · ödenecek' : 'KDV · devreden', value: '₺' + fmt(ode ? k.odenecek : k.devreden), cls: (ode ? '' : 'accent') + ' yetki-maliyet', detay: 'kdv',
       sub: 'alışta ödenen ₺' + fmt(k.I) + ' · satışta alınan ₺' + fmt(k.H) + ac + (ode ? '' : '<br>gider değil, satış KDV\'sinden geri gelir') };
   }
+  // r383: Kasa & banka kartı: Kasa & Banka › Hesaplar'daki hesapların bakiyesi (hesabın para biriminde; ₺ karşılığı o günün kuruyla).
+  // Bu ay ya da genel toplam seçiliyken şu anki bakiye (Kasa & Banka sayfasıyla aynı hesap); geçmiş bir ay seçiliyse o ayın son günündeki bakiye.
+  // Nakit = kasa + banka + POS; kredi kartı borcu ayrı gösterilir, nakde katılmaz.
+  function ozetKasa(){
+    var simdi = ozetGenel() || ozetBuAy(), gun = simdi ? todayISO() : muhAySonu(ozetDonem()), sira = { Kasa: 0, Banka: 1, POS: 2, 'Kredi kartı': 3 };
+    var l = hesaplar().map(function(h){
+      var pb = h.paraBirimi || 'EUR', b = simdi ? hesapBakiye(h) : (Number(h.acilis) || 0) + toplamla(hesapHareketleri(h.id).filter(function(x){ return (x.tarih || '') <= gun; }), function(x){ return x.tutar; });
+      var kur = pb === 'TRY' ? 1 : pbKur(pb, gun) || 0;
+      return { h: h, pb: pb, tur: h.hesapTuru || 'Banka', bakiye: muhR2(b), tl: muhR2(b * kur), kurYok: !kur, kart: h.hesapTuru === 'Kredi kartı' };
+    }).sort(function(a, b){ return ((sira[a.tur] != null ? sira[a.tur] : 9) - (sira[b.tur] != null ? sira[b.tur] : 9)) || String(a.h.ad || '').localeCompare(String(b.h.ad || ''), 'tr'); });
+    var nakit = l.filter(function(x){ return !x.kart; }), kart = l.filter(function(x){ return x.kart; }), tur = {};
+    nakit.forEach(function(x){ tur[x.tur] = (tur[x.tur] || 0) + x.tl; });
+    return { simdi: simdi, gun: gun, l: l, nakit: toplamla(nakit, function(x){ return x.tl; }), kart: toplamla(kart, function(x){ return x.tl; }), kartVar: kart.length > 0, tur: tur };
+  }
+  function ozetKasaKart(){
+    if (!sekmeIzinli('kasabanka')) return null;
+    var k = ozetKasa(), tY = function(v){ return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)); };
+    if (!k.l.length) return { label: 'Kasa & banka', value: '—', cls: 'yetki-maliyet', detay: 'kasa', sub: 'hesap tanımlı değil<br>Kasa &amp; Banka › + Hesap' };
+    var sat = Object.keys(k.tur).map(function(t){ return '<div class="oz-kirilim"><span>' + esc(t) + '</span><b>' + tY(k.tur[t]) + '</b></div>'; });
+    if (k.kartVar && Math.abs(k.kart) > 0.5) sat.push('<div class="oz-kirilim"><span>Kredi kartı</span><b>' + tY(k.kart) + '</b></div>');
+    return { label: 'Kasa & banka', value: tY(k.nakit), cls: (k.nakit < -0.004 ? 'bad' : '') + ' yetki-maliyet', detay: 'kasa', sub: sat.join('') + (k.simdi ? '' : kvTarihTR(k.gun) + ' akşamı') };
+  }
   // r273: ay sonu tahmini: bugüne kadarki karşılık ÷ geçen iş günü × ayın iş günü (Aylık Kapasite'deki çalışma düzeni, tatiller hariç);
   // gider = Aylık Kapasite'deki ay toplamı. Gider bir kez düşülür.
   function ozetTahmin(ciro){
@@ -4976,6 +5052,7 @@ Dikkat edilmesi gereken 2 nokta:
       {label:'Kazanç', value: tlY(kazanc), cls:(kazanc < -0.004 ? 'bad' : 'good isaretli')+' yetki-maliyet', detay:'kazanc', sub: donemYazi + (kur ? ' · ' + eurYazi(kazanc) : '')}
     ].concat(ozetBuAy() ? [ // ay sonu tahmini yalnız içinde bulunulan ayda
       {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)}] : [],
+      (function(){ try { var ks = ozetKasaKart(); return ks ? [ks] : []; } catch(e){ renderHatasi('Kasa kartı', e); return []; } })(), // r383
       (function(){ try { var kk = ozetKdvKart(); return kk ? [kk] : []; } catch(e){ renderHatasi('KDV kartı', e); return []; } })(), [
       // r377: Açık iş emri, Plansız duruş ve Açık alacak kartları kullanıcı isteğiyle Özet'ten kaldırıldı (sayfaları duruyor)
       {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'}
@@ -9232,9 +9309,9 @@ Dikkat edilmesi gereken 2 nokta:
     isemirleri:1, projeler:1, projeGorevleri:1, lotlar:1, duruslar:1, vardiyaDevir:1, kaliteKontroller:1, ncr:1, fasonSiparisleri:1,
     satinalmaTalepleri:1, satinalmaSiparisleri:1, bakimKayitlari:1, izinler:1, isgKayitlari:1, dokumanlar:1 };
   // Tanım kayıtlarında türe göre: kredi, bordro, vergi ödemesi, virman, sabit kıymet, şüpheli alacak muhasebe fişi doğurur
-  var SILINEN_GUVENLI_TANIM = { fiyat:1, olcuAleti:1, hesap:1, teminat:1, bakimPlani:1, gorusme:1, muhHesap:1, virgo:1, virgoUretim:1 };
+  var SILINEN_GUVENLI_TANIM = { fiyat:1, olcuAleti:1, hesap:1, teminat:1, bakimPlani:1, gorusme:1, muhHesap:1, virgo:1, virgoUretim:1, hatirlatma:1, takvimIsaret:1 };
   var TANIM_TUR_ADI = { aylikMesai:'Aylık mesai', fiyat:'Fiyat', olcuAleti:'Ölçü aleti', hesap:'Kasa / banka hesabı', kredi:'Kredi', teminat:'Teminat mektubu', bordro:'Bordro',
-    vergiOdeme:'Vergi ödemesi', supheliAlacak:'Şüpheli alacak', bakimPlani:'Bakım planı', sabitKiymet:'Sabit kıymet', gorusme:'Görüşme', virman:'Virman', muhHesap:'Alt hesap', virgo:'Hesap defteri hareketi', virgoUretim:'Virgo üretim girişi' };
+    vergiOdeme:'Vergi ödemesi', supheliAlacak:'Şüpheli alacak', bakimPlani:'Bakım planı', sabitKiymet:'Sabit kıymet', gorusme:'Görüşme', virman:'Virman', muhHesap:'Alt hesap', virgo:'Hesap defteri hareketi', virgoUretim:'Virgo üretim girişi', hatirlatma:'Hatırlatma', takvimIsaret:'Takvim işareti' };
   var _geriYuklenen = {}, _sonSilinenler = {}, _silinenSilindi = {}, _silinenTemizlendi = false;
   function silinenGuvenli(col, k){
     if (col === 'tanimKayitlari'){
@@ -16766,6 +16843,337 @@ Dikkat edilmesi gereken 2 nokta:
     });
   }
 
+  // ---------- r383: Takvim (Özet › Uyarılar'ın altında) ----------
+  // Vergi / SGK beyan ve ödeme son günleri, ay sonu kayıtları (bordro, kira faturası, tahsilatın Virgo borcuna dağıtımı), muhasebe dönem sonu
+  // (KDV mahsubu, e-Defter beratı), vadeler (alış / satış faturası, çek / senet, kredi taksidi) ve elle eklenen hatırlatmalar ay takviminde.
+  // Her işin sabit anahtarı var (kdv:2026-10, bordro:2026-10, hat:<id>:2026-11-05). "Yapıldı" işareti tanimKayitlari'nda tutulur:
+  // { tur 'takvimIsaret', anahtar, baslik, sonGun, yapildi, isaretTarihi, isaretleyen }; işaret kaldırılınca kayıt silinmez, yapildi false olur.
+  // Kayıtlardan anlaşılan işler kendiliğinden yapıldı sayılır: vergi / SGK ödemesi girildi, bordro girildi, kira gideri girildi, tahsilat dağıtıldı,
+  // KDV mahsup fişi var, berat alındı; vadeler ödeme / tahsilat girilince kapanır (onlar elle işaretlenmez).
+  // Son günü geçen ya da 7 gün içinde olan yapılmamış işler Uyarılar'a girer. Vadelerin ve programda ödenmemiş görünen vergi borcunun uyarısı
+  // zaten var (vergiUyarilari, vadesi geçen alacak, ödeme yaklaşıyor…); onlar burada tekrar uyarılmaz.
+  // Ayar (config.takvimAyar): { baslangic: 'YYYY-AA-GG', acik: { kdv: true, … } }. Başlangıçtan önce son günü olan işler gösterilmez
+  // (programdan önceki aylar gecikmiş görünmesin); programda ödenmemiş vergi borcu olan ay yine görünür.
+  var TAKVIM_BAS = '2026-11-01';
+  var TAKVIM_TURLER = [
+    { k: 'kdv', ad: 'KDV beyannamesi', grup: 'Vergi & SGK', acik: true, ip: 'Her ayın KDV\'si ertesi ayın 28\'ine kadar beyan edilip ödenir.' },
+    { k: 'kdv2', ad: 'KDV-2 (tevkifat)', grup: 'Vergi & SGK', acik: true, ip: 'Yalnız tevkifatlı alış olan aylarda; ertesi ayın 28\'i.' },
+    { k: 'muhtasar', ad: 'Muhtasar ve prim hizmet beyannamesi', grup: 'Vergi & SGK', acik: true, ip: 'Ücretlerin gelir ve damga vergisi, stopaj: ertesi ayın 26\'sı.' },
+    { k: 'sgk', ad: 'SGK prim ödemesi', grup: 'Vergi & SGK', acik: true, ip: 'Ertesi ayın son günü.' },
+    { k: 'gecici', ad: 'Geçici vergi', grup: 'Vergi & SGK', acik: true, ip: '1., 2. ve 3. dönem: dönemi izleyen ikinci ayın 17\'si (17 Mayıs, 17 Ağustos, 17 Kasım).' },
+    { k: 'kurumlar', ad: 'Kurumlar vergisi beyannamesi', grup: 'Vergi & SGK', acik: true, ip: 'Yıllık: ertesi yılın 30 Nisan\'ı.' },
+    { k: 'bordro', ad: 'Bordro özeti girişi', grup: 'Ay sonu kayıtları', acik: true, ip: 'Personeli olan her ay, ertesi ayın 15\'ine kadar (muhtasar ve SGK bordrodan hesaplanır).' },
+    { k: 'kira', ad: 'Kira faturası / gideri', grup: 'Ay sonu kayıtları', acik: true, ip: 'Aylık Kapasite\'de kira kalemi olan her ay; Giderler\'de ya da alış faturasında "Kira" türüyle girilince kapanır.' },
+    { k: 'tahsilat', ad: 'Tahsilatın Virgo borcuna dağıtımı', grup: 'Ay sonu kayıtları', acik: true, ip: 'Virgo döneminde müşteriden tahsilat gelen her ay; Özet\'teki "Virgo\'ya ödeme önerisi" onaylanınca kapanır.' },
+    { k: 'kdvmahsup', ad: 'KDV mahsup fişi (Dönem Sonu İşlemleri)', grup: 'Muhasebe', acik: false, ip: 'KDV hareketi olan her ay, KDV ödemesinden önce.' },
+    { k: 'berat', ad: 'e-Defter berat yükleme', grup: 'Muhasebe', acik: false, ip: 'Muhasebe fişi olan her ay; dönemi izleyen 4. ayın 14\'ü. e-Defter sayfasında "Berat alındı" deyince kapanır.' },
+    { k: 'vade', ad: 'Vadeler (alış / satış faturası, çek / senet, kredi taksidi)', grup: 'Vadeler', acik: true, ip: 'Yalnız takvimde görünür; ödeme / tahsilat girilince kendiliğinden kapanır (uyarıları zaten Uyarılar\'da).' }
+  ];
+  var TAKVIM_TEKRAR = ['Tek sefer', 'Her ay', 'Her yıl'];
+  var TK_GUN_AD = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+  function takvimAyar(){
+    var c = (state.config || {}).takvimAyar || {}, a = {};
+    TAKVIM_TURLER.forEach(function(t){ a[t.k] = c.acik && typeof c.acik[t.k] === 'boolean' ? c.acik[t.k] : t.acik; });
+    return { baslangic: /^\d{4}-\d{2}-\d{2}$/.test(c.baslangic || '') ? c.baslangic : TAKVIM_BAS, acik: a };
+  }
+  // Beyan / ödeme son günü hafta sonuna ya da resmî tatile denk gelirse ilk iş gününe kayar
+  function takvimIsGunu(t){
+    for (var i = 0; i < 12; i++){
+      var ay = t.slice(0, 7), w = KV_MODEL.haftaGunu(ay, Number(t.slice(8, 10)));
+      if (w !== 0 && w !== 6 && KV_MODEL.tatilOran(ay, t.slice(8, 10)) < 1) return t;
+      t = tarihEkle(t, 1);
+    }
+    return t;
+  }
+  function takvimIsaretleri(){
+    var m = {};
+    (state.tanimKayitlari || []).forEach(function(t){ if (t.tur === 'takvimIsaret' && t.anahtar && (!m[t.anahtar] || String(t.olusturma || '') > String(m[t.anahtar].olusturma || ''))) m[t.anahtar] = t; });
+    return m;
+  }
+  function tkTl(v){ return '<span class="yetki-maliyet">₺' + muhTutar(v) + '</span>'; }
+  function tkPb(v, pb){ return '<span class="yetki-maliyet">' + esc(pbFmt(v, pb)) + '</span>'; }
+  // [bas, bit] aralığında son günü olan işler (tarih sırasıyla). Önbellek: veri ve gün değişmedikçe aynı aralık yeniden hesaplanmaz.
+  var _tkCache = null;
+  function takvimOgeleri(bas, bit){
+    var gun = todayISO(), refs = [state.tanimKayitlari, state.config, state.alisFaturalari, state.faturalar, state.tahsilatlar, state.odemeler, state.giderler, state.cekSenet, state.personel, state.muhasebeFisleri, state.satisIadeleri, state.muhDonemler];
+    if (!_tkCache || _tkCache.gun !== gun || refs.some(function(r, i){ return r !== _tkCache.refs[i]; })) _tkCache = { gun: gun, refs: refs, m: {} };
+    var key = bas + '|' + bit; if (_tkCache.m[key]) return _tkCache.m[key];
+    var A = takvimAyar(), ac = A.acik, l = [], bu = gun.slice(0, 7), basAy = bas.slice(0, 7), bitAy = bit.slice(0, 7), icinde = function(t){ return t >= bas && t <= bit; };
+    var ekle = function(o){ l.push(Object.assign({ tab: '', id: '', git: '', donem: '', alt: '', oto: null, vade: false, borc: false, hat: null }, o)); };
+    var od = vergiOdemeleri(), odenen = function(kalem, ay){ return muhR2(toplamla(od.filter(function(x){ return x.kalem === kalem && x.donem === ay; }), function(x){ return x.tutar; })); };
+    var tur = {}; TAKVIM_TURLER.forEach(function(t){ tur[t.k] = t; });
+    // Vergi / SGK: dönem ayı p'nin son günü en geç 2 ay sonra (geçici vergi); muhasebe beratı 4 ay sonra.
+    // Muhasebe modülü kapalıyken de görünür (beyannameyi müşavir verse de son gün izlenir): maliyet yetkisi olana ya da Vergi & SGK sayfasını görene.
+    // Bağlantı: Vergi & SGK Ödemeleri açıksa oraya; değilse KDV için Özet › KDV dökümü, muhtasar / SGK için Bordro Özeti.
+    var vergiSayfa = sekmeIzinli('vergiodeme'), vergiGor = vergiSayfa || maliyetGorur();
+    var vergiGit = function(k){ return vergiSayfa ? 'vergiodeme' : (k === 'kdv' || k === 'kdv2') && maliyetGorur() ? 'ozkdv' : (k === 'muhtasar' || k === 'sgk') && sekmeIzinli('bordro') ? 'bordro' : ''; };
+    var vergi = function(k, kalem, p, son){
+      if (!vergiGor || !ac[k] || !icinde(son)) return;
+      var t = p <= bu ? vergiTahakkuk(kalem, p) : 0, o = odenen(kalem, p), kalan = muhR2(t - o);
+      if (k === 'kdv2' && t < 0.005 && o < 0.005) return;
+      if (son < A.baslangic && kalan < 0.01) return;
+      var oto = t > 0.004 && kalan < 0.01 ? { yapildi: true, not: 'ödendi ' + tkTl(o) } : t < 0.005 && o > 0.004 ? { yapildi: true, not: 'ödeme girildi ' + tkTl(o) } : null;
+      var alt = t > 0.004 ? 'ödenecek ' + tkTl(t) + (o > 0.004 && kalan >= 0.01 ? ' · ödenen ' + tkTl(o) : '') + (p >= bu ? ' · ay sürüyor' : '')
+        : o > 0.004 ? '' : { kdv: 'programda ödenecek KDV yok (devreden ya da hareket yok); beyanname yine verilir', muhtasar: 'programda tutar yok (bordro / stopaj girilmedi); beyanname yine verilir',
+          sgk: 'programda tutar yok (bordro girilmedi)', gecici: 'programda tutar yok (kâr yok ya da hesaplanmadı); beyanname yine verilir' }[k] || 'programda tutar yok';
+      ekle({ anahtar: k + ':' + p, seri: k, tarih: son, baslik: tur[k].ad, donem: k === 'gecici' ? (Number(p.slice(5, 7)) / 3) + '. dönem ' + p.slice(0, 4) : muhAyAdi(p),
+        git: vergiGit(k), alt: alt, oto: oto, borc: kalan >= 0.01 && vergiSayfa });
+    };
+    var kiraKalem = null, tdBek = null, tdDag = null, kdvAylar = null, fisAy = null;
+    var ayda = function(r, a){ return String(r.tarih || '').slice(0, 7) === a && !virgoErpEskiMi(r); };
+    for (var p = muhAyEkle(basAy, -4); p <= bitAy; p = muhAyEkle(p, 1)){
+      var s1 = muhAyEkle(p, 1), kdvSon = takvimIsGunu(s1 + '-28');
+      vergi('kdv', 'KDV', p, kdvSon);
+      vergi('kdv2', 'KDV-2 (tevkifat)', p, kdvSon);
+      vergi('muhtasar', 'Muhtasar (gelir + damga v., stopaj)', p, takvimIsGunu(s1 + '-26'));
+      vergi('sgk', 'SGK primleri', p, takvimIsGunu(muhAySonu(s1)));
+      if (/-(03|06|09)$/.test(p)) vergi('gecici', 'Geçici vergi', p, takvimIsGunu(muhAyEkle(p, 2) + '-17'));
+      // ay sonu kayıtları: ertesi ayın 15'i (yalnız biten ya da süren aylar)
+      var kSon = s1 + '-15';
+      if (p <= bu && icinde(kSon) && kSon >= A.baslangic){
+        if (ac.bordro && sekmeIzinli('bordro')){
+          var kisi = (state.personel || []).filter(function(x){ return KV_MODEL.kistOran(p, x.iseGiris, x.istenCikis, 0) > 0 && (personelNetTL(x) > 0 || personelIsverenTL(x) > 0); }).length;
+          var bGir = bordrolar().some(function(b){ return b.ay === p; }), mGir = (state.giderler || []).some(function(g){ return g.tur === 'Maaş' && ayda(g, p); });
+          if (kisi || bGir) ekle({ anahtar: 'bordro:' + p, seri: 'bordro', tarih: kSon, baslik: tur.bordro.ad, donem: muhAyAdi(p), tab: 'bordro',
+            alt: bGir || mGir ? '' : kisi + ' personel; girilmeyince Özet\'te maaş tahmini sayılır', oto: bGir ? { yapildi: true, not: 'bordro girildi' } : mGir ? { yapildi: true, not: 'maaş gideri girildi' } : null });
+        }
+        if (ac.kira && sekmeIzinli('giderler')){
+          if (!kiraKalem) kiraKalem = kpPlan().giderler.filter(function(g){ return Number(g.tutar) > 0 && (g.tur === 'stopaj' || /^kira/i.test(String(g.ad || '').trim())); });
+          if (kiraKalem.some(function(g){ return kpKalemOran(g, p) > 0; })){
+            var kGir = (state.giderler || []).some(function(g){ return g.tur === 'Kira' && ayda(g, p); }) || (state.alisFaturalari || []).some(function(f){ return f.durum !== 'İptal' && f.giderTuru === 'Kira' && ayda(f, p); });
+            ekle({ anahtar: 'kira:' + p, seri: 'kira', tarih: kSon, baslik: tur.kira.ad, donem: muhAyAdi(p), tab: 'giderler',
+              alt: kGir ? '' : 'faturası / gider kaydı girilmedi; Özet\'te tahmini kira sayılıyor', oto: kGir ? { yapildi: true, not: 'kira gideri girildi' } : null });
+          }
+        }
+        if (ac.tahsilat && sekmeIzinli('virgo')){
+          if (!tdBek){ tdBek = {}; tdDag = {}; tahsilatDagitimAylari().forEach(function(x){ tdBek[x.ay] = x; }); virgoKayitlariHam().forEach(function(v){ if (v.tahsilatDagitim) tdDag[v.tahsilatDagitim] = 1; }); }
+          var tb = tdBek[p];
+          if (tb || tdDag[p]) ekle({ anahtar: 'tahsilat:' + p, seri: 'tahsilat', tarih: kSon, baslik: tur.tahsilat.ad, donem: muhAyAdi(p), tab: 'virgo', git: 'oneri',
+            alt: tb ? 'tahsilat ' + tkTl(tb.tl) + ', KDV hariç ' + tkTl(tb.haric) + ' Virgo borcundan düşülmeli (Özet › Virgo\'ya ödeme önerisi)' : '', oto: tb ? null : { yapildi: true, not: 'dağıtıldı' } });
+        }
+      }
+      // muhasebe: KDV mahsubu (KDV son günü), e-Defter beratı (4. ayın 14'ü)
+      if (ac.kdvmahsup && p <= bu && icinde(kdvSon) && kdvSon >= A.baslangic && sekmeIzinli('donemsonu')){
+        if (!kdvAylar){ kdvAylar = {}; muhKdvAylar(bu).forEach(function(x){ if (x.I > 0.004 || x.H > 0.004) kdvAylar[x.ay] = 1; }); }
+        if (kdvAylar[p]){ var mf = !!muhKaynakFisi('kdv:' + p); ekle({ anahtar: 'kdvmahsup:' + p, seri: 'kdvmahsup', tarih: kdvSon, baslik: tur.kdvmahsup.ad, donem: muhAyAdi(p), tab: 'donemsonu', oto: mf ? { yapildi: true, not: 'mahsup fişi yapıldı' } : null }); }
+      }
+      var brSon = muhBeratSonGun(p);
+      if (ac.berat && p < bu && icinde(brSon) && brSon >= A.baslangic && sekmeIzinli('edefter')){
+        if (!fisAy){ fisAy = {}; muhTumFisler().forEach(function(f){ fisAy[String(f.tarih || '').slice(0, 7)] = 1; }); }
+        if (fisAy[p]){ var br = muhEdefterDurum()[p]; ekle({ anahtar: 'berat:' + p, seri: 'berat', tarih: brSon, baslik: tur.berat.ad, donem: muhAyAdi(p), tab: 'edefter', oto: br ? { yapildi: true, not: 'berat alındı' } : null }); }
+      }
+    }
+    // Kurumlar vergisi: önceki yılın beyannamesi 30 Nisan
+    if (ac.kurumlar && vergiGor) for (var y = Number(bas.slice(0, 4)) - 1; y <= Number(bit.slice(0, 4)) - 1; y++){
+      var kv = takvimIsGunu((y + 1) + '-04-30');
+      if (icinde(kv) && kv >= A.baslangic) ekle({ anahtar: 'kurumlar:' + y, seri: 'kurumlar', tarih: kv, baslik: tur.kurumlar.ad, donem: y + ' yılı', git: vergiSayfa ? 'vergiodeme' : '', alt: 'yıllık beyanname ve ödeme' });
+    }
+    // Vadeler: yalnız takvimde; ödeme / tahsilat girilince kapanır
+    if (ac.vade){
+      if (sekmeIzinli('alisfatura')) (state.alisFaturalari || []).forEach(function(f){
+        if (f.durum === 'İptal' || !(Number(f.genelToplam) > 0) || !icinde(f.vadeTarihi || '')) return;
+        var k = alisKalanBelge(f), acik = alisKalan(f) > 0.01;
+        ekle({ anahtar: 'af:' + f.id, tarih: f.vadeTarihi, baslik: 'Ödeme: ' + cariAdi(f.tedarikciId), donem: f.faturaNo || f.no || '', tab: 'alisfatura', id: f.id, vade: true,
+          alt: acik ? 'kalan ' + tkPb(k, belgePB(f)) : '', oto: { yapildi: !acik, not: 'ödendi' } });
+      });
+      if (sekmeIzinli('faturalar')) state.faturalar.forEach(function(f){
+        if (f.durum !== 'Kesildi' || !icinde(f.vadeTarihi || '')) return;
+        var k = faturaKalanBelge(f) || 0, acik = k > 0.01;
+        ekle({ anahtar: 'sf:' + f.id, tarih: f.vadeTarihi, baslik: 'Tahsilat: ' + musteriAdiById(f.musteriId), donem: f.faturaNo || '', tab: 'faturalar', id: f.id, vade: true,
+          alt: acik ? 'kalan ' + tkPb(k, belgePB(f)) : '', oto: { yapildi: !acik, not: 'tahsil edildi' } });
+      });
+      if (sekmeIzinli('ceksenet')) (state.cekSenet || []).forEach(function(c){
+        if (!icinde(c.vade || '')) return;
+        var al = cekAlinanMi(c), acik = al ? ['Portföyde', 'Bankaya verildi'].indexOf(c.durum) > -1 : ['Ödendi', 'İade', 'Karşılıksız'].indexOf(c.durum) < 0;
+        ekle({ anahtar: 'cs:' + c.id, tarih: c.vade, baslik: (c.tur || 'Çek') + (al ? ' tahsili: ' : ' ödemesi: ') + cariAdi(c.cariId), donem: c.seriNo ? 'no ' + c.seriNo : '', tab: 'ceksenet', id: c.id, vade: true,
+          alt: tkPb(c.tutar, c.paraBirimi || 'TRY'), oto: { yapildi: !acik, not: esc(String(c.durum || 'kapandı').toLocaleLowerCase('tr')) } });
+      });
+      if (sekmeIzinli('kasabanka')) krediler().forEach(function(k){
+        (k.taksitler || []).forEach(function(t){
+          if (!icinde(t.tarih || '')) return;
+          ekle({ anahtar: 'kr:' + k.id + ':' + t.no, tarih: t.tarih, baslik: (leasingMi(k) ? 'Leasing kirası ' : 'Kredi taksidi ') + (t.no || ''), donem: k.ad || '', tab: 'kasabanka', id: k.id, vade: true,
+            alt: tkTl(krediTaksitToplam(t)), oto: { yapildi: !!t.odendi, not: 'ödendi' } });
+        });
+      });
+    }
+    // Hatırlatmalar (elle eklenen; tek sefer, her ay, her yıl)
+    (state.tanimKayitlari || []).forEach(function(h){
+      if (h.tur !== 'hatirlatma' || !/^\d{4}-\d{2}-\d{2}$/.test(h.tarih || '')) return;
+      var tk = h.tekrar || TAKVIM_TEKRAR[0], ilk = h.tarih, gunler = [];
+      if (tk === 'Her ay'){ var g = Number(ilk.slice(8, 10));
+        for (var a = ilk.slice(0, 7) > basAy ? ilk.slice(0, 7) : basAy; a <= bitAy; a = muhAyEkle(a, 1)) gunler.push(a + '-' + String(Math.min(g, KV_MODEL.ayGunSayisi(a))).padStart(2, '0')); }
+      else if (tk === 'Her yıl'){
+        for (var yy = Math.max(Number(ilk.slice(0, 4)), Number(bas.slice(0, 4))); yy <= Number(bit.slice(0, 4)); yy++){ var ma = yy + '-' + ilk.slice(5, 7); gunler.push(ma + '-' + String(Math.min(Number(ilk.slice(8, 10)), KV_MODEL.ayGunSayisi(ma))).padStart(2, '0')); } }
+      else gunler.push(ilk);
+      gunler.forEach(function(d){
+        if (d < ilk || !icinde(d)) return;
+        ekle({ anahtar: 'hat:' + h.id + ':' + d, seri: 'hat:' + h.id, tarih: d, baslik: h.baslik || 'Hatırlatma', donem: tk === TAKVIM_TEKRAR[0] ? '' : tk.toLocaleLowerCase('tr'), alt: h.not_ ? esc(h.not_) : '', hat: h });
+      });
+    });
+    var isr = takvimIsaretleri();
+    l = l.filter(function(o){ return !o.tab || sekmeIzinli(o.tab); });
+    l.forEach(function(o){
+      var i = isr[o.anahtar]; o.isaret = i || null;
+      o.yapildi = o.oto && o.oto.yapildi ? true : o.vade ? false : !!(i && i.yapildi);
+      o.elle = !o.vade && !(o.oto && o.oto.yapildi); // kayıtlardan yapıldı anlaşılan ve vadeler elle işaretlenmez
+    });
+    l.sort(function(a, b){ return a.tarih.localeCompare(b.tarih) || (a.vade - b.vade) || a.baslik.localeCompare(b.baslik, 'tr'); });
+    _tkCache.m[key] = l;
+    return l;
+  }
+  // Uyarılar: yapılmamış, son günü geçen (kritik) ya da 7 gün içinde (uyarı). Tekrarlanan hatırlatmanın gecikenleri tek satır.
+  function takvimUyarilari(ekle){
+    var A = takvimAyar(), bugun = todayISO(), sinir = tarihEkle(bugun, -400), bas = A.baslangic > sinir ? A.baslangic : sinir;
+    if (bas > tarihEkle(bugun, 7)) return;
+    var l = takvimOgeleri(bas, tarihEkle(bugun, 7)).filter(function(o){ return !o.yapildi && !o.vade && !o.borc; }), gec = {};
+    l.forEach(function(o){ if (o.hat && o.tarih < bugun) (gec[o.seri] = gec[o.seri] || []).push(o); });
+    l.forEach(function(o){
+      var s = o.hat && o.tarih < bugun ? gec[o.seri] : null; if (s && s[s.length - 1] !== o) return;
+      var ad = o.baslik + (o.donem ? ' · ' + o.donem : ''), n = gunFarki(bugun, o.tarih), id = 'takvim:' + o.tarih;
+      if (n < 0) ekle('kritik', 'Gecikti: ' + ad + ' (son gün ' + kvTarihTR(o.tarih) + ')' + (s && s.length > 1 ? ' · ' + s.length + ' kez yapılmadı' : ''), 'ozet', id);
+      else ekle('uyari', 'Son gün ' + kvTarihTR(o.tarih) + (n === 0 ? ' (bugün)' : ' (' + n + ' gün)') + ': ' + ad, 'ozet', id);
+    });
+  }
+  // Takvim görünümü: ay ızgarası (gün başına açık iş sayısı) + o ayın (ya da seçili günün) iş listesi
+  var _tkAy = '', _tkGun = '', _tkHarita = {}, TK_GIZLE_KEY = 'ozerp_takvim_yapilan_gizle';
+  function tkYapilanGizli(){ try { return localStorage.getItem(TK_GIZLE_KEY) === '1'; } catch(e){ return false; } }
+  function tkDurum(o, bugun){
+    if (o.yapildi) return { c: 'tamam', y: '✓ ' + (o.vade ? 'Kapandı' : 'Yapıldı') };
+    var n = gunFarki(bugun, o.tarih);
+    return n < 0 ? { c: 'gec', y: (-n) + ' gün geçti' } : n === 0 ? { c: 'yakin', y: 'Bugün' } : n <= 7 ? { c: 'yakin', y: n + ' gün kaldı' } : { c: 'acik', y: n + ' gün kaldı' };
+  }
+  function tkSatirHtml(o, bugun){
+    var d = tkDurum(o, bugun), i = o.isaret, w = (KV_MODEL.haftaGunu(o.tarih.slice(0, 7), Number(o.tarih.slice(8, 10))) + 6) % 7;
+    var kutu = o.vade ? '<span class="tk-vade" title="Ödeme / tahsilat girilince kendiliğinden kapanır">' + (o.yapildi ? '✓' : '₺') + '</span>'
+      : '<input type="checkbox" data-tkisaret="' + escAttr(o.anahtar) + '"' + (o.yapildi ? ' checked' : '') + (o.elle && izinVar('ekle') ? '' : ' disabled') +
+        ' title="' + escAttr(!o.elle ? 'Kayıtlardan anlaşıldı, kendiliğinden yapıldı sayılıyor' : !izinVar('ekle') ? izinYokMesaji('ekle') : o.yapildi ? 'İşareti kaldır' : 'Yapıldı olarak işaretle') + '">';
+    var baslik = o.hat ? '<a href="#" data-tkhat="' + escAttr(o.hat.id) + '" title="Hatırlatmayı düzenle">' + esc(o.baslik) + '</a>'
+      : o.git || o.tab ? '<a href="#" data-tkgit="' + escAttr((o.git || o.tab) + '|' + (o.id || '')) + '" title="İlgili sayfaya git">' + esc(o.baslik) + '</a>' : '<span>' + esc(o.baslik) + '</span>';
+    var not = !o.yapildi ? '' : o.oto && o.oto.yapildi ? o.oto.not : i ? esc('işaretleyen ' + (i.isaretleyen || '?') + (i.isaretTarihi ? ' · ' + kvTarihTR(i.isaretTarihi) : '')) : '';
+    var alt = [o.alt, not].filter(Boolean).join(' · ');
+    return '<div class="tk-satir' + (o.yapildi ? ' yapildi' : '') + '">' + kutu +
+      '<div class="tk-tarih"><b>' + o.tarih.slice(8, 10) + '.' + o.tarih.slice(5, 7) + '</b> ' + TK_GUN_AD[w] + '</div>' +
+      '<div class="tk-ic"><div class="tk-bas">' + baslik + (o.donem ? ' <span class="muted">· ' + esc(o.donem) + '</span>' : '') + '</div>' + (alt ? '<div class="tk-alt">' + alt + '</div>' : '') + '</div>' +
+      '<span class="tk-durum ' + d.c + '">' + d.y + '</span></div>';
+  }
+  function takvimHtml(){
+    var bugun = todayISO(), buAy = bugun.slice(0, 7), ay = _tkAy || buAy, bas = ay + '-01', bit = muhAySonu(ay), A = takvimAyar();
+    var l = takvimOgeleri(bas, bit), harita = {}, gizle = tkYapilanGizli();
+    _tkHarita = {}; l.forEach(function(o){ (harita[o.tarih] = harita[o.tarih] || []).push(o); _tkHarita[o.anahtar] = o; });
+    // bu ay bakılıyorsa önceki aylardan kalan yapılmamış işler (vadeler hariç) listenin üstünde
+    var once = [];
+    if (ay === buAy){ var sinir = tarihEkle(bugun, -400), gb = A.baslangic > sinir ? A.baslangic : sinir;
+      if (gb < bas) once = takvimOgeleri(gb, tarihEkle(bas, -1)).filter(function(o){ return !o.yapildi && !o.vade; }); }
+    once.forEach(function(o){ _tkHarita[o.anahtar] = o; });
+    var ilkW = (KV_MODEL.haftaGunu(ay, 1) + 6) % 7, gs = KV_MODEL.ayGunSayisi(ay), yakin = tarihEkle(bugun, 7);
+    var izgara = TK_GUN_AD.map(function(g){ return '<span class="tk-hb">' + g + '</span>'; }).join('');
+    for (var b = 0; b < ilkW; b++) izgara += '<span class="tk-gun bos"></span>';
+    for (var g = 1; g <= gs; g++){
+      var dd = String(g).padStart(2, '0'), t = ay + '-' + dd, w = (ilkW + g - 1) % 7, its = harita[t] || [];
+      var isAc = its.filter(function(o){ return !o.yapildi && !o.vade; }).length, vAc = its.filter(function(o){ return !o.yapildi && o.vade; }).length;
+      var rz = isAc ? '<span class="tk-rozet ' + (t < bugun ? 'gec' : t <= yakin ? 'yakin' : 'acik') + '">' + isAc + '</span>' : vAc ? '<span class="tk-rozet vade">' + vAc + '</span>' : its.length ? '<span class="tk-rozet tamam">✓</span>' : '';
+      var tatil = KV_MODEL.tatilOran(ay, dd) >= 1, ipucu = (tatil ? KV_MODEL.tatilAdi(ay, dd) + '\n' : '') + its.map(function(o){ return (o.yapildi ? '✓ ' : '• ') + o.baslik + (o.donem ? ' · ' + o.donem : ''); }).join('\n');
+      izgara += '<button type="button" class="tk-gun' + (w >= 5 ? ' hs' : '') + (tatil ? ' tatil' : '') + (t === bugun ? ' bugun' : '') + (t === _tkGun ? ' secili' : '') + '" data-tkgun="' + t + '"' + (ipucu ? ' title="' + escAttr(ipucu) + '"' : '') + '><span class="tk-no">' + g + '</span>' + rz + '</button>';
+    }
+    var isler = l.filter(function(o){ return !o.vade; }), yapilan = isler.filter(function(o){ return o.yapildi; }).length, gecen = isler.filter(function(o){ return !o.yapildi && o.tarih < bugun; }).length;
+    var vadeAcik = l.filter(function(o){ return o.vade && !o.yapildi; }).length;
+    var ozet = isler.length || vadeAcik ? '<b>' + isler.length + '</b> iş · <span class="pos">' + yapilan + ' yapıldı</span> · ' + (isler.length - yapilan) + ' bekliyor' + (gecen ? ' · <span class="neg">' + gecen + ' gecikti</span>' : '') + (vadeAcik ? ' · ' + vadeAcik + ' açık vade' : '') : 'Bu ay takvimde iş yok.';
+    var liste = (_tkGun ? (harita[_tkGun] || []) : l).filter(function(o){ return !gizle || !o.yapildi; });
+    var listeBas = (_tkGun ? '<b>' + kvTarihTR(_tkGun) + '</b> <a href="#" data-tkgun="">tüm ay ›</a>' : '<b>' + esc(muhAyAdi(ay)) + '</b>') +
+      ' <a href="#" class="tk-gizle" data-tkgizle="1">' + (gizle ? 'yapılanları göster' : 'yapılanları gizle') + '</a>';
+    var bilgi = 'Vergi ve SGK beyan / ödeme son günleri (hafta sonu ya da resmî tatile denk gelirse ilk iş günü), ay sonunda girilmesi gereken kayıtlar (bordro, kira faturası, tahsilatın Virgo borcuna dağıtımı), vadeler ve sizin eklediğiniz hatırlatmalar. ' +
+      'Kutuyu işaretleyince iş yapıldı sayılır; kayıtlardan anlaşılanlar (ödeme, bordro, kira gideri girildi; tahsilat dağıtıldı) kendiliğinden işaretlenir, vadeler ödeme / tahsilat girilince kapanır. ' +
+      'Son günü geçen ya da 7 gün içinde olan yapılmamış işler Uyarılar\'da görünür. Hangi işlerin görüneceği ⚙ Ayarlar\'dan seçilir. Tutarlar programdaki kayıtlardan; müşavirin tahakkuk fişi esastır.';
+    return '<div class="block tk-blok"><div class="block-head"><h3>Takvim ' + infoIco(bilgi) + '</h3><div class="bh-actions tk-ust">' +
+        '<button type="button" class="btn secondary small" data-tkay="-1" title="Önceki ay">‹</button><button type="button" class="tk-ay" data-tkay="0" title="Bu aya dön">' + esc(muhAyAdi(ay)) + '</button><button type="button" class="btn secondary small" data-tkay="1" title="Sonraki ay">›</button>' +
+        (izinVar('ekle') ? '<button type="button" class="btn secondary small" data-tkyeni="1" title="Kendi hatırlatmanızı ekleyin (tek sefer, her ay ya da her yıl)">+ Hatırlatma</button>' : '') +
+        '<button type="button" class="btn secondary small" data-tkayar="1" title="Takvimde hangi işler görünsün">⚙</button></div></div>' +
+      '<div class="block-body">' +
+        '<div class="tk-ozet">' + ozet + '</div>' +
+        '<div class="tk-izgara">' + izgara + '</div>' +
+        (once.length && !_tkGun ? '<div class="tk-once"><div class="tk-liste-bas"><b class="neg">Önceki aylardan kalan (' + once.length + ')</b></div>' + once.map(function(o){ return tkSatirHtml(o, bugun); }).join('') + '</div>' : '') +
+        '<div class="tk-liste-bas">' + listeBas + '</div>' +
+        '<div class="tk-liste">' + (liste.length ? liste.map(function(o){ return tkSatirHtml(o, bugun); }).join('') : '<div class="empty">' + (_tkGun ? 'Bu gün iş yok.' : gizle && l.length ? 'Hepsi yapıldı.' : 'Bu ay iş yok.') + '</div>') + '</div>' +
+      '</div></div>';
+  }
+  function takvimYenile(){
+    var h = byId('ozetTakvim'); if (!h) return;
+    if (h.contains(document.activeElement) && document.activeElement.blur) document.activeElement.blur(); // setHtmlIdle odaktaki kabı yeniden çizmez
+    renderOzetTakvim();
+  }
+  function takvimGoster(t){
+    _tkAy = t.slice(0, 7); _tkGun = t;
+    gitSekme('ozet');
+    setTimeout(function(){ takvimYenile(); var el = byId('ozetTakvim'); if (el && el.offsetParent) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
+  }
+  function renderOzetTakvim(){
+    var host = byId('ozetTakvim'); if (!host) return;
+    setHtmlIdle(host, takvimHtml());
+    if (host.dataset.bagli) return; host.dataset.bagli = '1';
+    host.addEventListener('click', function(e){
+      var t = e.target;
+      // pencere kapanınca odak açan düğmeye döner; odak takvimde kalırsa setHtmlIdle yeni kaydı çizmez
+      var od = t.closest('button, a'); if (od && od.blur) od.blur();
+      var ay = t.closest('[data-tkay]'); if (ay){ var n = Number(ay.dataset.tkay); _tkAy = n ? muhAyEkle(_tkAy || todayISO().slice(0, 7), n) : ''; _tkGun = ''; takvimYenile(); return; }
+      var gn = t.closest('[data-tkgun]'); if (gn){ e.preventDefault(); _tkGun = _tkGun === gn.dataset.tkgun ? '' : gn.dataset.tkgun; takvimYenile(); return; }
+      var gt = t.closest('[data-tkgit]'); if (gt){ e.preventDefault(); var p = gt.dataset.tkgit.split('|');
+        if (p[0] === 'oneri'){ var on = document.querySelector('#ozetEkUst .td-oneri'); if (on) on.scrollIntoView({ behavior: 'smooth', block: 'start' }); else toast('Dağıtılacak tahsilat önerisi kalmadı.'); return; }
+        if (p[0] === 'ozkdv'){ ozetDetay('kdv'); return; }
+        if (p[1]) gitKayit(p[0], p[1]); else gitSekme(p[0]); return; }
+      var ht = t.closest('[data-tkhat]'); if (ht){ e.preventDefault(); var hk = (state.tanimKayitlari || []).find(function(x){ return x.id === ht.dataset.tkhat; }); if (hk) takvimHatirlatmaFormu(hk); return; }
+      if (t.closest('[data-tkyeni]')){ var ac = _tkAy && _tkAy !== todayISO().slice(0, 7) ? _tkAy + '-01' : ''; takvimHatirlatmaFormu(null, _tkGun || ac); return; }
+      if (t.closest('[data-tkayar]')){ takvimAyarFormu(); return; }
+      if (t.closest('[data-tkgizle]')){ e.preventDefault(); try { localStorage.setItem(TK_GIZLE_KEY, tkYapilanGizli() ? '0' : '1'); } catch(er){} takvimYenile(); return; }
+    });
+    host.addEventListener('change', function(e){ var c = e.target.closest && e.target.closest('[data-tkisaret]'); if (!c) return; c.blur(); takvimIsaretle(c.dataset.tkisaret, c.checked); });
+  }
+  function takvimIsaretle(anahtar, yapildi){
+    if (!izinVar('ekle')){ toast(izinYokMesaji('ekle'), true); takvimYenile(); return; }
+    var o = _tkHarita[anahtar], veri = { yapildi: !!yapildi, isaretTarihi: todayISO(), isaretleyen: aktifKullaniciAdi() || '' };
+    var l = (state.tanimKayitlari || []).filter(function(t){ return t.tur === 'takvimIsaret' && t.anahtar === anahtar; });
+    var is = l.length ? Promise.all(l.map(function(t){ return kayitGuncelle('tanimKayitlari', t.id, veri); }))
+      : yapildi ? kayitEkle('tanimKayitlari', Object.assign({ tur: 'takvimIsaret', anahtar: anahtar, baslik: o ? o.baslik + (o.donem ? ' · ' + o.donem : '') : anahtar, sonGun: o ? o.tarih : '' }, veri)) : Promise.resolve();
+    is.catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); takvimYenile(); });
+  }
+  function takvimHatirlatmaFormu(h, tarih){
+    var islem = h ? 'duzenle' : 'ekle'; if (!izinVar(islem)){ toast(izinYokMesaji(islem), true); return; }
+    openForm({ title: h ? 'Hatırlatmayı düzenle' : 'Yeni hatırlatma',
+      values: h ? { baslik: h.baslik || '', tarih: h.tarih, tekrar: h.tekrar || TAKVIM_TEKRAR[0], not_: h.not_ || '' } : { baslik: '', tarih: tarih || todayISO(), tekrar: TAKVIM_TEKRAR[0], not_: '' },
+      fields: [
+        { key: 'baslik', label: 'Ne yapılacak', type: 'text', required: true, placeholder: 'ör. İşyeri sigortasını yenile' },
+        { key: 'tarih', label: 'Tarih (son gün)', type: 'date', required: true, hint: 'Her ay / her yıl tekrarında ilk tarih; sonraki aylarda aynı gün (ay kısaysa ayın son günü).' },
+        { key: 'tekrar', label: 'Tekrar', type: 'select', options: TAKVIM_TEKRAR },
+        { key: 'not_', label: 'Not', type: 'textarea' }
+      ],
+      onOpen: h && izinVar('sil') ? function(el){
+        var d = document.createElement('div'); d.style.marginTop = '6px';
+        d.innerHTML = '<button type="button" class="btn danger small">Hatırlatmayı sil</button>';
+        d.firstChild.addEventListener('click', function(){ byId('formIptal').click(); confirmSil(silOnayMesaji('tanimKayitlari', h), function(){ db.collection('tanimKayitlari').doc(h.id).delete().then(function(){ toast('Silindi'); }).catch(function(e){ toast('Silinemedi: ' + dbErrMsg(e), true); }); }); });
+        el.appendChild(d);
+      } : null,
+      onSave: function(v){
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(v.tarih || '')){ toast('Tarih seçin.', true); return; }
+        var veri = { tur: 'hatirlatma', baslik: String(v.baslik || '').trim(), tarih: v.tarih, tekrar: TAKVIM_TEKRAR.indexOf(v.tekrar) > -1 ? v.tekrar : TAKVIM_TEKRAR[0], not_: v.not_ || '' };
+        (h ? kayitGuncelle('tanimKayitlari', h.id, veri) : kayitEkle('tanimKayitlari', veri))
+          .then(function(){ toast('✓ Hatırlatma ' + (h ? 'güncellendi' : 'eklendi') + ' (' + kvTarihTR(veri.tarih) + ')'); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+      } });
+  }
+  function takvimAyarFormu(){
+    if (!izinVar('duzenle')){ toast(izinYokMesaji('duzenle'), true); return; }
+    var A = takvimAyar(), gruplar = [];
+    TAKVIM_TURLER.forEach(function(t){ if (gruplar.indexOf(t.grup) < 0) gruplar.push(t.grup); });
+    var html = '<div class="helper" style="margin-bottom:6px">Takvimde ve Uyarılar\'da hangi işlerin görüneceğini seçin. Ayar herkes için geçerlidir; hatırlatmalar her zaman görünür.</div>' +
+      gruplar.map(function(g){ return '<div class="tk-grup">' + esc(g) + '</div>' + TAKVIM_TURLER.filter(function(t){ return t.grup === g; }).map(function(t){
+        return '<label class="tk-ayar"><input type="checkbox" data-tkac="' + t.k + '"' + (A.acik[t.k] ? ' checked' : '') + '><span><b>' + esc(t.ad) + '</b><br><span class="muted">' + esc(t.ip) + '</span></span></label>'; }).join(''); }).join('') +
+      '<div class="field" style="margin-top:12px;max-width:260px"><label>Başlangıç tarihi ' + infoIco('Son günü bu tarihten önce olan işler takvimde ve Uyarılar\'da gecikmiş görünmez; programı kullanmaya başladığınız tarihi yazın. Programda ödenmemiş görünen vergi borcu yine görünür.') + '</label><input type="date" data-tkbas="1" value="' + escAttr(A.baslangic) + '"></div>';
+    modalAc({ title: 'Takvim ayarları', genislik: 'orta', html: html, onSave: function(el){
+      var acik = {}; el.querySelectorAll('[data-tkac]').forEach(function(c){ acik[c.dataset.tkac] = c.checked; });
+      var bas = (el.querySelector('[data-tkbas]') || {}).value || '';
+      configWrite({ takvimAyar: { baslangic: /^\d{4}-\d{2}-\d{2}$/.test(bas) ? bas : TAKVIM_BAS, acik: acik } })
+        .then(function(){ toast('✓ Takvim ayarları kaydedildi'); }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+    } });
+  }
+
   // ---------- Banka ekstresi aktarımı ----------
   // Bankadan indirilen ekstre (Excel / CSV) okunur; sütunlar başlıktan tanınır (değiştirilebilir). Her satır için:
   // programda zaten kayıtlı mı (aynı hesap, aynı tutar, ±3 gün; ya da daha önce bu ekstreden aktarılmış), değilse öneri
@@ -19210,6 +19618,7 @@ Dikkat edilmesi gereken 2 nokta:
     try { var _fd = fireDuzeltAdaylar(); if (_fd.length) ekle('uyari', 'Firesi iyi adetten düşülmemiş ' + _fd.length + ' üretim kaydı var — Üretim Kayıtları', 'kayitlar', ''); } catch(e){}
     try { muhUyarilar(ekle); } catch(e){}
     try { vergiUyarilari(ekle); } catch(e){}
+    try { takvimUyarilari(ekle); } catch(e){ renderHatasi('takvim uyarıları', e); } // r383
     try { kirilimUyarilari(ekle); } catch(e){}
     var kap = sinirliDepo() ? dbDocSayilari().toplam / DB_KAPASITE : 0;
     if (kap >= 0.7) ekle(kap >= 0.9 ? 'kritik' : 'uyari', 'Veritabanı doluluğu %'+fmt(kap*100)+' — eski kayıtları arşivleyin (Sistem > Veri & Yedek)', 'veri', '');
@@ -19223,7 +19632,13 @@ Dikkat edilmesi gereken 2 nokta:
   function uyariMerkeziAc(){
     var u = uyarilariHesapla();
     var m = modalAc({ title: 'Uyarı merkezi ('+u.length+')', kaydetYok: true, genislik: 'orta', html: u.length ? u.map(uyariSatirHtml).join('') : '<div class="empty">Uyarı yok 🎉</div>',
-      onOpen: function(el, kapat){ el.querySelectorAll('[data-uyari]').forEach(function(r){ r.addEventListener('click', function(){ var p = r.dataset.uyari.split('|'); kapat(); if (p[1]) gitKayit(p[0], p[1]); else gitSekme(p[0]); }); }); } });
+      onOpen: function(el, kapat){ el.querySelectorAll('[data-uyari]').forEach(function(r){ r.addEventListener('click', function(){ kapat(); uyariAc(r.dataset.uyari); }); }); } });
+  }
+  // Uyarı satırına tıklayınca: kayıt / sayfa; r383: takvim uyarısı (ozet|takvim:GÜN) Özet › Takvim'de o günü açar
+  function uyariAc(deger){
+    var p = String(deger || '').split('|');
+    if (/^takvim:\d{4}-\d{2}-\d{2}$/.test(p[1] || '')){ takvimGoster(p[1].slice(7)); return; }
+    if (p[1]) gitKayit(p[0], p[1]); else gitSekme(p[0]);
   }
   function uyariRozetleri(){
     var u = uyarilariHesapla();
@@ -19353,6 +19768,21 @@ Dikkat edilmesi gereken 2 nokta:
       du.forEach(function(x){ gr[x.neden] = (gr[x.neden]||0) + durusSuresi(x); });
       d = { t: ozetDonemAd() + ' · plansız duruş', f: 'Duruşlar sayfasındaki bu dönemdeki kayıtların süreleri toplanır. "'+PLANLI_DURUSLAR.join('" ve "')+'" planlı sayılır, dahil edilmez.',
         h: ozetDetayTablo(['Neden','Süre'], Object.keys(gr).map(function(n){ return [esc(n), sureStrOlustur(gr[n])]; }), ['Toplam', sureStrOlustur(toplamla(du, durusSuresi))]), git: 'duruslar', gitAd: 'Duruşlar' };
+    } else if (k === 'kasa'){ // r383
+      var ks = ozetKasa(), notlar = [];
+      var satK = ks.l.map(function(x){ return [esc(x.h.ad) + (x.h.banka ? ' <span class="muted">' + esc(x.h.banka) + '</span>' : ''), esc(x.tur) + (x.kart ? ' <span class="muted">(nakde katılmaz)</span>' : ''), pbFmt(x.bakiye, x.pb), x.kurYok ? '<span class="neg">kur yok</span>' : tlEur(x.tl)]; });
+      ks.l.forEach(function(x){ var e = kasaEksiGunu(x.h); if (e) notlar.push('⚠ <b>' + esc(x.h.ad) + '</b> ' + kvTarihTR(e.tarih) + ' günü eksiye düştü (' + pbFmt(e.bakiye, x.pb) + '): kasa eksi bakiye veremez; eksik tahsilat / ortaktan alınan para girilmemiş olabilir.'); });
+      if (sekmeIzinli('virgo')) try { var vt = virgoToplam(); if (Math.abs(vt.elde.tl) > 0.5) notlar.push('Hesap Defteri\'nde Virgo\'nun verip henüz harcanmayan para (elimizdeki Virgo parası) <b>' + virgoTl(vt.elde.tl) + '</b>; bir kasa / banka hesabına girilmediyse yukarıdaki toplamda yoktur.'); } catch(e){}
+      d = { t: 'Kasa & banka · ' + (ks.simdi ? 'şu an' : kvTarihTR(ks.gun) + ' akşamı'),
+        f: '<b>Kasa &amp; Banka › Hesaplar</b>\'daki her hesabın açılış bakiyesi + hareketleri (tahsilat, ödeme, ödenmiş gider, virman, maaş, vergi / SGK ödemesi, kredi, çek tahsili / ödemesi). ' +
+          'Bakiye hesabın kendi para biriminde; ₺ karşılığı ' + (ks.simdi ? 'bugünkü' : 'o günkü') + ' kurla. <b>Nakit</b> = kasa + banka + POS; kredi kartı borcu nakde katılmaz.<br>' +
+          (ks.simdi ? 'Bu ay ya da genel toplam seçiliyken şu anki bakiye (Kasa &amp; Banka sayfasıyla aynı). Geçmiş bir ay seçilirse o ayın son günündeki bakiye görünür.' : 'Seçilen ayın son günündeki bakiye; şu anki bakiye için dönemden bu ayı seçin.') +
+          '<br>Ortakların kendi cebinden ödediği tutarlar şirket hesabından çıkmadığı için burada görünmez (Hesap Defteri › Ortaklar).',
+        h: ks.l.length ? ozetDetayTablo(['Hesap', 'Tür', 'Bakiye', '₺ karşılığı'], satK, ['Nakit (kasa + banka + POS)', '', '', tlEur(ks.nakit)]) +
+            (ks.kartVar ? '<div class="muted" style="font-size:11.5px;margin-top:6px">Kredi kartı borcu: ' + tlEur(ks.kart) + '</div>' : '') +
+            (notlar.length ? '<div class="helper" style="margin-top:8px">' + notlar.join('<br>') + '</div>' : '')
+          : '<div class="empty">Kasa &amp; Banka\'da hesap tanımlı değil. Kasa ve banka hesaplarını açılış bakiyeleriyle açın; tahsilat, ödeme ve giderlerde hesabı seçtikçe bakiye burada görünür.</div>',
+        git: 'kasabanka', gitAd: 'Kasa & Banka' };
     } else if (k === 'alacak'){
       var kal = faturaKalanlari(), fl = state.faturalar.filter(function(f){ return (kal[f.id]||0) > 0.01; });
       d = { t: 'Açık alacak', f: 'Kesilmiş faturaların genel toplamından alınan tahsilatlar düşülür; kalanı olan faturalar listelenir.',
@@ -19440,11 +19870,13 @@ Dikkat edilmesi gereken 2 nokta:
     var td = ''; try { td = tahsilatDagitimHtml(); } catch(e){ renderHatasi('tahsilat dağıtımı', e); } // r376
     if (!host.dataset.tdBagli){ host.dataset.tdBagli = '1'; host.addEventListener('click', function(e){ var b = e.target.closest('[data-tdonay]'); if (b && !b.disabled) tahsilatDagitimKaydet(b.dataset.tdonay); var a = e.target.closest('[data-tdatla]'); if (a && !a.disabled) tahsilatDagitimKaydet(a.dataset.tdatla, true); }); }
     // r244: kartlar Özet şeridinde, OEE makine tablosunda; burada yalnız uyarılar ve (iş varsa) operasyon darboğazı
+    // r383: uyarıların altında takvim; darboğaz takvimin altında kendi kabında
     setHtmlIdle(host, td +
       '<div class="block"><div class="block-head"><h3>Uyarılar ('+u.length+')</h3></div>'+
-        '<div class="block-body">'+(u.length ? ozetIlkN('uyari', u, 4, uyariSatirHtml, 'uyarı') : '<div class="empty">Uyarı yok.</div>')+'</div></div>'+
-      (dar ? darbogazHtml() : ''));
-    host.querySelectorAll('[data-uyari]').forEach(function(r){ if (r.dataset.bagli) return; r.dataset.bagli = 1; r.addEventListener('click', function(){ var p = r.dataset.uyari.split('|'); if (p[1]) gitKayit(p[0], p[1]); else gitSekme(p[0]); }); });
+        '<div class="block-body">'+(u.length ? ozetIlkN('uyari', u, 4, uyariSatirHtml, 'uyarı') : '<div class="empty">Uyarı yok.</div>')+'</div></div>');
+    host.querySelectorAll('[data-uyari]').forEach(function(r){ if (r.dataset.bagli) return; r.dataset.bagli = 1; r.addEventListener('click', function(){ uyariAc(r.dataset.uyari); }); });
+    try { renderOzetTakvim(); } catch(e){ renderHatasi('takvim', e); }
+    setHtmlIdle('ozetDarbogaz', dar ? darbogazHtml() : '');
   };
 
 // ===== m6_karlilik_model.js =====
