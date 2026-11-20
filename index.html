@@ -2008,7 +2008,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r385</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r386</div>
     </div>
   </nav>
   <main>
@@ -7579,6 +7579,45 @@ Dikkat edilmesi gereken 2 nokta:
       db.collection('faturalar').doc(f.id).update(gun).then(function(){ toast('✓ Resmi fatura bilgisi kaydedildi'); }).catch(function(e){ toast('Kaydedilemedi: '+dbErrMsg(e), true); });
     } });
   }
+  // r386: satış faturası no düzeltme ve sayaç hizalama. Seri = ön ek + yıl (ör. FTR-26-); sayaç serideki en büyük sıraya çekilir,
+  // yeni fatura sıradaki numarayla devam eder (yanlış verilen 3 → 1 yapılınca sonraki fatura 2 olur).
+  function faturaSeriBas(){ var cfg = state.config || {}; return (cfg.faturaOnEk != null ? cfg.faturaOnEk : 'FTR-') + kodYilStr() + '-'; }
+  function faturaSeriSirasi(no){ var bas = faturaSeriBas(); no = String(no || '').trim(); if (no.indexOf(bas) !== 0) return 0; var r = no.slice(bas.length); return /^\d+$/.test(r) ? Number(r) : 0; }
+  function faturaSeriEnBuyuk(haricId, ek){ var m = 0; (state.faturalar || []).forEach(function(f){ if (f.id === haricId) return; m = Math.max(m, faturaSeriSirasi(ek && ek.id === f.id ? ek.faturaNo : f.faturaNo)); }); return m; }
+  // Silinen taslak serinin son numarasıysa sayaç geri alınır (numarada boşluk kalmaz); elle ileri alınmış sayaç korunur
+  function faturaSilSayac(f){
+    var sira = faturaSeriSirasi(f && f.faturaNo), sayac = Number((state.config || {}).faturaSayac) || 0;
+    if (!sira || sira !== sayac) return;
+    configWrite({ faturaSayac: Math.max(faturaSeriEnBuyuk(f.id), sira - 1) }).catch(function(){});
+  }
+  function faturaNoDegistir(id){
+    var f = state.faturalar.find(function(x){ return x.id === id; }); if (!f) return;
+    if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
+    if (!izinVar('duzenle')){ toast(izinYokMesaji('duzenle'), true); return; }
+    if (donemKilitli(f.tarih)){ toast('Bu faturanın dönemi kilitli; numara değiştirilemez.', true); return; }
+    var bas = faturaSeriBas(), oneri = f.faturaNo;
+    openForm({ title: 'Fatura no değiştir: ' + f.faturaNo, values: { faturaNo: oneri }, fields: [
+      { key: 'faturaNo', label: 'Yeni fatura no', type: 'text', placeholder: bas + '0001', hint: 'Seri ' + bas + '… Kaydedince sayaç serideki en büyük numaraya çekilir; yeni faturalar sıradaki numarayla devam eder.' }
+    ], kayitOncesi: function(v, devam){
+      var no = String(v.faturaNo || '').trim();
+      if (!no){ toast('Fatura no boş olamaz.', true); return; }
+      if ((state.faturalar || []).some(function(x){ return x.id !== f.id && String(x.faturaNo || '').trim() === no; })){ toast(no + ' numaralı başka bir fatura var.', true); return; }
+      devam();
+    }, onSave: function(v){
+      var no = String(v.faturaNo || '').trim(), eski = f.faturaNo;
+      if (no === eski){ faturaSayacSirala(f, no); return; }
+      kayitGuncelle('faturalar', f.id, { faturaNo: no }).then(function(){
+        (state.stokHareketleri || []).forEach(function(h){ if (h.kaynakTur === 'fatura' && h.kaynakId === f.id && h.kaynakNo !== no) kayitGuncelle('stokHareketleri', h.id, { kaynakNo: no }).catch(function(){}); });
+        faturaSayacSirala(f, no, eski);
+      }).catch(function(e){ toast('Kaydedilemedi: ' + dbErrMsg(e), true); });
+    } });
+  }
+  function faturaSayacSirala(f, no, eski){
+    var m = faturaSeriEnBuyuk(null, { id: f.id, faturaNo: no }), sonraki = faturaSeriBas() + String(m + 1).padStart(4, '0');
+    var bitti = function(){ toast('✓ ' + (eski ? 'Fatura no ' + eski + ' → ' + no + '. ' : '') + 'Sonraki yeni fatura: ' + sonraki); };
+    if (m === (Number((state.config || {}).faturaSayac) || 0)){ bitti(); return; }
+    configWrite({ faturaSayac: m }).then(bitti).catch(function(e){ toast('Sayaç kaydedilemedi: ' + dbErrMsg(e), true); });
+  }
   function renderFaturaListesi(){
     var wrap = document.getElementById('faturaListesi');
     if (state.faturalar.length === 0){ wrap.innerHTML = '<div class="empty">Henüz fatura oluşturulmadı</div>'; return; }
@@ -7622,6 +7661,7 @@ Dikkat edilmesi gereken 2 nokta:
           (f.durum === 'Kesildi' && iadeKaynak && faturaIadeIrsaliyeleri(f, iadeKaynak).length ? '<button class="btn secondary small" data-ftriade="'+f.id+'" title="Müşteriden geri gelen malı bu faturanın irsaliyesine bağlı satış iadesi olarak gir">↩ İade al</button>' : '')+
           '<span class="ftr-bosluk"></span>'+
           '<button class="btn secondary small" data-gecmis="'+f.id+'">İşlem geçmişi</button>'+
+          (!kilit && izinVar('duzenle') ? '<button class="btn secondary small" data-ftrno="'+f.id+'" title="Fatura numarasını düzelt; yeni faturalar sıradaki numarayla devam eder">No değiştir</button>' : '')+
           (f.durum !== 'İptal' && !kilit ? '<button class="btn secondary small" data-ftredit="'+f.id+'">Düzenle</button>' : '')+
           (f.durum === 'Taslak' && !kilit ? '<button class="btn danger" data-ftrdel="'+f.id+'">Sil</button>' : '')+
           '</div>'+iptalNotuHtml(f)+faturaRiskHtml(f)+
@@ -7718,6 +7758,7 @@ Dikkat edilmesi gereken 2 nokta:
         });
       });
     });
+    wrap.querySelectorAll('[data-ftrno]').forEach(function(btn){ btn.addEventListener('click', function(){ faturaNoDegistir(btn.dataset.ftrno); }); }); // r386
     wrap.querySelectorAll('[data-ftrdel]').forEach(function(btn){
       btn.addEventListener('click', function(){
         if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
@@ -7733,6 +7774,7 @@ Dikkat edilmesi gereken 2 nokta:
             .then(function(){
               belgeStokEsitle('fatura', silId, ftrKontrol ? ftrKontrol.faturaNo : '', {}, 'Fatura silindi (stoğa geri)');
               faturaIrsaliyeleriniBirak(silId);
+              faturaSilSayac(ftrKontrol); // r386
               toast('Silindi');
             })
             .catch(function(e){ toast('Silinemedi: '+dbErrMsg(e), true); });
