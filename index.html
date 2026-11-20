@@ -1880,7 +1880,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-19-r376</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r377</div>
     </div>
   </nav>
   <main>
@@ -4789,12 +4789,7 @@ Dikkat edilmesi gereken 2 nokta:
     var katkilar = urunListesi().map(ozetUrunKatki), toplamCiro = toplamla(katkilar, function(x){ return x.top; });
     var gider = ozetGiderTl(), giderTahmini = toplamla(ozetTahminiGiderler(), function(x){ return x.tl; }), kazanc = toplamCiro - gider, th = ozetTahmin(toplamCiro), tlY = function(v){ return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)); }, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
     // r244: üretim / kalite kartları da aynı şeritte (eskiden ayrı satırdı)
-    var bugun = todayISO(), ay = thisMonthKey();
-    var acikIe = state.isemirleri.filter(function(ie){ return ie.durum !== 'İptal' && isEmriKalan(ie) > 0; });
-    var gecIe = acikIe.filter(function(ie){ return ie.termin && ie.termin < bugun; });
     var oka = ozetKayitlari(), fire = toplamla(oka, function(k){ return k.fireAdet; }), iyi = toplamla(oka, function(k){ return k.adet; });
-    var durusDk = toplamla((state.duruslar||[]).filter(function(d){ return ozetDonemde(d.tarih) && PLANLI_DURUSLAR.indexOf(d.neden) < 0; }), durusSuresi);
-    var fk = faturaKalanlari(), acikAlacak = toplamla(Object.keys(fk), function(k){ return Math.max(0, fk[k]); });
 
     // r275: dönem seçimi (ay ay ya da genel toplam)
     var donem = ozetDonem(), aylar = ozetAylar();
@@ -4810,11 +4805,9 @@ Dikkat edilmesi gereken 2 nokta:
     ].concat(ozetBuAy() ? [ // ay sonu tahmini yalnız içinde bulunulan ayda
       {label:'Ay sonu tahmini', value: tlY(th.net), cls:(th.net < -0.004 ? 'bad' : 'accent')+' yetki-maliyet', detay:'tahmin', sub: 'karşılık ≈ ₺' + fmt(th.ciro) + ' − gider ₺' + fmt(th.gider)}] : [],
       (function(){ try { var kk = ozetKdvKart(); return kk ? [kk] : []; } catch(e){ renderHatasi('KDV kartı', e); return []; } })(), [
-      {label:'Açık iş emri', value: acikIe.length, cls: gecIe.length?'accent':'', detay:'isemri', sub: gecIe.length ? '<span class="neg">'+gecIe.length+' gecikmiş</span>' : 'gecikme yok'},
-      {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'},
-      {label:'Plansız duruş', value: sureStrOlustur(durusDk), cls:'', detay:'durus'}
+      // r377: Açık iş emri, Plansız duruş ve Açık alacak kartları kullanıcı isteğiyle Özet'ten kaldırıldı (sayfaları duruyor)
+      {label:'Fire oranı', value: (iyi+fire) ? '%'+fmt2(fire/(iyi+fire)*100) : '-', cls:'', detay:'fire', sub: fmt(fire)+' adet'}
     ]);
-    if (sekmeIzinli('carihesap') || sekmeIzinli('faturalar')) cards.push({label:'Açık alacak', value: euro(acikAlacak), cls:'', detay:'alacak'});
     // r370: € borç (makine): MS Mekanik Sanatlar faturalarının fatura günü kuruyla € karşılığı − € borç ödemeleri; tıklayınca ayrıntı
     if (sekmeIzinli('virgo')) try { var eb = virgoIkiBorc(), ebKur = virgoGunKuru(todayISO());
       cards.push({ label: '€ borç (makine)', value: virgoEur(eb.eur.eur), cls: 'accent', detay: 'eurborc', sub: virgoEurCariler().length ? 'ödenen ' + virgoEur(eb.eurOdenen.eur) + (ebKur ? ' · ≈ ₺' + fmt(eb.eur.eur * ebKur) + ' bugünkü kurla' : '') : 'MS Mekanik Sanatlar cari kartı bulunamadı — tıklayıp seçin' });
