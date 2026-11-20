@@ -439,6 +439,23 @@
   .satir-menu-ic .btn { text-align: left; }
   body.no-delete .satir-menu { display: none !important; }
   .tg-tablo tr.tg-ac .satir-menu-ic { position: static; box-shadow: none; margin-top: 4px; } /* tablo görünümünde açılan satır hücresi taşanı kırpar */
+  /* r378: kayıt işlem menüsü (sağ tık / tablo satırındaki "⋯") */
+  .islem-menu { position: fixed; z-index: 900; min-width: 190px; max-width: 320px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 4px; box-shadow: 0 8px 24px rgba(21,32,43,.2); display: flex; flex-direction: column; font-size: 12.5px; }
+  .islem-menu-bas { padding: 5px 9px 6px; margin-bottom: 3px; border-bottom: 1px solid var(--border); color: var(--ink-soft); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .islem-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 3px; padding: 7px 10px; font: inherit; color: var(--ink); cursor: pointer; white-space: nowrap; }
+  .islem-menu button:hover, .islem-menu button:focus { background: var(--accent-soft); outline: none; }
+  .islem-menu button.tehlike { color: var(--bad); }
+  .islem-menu button.tehlike:hover, .islem-menu button.tehlike:focus { background: var(--bad-soft, #F6DEDC); }
+  .islem-menu button:disabled { opacity: .45; cursor: default; background: none; }
+  .islem-menu-ayir { height: 1px; background: var(--border); margin: 3px 2px; }
+  .tg-tablo th.tg-is, .tg-tablo td.tg-is { position: sticky; right: 0; width: 34px; min-width: 34px; max-width: 34px; padding: 2px 3px; text-align: center; cursor: default; }
+  .tg-tablo td.tg-is { background: var(--surface); box-shadow: inset 1px 0 0 var(--border); z-index: 1; }
+  .tg-tablo thead th.tg-is { background: var(--surface-alt); z-index: 3; }
+  .tg-tablo tfoot td.tg-is { background: var(--surface-alt); z-index: 2; }
+  .tg-is-btn { border: 1px solid transparent; background: none; border-radius: 3px; padding: 0 7px; line-height: 22px; font-weight: 700; letter-spacing: 1px; color: var(--ink-soft); cursor: pointer; }
+  .tg-is-btn:hover, .tg-is-btn[aria-expanded="true"] { border-color: var(--border); background: var(--surface); color: var(--ink); }
+  .tg-tablo tr.tg-menude td { background: var(--accent-soft); }
+  .tg-tablo tr.tg-ac .recordrow.tg-ra-gizli > .ractions { display: none; }
   .silinenler-kutu { margin: 0 0 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-alt); }
   .silinenler-kutu > summary { cursor: pointer; padding: 8px 10px; font-weight: 600; }
   .silinenler-kutu .tablewrap { margin: 0 10px 10px; }
@@ -1880,7 +1897,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r377</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-20-r378</div>
     </div>
   </nav>
   <main>
@@ -2901,6 +2918,99 @@ Dikkat edilmesi gereken 2 nokta:
   document.addEventListener('click', function(e){
     document.querySelectorAll('details.satir-menu[open]').forEach(function(d){ if (!d.contains(e.target)) d.open = false; });
     var b = e.target.closest && e.target.closest('.satir-menu-ic button'); if (b){ var d = b.closest('details'); if (d) d.open = false; }
+  });
+  // ---------- r378: Kayıt işlem menüsü (sağ tık; tablo görünümünde satır sonundaki "⋯") ----------
+  // Kartın işlem düğmeleri (Öde, Yazdır, Düzenle, Kart çıktısı, Sil…) listelenir; seçilince kartın kendi düğmesine tıklanır,
+  // böylece yetki, dönem kilidi, silme onayı ve sayfaya özel düzenleme ekranı aynı kalır. Shift + sağ tık: tarayıcının menüsü.
+  var ISLEM_DUZENLE_SEC = '[data-cedit],[data-editid],[data-irsedit],[data-ftredit],[data-kayitedit],[data-igak$="|duzenle"]';
+  // Kartın sağındaki düğmeler + ayrıntı bölümündeki işlem düğmeleri (satış faturasında Yazdır, PDF, Düzenle, Sil… orada);
+  // ayrıntıdaki tablo / form içindeki düğmeler alınmaz. Sil gibi tehlikeli işlemler sonda.
+  function islemDugmeleri(kart){
+    if (!kart) return [];
+    var bs = document.body.classList, duzYok = bs.contains('no-edit'), silYok = bs.contains('no-delete'), gorulen = {}, l = [];
+    [kart.querySelector(':scope > .ractions'), kart.querySelector(':scope > .rmain > .rdetail')].forEach(function(kok){
+      if (!kok) return;
+      Array.prototype.forEach.call(kok.querySelectorAll('button'), function(x){
+        if (x.hidden || x.style.display === 'none' || x.matches('[data-detoggle]') || (duzYok && x.matches(ISLEM_DUZENLE_SEC)) || (silYok && x.classList.contains('danger'))) return;
+        for (var p = x.parentElement; p && p !== kok; p = p.parentElement) if (p.hidden || (p.style && p.style.display === 'none') || /^(TABLE|FORM)$/.test(p.tagName) || p.classList.contains('recordrow')) return;
+        var im = islemImza(x); if (gorulen[im]) return; gorulen[im] = 1;
+        l.push(x);
+      });
+    });
+    return l.filter(function(x){ return !x.classList.contains('danger'); }).concat(l.filter(function(x){ return x.classList.contains('danger'); }));
+  }
+  function islemEtiket(x){
+    var t = (x.textContent || '').replace(/\s+/g, ' ').trim(), ip = (x.getAttribute('title') || x.getAttribute('aria-label') || '').trim();
+    if (ip.length > 40) ip = ip.slice(0, 38) + '…';
+    if (/[0-9A-Za-zÇĞİÖŞÜçğıöşü]/.test(t)) return t;
+    if (/🖨/.test(t)) return '🖨 ' + (ip || 'Yazdır');
+    return ip ? (t ? t + ' ' : '') + ip : (t || '…');
+  }
+  // Menü açıkken liste yeniden çizilirse düğme, aynı etiket ve data-* ile yeni kartta bulunur
+  function islemImza(x){ return islemEtiket(x) + '|' + Array.prototype.filter.call(x.attributes, function(a){ return /^data-/.test(a.name) && a.name !== 'data-bagli'; }).map(function(a){ return a.name + '=' + a.value; }).sort().join(';'); }
+  function yaziSeciliMi(kapsam){ try { var s = window.getSelection(); return !!(s && !s.isCollapsed && String(s).trim() && kapsam.contains(s.anchorNode)); } catch(e){ return false; } }
+  var _islemMenu = null;
+  function islemMenuKapat(odakGeri){
+    var m = _islemMenu; if (!m) return;
+    var geri = odakGeri === true && m.contains(document.activeElement) ? (m._dugme || m._satir) : null;
+    _islemMenu = null; m.remove();
+    if (geri && geri.isConnected) geri.focus({ preventScroll: true });
+    if (m._dugme) m._dugme.removeAttribute('aria-expanded');
+    if (m._satir) m._satir.classList.remove('tg-menude');
+  }
+  // kartBul(): kartın güncel öğesi; x, y: ekran konumu; o.dugme: menüyü açan düğme (sağ kenarı hizalanır, ikinci tık kapatır); o.satir: vurgulanan tablo satırı
+  function islemMenuAc(kartBul, x, y, o){
+    o = o || {};
+    if (_islemMenu && o.dugme && _islemMenu._dugme === o.dugme){ islemMenuKapat(); return true; }
+    islemMenuKapat();
+    var kart = kartBul(), l = islemDugmeleri(kart);
+    if (!l.length) return false;
+    var t = kart.querySelector('.rtitle'), bas = t ? t.textContent.replace(/\s+/g, ' ').trim() : '', imzalar = l.map(islemImza);
+    var m = document.createElement('div'); m.className = 'islem-menu'; m.setAttribute('role', 'menu');
+    m.innerHTML = (bas ? '<div class="islem-menu-bas" title="' + escAttr(bas) + '">' + esc(bas) + '</div>' : '') +
+      l.map(function(b, i){ var teh = b.classList.contains('danger');
+        return (teh && i && !l[i - 1].classList.contains('danger') ? '<div class="islem-menu-ayir"></div>' : '') + '<button type="button" role="menuitem" data-i="' + i + '"' + (teh ? ' class="tehlike"' : '') + (b.disabled ? ' disabled' : '') + '>' + esc(islemEtiket(b)) + '</button>'; }).join('');
+    document.body.appendChild(m);
+    var w = m.offsetWidth, h = m.offsetHeight, vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+    var ust = y + h > vh - 4 ? (o.dugme ? o.dugme.getBoundingClientRect().top - h - 2 : y - h) : y;
+    m.style.left = Math.max(4, Math.min(o.dugme ? x - w : x, vw - w - 4)) + 'px';
+    m.style.top = Math.max(4, ust) + 'px';
+    m._dugme = o.dugme || null; m._satir = o.satir || null;
+    if (m._dugme) m._dugme.setAttribute('aria-expanded', 'true');
+    if (m._satir) m._satir.classList.add('tg-menude');
+    _islemMenu = m;
+    m.addEventListener('click', function(e){
+      var it = e.target.closest('button[data-i]'); if (!it || it.disabled) return;
+      var i = +it.dataset.i, b = l[i];
+      islemMenuKapat();
+      if (!b || !b.isConnected) b = islemDugmeleri(kartBul()).find(function(z){ return islemImza(z) === imzalar[i]; });
+      if (b) b.click(); else toast('Kayıt bu arada değişti; işlemi yeniden seçin.', true);
+    });
+    m.addEventListener('keydown', function(e){
+      var d = Array.prototype.slice.call(m.querySelectorAll('button[data-i]:not([disabled])')), i = d.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown'){ e.preventDefault(); (d[i + 1] || d[0]).focus(); }
+      else if (e.key === 'ArrowUp'){ e.preventDefault(); (d[i - 1] || d[d.length - 1]).focus(); }
+      else if (e.key === 'Tab'){ e.preventDefault(); islemMenuKapat(true); }
+    });
+    var ilk = m.querySelector('button[data-i]:not([disabled])'); if (ilk) ilk.focus({ preventScroll: true });
+    return true;
+  }
+  document.addEventListener('mousedown', function(e){ if (_islemMenu && !_islemMenu.contains(e.target) && !(_islemMenu._dugme && _islemMenu._dugme.contains(e.target))) islemMenuKapat(); }, true);
+  document.addEventListener('scroll', function(e){ if (_islemMenu && !_islemMenu.contains(e.target)) islemMenuKapat(); }, true);
+  document.addEventListener('keydown', function(e){ if (_islemMenu && e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); islemMenuKapat(true); } }, true);
+  window.addEventListener('resize', function(){ islemMenuKapat(); });
+  window.addEventListener('blur', function(){ islemMenuKapat(); });
+  // Kart listelerinde (ve tabloda açılan kartta) karta sağ tık
+  document.addEventListener('contextmenu', function(e){
+    if (e.defaultPrevented || e.shiftKey) return;
+    var kart = e.target.closest && e.target.closest('.recordrow[data-rid]');
+    if (!kart || e.target.closest('input, select, textarea, a[href], .islem-menu') || yaziSeciliMi(kart)) return;
+    var rid = kart.dataset.rid, liste = kart.parentElement, tg = kart.closest('.tg');
+    var bul = tg && tg.__el ? function(){ return tgKartEl(tg.__el, rid); }
+      : function(){ return kart.isConnected ? kart : liste && liste.querySelector(':scope > .recordrow[data-rid="' + String(rid).replace(/"/g, '') + '"]'); };
+    var x = e.clientX, y = e.clientY;
+    if (!x && !y){ var r = kart.getBoundingClientRect(); x = r.left + 40; y = r.top + 20; }
+    if (islemMenuAc(bul, x, y)) e.preventDefault();
   });
   // Kart çıktısı: formun alan tanımından bölüm bölüm ayrıntılı kart (Logo / Canias kart dökümü gibi); firma başlığı ve önizlemedeki PDF / Excel ile
   function kartDegerMetni(f, v){
@@ -12512,8 +12622,8 @@ Dikkat edilmesi gereken 2 nokta:
           return;
         }
         var r = new FileReader(); r.onload = function(){ gelenEFaturaAc(String(r.result || ''), f.name); }; r.onerror = function(){ toast('Dosya okunamadı.', true); }; r.readAsText(f, 'utf-8'); });
-      // kalemli faturada "Düzenle" kalem editörünü açar
-      host.addEventListener('click', function(e){ var b = e.target.closest('[data-editid]'); if (!b) return; var f = (state.alisFaturalari||[]).find(function(x){ return x.id === b.dataset.editid; }); if (!f || !f.kalemli) return; e.stopPropagation(); e.preventDefault(); alisFaturaEditor(f); }, true); },
+      // r378: "Düzenle" her alış faturasında yeni faturadaki ekranı (kalem editörü) açar; kalemsiz kayıt (hızlı giriş / eski) tek kalemle açılır
+      host.addEventListener('click', function(e){ var b = e.target.closest('[data-editid]'); if (!b) return; var f = (state.alisFaturalari||[]).find(function(x){ return x.id === b.dataset.editid; }); if (!f) return; e.stopPropagation(); e.preventDefault(); alisFaturaEditor(alisEditorKaydi(f)); }, true); },
     fields: function(){ return [
       {key:'faturaNo', label:'Tedarikçi fatura no', type:'text', required:true},
       {key:'tedarikciId', label:'Tedarikçi / fasoncu', type:'select', options: cariSecenek(tedarikciMi), required:true},
@@ -22146,6 +22256,16 @@ Dikkat edilmesi gereken 2 nokta:
       }).catch(function(e){ toast('Kart açılamadı: '+dbErrMsg(e), true); });
     });
   }
+  // r378: kalemsiz alış faturası (hızlı giriş, eski kayıt) editörde tek kalemle açılır: KDV hariç tutar, KDV oranı ve gider türü kaleme geçer.
+  // Kaydedilince kalemli olur; toplamlar aynı kalır. Kaydın kendisi editör kaydedene kadar değişmez.
+  function alisEditorKaydi(f){
+    if (!f || f.kalemli || (Array.isArray(f.kalemler) && f.kalemler.length)) return f;
+    var pb = belgePB(f), bt = f.belgeTutar && typeof f.belgeTutar === 'object' ? f.belgeTutar : null;
+    var ara = Math.abs(Number(pb !== 'EUR' && bt ? bt.araToplam : f.araToplam) || 0);
+    var kdv = f.kdvOrani != null && f.kdvOrani !== '' ? Number(f.kdvOrani) || 0 : 20;
+    return Object.assign({}, f, { faturaTipi: f.faturaTipi || ALIS_FATURA_TIPLERI[0].ad,
+      kalemler: [{ stokId: '', ad: f.aciklama || f.giderTuru || 'Fatura tutarı', miktar: 1, birim: 'adet', birimFiyat: ara, iskonto: 0, iskonto1: 0, iskonto2: 0, kdvOrani: kdv, giderTuru: f.giderTuru || alisTipi(f.faturaTipi).gider, tutar: ara }] });
+  }
   function alisFaturaEditor(mevcut, on){
     if (!db){ toast('Ortak veri bağlantısı yok.', true); return; }
     if (mevcut ? !izinVar('duzenle') : !izinVar('ekle')){ toast(izinYokMesaji(mevcut ? 'duzenle' : 'ekle'), true); return; }
@@ -23776,6 +23896,9 @@ Dikkat edilmesi gereken 2 nokta:
     (el._tgYer = el._tgYer || {})[rid] = y; (el._tgKart = el._tgKart || {})[rid] = kart;
     kart.style.display = '';
     td.appendChild(kart);
+    // r378: işlemler satırın "⋯" / sağ tık menüsünde; açılan kartta düğmeler tekrar edilmez (seçim kutusu, bağlantı varsa kalır)
+    var ra = kart.querySelector(':scope > .ractions');
+    kart.classList.toggle('tg-ra-gizli', !!(ra && islemDugmeleri(kart).length && !ra.querySelector('select, input, textarea, a')));
     // Ayrıntısı kapalı kartta işlem düğmeleri ayrıntının içinde: açılınca hemen görünsün
     var det = kart.querySelector('[data-detoggle]'), detEl = det && byId('rdetail-' + det.dataset.detoggle);
     if (det && detEl && detEl.style.display === 'none') det.click();
@@ -23820,14 +23943,15 @@ Dikkat edilmesi gereken 2 nokta:
         '<button class="btn secondary small tg-filtre-ac" type="button">' + (filtreAcik ? '▴ Sütun filtresi' : '▾ Sütun filtresi') + '</button>' +
         '<button class="btn secondary small tg-temizle" type="button" style="display:none">✕ Filtreleri temizle</button>' +
         '<button class="btn secondary small tg-excel" type="button">⇩ Excel</button>' +
-        '<span class="muted tg-ipucu">Satıra tıklayın: kayıt açılır · çift tıklama: düzenle · ↑↓ Enter</span>' +
+        '<span class="muted tg-ipucu">Satıra tıklayın: kayıt açılır · çift tıklama: düzenle · sağ tık / ⋯: işlemler · ↑↓ Enter</span>' +
       '</div>' +
       '<div class="tg-secim" style="display:none"></div>' +
       '<div class="tablewrap tg-kutu"><table class="tg-tablo"><thead><tr>' +
         '<th class="tg-sec"><input type="checkbox" class="tg-hepsi" title="Görünen tümünü seç"></th>' +
         gor.map(function(k){ var s = sira.k === k.k ? (sira.yon === -1 ? ' ▼' : ' ▲') : ''; var ef = Array.isArray((a.secim || {})[k.k]); return '<th data-k="' + k.k + '" class="' + (tgSayisalMi(k) ? 'num ' : '') + (s ? 'tg-sirali' : '') + '" title="Sıralamak için tıklayın · ▾: değerlere göre filtrele · genişlik: sağ kenarı sürükleyin (çift tık: eski haline)"><div class="tg-g" data-gk="' + k.k + '">' + esc(k.b) + s + '<button type="button" class="tg-ef' + (ef ? ' on' : '') + '" data-ef="' + k.k + '" title="' + (ef ? 'Filtreli — değerleri değiştir' : 'Değerlere göre filtrele (Excel gibi)') + '">' + (ef ? '⧩' : '▾') + '</button></div><span class="tg-boy" data-boy="' + k.k + '"></span></th>'; }).join('') +
+        '<th class="tg-is" aria-label="İşlemler"></th>' +
       '</tr>' +
-      (filtreAcik ? '<tr class="tg-filtre"><th></th>' + gor.map(function(k){ return '<th><input type="search" data-fk="' + k.k + '" value="' + escAttr(filtre[k.k] || '') + '" placeholder="' + escAttr(tgFiltreIpucu(k)) + '" title="' + escAttr(tgFiltreAciklama(k)) + '"></th>'; }).join('') + '</tr>' : '') +
+      (filtreAcik ? '<tr class="tg-filtre"><th></th>' + gor.map(function(k){ return '<th><input type="search" data-fk="' + k.k + '" value="' + escAttr(filtre[k.k] || '') + '" placeholder="' + escAttr(tgFiltreIpucu(k)) + '" title="' + escAttr(tgFiltreAciklama(k)) + '"></th>'; }).join('') + '<th class="tg-is"></th></tr>' : '') +
       '</thead><tbody></tbody><tfoot></tfoot></table></div><style class="tg-gstil"></style>';
     tg.dataset.tgid = el.id;
     tgGenislikStil(el, tg);
@@ -23840,7 +23964,7 @@ Dikkat edilmesi gereken 2 nokta:
     var tg = el._tg; if (!tg) return;
     tgKartlariGeriKoy(el);
     var d = tgDurum(el.id), kolonlar = el._tgKolonlar, gor = tgGorunur(el, kolonlar), a = tgAyar(el.id);
-    var l = tgSuz(el, el._tgSatirlar, kolonlar), goster = l.slice(0, d.limit), n = gor.length + 1;
+    var l = tgSuz(el, el._tgSatirlar, kolonlar), goster = l.slice(0, d.limit), n = gor.length + 2;
     el._tgSuzulmus = l;
     var bugun = todayISO();
     var html = goster.map(function(x){
@@ -23851,7 +23975,8 @@ Dikkat edilmesi gereken 2 nokta:
           var gec = k.k === 'vade' && x.o && tgDeger(k, x) && tgDeger(k, x) < bugun && tgFiltreGecikme(el, x);
           var hv = tgHucre(k, x), ham = tgSayisalMi(k) ? '' : String(tgDeger(k, x) == null ? '' : tgDeger(k, x));
           return '<td' + (tgSayisalMi(k) ? ' class="num"' : '') + (gec ? ' style="color:var(--bad)"' : '') + (ham.length > 12 ? ' title="' + escAttr(k.t === 'tarih' ? kvTarihTR(ham) : ham) + '"' : '') + '><div class="tg-g" data-gk="' + k.k + '">' + hv + '</div></td>';
-        }).join('') + '</tr>';
+        }).join('') +
+        '<td class="tg-is">' + (islemDugmeleri(x.kart).length ? '<button type="button" class="tg-is-btn" data-tgis="' + escAttr(x.rid) + '" title="İşlemler: düzenle, sil… (satıra sağ tıklayınca da açılır)" aria-label="İşlemler" aria-haspopup="menu">⋯</button>' : '') + '</td></tr>';
       if (d.acik[x.rid]) tr += '<tr class="tg-ac"><td colspan="' + n + '" data-tgkart="' + escAttr(x.rid) + '"></td></tr>';
       return tr;
     }).join('');
@@ -23861,7 +23986,7 @@ Dikkat edilmesi gereken 2 nokta:
     tb.querySelectorAll('[data-tgkart]').forEach(function(td){ if (!tgKartTasi(el, td.dataset.tgkart, td)) td.parentElement.remove(); });
     tgAcikGenislik(el._tg.querySelector('.tg-kutu'));
     var toplamVar = gor.some(function(k){ return k.toplam; });
-    el._tg.querySelector('tfoot').innerHTML = toplamVar && l.length ? '<tr><td></td>' + gor.map(function(k, i){ var t = tgToplamHtml(k, l); return '<td class="' + (tgSayisalMi(k) ? 'num' : '') + '">' + (t || (i === 0 ? 'Toplam (' + l.length + ')' : '')) + '</td>'; }).join('') + '</tr>' : '';
+    el._tg.querySelector('tfoot').innerHTML = toplamVar && l.length ? '<tr><td></td>' + gor.map(function(k, i){ var t = tgToplamHtml(k, l); return '<td class="' + (tgSayisalMi(k) ? 'num' : '') + '">' + (t || (i === 0 ? 'Toplam (' + l.length + ')' : '')) + '</td>'; }).join('') + '<td class="tg-is"></td></tr>' : '';
     var hepsi = el._tg.querySelector('.tg-hepsi');
     if (hepsi){ var sec = l.filter(function(x){ return d.secili[x.rid]; }).length; hepsi.checked = !!l.length && sec === l.length; hepsi.indeterminate = sec > 0 && sec < l.length; }
     var temizle = el._tg.querySelector('.tg-temizle'), f = a.filtre || {};
@@ -23965,11 +24090,20 @@ Dikkat edilmesi gereken 2 nokta:
     });
     tb.addEventListener('click', function(ev){
       if (ev.target.closest('.tg-tumu')){ d.limit = Infinity; tgGovde(el); return; }
-      var tr = ev.target.closest('tr.tg-satir'); if (!tr || ev.target.closest('.tg-sec')) return;
+      var ib = ev.target.closest('[data-tgis]');
+      if (ib){ var r = ib.getBoundingClientRect(); tgIslemMenu(el, ib.dataset.tgis, r.right, r.bottom + 2, ib); return; }
+      var tr = ev.target.closest('tr.tg-satir'); if (!tr || ev.target.closest('.tg-sec, .tg-is')) return;
       tgSatirAcKapa(el, tr.dataset.rid);
     });
+    // r378: satıra sağ tık (ya da klavyede menü tuşu) → kaydın işlemleri; seçili yazı varken ya da Shift ile tarayıcının kendi menüsü
+    tb.addEventListener('contextmenu', function(ev){
+      var tr = ev.target.closest('tr.tg-satir'); if (!tr || ev.shiftKey || yaziSeciliMi(tr)) return;
+      var x = ev.clientX, y = ev.clientY;
+      if (!x && !y){ var r = tr.getBoundingClientRect(); x = r.left + 40; y = r.bottom; }
+      if (tgIslemMenu(el, tr.dataset.rid, x, y)) ev.preventDefault();
+    });
     tb.addEventListener('dblclick', function(ev){
-      var tr = ev.target.closest('tr.tg-satir'); if (!tr || ev.target.closest('.tg-sec')) return;
+      var tr = ev.target.closest('tr.tg-satir'); if (!tr || ev.target.closest('.tg-sec, .tg-is')) return;
       if (window.getSelection) try { window.getSelection().removeAllRanges(); } catch(e){}
       tgDuzenle(el, tr.dataset.rid);
     });
@@ -23989,9 +24123,15 @@ Dikkat edilmesi gereken 2 nokta:
     var tr = el._tg && el._tg.querySelector('tr.tg-satir[data-rid="' + rid.replace(/"/g, '') + '"]');
     if (tr) tr.focus();
   }
+  function tgKartEl(el, rid){ return (el._tgKart || {})[rid] || el.querySelector(':scope > .recordrow[data-rid="' + String(rid).replace(/"/g, '') + '"]'); }
+  // r378: satırın "⋯" düğmesi / sağ tık: kartın işlemleri menüde (satır açılmadan)
+  function tgIslemMenu(el, rid, x, y, dugme){
+    var tr = el._tg && el._tg.querySelector('tr.tg-satir[data-rid="' + String(rid).replace(/"/g, '') + '"]');
+    return islemMenuAc(function(){ return tgKartEl(el, rid); }, x, y, { dugme: dugme, satir: tr });
+  }
   // Çift tıklama: kartın Düzenle düğmesi (ayrıntının içinde olsa da) tıklanır; yoksa kart açılır
   function tgDuzenle(el, rid){
-    var kart = (el._tgKart || {})[rid] || el.querySelector(':scope > .recordrow[data-rid="' + rid.replace(/"/g, '') + '"]');
+    var kart = tgKartEl(el, rid);
     var b = kart && (kart.querySelector('[data-editid],[data-cedit],[data-ftredit]') || Array.prototype.slice.call(kart.querySelectorAll('button')).find(function(x){ return /^\s*Düzenle\s*$/.test(x.textContent); }));
     if (b){ b.click(); return; }
     var d = tgDurum(el.id); if (!d.acik[rid]) tgSatirAcKapa(el, rid);
