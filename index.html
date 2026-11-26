@@ -211,6 +211,22 @@
   /* r390: Özet › Makineler: "Çalışmayanları gizle" */
   .oz-gizle-sec { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 400; color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
   .oz-gizle-sec input { margin: 0; }
+  /* r391: Özet düzeni: bölümler .oz-birim sarıcısında; art arda sol / sağ bölümler iki sütunlu satır (.ozet-izgara), tek sütunu dolu satır tam genişlik */
+  .ozet-izgara.tek { grid-template-columns: minmax(0, 1fr); }
+  .ozet-kol .block { margin-bottom: 12px; }
+  .ozet-kol .cards { margin-bottom: 12px; }
+  .oz-duzen-cubuk { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; padding: 10px 12px; margin-bottom: 12px; background: var(--accent-soft); border: 1px solid var(--accent); font-size: 13px; position: sticky; top: 0; z-index: 30; }
+  .oz-duzen-cubuk[hidden] { display: none; }
+  .oz-duzen-cubuk-btn { display: flex; gap: 6px; }
+  .oz-duzen-modu .oz-birim { outline: 2px dashed var(--accent); outline-offset: 2px; margin: 0 0 16px; }
+  .oz-duzen-modu .oz-birim > :not(.oz-tasi) { margin-bottom: 0; }
+  .oz-tasi { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 10px; padding: 6px 8px; background: var(--accent-soft); font-size: 12.5px; }
+  .oz-tasi-ad { font-weight: 600; }
+  .oz-tasi-btn { display: flex; flex-wrap: wrap; gap: 4px; }
+  .oz-tasi-btn .btn { min-width: 32px; justify-content: center; }
+  .oz-tasi-btn .btn:disabled { opacity: .35; cursor: default; }
+  .oz-birim.gizli > :not(.oz-tasi) { opacity: .4; }
+  .oz-kol-bos { border: 2px dashed var(--border); padding: 24px 12px; text-align: center; color: var(--ink-soft); font-size: 12.5px; margin-bottom: 16px; }
   .ozet-izgara td.num, .ozet-izgara th.num { white-space: nowrap; }
   @media (min-width: 981px) { .cards.ozet-kpi { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); } }
   @media (max-width: 980px) { .ozet-izgara { grid-template-columns: minmax(0, 1fr); } }
@@ -2050,7 +2066,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-26-r390</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-26-r391</div>
     </div>
   </nav>
   <main>
@@ -2068,14 +2084,14 @@
           <h1>Özet</h1>
           <p id="ozetAyEtiket"></p>
         </div>
-        <div style="display:flex;gap:8px;align-items:center"><span class="muted" id="ozetDuzenNot" style="font-size:12px"></span><button type="button" class="btn secondary small" id="ozetDuzenBtn" title="Bölümleri sırala, istemediğin kutuları gizle">⚙ Özeti düzenle</button></div>
+        <div style="display:flex;gap:8px;align-items:center"><span class="muted" id="ozetDuzenNot" style="font-size:12px"></span><button type="button" class="btn secondary small" id="ozetDuzenBtn" title="Bölümleri oklarla taşı (yukarı, aşağı, sol, sağ sütun, tam genişlik), istemediğini gizle">⚙ Özeti düzenle</button></div>
       </div>
+      <!-- r391: düzen modu çubuğu ve bölümler. Bölümlerin yeri m25_ozet_duzen.js'te (ozetDuzenUygula): sıralı liste, tam / sol / sağ -->
+      <div class="oz-duzen-cubuk" id="ozetDuzenCubuk" hidden><span>Bölümleri oklarla taşıyın: <b>↑ ↓</b> sıra, <b>← →</b> sol / sağ sütun, <b>⇔</b> tam genişlik; <b>Gizle</b> ile kaldırın. Ayar sizin için, bu tarayıcıda saklanır.</span><span class="oz-duzen-cubuk-btn"><button type="button" class="btn secondary small" data-ozduzen="sifirla">Varsayılana dön</button><button type="button" class="btn small" data-ozduzen="bitir">✓ Bitti</button></span></div>
+      <div id="ozetAlan">
       <div class="block ozet-serit" id="ozetDonemSerit"><div class="block-body" id="ozetDonemSeritIc"></div></div>
       <div class="cards ozet-kpi" id="ozetCards"></div>
-      <!-- r244: tek ekran — solda makineler + ürün katkısı, sağda uyarılar + trend + darboğaz -->
-      <div class="ozet-izgara" id="ozetIzgara">
-        <div class="ozet-kol">
-          <div class="block">
+      <div class="block" id="ozetMakineler">
             <div class="block-head"><h3>Makineler <span class="info-ico" tabindex="0">!<span class="info-bubble">Durum: makinenin son üretim kaydı (bugün kayıt varsa "bugün"). Satırın üzerine gelince son iş görünür.
 Doluluk: bu ay üretilen her ürünün birim süresine (dk/adet) göre harcanan süre ÷ ayın 1'inden bugüne kapasite (Tanımlar &gt; Kapasite). Yeşil %70 altı · mavi %70–100 · kırmızı kapasite aşıldı.
 OEE = Kullanılabilirlik × Performans × Kalite (dönemin başından bugüne):
@@ -2085,34 +2101,24 @@ OEE = Kullanılabilirlik × Performans × Kalite (dönemin başından bugüne):
 Hücrenin üzerine gelince ayrıntı. Dünya standardı ≈ %85, %60 altı iyileştirme alanı.
 Çalışmayanları gizle: Durumu Pasif olan ve seçili dönemde hiç üretim kaydı olmayan makineler listelenmez.</span></span></h3><div class="bh-actions"><label class="oz-gizle-sec" title="Pasif makineleri ve seçili dönemde üretim kaydı olmayanları gizle (bu tarayıcıda hatırlanır)"><input type="checkbox" id="ozetMakineGizle"> Çalışmayanları gizle</label></div></div>
             <div class="block-body tablewrap" id="ozetMakineTablo"></div>
-          </div>
-          <div class="block yetki-maliyet">
-            <div class="block-head"><h3>Ürün bazında karşılık</h3></div>
-            <div class="block-body tablewrap">
-              <table id="ozetUrunTablo"><thead><tr>
-                <th>Ürün</th><th class="num">Adet</th><th class="num">Fiyat ₺</th><th class="num">Karşılık</th>
-              </tr></thead><tbody></tbody></table>
-            </div>
-          </div>
-        </div>
-        <div class="ozet-kol">
-          <div id="ozetEkUst"></div>
-          <div id="ozetDarbogaz"></div>
-          <div class="block">
+      </div>
+      <div id="ozetEkUst"></div>
+      <div id="ozetDarbogaz"></div>
+      <div class="block" id="ozetSevkFatura" hidden></div>
+      <div class="block" id="ozetAylikBlok">
             <div class="block-head"><h3>Aylık üretim (son 6 ay) <span class="info-ico" tabindex="0">!<span class="info-bubble">Son operasyon (mamul) adetleri ürün ürün üst üste. Çubuğun üzerine gelince ürün kırılımı ve ₺ karşılığı görünür. Birkaç günü kapsayan kayıt günlere eşit bölünür.</span></span></h3></div>
             <div class="block-body" id="ozetTrendGrafik"></div>
-          </div>
-          <div class="block">
+      </div>
+      <div class="block" id="ozetGunlukBlok">
             <div class="block-head"><h3>Günlük / haftalık üretim <span class="info-ico" tabindex="0">!<span class="info-bubble">Günlük: son 14 gün; haftalık: son 8 hafta (pazartesi başlar). Adetler ürün ürün üst üste; çubuğun üzerine gelince ürün kırılımı ve ₺ karşılığı. Hafta sonu ve tatil günleri soluk. Birkaç günü kapsayan kayıt (bitiş günü seçilmiş) günlere eşit bölünür.</span></span></h3>
               <div class="bh-actions"><span class="oz-sekme" id="ozetTrend2Sekme"><button type="button" data-oztrend="gun">Günlük</button><button type="button" data-oztrend="hafta">Haftalık</button></span></div></div>
             <div class="block-body" id="ozetTrend2Grafik"></div>
-          </div>
-        </div>
       </div>
-      <div class="block" id="ozetSevkFatura" hidden></div>
-      <div id="ozetVirgoBorc"></div>
       <div id="ozetHesapDefteri" hidden><div class="block-head" style="background:none;border:0;padding:14px 0 6px"><h3 style="font-size:16px">Ortaklar hesabı</h3></div><div id="virgoIcerik"></div></div>
       <div class="block" id="ozetAnaliz"></div>
+      </div>
+      <div id="ozetGizliDepo" hidden></div>
+      <div id="ozetVirgoBorc"></div>
     </section>
 
     <!-- r390: Takvim Özet'ten çıktı, kendi sayfası (menüde Özet'in altında, telefonda alt çubukta) -->
@@ -2199,6 +2205,12 @@ Hücrenin üzerine gelince ayrıntı. Dünya standardı ≈ %85, %60 altı iyile
           </tr></thead><tbody></tbody><tfoot id="kayitToplam"></tfoot></table>
           <div class="empty" id="kayitEmpty" style="display:none">Henüz üretim kaydı girilmedi.</div>
         </div>
+      </div>
+      <!-- r391: Özet'ten taşındı: ürün bazında karşılık, ay ay (renderKayitKarsilik) -->
+      <div class="block yetki-maliyet" id="kayitKarsilikBlok">
+        <div class="block-head"><h3>Ürün bazında karşılık <span class="info-ico" tabindex="0">!<span class="info-bubble">Seçilen ayda üretilen adet (parçanın son operasyonu ya da mamul girişi; ara operasyonlar sayılmaz) × stok kartındaki birim fiyat (fason ücret ₺; yoksa fason ücret € × bugünkü kur; o da yoksa satış fiyatı € × kur). Özet'teki üretim karşılığıyla aynı hesap. Birkaç günü kapsayan kayıt aylara gün oranıyla bölünür.</span></span></h3>
+          <div class="bh-actions"><button type="button" class="btn secondary small" data-kkay="1" title="Önceki ay" aria-label="Önceki ay">‹</button><select id="kayitKarsilikAy" aria-label="Ay"></select><button type="button" class="btn secondary small" data-kkay="-1" title="Sonraki ay" aria-label="Sonraki ay">›</button></div></div>
+        <div class="block-body tablewrap" id="kayitKarsilikIcerik"></div>
       </div>
     </section>
 
@@ -4863,7 +4875,8 @@ Dikkat edilmesi gereken 2 nokta:
   function renderOzetAnaliz(){ var el = byId('ozetAnaliz'); if (el) setHtmlIdle(el, ozetAnalizHtml()); }
   (function(){
     var p = byId('panel-ozet'); if (!p) return;
-    p.addEventListener('change', function(e){ var a = e.target.closest('[data-ozanalizay],[data-ozanalizgrup]'); if (!a) return; if (a.dataset.ozanalizay) ozetAnalizAy = a.value; else ozetAnalizGrup = a.value; var el = byId('ozetAnaliz'); if (el){ el.__sonHtml = null; renderOzetAnaliz(); } });
+    // r391: seçim kutusu odakta kalınca setHtmlIdle tabloyu yeniden çizmiyordu (makine / operatör / ürün ve ay seçimi değişmiyordu): önce odak bırakılır
+    p.addEventListener('change', function(e){ var a = e.target.closest('[data-ozanalizay],[data-ozanalizgrup]'); if (!a) return; if (a.dataset.ozanalizay) ozetAnalizAy = a.value; else ozetAnalizGrup = a.value; if (a.blur) a.blur(); var el = byId('ozetAnaliz'); if (el){ el.__sonHtml = null; renderOzetAnaliz(); var s2 = el.querySelector(a.dataset.ozanalizay ? '[data-ozanalizay]' : '[data-ozanalizgrup]'); if (s2) try { s2.focus({ preventScroll: true }); } catch(er){} } });
   })();
   document.addEventListener('click', function(e){ if (e.target.closest('[data-ozfiyatyaz]')) ozetFiyatlariStogaYaz(); });
   // r304: günlük / haftalık / aylık üretim ürün ürün (son operasyon kayıtları). Bitiş günü olan kayıt günlere eşit bölünür
@@ -5160,14 +5173,7 @@ Dikkat edilmesi gereken 2 nokta:
       return '<div class="card '+c.cls+(c.detay?' tiklanir" data-ozetdetay="'+c.detay+'" title="'+escAttr(c.title || 'Hesabı görmek için tıklayın'):'')+'"><div class="label">'+c.label+(c.detay?' <span class="kart-ok">›</span>':'')+'</div><div class="value">'+c.value+'</div>'+(c.sub?'<div class="sub">'+c.sub+'</div>':'')+'</div>';
     }).join('');
 
-    var tbody = document.querySelector('#ozetUrunTablo tbody');
-    if (urunListesi().length === 0){
-      tbody.innerHTML = '<tr><td colspan="4" class="empty">Henüz ürün tanımlanmadı — Stok Kartları\'ndan mamul kartı açın.</td></tr>';
-    } else {
-      tbody.innerHTML = katkilar.filter(function(x){ return x.adet; }).map(function(x){
-        return '<tr><td>'+esc(x.u.ad)+'</td><td class="num">'+fmt(x.adet)+'</td><td class="num" title="'+escAttr(x.kaynak)+'">₺'+fmt2(x.fiyat)+'</td><td class="num"'+(kur?' title="≈ €'+fmt(x.top / kur)+' (bugünkü kurla)"':'')+'>₺'+fmt(x.top)+'</td></tr>';
-      }).join('') || '<tr><td colspan="4" class="empty">Bu ay üretim girilmedi.</td></tr>';
-    }
+    // r391: "Ürün bazında karşılık" Özet'ten Üretim Kayıtları'nın altına taşındı (ay seçmeli: renderKayitKarsilik)
 
     renderOzetMakineTablo();
     try { renderOzetDonemSerit(); } catch(e){ renderHatasi('dönem şeridi', e); }
@@ -5485,7 +5491,7 @@ Dikkat edilmesi gereken 2 nokta:
   // Özet kartından: dönemin ayı açılır, bölüme kaydırılır
   function sevkFaturaGoster(){
     var host = byId('ozetSevkFatura'); if (!host) return;
-    if (host.style.display === 'none'){ toast('Sevkiyat & fatura bölümü Özet düzeninde gizli (⚙ Özeti düzenle).', true); return; }
+    var sar = host.closest('.oz-birim'); if (!sar || !sar.closest('#ozetAlan') || sar.style.display === 'none'){ toast('Sevkiyat & fatura bölümü Özet düzeninde gizli (⚙ Özeti düzenle).', true); return; } // r391: gizli bölüm depoda
     var v = sevkFaturaVerisi(); if (!ozetGenel()){ _sfAcikAy = _sfAcikAy || {}; _sfAcikAy[ozetDonem()] = true; }
     renderOzetSevkFatura(v, true);
     try { host.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch(e){}
@@ -5703,8 +5709,42 @@ Dikkat edilmesi gereken 2 nokta:
     var tum = byId('uSonTumu'); if (tum) tum.style.display = sekmeIzinli('kayitlar') ? '' : 'none';
   }
   (function(){ var b = byId('uSonTumu'); if (b) b.addEventListener('click', function(){ gitSekme('kayitlar'); }); })();
+  // r391: Üretim Kayıtları › Ürün bazında karşılık (Özet'ten taşındı): seçilen ay (ya da tüm dönem) ürün ürün üretilen adet × stok kartı fiyatı.
+  // Özet'in üretim karşılığıyla aynı kayıtlar (son operasyon / mamul girişi; aralıklı kayıt aylara bölünmüş) ve aynı fiyat (ozetUrunFiyat).
+  var _kkAy = null; // null: bu ay · '': tüm dönem · 'YYYY-AA'
+  function kayitKarsilikAylari(){ var a = {}, bu = thisMonthKey(); a[bu] = 1; ozetUretimHam().forEach(function(k){ var m = String(k.tarih || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(m) && m <= bu) a[m] = 1; }); return Object.keys(a).sort().reverse(); }
+  function kayitKarsilikSeciliAy(aylar){ var ay = _kkAy == null ? thisMonthKey() : _kkAy; return ay && aylar.indexOf(ay) < 0 ? thisMonthKey() : ay; }
+  function renderKayitKarsilik(){
+    var host = byId('kayitKarsilikIcerik'), sel = byId('kayitKarsilikAy'); if (!host || !sel) return;
+    var aylar = kayitKarsilikAylari(), ay = kayitKarsilikSeciliAy(aylar), kur = ozetKur(), bugun = todayISO();
+    var opt = aylar.map(function(a){ return '<option value="' + a + '"' + (a === ay ? ' selected' : '') + '>' + esc(muhAyAdi(a)) + (a === thisMonthKey() ? ' (bu ay)' : '') + '</option>'; }).join('') + '<option value=""' + (!ay ? ' selected' : '') + '>Tüm dönem</option>';
+    if (sel.__sonHtml !== opt && document.activeElement !== sel){ sel.innerHTML = opt; sel.__sonHtml = opt; }
+    var ai = aylar.indexOf(ay), onceki = host.parentNode.querySelector('[data-kkay="1"]'), sonraki = host.parentNode.querySelector('[data-kkay="-1"]');
+    if (onceki) onceki.disabled = !ay || ai >= aylar.length - 1; if (sonraki) sonraki.disabled = !ay || ai <= 0;
+    var kay = ozetUretimHam().filter(function(k){ return sonOperasyonKaydiMi(k) && k.tarih && k.tarih <= bugun && (!ay || String(k.tarih).slice(0, 7) === ay); });
+    var l = urunListesi().map(function(u){
+      var adet = toplamla(kay.filter(function(k){ return urunEsit(k.urunId, u.id); }), function(k){ return k.adet; }), f = ozetUrunFiyat(u), fy = Number(f.fiyat) || 0;
+      return { u: u, adet: adet, fiyat: fy, kaynak: f.kaynak || '', top: adet * fy };
+    }).filter(function(x){ return x.adet > 0.0001; }).sort(function(a, b){ return b.top - a.top || b.adet - a.adet; });
+    var tA = toplamla(l, function(x){ return x.adet; }), tT = toplamla(l, function(x){ return x.top; }), fyok = l.filter(function(x){ return !(x.fiyat > 0); });
+    var html = !l.length ? '<div class="empty">' + (ay ? esc(muhAyAdi(ay)) + ' ayında' : 'Henüz') + ' üretim kaydı yok.</div>'
+      : '<table id="kayitKarsilikTablo"><thead><tr><th>Ürün</th><th class="num">Adet</th><th class="num">Birim fiyat ₺</th><th class="num">Karşılık ₺</th><th class="num">Pay</th></tr></thead><tbody>' +
+        l.map(function(x){ return '<tr><td>' + esc(x.u.ad) + '</td><td class="num">' + fmt(x.adet) + '</td><td class="num"' + (x.kaynak ? ' title="' + escAttr(x.kaynak) + '"' : '') + '>' + (x.fiyat > 0 ? '₺' + fmt2(x.fiyat) : '<span class="neg">fiyat yok</span>') + '</td>' +
+          '<td class="num"' + (kur ? ' title="≈ €' + fmt(x.top / kur) + ' (bugünkü kurla)"' : '') + '>₺' + fmt(x.top) + '</td><td class="num">' + (tT > 0 ? '%' + fmt(x.top / tT * 100) : '—') + '</td></tr>'; }).join('') +
+        '</tbody><tfoot><tr class="kv-alt"><td><b>Toplam' + (ay ? ' · ' + esc(muhAyAdi(ay)) : ' · tüm dönem') + '</b></td><td class="num"><b>' + fmt(tA) + '</b></td><td></td><td class="num"><b>₺' + fmt(tT) + '</b>' + (kur ? '<div class="muted" style="font-size:11px">≈ €' + fmt(tT / kur) + '</div>' : '') + '</td><td></td></tr></tfoot></table>' +
+        (fyok.length ? '<div class="helper neg" style="margin-top:6px">Stok kartında fiyatı olmayan ürün (karşılık 0 sayıldı): ' + fyok.map(function(x){ return esc(x.u.ad); }).join(', ') + '.</div>' : '');
+    setHtmlIdle(host, html);
+  }
+  (function(){
+    var b = byId('kayitKarsilikBlok'); if (!b) return;
+    b.addEventListener('change', function(e){ if (e.target.id !== 'kayitKarsilikAy') return; _kkAy = e.target.value; e.target.blur(); renderKayitKarsilik(); });
+    b.addEventListener('click', function(e){ var t = e.target.closest('[data-kkay]'); if (!t || t.disabled) return; t.blur();
+      var aylar = kayitKarsilikAylari(), i = aylar.indexOf(kayitKarsilikSeciliAy(aylar)), j = i + Number(t.dataset.kkay);
+      if (i < 0 || j < 0 || j >= aylar.length) return; _kkAy = aylar[j]; renderKayitKarsilik(); });
+  })();
   function renderKayitlar(){
     m1Render(); uSonGirisRender(); fireDuzeltCiz();
+    try { renderKayitKarsilik(); } catch(e){ renderHatasi('Ürün bazında karşılık', e); } // r391
     var tbody = document.querySelector('#kayitTablo tbody');
     var empty = document.getElementById('kayitEmpty');
     var ham = virgoUretimNormalSatirlar(), liste = ham.length ? state.uretim.concat(ham).sort(function(a, b){ return (b.tarih || '').localeCompare(a.tarih || ''); }) : state.uretim; // aralıklı kayıt bölünmeden, tek satır
@@ -26724,88 +26764,143 @@ Dikkat edilmesi gereken 2 nokta:
     muhExcel(ciktiDosyaAdi('ekstre-' + (c.kod || c.ad) + '-' + (CK.bas || 'baslangic') + '_' + CK.bit), [{ ad: 'Ekstre', satirlar: rows, genislik: [6, 11, 16, 16, 44, 11, 14, 14, 16] }]);
   }
 
-// ===== m25_ozet_duzen.js — Özet sayfasını kişiselleştirme: bölüm sırası ve blok gizleme =====
-  // Özet'in üst düzey bölümleri (kartlar, uyarılar / OEE, takvim, yönetim panosu, makine, fabrika, trend, ürün katkısı)
-  // yukarı / aşağı taşınır; her blok tek tek gizlenebilir. Ayar kullanıcıya özel, bu tarayıcıda saklanır.
-  // Bölümler kendi kaplarında yeniden çizildiği için düzen her çizimden sonra (MutationObserver) yeniden uygulanır.
+// ===== m25_ozet_duzen.js — Özet sayfasını kişiselleştirme (r391: bölümler oklarla taşınır: yukarı / aşağı, sol / sağ sütun, tam genişlik; gizle / göster) =====
+  // Düzen sıralı bir listedir: [{ k: bölümün id'si, yer: 'tam' | 'sol' | 'sag' }]. Art arda gelen sol / sağ bölümler iki sütunlu bir satır
+  // oluşturur (sol sütun soldakiler, sağ sütun sağdakiler); tam genişlik bölüm satırı böler. Her bölüm .oz-birim sarıcısının içindedir:
+  // bölümleri çizen fonksiyonlar kendi kaplarına (id) yazar, düzen yalnız sarıcıları taşır; gizli bölümler görünmeyen depoda durur.
+  // "Özeti düzenle" düzen modunu açar: her bölümün üstünde ↑ ↓ ← → ⇔ ve Gizle / Göster düğmeleri. Ayar kullanıcıya özel, bu tarayıcıda saklanır.
   var OZET_DUZEN_KEY = 'ozerp_ozet_duzen_v1';
-  var OZET_BOLUM_AD = { ozetAnaliz: 'Üretim analizi (makine / operatör / ürün)', ozetDonemSerit: 'Dönem şeridi (bugün, hafta, ay: adet ve ₺)', ozetCards: 'Kartlar (stok, gider, fatura, kazanç, kasa, KDV, fire…)', ozetIzgara: 'Makineler, ürün katkısı, uyarılar, trend', ozetPano: 'Yönetim panosu (grafikler)', ozetSevkFatura: 'Sevkiyat & fatura (ay ay sevk edilen adet, gönderim başına fatura, tahsilat)', ozetVirgoBorc: 'Virgo\'ya borç (kalan borç, ödemeler, ay ay)', ozetHesapDefteri: 'Ortaklar hesabı' };
-  function ozetDuzen(){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); return t[aktifKullaniciId() || '-'] || { sira: [], gizli: [] }; } catch(e){ return { sira: [], gizli: [] }; } }
-  function ozetDuzenYaz(d){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}'); t[aktifKullaniciId() || '-'] = d; localStorage.setItem(OZET_DUZEN_KEY, JSON.stringify(t)); } catch(e){} }
-  function ozetBlokAdi(b){ var h = b.querySelector('.block-head h3'); if (!h) return ''; var k = h.cloneNode(true); k.querySelectorAll('.info-ico, button, select').forEach(function(x){ x.remove(); }); return k.textContent.replace(/\s*\(\d[\d.]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim(); }
-  // Üst düzey bölümler: pagehead dışındaki doğrudan çocuklar; sabit bloklara başlığından anahtar verilir
-  function ozetBolumleri(){
-    var p = byId('panel-ozet'); if (!p) return [];
-    return Array.prototype.filter.call(p.children, function(el){ return !el.classList.contains('pagehead') && el.id !== 'ozetDuzenNot'; }).map(function(el){
-      var k = el.id || ('blok:' + ozetBlokAdi(el)); return { el: el, k: k, ad: OZET_BOLUM_AD[el.id] || ozetBlokAdi(el) || k };
+  var OZET_BIRIMLER = [
+    { k: 'ozetDonemSerit', ad: 'Dönem şeridi', yer: 'tam' },
+    { k: 'ozetCards', ad: 'Kartlar', yer: 'tam' },
+    { k: 'ozetMakineler', ad: 'Makineler', yer: 'sol' },
+    { k: 'ozetEkUst', ad: 'Uyarılar', yer: 'sag' },
+    { k: 'ozetDarbogaz', ad: 'Operasyon darboğazı', yer: 'sag' },
+    { k: 'ozetSevkFatura', ad: 'Sevkiyat & fatura', yer: 'tam' },
+    { k: 'ozetAylikBlok', ad: 'Aylık üretim', yer: 'sol' },
+    { k: 'ozetGunlukBlok', ad: 'Günlük / haftalık üretim', yer: 'sag' },
+    { k: 'ozetHesapDefteri', ad: 'Ortaklar hesabı', yer: 'tam' },
+    { k: 'ozetAnaliz', ad: 'Üretim analizi', yer: 'tam' }
+  ];
+  // r391 öncesi düzenin gizli anahtarları (blok başlığından) yeni bölümlere
+  var OZET_ESKI_ANAHTAR = { 'blok:Makineler': ['ozetMakineler'], 'blok:Uyarılar': ['ozetEkUst'], 'blok:Operasyon darboğazı': ['ozetDarbogaz'],
+    'blok:Aylık üretim (son 6 ay)': ['ozetAylikBlok'], 'blok:Günlük / haftalık üretim': ['ozetGunlukBlok'],
+    ozetIzgara: ['ozetMakineler', 'ozetEkUst', 'ozetDarbogaz', 'ozetAylikBlok', 'ozetGunlukBlok'] };
+  var _ozDuzenModu = false, _ozSarici = {};
+  function ozetBirim(k){ for (var i = 0; i < OZET_BIRIMLER.length; i++) if (OZET_BIRIMLER[i].k === k) return OZET_BIRIMLER[i]; return null; }
+  function ozetVarsayilanDuzen(){ return OZET_BIRIMLER.map(function(b){ return { k: b.k, yer: b.yer }; }); }
+  function ozetDuzen(){
+    var t = {}; try { t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}') || {}; } catch(e){}
+    var d = t[aktifKullaniciId() || '-'] || {}, gizli = [], l = [];
+    (d.gizli || []).forEach(function(k){ (OZET_ESKI_ANAHTAR[k] || [k]).forEach(function(x){ if (ozetBirim(x) && gizli.indexOf(x) < 0) gizli.push(x); }); });
+    if (d.v === 2 && Array.isArray(d.l)) d.l.forEach(function(x){ if (x && ozetBirim(x.k) && ['tam', 'sol', 'sag'].indexOf(x.yer) > -1 && !l.some(function(y){ return y.k === x.k; })) l.push({ k: x.k, yer: x.yer }); });
+    // listede olmayan bölüm (yeni eklenen) varsayılan yerine: kendisinden sonraki bölümün önüne
+    OZET_BIRIMLER.forEach(function(b, i){
+      if (l.some(function(y){ return y.k === b.k; })) return;
+      var son = OZET_BIRIMLER.slice(i + 1).map(function(x){ for (var j = 0; j < l.length; j++) if (l[j].k === x.k) return j; return -1; }).filter(function(j){ return j > -1; })[0];
+      l.splice(son == null ? l.length : son, 0, { k: b.k, yer: b.yer });
     });
+    return { l: l, gizli: gizli };
   }
-  // Bir bölümdeki gizlenebilir parçalar: bölüm bloksa kendisi; kapsa içindeki bloklar ve kart sırası
-  function ozetParcalari(b){
-    if (b.el.classList.contains('block')) return [{ el: b.el, k: b.k, ad: b.ad }];
-    var l = [];
-    // r244: ızgaradaki bloklar sütun kaplarının içinde; iç içe olmayan tüm bloklar ayrı ayrı gizlenebilir
-    Array.prototype.forEach.call(b.el.querySelectorAll('.block'), function(c){
-      if (c.parentElement.closest('.block')) return;
-      if (c.hasAttribute('data-vsekme')) return; // r365: Hesap Defteri sekmelerinin blokları; görünürlüğü sekme seçer (düzen açarsa hepsi birden görünüyordu)
-      l.push({ el: c, k: 'blok:' + ozetBlokAdi(c), ad: ozetBlokAdi(c) });
+  function ozetDuzenYaz(d){ try { var t = JSON.parse(localStorage.getItem(OZET_DUZEN_KEY) || '{}') || {}; t[aktifKullaniciId() || '-'] = { v: 2, l: d.l, gizli: d.gizli }; localStorage.setItem(OZET_DUZEN_KEY, JSON.stringify(t)); } catch(e){} }
+  // Satırlar: tam genişlik bölüm tek başına; art arda sol / sağ bölümler bir iki sütunlu satır (idx: listedeki sıra numaraları)
+  function ozetSatirlar(l, gor){
+    var rows = [], cur = null;
+    l.forEach(function(x, j){
+      if (gor && !gor(x.k)) return;
+      if (x.yer === 'tam'){ rows.push({ tam: true, idx: [j] }); cur = null; return; }
+      if (!cur){ cur = { tam: false, idx: [] }; rows.push(cur); }
+      cur.idx.push(j);
     });
-    if (b.el.classList.contains('cards')) l = [{ el: b.el, k: b.k, ad: b.ad }];
-    if (!l.length) l = [{ el: b.el, k: b.k, ad: b.ad }];
-    return l;
+    return rows;
   }
-  var _ozetUyguluyor = false, OZET_VARSAYILAN_SIRA = ozetBolumleri().map(function(b){ return b.k; }); // sayfanın kendi sırası (yüklenirken)
+  // Bir bölümü taşı; yeni listeyi döndürür (taşınamıyorsa null)
+  function ozetTasi(l, k, yon){
+    var i = -1; l.forEach(function(x, j){ if (x.k === k) i = j; }); if (i < 0) return null;
+    var x = l[i];
+    if (yon === 'tam' || yon === 'sol' || yon === 'sag'){ if (x.yer === yon) return null; var y = l.slice(); y[i] = { k: k, yer: yon }; return y; }
+    var rows = ozetSatirlar(l), ri = -1; rows.forEach(function(r, n){ if (r.idx.indexOf(i) > -1) ri = n; });
+    var r = rows[ri], n = l.slice(); n.splice(i, 1);
+    var adj = function(j){ return j > i ? j - 1 : j; }, koy = function(pos){ n.splice(pos, 0, x); return n; };
+    if (x.yer !== 'tam'){ // önce kendi sütununda
+      var ayni = r.idx.filter(function(j){ return l[j].yer === x.yer; }), p = ayni.indexOf(i);
+      if (yon === 'yukari' && p > 0) return koy(adj(ayni[p - 1]));
+      if (yon === 'asagi' && p < ayni.length - 1) return koy(adj(ayni[p + 1]) + 1);
+    }
+    if (yon === 'yukari'){ if (ri <= 0) return null; return koy(adj(rows[ri - 1].idx[0])); }
+    if (yon === 'asagi'){ if (ri >= rows.length - 1) return null; var sr = rows[ri + 1].idx; return koy(adj(sr[sr.length - 1]) + 1); }
+    return null;
+  }
+  function ozetTasiCubuk(k, d){
+    var gz = d.gizli.indexOf(k) > -1, el = byId(k), bos = !el || el.hidden || !el.textContent.trim();
+    var b = function(yon, et, ip){ return '<button type="button" class="btn secondary small" data-oztasi="' + k + '|' + yon + '"' + (ozetTasi(d.l, k, yon) ? '' : ' disabled') + ' title="' + ip + '" aria-label="' + ip + '">' + et + '</button>'; };
+    return '<span class="oz-tasi-ad">' + esc((ozetBirim(k) || {}).ad || k) + (gz ? ' <span class="muted">· gizli</span>' : bos ? ' <span class="muted">· şu an boş</span>' : '') + '</span>' +
+      '<span class="oz-tasi-btn">' + b('yukari', '↑', 'Yukarı taşı') + b('asagi', '↓', 'Aşağı taşı') + b('sol', '←', 'Sol sütuna taşı') + b('sag', '→', 'Sağ sütuna taşı') + b('tam', '⇔', 'Tam genişlik') +
+      '<button type="button" class="btn secondary small" data-oztasi="' + k + '|gizle">' + (gz ? 'Göster' : 'Gizle') + '</button></span>';
+  }
+  function ozetSarici(k){
+    var w = _ozSarici[k], el = byId(k); if (!el) return null;
+    if (!w){ w = document.createElement('div'); w.className = 'oz-birim'; w.dataset.k = k; _ozSarici[k] = w; }
+    if (el.parentNode !== w) w.appendChild(el);
+    return w;
+  }
   function ozetDuzenUygula(){
-    if (_ozetUyguluyor) return; _ozetUyguluyor = true;
-    try {
-      var d = ozetDuzen(), p = byId('panel-ozet'), bl = ozetBolumleri(), sira = d.sira && d.sira.length ? d.sira.slice() : OZET_VARSAYILAN_SIRA;
-      // r304: kayıtlı sırada olmayan yeni bölüm (ör. dönem şeridi) sona değil, varsayılan yerine (kendisinden sonraki bölümün önüne) girer
-      if (sira !== OZET_VARSAYILAN_SIRA) OZET_VARSAYILAN_SIRA.forEach(function(k, i){ if (sira.indexOf(k) > -1) return; var son = OZET_VARSAYILAN_SIRA.slice(i + 1).map(function(x){ return sira.indexOf(x); }).filter(function(x){ return x > -1; })[0]; sira.splice(son == null ? sira.length : son, 0, k); });
-      if (sira.length){
-        var sirali = bl.slice().sort(function(a, b){ var ia = sira.indexOf(a.k), ib = sira.indexOf(b.k); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); });
-        var gecerli = bl.map(function(x){ return x.k; }).join('|'), istenen = sirali.map(function(x){ return x.k; }).join('|');
-        if (gecerli !== istenen) sirali.forEach(function(x){ p.appendChild(x.el); });
-      }
-      bl.forEach(function(b){ ozetParcalari(b).forEach(function(x){ var g = d.gizli.indexOf(x.k) > -1, sim = x.el.style.display === 'none'; if (g !== sim) x.el.style.display = g ? 'none' : ''; }); });
-      var not = byId('ozetDuzenNot'); if (not) not.textContent = d.gizli.length ? d.gizli.length + ' bölüm gizli' : '';
-    } finally { _ozetUyguluyor = false; }
-  }
-  (function(){
-    var p = byId('panel-ozet'); if (!p || !window.MutationObserver) return;
-    var bekliyor = false;
-    new MutationObserver(function(){ if (_ozetUyguluyor || bekliyor) return; bekliyor = true; requestAnimationFrame(function(){ bekliyor = false; ozetDuzenUygula(); }); }).observe(p, { childList: true, subtree: true });
-  })();
-  function ozetDuzenAc(){
-    var d = ozetDuzen(), bl = ozetBolumleri();
-    var dsira = d.sira && d.sira.length ? d.sira : OZET_VARSAYILAN_SIRA;
-    var sira = bl.map(function(b){ return b.k; }).sort(function(a, b){ var ia = dsira.indexOf(a), ib = dsira.indexOf(b); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); });
-    var gizli = (d.gizli || []).slice();
-    modalAc({ title: 'Özeti düzenle', genislik: 'orta', kaydetEtiket: 'Kaydet',
-      html: '<div id="ozetDuzenKap"><div class="helper" style="margin-top:0">Bölümleri ↑ ↓ ile sıralayın, istemediğiniz kutuların işaretini kaldırın. Ayar yalnız sizin için, bu tarayıcıda saklanır.</div><div id="ozetDuzenListe"></div>' +
-        '<button type="button" class="btn secondary small" id="ozetDuzenSifirla" style="margin-top:8px">Varsayılana dön</button></div>',
-      onOpen: function(){
-        var el = byId('ozetDuzenKap');
-        function ciz(){
-          byId('ozetDuzenListe').innerHTML = sira.map(function(k, i){
-            var b = bl.find(function(x){ return x.k === k; }); if (!b) return '';
-            var parcalar = ozetParcalari(b);
-            return '<div class="ozet-duzen-bolum"><div class="ozet-duzen-bas"><b>' + esc(b.ad) + '</b><span><button type="button" class="btn secondary small" data-odyukari="' + i + '"' + (i ? '' : ' disabled') + ' title="Yukarı">↑</button> <button type="button" class="btn secondary small" data-odasagi="' + i + '"' + (i < sira.length - 1 ? '' : ' disabled') + ' title="Aşağı">↓</button></span></div>' +
-              parcalar.map(function(x){ return '<label class="ozet-duzen-oge"><input type="checkbox" data-odgoster="' + escAttr(x.k) + '"' + (gizli.indexOf(x.k) > -1 ? '' : ' checked') + '> ' + esc(x.ad) + '</label>'; }).join('') + '</div>';
-          }).join('');
-        }
-        ciz();
-        el.addEventListener('click', function(e){
-          var b = e.target.closest('button'); if (!b) return;
-          if (b.id === 'ozetDuzenSifirla'){ sira = bl.map(function(x){ return x.k; }).sort(function(a, c){ var ia = OZET_VARSAYILAN_SIRA.indexOf(a), ic = OZET_VARSAYILAN_SIRA.indexOf(c); return (ia < 0 ? 999 : ia) - (ic < 0 ? 999 : ic); }); gizli = []; ciz(); return; }
-          var i = Number(b.dataset.odyukari != null ? b.dataset.odyukari : b.dataset.odasagi), j = b.dataset.odyukari != null ? i - 1 : i + 1;
-          if (isNaN(i) || j < 0 || j >= sira.length) return; var t = sira[i]; sira[i] = sira[j]; sira[j] = t; ciz();
-        });
-        el.addEventListener('change', function(e){ var k = e.target.dataset && e.target.dataset.odgoster; if (k == null) return; gizli = gizli.filter(function(x){ return x !== k; }); if (!e.target.checked) gizli.push(k); });
-      },
-      onSave: function(){ ozetDuzenYaz({ sira: sira, gizli: gizli }); ozetDuzenUygula(); toast('✓ Özet düzeni kaydedildi'); }
+    var alan = byId('ozetAlan'), depo = byId('ozetGizliDepo'); if (!alan || !depo) return;
+    var d = ozetDuzen(), mod = _ozDuzenModu, gor = function(k){ return mod || d.gizli.indexOf(k) < 0; };
+    var odak = document.activeElement, frag = document.createDocumentFragment();
+    d.l.forEach(function(x){ if (!gor(x.k)){ var w = ozetSarici(x.k); if (w) depo.appendChild(w); } });
+    var yerlestir = function(kap, k){
+      var w = ozetSarici(k); if (!w) return;
+      var gz = d.gizli.indexOf(k) > -1, c = w.querySelector(':scope > .oz-tasi');
+      w.classList.toggle('gizli', mod && gz);
+      if (mod){ if (!c){ c = document.createElement('div'); c.className = 'oz-tasi'; w.insertBefore(c, w.firstChild); } c.innerHTML = ozetTasiCubuk(k, d); }
+      else if (c) c.remove();
+      kap.appendChild(w);
+    };
+    ozetSatirlar(d.l, gor).forEach(function(r){
+      if (r.tam){ yerlestir(frag, d.l[r.idx[0]].k); return; }
+      var kol = { sol: [], sag: [] }; r.idx.forEach(function(j){ kol[d.l[j].yer].push(d.l[j].k); });
+      var sat = document.createElement('div'); sat.className = 'ozet-izgara oz-satir' + (!mod && (!kol.sol.length || !kol.sag.length) ? ' tek' : '');
+      ['sol', 'sag'].forEach(function(y){
+        if (!mod && !kol[y].length) return;
+        var kd = document.createElement('div'); kd.className = 'ozet-kol';
+        kol[y].forEach(function(k){ yerlestir(kd, k); });
+        if (mod && !kol[y].length) kd.innerHTML = '<div class="oz-kol-bos">Boş sütun · bir bölümü buraya ' + (y === 'sol' ? '←' : '→') + ' ile taşıyın</div>';
+        sat.appendChild(kd);
+      });
+      frag.appendChild(sat);
     });
+    while (alan.firstChild) alan.removeChild(alan.firstChild);
+    alan.appendChild(frag);
+    if (odak && odak !== document.activeElement && document.contains(odak) && odak.focus) try { odak.focus({ preventScroll: true }); } catch(e){}
+    var p = byId('panel-ozet'); if (p) p.classList.toggle('oz-duzen-modu', mod);
+    var cub = byId('ozetDuzenCubuk'); if (cub) cub.hidden = !mod;
+    var bt = byId('ozetDuzenBtn'); if (bt) bt.textContent = mod ? '✓ Düzenlemeyi bitir' : '⚙ Özeti düzenle';
+    var not = byId('ozetDuzenNot'); if (not) not.textContent = d.gizli.length ? d.gizli.length + ' bölüm gizli' : '';
+    _ozDuzenImza = ozetDuzenImza();
   }
-  document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('#ozetDuzenBtn'); if (b) ozetDuzenAc(); });
+  function ozetDuzenModu(ac){ _ozDuzenModu = ac == null ? !_ozDuzenModu : !!ac; ozetDuzenUygula(); }
+  // Oturum açan kullanıcı değişince (ya da ayar başka sekmede değişince) düzen yeniden kurulur; aynıysa her çizimde dokunulmaz
+  var _ozDuzenImza = '';
+  function ozetDuzenImza(){ return (aktifKullaniciId() || '-') + '|' + _ozDuzenModu + '|' + JSON.stringify(ozetDuzen()); }
+  EK_HER_ZAMAN.push(function ozetDuzenKontrol(){ var i = ozetDuzenImza(); if (i !== _ozDuzenImza) ozetDuzenUygula(); });
+  ozetDuzenUygula();
+  document.addEventListener('click', function(e){
+    var t = e.target; if (!t.closest) return;
+    if (t.closest('#ozetDuzenBtn')){ ozetDuzenModu(); return; }
+    var c = t.closest('[data-ozduzen]');
+    if (c){ var is = c.dataset.ozduzen;
+      if (is === 'bitir') ozetDuzenModu(false);
+      else if (is === 'sifirla'){ ozetDuzenYaz({ l: ozetVarsayilanDuzen(), gizli: [] }); ozetDuzenUygula(); toast('✓ Özet varsayılan düzene döndü'); }
+      return; }
+    var b = t.closest('[data-oztasi]'); if (!b || b.disabled) return;
+    var p = b.dataset.oztasi.split('|'), d = ozetDuzen();
+    if (p[1] === 'gizle'){ var gi = d.gizli.indexOf(p[0]); if (gi > -1) d.gizli.splice(gi, 1); else d.gizli.push(p[0]); }
+    else { var y = ozetTasi(d.l, p[0], p[1]); if (!y) return; d.l = y; }
+    ozetDuzenYaz(d); ozetDuzenUygula();
+    // taşınan bölüm görünür kalsın, düğmesi odakta kalsın (art arda basılabilsin)
+    var w = _ozSarici[p[0]]; if (w){ var nb = w.querySelector('[data-oztasi="' + p.join('|') + '"]'); if (nb && !nb.disabled) nb.focus({ preventScroll: true }); try { w.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch(er){} }
+  });
   document.addEventListener('change', function(e){ if (e.target && e.target.id === 'ozetDonemSec'){ _ozetDonem = e.target.value === thisMonthKey() ? '' : e.target.value; renderOzet(); } }); // r275
   init();
 // ===== r371: Mobil uyum — kalem tabloları telefonda / dokunmatik tablette kart; açılır formun altında toplam; uygulama olarak kurulum =====
