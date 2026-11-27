@@ -1659,6 +1659,11 @@
   .ck-filtre .field input, .ck-filtre .field select { width:auto; }
   .ck-grup { margin:14px 0 6px; font-size:13px; }
   tr.ck-satir { cursor:pointer; }
+  /* r396: Cari Hesap › satırın altında açılan ekstre */
+  tr.ch-cari .ch-ok { display:inline-block; width:12px; color:var(--ink-soft); }
+  tr.ch-ekstre > td { background:var(--surface-alt); padding:8px 12px 12px; }
+  tr.ch-ekstre .ch-ekstre-bas { font-size:12px; margin-bottom:6px; }
+  tr.ch-ekstre table { font-size:12px; background:var(--surface); }
   tr.ck-satir:hover td { background:var(--surface-alt); }
   table.ck-ekstre tfoot td { border-top:2px solid var(--border); }
   table.ck-ekstre td:nth-child(-n+2), table.ck-ekstre td:nth-child(5), table.ck-ekstre td.num { white-space:nowrap; }
@@ -2068,7 +2073,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r395</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r396</div>
     </div>
   </nav>
   <main>
@@ -8143,6 +8148,27 @@ Dikkat edilmesi gereken 2 nokta:
       .reduce(function(s,t){ return s + (Number(t.tutar)||0); }, 0) + musteriIadeToplam(musteriId);
   }
   function musteriIadeToplam(musteriId){ return toplamla((state.satisIadeleri||[]).filter(function(i){ return i.cariId === musteriId; }), function(i){ return i.genelToplam; }); }
+  // r396: Cari Hesap › cari satırına tıklayınca carinin ekstresi satırın altında açılır (Cari ekstre ile aynı hesap: muhasebe kayıtlarından,
+  // hesabın para biriminde, başlangıçtan bugüne: satış / alış faturası, tahsilat, ödeme, iade, çek…); ekstre satırına tıklayınca belge açılır
+  var CH_ACIK = {};
+  function chEkstreHtml(anahtar, cariId, kolon){
+    var c = state.musteriler.find(function(m){ return m.id === cariId; }); if (!c) return '';
+    var gruplar = cariEkstreHesapla(c, '', todayISO(), 'doviz');
+    return '<tr class="ch-ekstre" data-chekstre="' + escAttr(anahtar) + '"><td colspan="' + kolon + '"><div class="ch-ekstre-bas"><b>' + esc(c.ad) + ' — hesap ekstresi</b> <span class="muted">başlangıçtan bugüne · satıra tıklayınca belge açılır</span>' +
+      (sekmeIzinli('cariekstre') ? ' · <a href="#" data-cariekstre="' + c.id + '">Cari ekstre sayfasında aç (dönem, mutabakat, PDF) ›</a>' : '') + '</div>' +
+      (gruplar.length ? gruplar.map(function(g){ return (gruplar.length > 1 ? '<h4 class="ck-grup">' + esc(CK_PB_AD[g.pb] || g.pb) + ' hesabı — bakiye ' + ckBakiye(g.bakiye, g.pb) + '</h4>' : '') + '<div class="tablewrap">' + ckEkstreTablo(g, c, false, '') + '</div>'; }).join('')
+        : '<div class="empty">Muhasebeleşmiş hareket yok (taslak fatura ekstreye girmez).</div>') + '</td></tr>';
+  }
+  function chSatirAc(anahtar, cariId){ return 'class="ck-satir ch-cari" data-chac="' + escAttr(anahtar) + '" data-chcari="' + escAttr(cariId) + '" title="Ekstreyi aç / kapat"'; }
+  function chOk(anahtar){ return '<span class="ch-ok">' + (CH_ACIK[anahtar] ? '▾' : '▸') + '</span> '; }
+  document.addEventListener('click', function(e){
+    var r = e.target.closest && e.target.closest('tr[data-chac]'); if (!r || e.target.closest('button, a, input, select, [data-tahsil]')) return;
+    var k = r.dataset.chac, ac = !CH_ACIK[k], sonraki = r.nextElementSibling;
+    if (ac) CH_ACIK[k] = true; else delete CH_ACIK[k];
+    if (sonraki && sonraki.matches('tr[data-chekstre]')) sonraki.remove();
+    if (ac) r.insertAdjacentHTML('afterend', chEkstreHtml(k, r.dataset.chcari, r.cells.length));
+    var ok = r.querySelector('.ch-ok'); if (ok) ok.textContent = ac ? '▾' : '▸';
+  });
   function renderCariHesap(){
     var sel = document.getElementById('chMusteri');
     if (sel){
@@ -8154,25 +8180,28 @@ Dikkat edilmesi gereken 2 nokta:
     wireKurHint(document.getElementById('chTutar'), document.getElementById('chTutarKur'));
     tahsilatEkSecimler();
 
-    var toplamAlacak = 0, toplamTahsil = 0;
+    // r396: tutarlar her müşterinin kendi para biriminde (cari kartı › Para birimi; boşsa €); toplamlar para birimine göre ayrı (₺ ile € toplanmaz)
+    var T = { fat: {}, tah: {}, bak: {} }, fGenel = function(f){ return pbFmt(faturaBelgeGenel(f), belgePB(f)); };
     var satirlar = state.musteriler.map(function(m){
-      var fTop = musteriFaturaToplam(m.id);
-      var tTop = musteriTahsilatToplam(m.id);
-      toplamAlacak += fTop; toplamTahsil += tTop;
-      var taslak = state.faturalar.filter(function(f){ return f.musteriId === m.id && f.durum === 'Taslak'; });
-      return { musteri: m, fTop: fTop, tTop: tTop, bakiye: cariAcikBakiye(m.id, 'Satış'), taslak: taslak };
+      var pb = cariPB(m), fl = state.faturalar.filter(function(f){ return f.musteriId === m.id; });
+      var fTop = muhR2(toplamla(fl.filter(function(f){ return f.durum === 'Kesildi'; }), function(f){ return belgeTutarPB(f, 'genelToplam', pb); }));
+      var tTop = muhR2(toplamla(state.tahsilatlar.filter(function(t){ return t.musteriId === m.id; }), function(t){ return odemePB(t, pb); }) +
+        toplamla((state.satisIadeleri || []).filter(function(i){ return i.cariId === m.id; }), function(i){ return belgeTutarPB(i, 'genelToplam', pb); }));
+      var taslak = fl.filter(function(f){ return f.durum === 'Taslak'; }), bak = cariAcikPB(m.id, 'Satış', pb);
+      return { musteri: m, pb: pb, fTop: fTop, tTop: tTop, bak: bak, bakiye: bak.tutar, taslak: taslak };
     }).filter(function(r){ return r.fTop > 0 || r.tTop > 0 || r.taslak.length; });
-    // Taslak faturalar alacağa sayılmaz; unutulmasın diye ayrıca gösterilir
+    satirlar.forEach(function(r){ pbEkle(T.fat, r.pb, r.fTop); pbEkle(T.tah, r.pb, r.tTop); pbEkle(T.bak, r.pb, r.bakiye); });
+    // Taslak faturalar alacağa sayılmaz; unutulmasın diye ayrıca gösterilir (faturanın kendi para biriminde)
     var taslaklar = state.faturalar.filter(function(f){ return f.durum === 'Taslak'; });
-    var taslakTop = taslaklar.reduce(function(s,f){ return s + (Number(f.genelToplam)||0); }, 0);
+    var taslakTop = {}; taslaklar.forEach(function(f){ pbEkle(taslakTop, belgePB(f), faturaBelgeGenel(f)); });
 
     document.getElementById('chCards').innerHTML = [
-      {label:'Toplam kesilen fatura', value:'€'+fmt(toplamAlacak)},
-      {label:'Toplam tahsil edilen / iade', value:'€'+fmt(toplamTahsil), cls:'good'},
-      {label:'Toplam bakiye (alacak)', value:'€'+fmt(toplamla(satirlar, function(r){ return r.bakiye; })), cls:'accent'}
+      {label:'Toplam kesilen fatura', value: pbToplamYazi(T.fat)},
+      {label:'Toplam tahsil edilen / iade', value: pbToplamYazi(T.tah), cls:'good'},
+      {label:'Toplam bakiye (alacak)', value: pbToplamYazi(T.bak), cls:'accent'}
     ].map(function(c){ return '<div class="card '+(c.cls||'')+'"><div class="label">'+c.label+'</div><div class="value">'+c.value+'</div></div>'; }).join('')+
-      (taslaklar.length ? '<div class="helper" style="grid-column:1 / -1;margin:0"><span class="neg">●</span> '+taslaklar.length+' taslak fatura (€'+fmt2(taslakTop)+') hesaba katılmadı — durumu "Kesildi" yapılınca alacağa eklenir: '+
-        taslaklar.map(function(f){ return '<span class="chip" data-git="faturalar|'+f.id+'">'+esc((f.faturaNo || 'Fatura')+' · '+musteriAdiById(f.musteriId)+' · €'+fmt2(f.genelToplam))+'</span>'; }).join(' ')+'</div>' : '');
+      (taslaklar.length ? '<div class="helper" style="grid-column:1 / -1;margin:0"><span class="neg">●</span> '+taslaklar.length+' taslak fatura ('+pbToplamYazi(taslakTop, ' + ')+') hesaba katılmadı — durumu "Kesildi" yapılınca alacağa eklenir: '+
+        taslaklar.map(function(f){ return '<span class="chip" data-git="faturalar|'+f.id+'">'+esc((f.faturaNo || 'Fatura')+' · '+musteriAdiById(f.musteriId)+' · '+fGenel(f))+'</span>'; }).join(' ')+'</div>' : '');
 
     var tbody = document.querySelector('#chBakiyeTablo tbody');
     var empty = document.getElementById('chBakiyeEmpty');
@@ -8180,19 +8209,22 @@ Dikkat edilmesi gereken 2 nokta:
       tbody.innerHTML = ''; empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      satirlar.sort(function(a,b){ return b.bakiye - a.bakiye; });
+      satirlar.sort(function(a,b){ return pbCevir(b.bakiye, b.pb, 'EUR') - pbCevir(a.bakiye, a.pb, 'EUR'); });
       var kalanlar = faturaKalanlari();
       tbody.innerHTML = satirlar.map(function(r){
         // "Tahsil et": müşterinin kesilmiş, kalanı olan faturası varsa (tahsilat formundaki listeyle aynı ölçü)
         var tahsil = musteriMi(r.musteri) && state.faturalar.some(function(f){ return f.musteriId === r.musteri.id && f.durum === 'Kesildi' && (kalanlar[f.id]||0) > 0.01; });
-        return '<tr><td>'+(sekmeIzinli('cariekstre') ? '<a href="#" data-cariekstre="'+r.musteri.id+'" title="Hesap ekstresi">'+esc(r.musteri.ad)+'</a>' : esc(r.musteri.ad))+(r.taslak.length ? '<div class="muted" style="font-size:11px">+ '+r.taslak.length+' taslak fatura €'+fmt2(r.taslak.reduce(function(s,f){ return s + (Number(f.genelToplam)||0); }, 0))+' (dahil değil)</div>' : '')+'</td><td class="num">€'+fmt2(r.fTop)+'</td><td class="num">€'+fmt2(r.tTop)+'</td>'+
-          '<td class="num '+(r.bakiye>0?'neg':(r.bakiye<0?'pos':''))+'">€'+fmt2(r.bakiye)+'</td><td>'+(tahsil ? tahsilDugmesi('m:'+r.musteri.id) : '')+'</td></tr>';
+        var ak = 'm:' + r.musteri.id;
+        return '<tr '+chSatirAc(ak, r.musteri.id)+'><td>'+chOk(ak)+esc(r.musteri.ad)+(r.taslak.length ? '<div class="muted" style="font-size:11px">+ '+r.taslak.length+' taslak fatura '+pbToplamYazi(r.taslak.reduce(function(m,f){ return pbEkle(m, belgePB(f), faturaBelgeGenel(f)); }, {}), ' + ')+' (dahil değil)</div>' : '')+'</td><td class="num">'+pbFmt(r.fTop, r.pb)+'</td><td class="num">'+pbFmt(r.tTop, r.pb)+'</td>'+
+          '<td class="num '+(r.bakiye>0?'neg':(r.bakiye<0?'pos':''))+'">'+cariTutarYazi(r.bak, r.pb)+'</td><td>'+(tahsil ? tahsilDugmesi('m:'+r.musteri.id) : '')+'</td></tr>'+
+          (CH_ACIK[ak] ? chEkstreHtml(ak, r.musteri.id, 5) : '');
       }).join('');
     }
 
     renderSimpleList('chListe', state.tahsilatlar, 'tahsilatlar', {
       emptyText: 'Henüz tahsilat kaydı yok',
-      rowFn: function(t){ var ft = t.faturaId ? state.faturalar.find(function(x){ return x.id===t.faturaId; }) : null, yf = tahsilatFaturaUyumsuz(t); return { title: esc(musteriAdiById(t.musteriId))+' · '+(belgePB(t) !== 'EUR' ? pbFmt(t.belgeTutar, belgePB(t))+' <span class="muted">≈ €'+fmt2(t.tutar)+'</span>' : '€'+fmt2(t.tutar)), sub: esc(t.tarih||'')+' · '+esc(t.yontem||'')+(ft && !yf?' · '+esc(ft.faturaNo):'')+(t.hesapId?' · '+esc(hesapAdi(t.hesapId)):'')+(t.not_?' · '+esc(t.not_):'')+(yf ? ' · <span class="neg">⚠ başka müşterinin faturasına bağlı ('+esc(yf.faturaNo)+' · '+esc(musteriAdiById(yf.musteriId))+') — düzenleyip kaydedin</span>' : '') }; },
+      rowFn: function(t){ var ft = t.faturaId ? state.faturalar.find(function(x){ return x.id===t.faturaId; }) : null, yf = tahsilatFaturaUyumsuz(t); var tpb = belgePB(t), cpb = cariPB(state.musteriler.find(function(m){ return m.id === t.musteriId; })); // r396: tahsilatın kendi para birimi; carininkinden farklıysa ≈ carinin para biriminde
+        return { title: esc(musteriAdiById(t.musteriId))+' · '+pbFmt(odemePB(t, tpb), tpb)+(tpb !== cpb ? ' <span class="muted">≈ '+pbFmt(odemePB(t, cpb), cpb)+'</span>' : ''), sub: esc(t.tarih||'')+' · '+esc(t.yontem||'')+(ft && !yf?' · '+esc(ft.faturaNo):'')+(t.hesapId?' · '+esc(hesapAdi(t.hesapId)):'')+(t.not_?' · '+esc(t.not_):'')+(yf ? ' · <span class="neg">⚠ başka müşterinin faturasına bağlı ('+esc(yf.faturaNo)+' · '+esc(musteriAdiById(yf.musteriId))+') — düzenleyip kaydedin</span>' : '') }; },
       // müşteri değiştirilemediği için "Kapanan fatura" listesi formun açıldığı tahsilatın müşterisine göre süzülür
       fields: function(t){ return [
         {key:'tarih', label:'Tarih', type:'date'},
@@ -18052,6 +18084,20 @@ Dikkat edilmesi gereken 2 nokta:
     var sb = d.serbestTL[cariId] || 0; if (sb > 0.004){ if (pb !== 'TRY') cev = true; top -= pbCevir(sb, 'TRY', pb); }
     return { tutar: muhR2(top), cevrildi: cev && Math.abs(top) >= 0.005 };
   }
+  // Ödeme / tahsilat tutarı istenen para biriminde (aynıysa belgedeki tutar; ₺'ye belge kuruyla; başkasına belge tarihindeki kurla)
+  function odemePB(p, pb){
+    var op = belgePB(p); if (op === pb) return op !== 'EUR' && p.belgeTutar != null ? Number(p.belgeTutar) || 0 : Number(p.tutar) || 0;
+    if (pb === 'EUR') return Number(p.tutar) || 0;
+    var tl = odemeTL(p); if (pb === 'TRY') return tl;
+    var k = pbKur(pb, p.tarih); return k ? muhR2(tl / k) : 0;
+  }
+  // { TRY: 1200, EUR: 50 } → "₺1.200<br>€50" (₺ önce); farklı para birimleri toplanmaz
+  var PB_SIRA = { TRY: 0, EUR: 1, USD: 2 };
+  function pbToplamYazi(m, ayrac){
+    var l = Object.keys(m || {}).filter(function(pb){ return Math.abs(m[pb]) >= 0.005; }).sort(function(a, b){ return (PB_SIRA[a] != null ? PB_SIRA[a] : 9) - (PB_SIRA[b] != null ? PB_SIRA[b] : 9); });
+    return l.length ? l.map(function(pb){ return pbFmt(m[pb], pb); }).join(ayrac || '<br>') : pbFmt(0, 'TRY');
+  }
+  function pbEkle(m, pb, v){ m[pb] = (m[pb] || 0) + (Number(v) || 0); return m; }
   function cariTutarYazi(a, pb){ return (a.cevrildi ? '≈ ' : '') + pbFmt(a.tutar, pb); }
   // Belge tutarı (araToplam, genelToplam…) istenen para biriminde: aynı para birimindeyse belgedeki tutar, ₺'ye belge kuruyla, başkasına belge tarihindeki kurla
   function belgeTutarPB(f, alan, pb){
@@ -18161,12 +18207,16 @@ Dikkat edilmesi gereken 2 nokta:
       setTimeout(function(){ var t = byId('chTutar'); try { t.focus({ preventScroll: true }); t.select(); } catch(err){} }, 150);
     }, 120);
   }
+  // r396: açık kısım müşterinin para biriminde (faturanın kendi para biriminde kalan; farklıysa bugünkü kurla çevrilir)
   function yaslandirma(){
-    var kalanlar = faturaKalanlari(); var bugun = todayISO();
+    var d = cariDagitim('Satış'), bugun = todayISO(), pbler = {};
+    state.musteriler.forEach(function(m){ pbler[m.id] = cariPB(m); });
     var satirlar = {};
     state.faturalar.forEach(function(f){
-      var k = kalanlar[f.id]; if (!k || k <= 0.01) return;
-      var r = satirlar[f.musteriId] = satirlar[f.musteriId] || { vadesiGelmemis:0, g30:0, g60:0, g90:0, g90p:0, toplam:0 };
+      var kb = d.kalanB[f.id]; if (!(kb > 0.01)) return;
+      var pb = pbler[f.musteriId] || 'EUR', k = pbCevir(kb, belgePB(f), pb);
+      var r = satirlar[f.musteriId] = satirlar[f.musteriId] || { pb: pb, cevrildi: false, vadesiGelmemis:0, g30:0, g60:0, g90:0, g90p:0, toplam:0 };
+      if (belgePB(f) !== pb) r.cevrildi = true;
       var gecikme = f.vadeTarihi ? gunFarki(f.vadeTarihi, bugun) : gunFarki(f.tarih, bugun);
       if (gecikme <= 0) r.vadesiGelmemis += k; else if (gecikme <= 30) r.g30 += k; else if (gecikme <= 60) r.g60 += k; else if (gecikme <= 90) r.g90 += k; else r.g90p += k;
       r.toplam += k;
@@ -18175,22 +18225,27 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function renderCariHesapEk(){
     var host = byId('chEkBloklar'); if (!host) return;
-    var y = yaslandirma(); var ids = Object.keys(y).sort(function(a,b){ return y[b].toplam - y[a].toplam; });
-    var T = {vadesiGelmemis:0,g30:0,g60:0,g90:0,g90p:0,toplam:0}; ids.forEach(function(id){ Object.keys(T).forEach(function(k){ T[k] += y[id][k]; }); });
+    // r396: her cari kendi para biriminde; toplam satırı para birimine göre ayrı (₺ ile € toplanmaz)
+    var y = yaslandirma(); var ids = Object.keys(y).sort(function(a,b){ return pbCevir(y[b].toplam, y[b].pb, 'EUR') - pbCevir(y[a].toplam, y[a].pb, 'EUR'); });
+    var KOL = ['vadesiGelmemis','g30','g60','g90','g90p','toplam'], T = {};
+    ids.forEach(function(id){ var r = y[id], t = T[r.pb] = T[r.pb] || { vadesiGelmemis:0,g30:0,g60:0,g90:0,g90p:0,toplam:0 }; KOL.forEach(function(k){ t[k] += r[k]; }); });
+    var tPbler = Object.keys(T).sort(function(a, b){ return (PB_SIRA[a] != null ? PB_SIRA[a] : 9) - (PB_SIRA[b] != null ? PB_SIRA[b] : 9); });
+    var tutarH = function(v, pb){ return Math.abs(v) < 0.005 ? '' : pbFmt(v, pb); };
     var tedarikciler = state.musteriler.filter(tedarikciMi).map(function(m){
-      var ft = (state.alisFaturalari||[]).filter(function(f){ return f.tedarikciId === m.id; });
-      var borc = toplamla(ft, function(f){ return f.genelToplam; }), odenen = toplamla((state.odemeler||[]).filter(function(o){ return o.cariId === m.id; }), function(o){ return o.tutar; });
-      var vadesiGecen = toplamla(ft.filter(function(f){ return f.vadeTarihi && f.vadeTarihi < todayISO(); }), alisKalan);
-      return { m: m, borc: borc, odenen: odenen, bakiye: cariAcikBakiye(m.id, 'Alış'), vadesiGecen: Math.max(0, vadesiGecen) };
+      var pb = cariPB(m), ft = (state.alisFaturalari||[]).filter(function(f){ return f.tedarikciId === m.id; });
+      var borc = muhR2(toplamla(ft, function(f){ return belgeTutarPB(f, 'genelToplam', pb); })), odenen = muhR2(toplamla((state.odemeler||[]).filter(function(o){ return o.cariId === m.id; }), function(o){ return odemePB(o, pb); }));
+      var gecen = ft.filter(function(f){ return f.vadeTarihi && f.vadeTarihi < todayISO() && alisKalanBelge(f) > 0.01; });
+      var vadesiGecen = muhR2(toplamla(gecen, function(f){ return pbCevir(alisKalanBelge(f), belgePB(f), pb); }));
+      return { m: m, pb: pb, borc: borc, odenen: odenen, bak: cariAcikPB(m.id, 'Alış', pb), vadesiGecen: Math.max(0, vadesiGecen), gecCev: gecen.some(function(f){ return belgePB(f) !== pb; }) };
     }).filter(function(r){ return r.borc || r.odenen; });
     setHtmlIdle(host,
-      '<div class="block"><div class="block-head"><h3>Alacak yaşlandırma '+infoIco('Kesilmiş faturaların açık kısmı, vade tarihine göre gecikme günü. Faturaya bağlanmamış tahsilatlar en eski faturadan düşülür.')+'</h3></div><div class="block-body tablewrap">'+
+      '<div class="block"><div class="block-head"><h3>Alacak yaşlandırma '+infoIco('Kesilmiş faturaların açık kısmı, vade tarihine göre gecikme günü. Faturaya bağlanmamış tahsilatlar en eski faturadan düşülür. Tutarlar müşterinin para biriminde (cari kartı › Para birimi); başka para birimindeki fatura bugünkü kurla çevrilir (≈). Toplam her para birimi için ayrı.')+'</h3></div><div class="block-body tablewrap">'+
       (ids.length ? '<table id="yaslandirmaTablo"><thead><tr><th>Müşteri</th><th class="num">Vadesi gelmemiş</th><th class="num">1–30</th><th class="num">31–60</th><th class="num">61–90</th><th class="num">90+</th><th class="num">Toplam açık</th></tr></thead><tbody>'+
-        ids.map(function(id){ var r = y[id]; return '<tr><td>'+esc(musteriAdiById(id))+'</td><td class="num">'+euro(r.vadesiGelmemis)+'</td><td class="num">'+euro(r.g30)+'</td><td class="num">'+euro(r.g60)+'</td><td class="num '+(r.g90?'neg':'')+'">'+euro(r.g90)+'</td><td class="num '+(r.g90p?'neg':'')+'">'+euro(r.g90p)+'</td><td class="num"><b>'+euro(r.toplam)+'</b></td></tr>'; }).join('')+
-        '<tr><td><b>Toplam</b></td><td class="num">'+euro(T.vadesiGelmemis)+'</td><td class="num">'+euro(T.g30)+'</td><td class="num">'+euro(T.g60)+'</td><td class="num">'+euro(T.g90)+'</td><td class="num">'+euro(T.g90p)+'</td><td class="num"><b>'+euro(T.toplam)+'</b></td></tr></tbody></table>' : '<div class="empty">Açık alacak yok.</div>')+'</div></div>'+
-      '<div class="block"><div class="block-head"><h3>Tedarikçi / fasoncu borçları</h3></div><div class="block-body tablewrap">'+
+        ids.map(function(id){ var r = y[id]; return '<tr><td>'+esc(musteriAdiById(id))+'</td><td class="num">'+tutarH(r.vadesiGelmemis, r.pb)+'</td><td class="num">'+tutarH(r.g30, r.pb)+'</td><td class="num">'+tutarH(r.g60, r.pb)+'</td><td class="num '+(r.g90?'neg':'')+'">'+tutarH(r.g90, r.pb)+'</td><td class="num '+(r.g90p?'neg':'')+'">'+tutarH(r.g90p, r.pb)+'</td><td class="num"><b>'+(r.cevrildi ? '≈ ' : '')+pbFmt(r.toplam, r.pb)+'</b></td></tr>'; }).join('')+
+        tPbler.map(function(pb){ var t = T[pb]; return '<tr><td><b>Toplam'+(tPbler.length > 1 ? ' ('+pbSembol(pb)+')' : '')+'</b></td><td class="num">'+tutarH(t.vadesiGelmemis, pb)+'</td><td class="num">'+tutarH(t.g30, pb)+'</td><td class="num">'+tutarH(t.g60, pb)+'</td><td class="num">'+tutarH(t.g90, pb)+'</td><td class="num">'+tutarH(t.g90p, pb)+'</td><td class="num"><b>'+pbFmt(t.toplam, pb)+'</b></td></tr>'; }).join('')+'</tbody></table>' : '<div class="empty">Açık alacak yok.</div>')+'</div></div>'+
+      '<div class="block"><div class="block-head"><h3>Tedarikçi / fasoncu borçları '+infoIco('Tutarlar carinin para biriminde (cari kartı › Para birimi). Başka para birimindeki fatura / ödeme ₺\'ye belge kuruyla, bakiye ve vadesi geçende bugünkü kurla çevrilir (≈).')+'</h3></div><div class="block-body tablewrap">'+
       (tedarikciler.length ? '<table><thead><tr><th>Cari</th><th class="num">Alış faturaları</th><th class="num">Ödenen</th><th class="num">Bakiye (borç)</th><th class="num">Vadesi geçen</th></tr></thead><tbody>'+
-        tedarikciler.map(function(r){ return '<tr><td>'+esc(r.m.ad)+'</td><td class="num">'+euro(r.borc)+'</td><td class="num">'+euro(r.odenen)+'</td><td class="num"><b>'+euro(r.bakiye)+'</b></td><td class="num '+(r.vadesiGecen>0.01?'neg':'')+'">'+euro(r.vadesiGecen)+'</td></tr>'; }).join('')+'</tbody></table>' : '<div class="empty">Alış faturası girilmedi.</div>')+'</div></div>');
+        tedarikciler.map(function(r){ var ak = 't:' + r.m.id; return '<tr '+chSatirAc(ak, r.m.id)+'><td>'+chOk(ak)+esc(r.m.ad)+'</td><td class="num">'+pbFmt(r.borc, r.pb)+'</td><td class="num">'+pbFmt(r.odenen, r.pb)+'</td><td class="num"><b>'+cariTutarYazi(r.bak, r.pb)+'</b></td><td class="num '+(r.vadesiGecen>0.01?'neg':'')+'">'+(r.vadesiGecen > 0.01 ? (r.gecCev ? '≈ ' : '')+pbFmt(r.vadesiGecen, r.pb) : '')+'</td></tr>'+(CH_ACIK[ak] ? chEkstreHtml(ak, r.m.id, 5) : ''); }).join('')+'</tbody></table>' : '<div class="empty">Alış faturası girilmedi.</div>')+'</div></div>');
   }
   // ---------- Şüpheli ticari alacaklar (VUK 323) ----------
   // Dava ya da icra takibine konulan alacak 120 → 128'e alınır, aynı tutarda karşılık ayrılır (654 B / 129 A).
@@ -26695,7 +26750,8 @@ Dikkat edilmesi gereken 2 nokta:
   function ckBakiye(n, pb){ return pbSembol(pb) + muhTutar(Math.abs(n)) + (Math.abs(n) < 0.005 ? '' : ' ' + (n > 0 ? '(B)' : '(A)')); }
   var CK_PB_AD = { EUR: 'Euro (€)', TRY: 'Türk lirası (₺)', USD: 'Dolar ($)' };
   function ckGrupBaslik(g){ return CK.para === 'doviz' ? (CK_PB_AD[g.pb] || g.pb) + ' hesabı' : (CK.para === 'TRY' ? 'Tüm hareketler — ₺ (yasal tutarlar)' : 'Tüm hareketler — € karşılığı (yönetim)'); }
-  function ckEkstreTablo(g, c, cikti){
+  function ckEkstreTablo(g, c, cikti, bas){
+    if (arguments.length < 4) bas = CK.bas; // r396: Cari Hesap'taki açılır ekstre kendi dönemini verir
     var satir = function(x){
       var f = x.f, link = f.oto && f.tab && f.kaynakId ? f.tab + '|' + f.kaynakId : (f.elle ? 'muhfis|' + f.id : '');
       var ac = String(f.aciklama || '').split(' · ' + c.ad).join('');
@@ -26703,7 +26759,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<td>' + esc(ac) + '</td><td>' + esc(kvTarihTR(ckVade(f))) + '</td><td class="num">' + (x.n > 0 ? muhTutar(x.n) : '') + '</td><td class="num">' + (x.n < 0 ? muhTutar(-x.n) : '') + '</td><td class="num">' + ckBakiye(x.bakiye, g.pb) + '</td></tr>';
     };
     return '<table class="ck-ekstre"><thead><tr><th>Tarih</th><th>Belge no</th><th>İşlem</th><th>Açıklama</th><th>Vade</th><th class="num">Borç</th><th class="num">Alacak</th><th class="num">Bakiye</th></tr></thead><tbody>' +
-      (CK.bas ? '<tr class="muted"><td>' + kvTarihTR(CK.bas) + '</td><td></td><td>Devir</td><td>' + kvTarihTR(CK.bas) + ' öncesi bakiye</td><td></td><td class="num">' + (g.devir > 0 ? muhTutar(g.devir) : '') + '</td><td class="num">' + (g.devir < 0 ? muhTutar(-g.devir) : '') + '</td><td class="num">' + ckBakiye(g.devir, g.pb) + '</td></tr>' : '') +
+      (bas ? '<tr class="muted"><td>' + kvTarihTR(bas) + '</td><td></td><td>Devir</td><td>' + kvTarihTR(bas) + ' öncesi bakiye</td><td></td><td class="num">' + (g.devir > 0 ? muhTutar(g.devir) : '') + '</td><td class="num">' + (g.devir < 0 ? muhTutar(-g.devir) : '') + '</td><td class="num">' + ckBakiye(g.devir, g.pb) + '</td></tr>' : '') +
       g.satirlar.map(satir).join('') +
       (g.satirlar.length ? '' : '<tr><td colspan="8" class="empty">Bu dönemde hareket yok</td></tr>') +
       '</tbody><tfoot><tr><td colspan="5"><b>Dönem toplamı</b></td><td class="num"><b>' + muhTutar(g.borc) + '</b></td><td class="num"><b>' + muhTutar(g.alacak) + '</b></td><td class="num"><b>' + ckBakiye(g.bakiye, g.pb) + '</b></td></tr></tfoot></table>';
