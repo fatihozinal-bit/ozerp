@@ -2068,7 +2068,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r392</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r393</div>
     </div>
   </nav>
   <main>
@@ -2850,6 +2850,7 @@ Dikkat edilmesi gereken 2 nokta:
     var yigin = document.getElementById('toast');
     msg = msg == null ? '' : String(msg);
     isErr = !!isErr; secenek = secenek || {};
+    if (_toplu){ if (isErr) (_toplu.cur ? _toplu.cur.uyari : _toplu.hatalar).push(esc(msg)); return; } // r392: toplu silmede tek tek "Silindi" yazılmaz
     if (msg === 'Silindi' && !isErr && Date.now() - _sonSilBildirimi < 4000) return;
     if (yigin){
       var kutu = Array.prototype.find.call(yigin.children, function(k){ return k._mesaj === msg && k._hata === isErr && !k._eylem && !secenek.eylem; });
@@ -2904,8 +2905,10 @@ Dikkat edilmesi gereken 2 nokta:
     clearTimeout(kutu._zaman);
     if (kutu.parentNode) kutu.parentNode.removeChild(kutu);
   }
+  var _toplu = null; // r392: toplu silme sürüyor (topluSilYap): { cur: { rid, onay, uyari[] }, hatalar[] }
   var _silOnayZamani = 0; // kullanıcı onay kutusunda "Evet" dedi: hemen ardından gelen silme "Geri al" bildirimi gösterir
   function confirmSil(mesaj, fn, onayMetni, vazgecFn){
+    if (_toplu && _toplu.cur){ _toplu.cur.onay++; fn(); return; } // r392: toplu silmede onay başta bir kez alındı
     var overlay = document.getElementById('confirmOverlay');
     var msgEl = document.getElementById('confirmMsg');
     var onayBtn = document.getElementById('confirmOnayla');
@@ -3401,6 +3404,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   // Sadece bilgi veren uyarı: mevcut onay kutusunu kullanır, "Evet" düğmesini gizler, "Vazgeç" yerine "Tamam" der
   function uyariGoster(html){
+    if (_toplu){ (_toplu.cur ? _toplu.cur.uyari : _toplu.hatalar).push(html); return; } // r392: toplu silmede engeller sonda tek özette
     var ov = byId('confirmOverlay'), msgEl = byId('confirmMsg'), onayBtn = byId('confirmOnayla'), vazgecBtn = byId('confirmVazgec');
     var eskiVazgec = vazgecBtn.textContent;
     msgEl.innerHTML = html; onayBtn.style.display = 'none'; vazgecBtn.textContent = 'Tamam';
@@ -10095,7 +10099,7 @@ Dikkat edilmesi gereken 2 nokta:
         arac = document.createElement('div');
         arac.className = 'liste-arac';
         arac.innerHTML = '<input type="search" placeholder="Listede ara / filtrele…"><button class="btn secondary small" type="button">⇩ CSV</button><span class="muted sayac"></span>'+
-          (el.tagName === 'TABLE' ? '' : '<button class="btn secondary small tg-mod" type="button">▦ Tablo</button>');
+          (el.tagName === 'TABLE' ? '' : '<button class="btn secondary small tg-secmod" type="button" title="Toplu seçim: tablo görünümüne geçer; satır başındaki kutularla seçip toplu silin, Excel\'e aktarın">☑ Seç</button><button class="btn secondary small tg-mod" type="button">▦ Tablo</button>');
         anchor.parentElement.insertBefore(arac, anchor);
         var inp = arac.querySelector('input');
         inp.value = LISTE_FILTRE[el.id] || '';
@@ -10103,6 +10107,10 @@ Dikkat edilmesi gereken 2 nokta:
         arac.querySelector('button').addEventListener('click', function(){ listeCSV(el); });
         var md = arac.querySelector('.tg-mod');
         if (md) md.addEventListener('click', function(){ var a = tgAyar(el.id); a.mod = tgTabloMu(el) ? 'kart' : 'tablo'; tgAyarYaz(el.id, a); el._tgArac = arac; tgUygula(el, arac); filtreUygula(el, arac); });
+        // r392: toplu seçim tablo görünümünde (satır başında seçim kutusu, üstte seçim çubuğu: Sil / Excel / Yazdır)
+        var sm = arac.querySelector('.tg-secmod');
+        if (sm) sm.addEventListener('click', function(){ var a = tgAyar(el.id); a.mod = 'tablo'; tgAyarYaz(el.id, a); el._tgArac = arac; tgUygula(el, arac); filtreUygula(el, arac);
+          toast('Satırların başındaki kutularla seçin (en üstteki kutu: görünenlerin tümü). Seçince üstte "Seçilenleri sil" ve Excel çıkar.'); });
       }
       if (el.tagName === 'TABLE') tgHazirTabloSirala(el);
       else { el._tgArac = arac; tgUygula(el, arac); }
@@ -25174,6 +25182,7 @@ Dikkat edilmesi gereken 2 nokta:
     var anchor = (el.parentElement && el.parentElement.classList.contains('tablewrap')) ? el.parentElement : el;
     var dugme = arac && arac.querySelector('.tg-mod');
     if (dugme){ dugme.textContent = tablo ? '☰ Kart' : '▦ Tablo'; dugme.title = tablo ? 'Kart görünümüne dön' : 'Sütunlu tablo: sırala, filtrele, alt toplam, Excel'; }
+    var secmod = arac && arac.querySelector('.tg-secmod'); if (secmod) secmod.style.display = tablo ? 'none' : ''; // r392
     tgKartlariGeriKoy(el);
     if (!tablo){
       el.style.display = '';
@@ -25206,7 +25215,7 @@ Dikkat edilmesi gereken 2 nokta:
         '<button class="btn secondary small tg-filtre-ac" type="button">' + (filtreAcik ? '▴ Sütun filtresi' : '▾ Sütun filtresi') + '</button>' +
         '<button class="btn secondary small tg-temizle" type="button" style="display:none">✕ Filtreleri temizle</button>' +
         '<button class="btn secondary small tg-excel" type="button">⇩ Excel</button>' +
-        '<span class="muted tg-ipucu">Satıra tıklayın: kayıt açılır · çift tıklama: düzenle · sağ tık / ⋯: işlemler · ↑↓ Enter</span>' +
+        '<span class="muted tg-ipucu">Satıra tıklayın: kayıt açılır · çift tıklama: düzenle · sağ tık / ⋯: işlemler · ☐ kutularla toplu seçim (sil, Excel) · ↑↓ Enter</span>' +
       '</div>' +
       '<div class="tg-secim" style="display:none"></div>' +
       '<div class="tablewrap tg-kutu"><table class="tg-tablo"><thead><tr>' +
@@ -25272,10 +25281,13 @@ Dikkat edilmesi gereken 2 nokta:
     var top = gor.map(function(k){ var t = tgToplamHtml(k, secili); return t ? '<span class="muted">' + esc(k.b) + ':</span> <b>' + t.replace(/<br>/g, ' · ') + '</b>' : ''; }).filter(Boolean).join(' &nbsp; ');
     cubuk.style.display = '';
     var turler = (TOPLU_CIKTI[el.id] || []).filter(function(t){ return !!ciktiTuru(t); });
+    var silinir = secili.filter(function(x){ return topluSilDugmesi(tgKartEl(el, x.rid)); }).length; // r392
     cubuk.innerHTML = '<b>' + secili.length + ' seçili</b>' + (top ? ' &nbsp; ' + top : '') +
       ' <button class="btn secondary small tg-sec-excel" type="button">⇩ Seçilenleri Excel\'e</button>' +
       turler.map(function(t){ return '<button class="btn small" type="button" data-tgyaz="' + escAttr(t) + '">🖨 ' + esc(t) + ' (' + secili.length + ')</button><button class="btn secondary small" type="button" data-tgpdf="' + escAttr(t) + '" title="Seçilenleri tek PDF olarak indir">⇩ PDF</button>'; }).join('') +
+      (silinir ? '<button class="btn danger small tg-sec-sil" type="button" title="' + escAttr(silinir < secili.length ? (secili.length - silinir) + ' seçili kaydın kartında Sil yok (ör. kesilmiş fatura iptal edilir, silinmez); onlar kalır.' : 'Seçilen kayıtları sil (Delete tuşu da siler)') + '">🗑 Seçilenleri sil (' + silinir + ')</button>' : '') +
       '<button class="btn secondary small tg-sec-temizle" type="button">Seçimi kaldır</button>';
+    var sb = cubuk.querySelector('.tg-sec-sil'); if (sb) sb.addEventListener('click', function(){ topluSil(el, secili.map(function(x){ return x.rid; })); });
     cubuk.querySelector('.tg-sec-excel').addEventListener('click', function(){ tgExcel(el, secili); });
     cubuk.querySelectorAll('[data-tgyaz], [data-tgpdf]').forEach(function(b){ b.addEventListener('click', function(){
       var tad = b.dataset.tgyaz || b.dataset.tgpdf, tur = ciktiTuru(tad); if (!tur) return;
@@ -25284,6 +25296,60 @@ Dikkat edilmesi gereken 2 nokta:
       if (b.dataset.tgyaz) topluYazdir(tad, kayitlar); else ciktiPdfIndir(tad, kayitlar);
     }); });
     cubuk.querySelector('.tg-sec-temizle').addEventListener('click', function(){ d.secili = {}; tgGovde(el); });
+  }
+  // ---------- r392: Toplu silme (tablo görünümünde seçilen kayıtlar) ----------
+  // Her kaydın kendi "Sil" düğmesi sırayla tıklanır: bağlı kayıt engeli, kesinleşmiş ay kilidi, stok / cari geri alma ve "Silinenler"
+  // kopyası tek tek silmedeki gibi işler. Onay başta bir kez alınır (kaydın kendi onay kutusu sorulmaz); engel uyarıları ve hata
+  // bildirimleri toplanır, sonunda kayıtlar gerçekten silindi mi bakılır, silinemeyenler nedeniyle tek özette gösterilir.
+  function topluSilDugmesi(kart){
+    if (!kart || document.body.classList.contains('no-delete')) return null;
+    return islemDugmeleri(kart).find(function(b){ return b.classList.contains('danger') && !b.disabled && /^\s*(🗑\s*)?Sil\s*$/.test(b.textContent || ''); }) || null;
+  }
+  function topluMevcut(){ var v = {}; Object.keys(state).forEach(function(k){ var a = state[k]; if (Array.isArray(a)) a.forEach(function(r){ if (r && r.id) v[r.id] = 1; }); }); return v; }
+  function topluSil(el, ridler){
+    if (!ridler || !ridler.length) return;
+    if (!izinVar('sil')){ uyariGoster(esc(izinYokMesaji('sil'))); return; }
+    var ad = function(rid){ var x = (el._tgSatirlar || []).find(function(s){ return s.rid === rid; }), k = tgKartEl(el, rid), t = k && k.querySelector('.rtitle');
+      var tr = String((x && x.__ayrinti) || '').split(' · ')[0].trim(), tarih = /^\d{2}\.\d{2}\.\d{4}$/.test(tr) ? tr : /^\d{4}-\d{2}-\d{2}$/.test(tr) ? kvTarihTR(tr) : '';
+      return (tarih ? tarih + ' · ' : '') + String((x && x.__baslik) || (t && t.textContent) || rid).replace(/\s+/g, ' ').trim().slice(0, 90); };
+    var silinir = ridler.filter(function(rid){ return topluSilDugmesi(tgKartEl(el, rid)); }), dugmesiz = ridler.length - silinir.length;
+    if (!silinir.length){ uyariGoster('Seçilen ' + ridler.length + ' kaydın hiçbiri bu listeden silinemiyor: kartlarında Sil yok (ör. kesilmiş fatura silinmez, iptal edilir).'); return; }
+    var ornek = silinir.slice(0, 8).map(function(rid){ return '• ' + ad(rid); }).join('\n') + (silinir.length > 8 ? '\n… ve ' + (silinir.length - 8) + ' kayıt daha' : '');
+    confirmSil(silinir.length + ' kayıt silinecek:\n\n' + ornek +
+      (dugmesiz ? '\n\n' + dugmesiz + ' seçili kaydın kartında Sil yok, onlar kalır.' : '') +
+      '\n\nHer kayıt tek tek silmedeki kontrolden geçer (bağlı kayıt, kesinleşmiş ay); geçemeyen silinmez, sonda listelenir. Stok / cari / kasa etkisi tek tek silmedeki gibi geri alınır.' +
+      '\n\nSilinen kayıtların kopyası ' + SILINEN_GUN + ' gün "Silinenler"de saklanır.', function(){ topluSilYap(el, silinir, ad); }, 'Evet, ' + silinir.length + ' kaydı sil');
+  }
+  function topluSilYap(el, ridler, ad){
+    var engel = [], bekleyen = [], T = { cur: null, hatalar: [] };
+    var bekle = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+    var duz = function(h){ var d = document.createElement('div'); d.innerHTML = String(h).split(/<br\s*\/?>/i)[0]; return d.textContent.replace(/\s+/g, ' ').trim(); }; // uyarının ilk cümlesi
+    var ilerleme = ridler.length + ' kayıt siliniyor…', ilerlemeKapat = function(){ var y = byId('toast'); if (y) Array.prototype.slice.call(y.children).forEach(function(k){ if (k._mesaj === ilerleme) toastKapat(k); }); };
+    toast(ilerleme);
+    _toplu = T;
+    (async function(){
+      try {
+        for (var i = 0; i < ridler.length; i++){
+          var rid = ridler[i], b = topluSilDugmesi(tgKartEl(el, rid));
+          if (!b){ if (topluMevcut()[rid]) engel.push({ rid: rid, neden: 'kartında Sil düğmesi bulunamadı' }); continue; }
+          T.cur = { rid: rid, onay: 0, uyari: [] };
+          try { b.click(); } catch(e){ T.cur.uyari.push(esc(e && e.message || String(e))); }
+          if (T.cur.uyari.length) engel.push({ rid: rid, neden: duz(T.cur.uyari[0]) }); else bekleyen.push(rid);
+          T.cur = null;
+          await bekle(0);
+        }
+        var son = Date.now() + 10000;
+        while (Date.now() < son){ var v = topluMevcut(); if (!bekleyen.some(function(r){ return v[r]; })) break; await bekle(200); }
+      } finally { _toplu = null; ilerlemeKapat(); }
+      var mevcut = topluMevcut(), kalan = bekleyen.filter(function(r){ return mevcut[r]; }), silinen = bekleyen.length - kalan.length;
+      kalan.forEach(function(r){ engel.push({ rid: r, neden: T.hatalar.length ? duz(T.hatalar[0]) : 'silinmedi (bağlantı ya da yetki)' }); });
+      var d = tgDurum(el.id); ridler.forEach(function(r){ if (!mevcut[r]) delete d.secili[r]; });
+      if (el._tg) tgGovde(el);
+      if (!engel.length){ toast('✓ ' + silinen + ' kayıt silindi'); return; }
+      uyariGoster((silinen ? '✓ ' + silinen + ' kayıt silindi.<br><br>' : '') + '<b>' + engel.length + ' kayıt silinemedi</b> (seçili kaldı):' +
+        '<ul style="margin:8px 0 0;padding-left:18px;max-height:50vh;overflow:auto">' + engel.slice(0, 40).map(function(x){ return '<li><b>' + esc(ad(x.rid)) + '</b>: ' + esc(x.neden) + '</li>'; }).join('') +
+        (engel.length > 40 ? '<li class="muted">… ve ' + (engel.length - 40) + ' kayıt daha</li>' : '') + '</ul>');
+    })();
   }
   function tgAyarDegistir(el, fn){ var a = tgAyar(el.id); fn(a); if (a.gorunum) a.gorunum = ''; tgAyarYaz(el.id, a); }
   // r300: sütun genişliği elle — başlığın sağ kenarı sürüklenir; genişlik bu tarayıcıda tablo tablo saklanır (a.genislik), çift tık siler.
@@ -25376,6 +25442,9 @@ Dikkat edilmesi gereken 2 nokta:
       if (ev.key === 'ArrowDown' && satirlar[i + 1]){ satirlar[i + 1].focus(); ev.preventDefault(); }
       else if (ev.key === 'ArrowUp' && satirlar[i - 1]){ satirlar[i - 1].focus(); ev.preventDefault(); }
       else if (ev.key === 'Enter'){ tgSatirAcKapa(el, tr.dataset.rid); ev.preventDefault(); }
+      else if (ev.key === 'Delete' && !document.body.classList.contains('no-delete')){ // r392
+        var d = tgDurum(el.id), sec = (el._tgSatirlar || []).filter(function(x){ return d.secili[x.rid]; }).map(function(x){ return x.rid; });
+        topluSil(el, sec.length ? sec : [tr.dataset.rid]); ev.preventDefault(); }
       else if (ev.key === ' '){ var cb = tr.querySelector('[data-sec]'); if (cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); } ev.preventDefault(); }
     });
   }
