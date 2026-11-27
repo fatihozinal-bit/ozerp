@@ -2066,7 +2066,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-26-r391</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r392</div>
     </div>
   </nav>
   <main>
@@ -5026,13 +5026,20 @@ Dikkat edilmesi gereken 2 nokta:
   function ozetGiderKayitlari(){
     var l = [];
     (state.giderler || []).forEach(function(g){ if (!ozetDonemde(g.tarih) || virgoErpEskiMi(g) || OZET_YATIRIM_GIDER.indexOf(g.tur) > -1) return;
-      l.push({ tarih: g.tarih, tur: 'Gider · ' + (g.tur || ''), aciklama: [g.aciklama, g.cariId ? cariAdi(g.cariId) : ''].filter(Boolean).join(' · '), tl: belgeTL(g, 'tutar', 'belgeTutar'), git: 'giderler/' + g.id }); });
+      l.push({ tarih: g.tarih, tur: 'Gider · ' + (g.tur || ''), aciklama: [g.aciklama, g.cariId ? cariAdi(g.cariId) : ''].filter(Boolean).join(' · '), tl: belgeTL(g, 'tutar', 'belgeTutar'), git: 'giderler/' + g.id, grup: ozetGiderGrup(g.tur) }); });
     (state.alisFaturalari || []).forEach(function(f){ if (!ozetDonemde(f.tarih) || f.durum === 'İptal' || virgoErpEskiMi(f) || /Sabit kıymet/i.test(f.faturaTipi || '') || OZET_YATIRIM_GIDER.indexOf(f.giderTuru) > -1) return;
-      l.push({ tarih: f.tarih, tur: 'Alış faturası' + (f.faturaTipi ? ' · ' + f.faturaTipi : ''), aciklama: [cariAdi(f.tedarikciId), f.faturaNo].filter(function(x){ return x && x !== '-'; }).join(' · '), tl: belgeTL(f, 'araToplam', 'araToplam'), git: 'alisfatura/' + f.id }); });
+      l.push({ tarih: f.tarih, tur: 'Alış faturası' + (f.faturaTipi ? ' · ' + f.faturaTipi : ''), aciklama: [cariAdi(f.tedarikciId), f.faturaNo].filter(function(x){ return x && x !== '-'; }).join(' · '), tl: belgeTL(f, 'araToplam', 'araToplam'), git: 'alisfatura/' + f.id, grup: ozetGiderGrup(f.giderTuru) }); });
     // r348: maaşlar Bordro Özeti'nden (ücret gideri = brüt + işveren SGK / işsizlik payı; ayın son günü)
     bordrolar().forEach(function(b){ if (!/^\d{4}-\d{2}$/.test(b.ay || '')) return; var t = muhAySonu(b.ay); if (!ozetDonemde(t)) return;
-      l.push({ tarih: t, tur: 'Bordro · ' + muhAyAdi(b.ay), aciklama: (b.kisi ? b.kisi + ' kişi · ' : '') + 'brüt + işveren payı', tl: bordroHesap(b).maliyet, git: 'bordro/' + b.id }); });
+      l.push({ tarih: t, tur: 'Bordro · ' + muhAyAdi(b.ay), aciklama: (b.kisi ? b.kisi + ' kişi · ' : '') + 'brüt + işveren payı', tl: bordroHesap(b).maliyet, git: 'bordro/' + b.id, grup: 'maas' }); });
     return l.concat(ozetTahminiGiderler());
+  }
+  // r392: Gider kartı alt satırı üç grup: maaş (Bordro, Giderler'de Maaş / SGK, tahmini maaş), kira (Giderler / alış faturasında Kira, tahmini kira), gerisi faturalı
+  function ozetGiderGrup(tur){ return tur === 'Maaş' || tur === 'SGK / vergi' ? 'maas' : tur === 'Kira' ? 'kira' : 'fatura'; }
+  function ozetGiderGruplari(){
+    var g = { fatura: { tl: 0, tahmini: 0 }, kira: { tl: 0, tahmini: 0 }, maas: { tl: 0, tahmini: 0 } };
+    ozetGiderKayitlari().forEach(function(x){ var k = g[x.grup] || g.fatura; k.tl += x.tl; if (x.tahmini) k.tahmini += x.tl; });
+    return g;
   }
   // r355: faturası gelmeyen giderler (maaş, kira) belge girilmemiş aylarda tahmini girer; şirket boşuna kârda görünmesin.
   // Maaş: o ayın Bordro Özeti girilmediyse ve Giderler'de "Maaş" kaydı yoksa personel kartındaki net maaştan işveren maliyeti
@@ -5054,13 +5061,13 @@ Dikkat edilmesi gereken 2 nokta:
           var b = personelAyBordroTL(p, ay, P), m = b.net > 0 ? (personelAyMesai(p, ay, MH).tutar || 0) * b.maliyet / b.net : 0;
           if (b.maliyet + m > 0.5){ top += b.maliyet + m; kisi++; }
         });
-        if (top > 0.5) l.push({ tarih: tarih, tur: 'Maaş (tahmini) · ' + muhAyAdi(ay), aciklama: kisi + ' kişi · personel kartındaki net maaştan işveren maliyeti; bordro girilince yerine o geçer' + oranYazi, tl: top, git: gitYer, tahmini: true });
+        if (top > 0.5) l.push({ grup: 'maas', tarih: tarih, tur: 'Maaş (tahmini) · ' + muhAyAdi(ay), aciklama: kisi + ' kişi · personel kartındaki net maaştan işveren maliyeti; bordro girilince yerine o geçer' + oranYazi, tl: top, git: gitYer, tahmini: true });
       }
       if (kiraKalem.length && !(state.giderler || []).some(function(g){ return g.tur === 'Kira' && ayda(g, ay); }) && !(state.alisFaturalari || []).some(function(f){ return f.durum !== 'İptal' && f.giderTuru === 'Kira' && ayda(f, ay); })){
         kiraKalem.forEach(function(g){
           var bo = kpKalemOran(g, ay); if (!(bo > 0)) return; // r358: kira başlamadan önceki aylarda yok, başladığı ayda kalan gün kadar
           var t = Number(g.tutar), stopajli = g.tur === 'stopaj', tl = (stopajli ? t / (1 - KP_STOPAJ) : t) * bo;
-          l.push({ tarih: tarih, tur: (g.ad || 'Kira') + ' (tahmini) · ' + muhAyAdi(ay), aciklama: 'Aylık Kapasite\'deki tutar' + (stopajli ? ' (stopajlı: net ₺' + fmt(t) + ' + stopaj)' : '') + (bo < 1 ? ' · ' + kpKalemOranYazi(g, ay) : '') + '; faturası / gider kaydı girilince yerine o geçer', tl: tl, git: 'kapasiteplan', tahmini: true });
+          l.push({ grup: 'kira', tarih: tarih, tur: (g.ad || 'Kira') + ' (tahmini) · ' + muhAyAdi(ay), aciklama: 'Aylık Kapasite\'deki tutar' + (stopajli ? ' (stopajlı: net ₺' + fmt(t) + ' + stopaj)' : '') + (bo < 1 ? ' · ' + kpKalemOranYazi(g, ay) : '') + '; faturası / gider kaydı girilince yerine o geçer', tl: tl, git: 'kapasiteplan', tahmini: true });
         });
       }
     });
@@ -5134,7 +5141,7 @@ Dikkat edilmesi gereken 2 nokta:
   function renderOzet(){
     var kur = ozetKur();
     var katkilar = urunListesi().map(ozetUrunKatki), toplamCiro = toplamla(katkilar, function(x){ return x.top; });
-    var gider = ozetGiderTl(), giderTahmini = toplamla(ozetTahminiGiderler(), function(x){ return x.tl; }), kazanc = toplamCiro - gider, th = ozetTahmin(toplamCiro), tlY = function(v){ return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)); }, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
+    var gider = ozetGiderTl(), kazanc = toplamCiro - gider, th = ozetTahmin(toplamCiro), tlY = function(v){ return (v < -0.004 ? '−₺' : '₺') + fmt(Math.abs(v)); }, eurYazi = function(v){ return kur ? '≈ ' + (v < -0.004 ? '−' : '') + '€' + fmt(Math.abs(v) / kur) : ''; };
     // r244: üretim / kalite kartları da aynı şeritte (eskiden ayrı satırdı)
     var oka = ozetKayitlari(), fire = toplamla(oka, function(k){ return k.fireAdet; }), iyi = toplamla(oka, function(k){ return k.adet; });
 
@@ -5151,7 +5158,12 @@ Dikkat edilmesi gereken 2 nokta:
     var fg = null; try { if (sekmeIzinli('faturalar')) fg = ozetFaturaGelir(); } catch(e){ renderHatasi('Fatura geliri', e); }
     var cards = [];
     try { cards.push(ozetStokKart()); } catch(e){ renderHatasi('Stok kartı', e); }
-    cards.push({label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: (giderTahmini > 0.5 ? 'belgeli ₺' + fmt(gider - giderTahmini) + ' + tahmini maaş / kira ₺' + fmt(giderTahmini) : 'Giderler + alış faturaları + bordro') + (kur ? ' · ' + eurYazi(gider) : '')});
+    // r392: alt satır alt alta: Faturalı / Kira / Maaş (tahmini olan işaretli), en altta € karşılığı
+    var gg = ozetGiderGruplari();
+    cards.push({label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: [['fatura', 'Faturalı', 'Giderler + alış faturaları (kira ve maaş hariç)'], ['kira', 'Kira', 'Giderler / alış faturasında Kira; yoksa Aylık Kapasite\'deki kira (tahmini)'], ['maas', 'Maaş', 'Bordro Özeti + Giderler\'de Maaş / SGK; bordro yoksa personel kartından (tahmini)']].map(function(r){
+      var k = gg[r[0]], tah = k.tahmini > 0.5 ? (Math.abs(k.tl - k.tahmini) > 0.5 ? ' (₺' + fmt(k.tahmini) + ' tahmini)' : ' (tahmini)') : '';
+      return '<div class="oz-kirilim" title="' + escAttr(r[2]) + '"><span>' + r[1] + tah + '</span><b>' + tlY(k.tl) + '</b></div>';
+    }).join('') + (kur ? eurYazi(gider) : '')});
     if (fg) try { cards.push(ozetFaturaKart(fg)); } catch(e){ renderHatasi('Fatura kartı', e); }
     if (fg){
       var kazF = fg.net - gider, isr = function(v){ return v < -0.004 ? 'neg' : 'pos'; };
