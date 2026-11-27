@@ -253,6 +253,8 @@
   /* r262: Özet › Üretilen kartında ürünler alt alta: ad solda (sığmazsa …), adet sağda */
   .card .sub .oz-kirilim { display: flex; justify-content: space-between; gap: 6px; }
   .card .sub .oz-kirilim span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  /* r392: büyük tutarın yanında küçük € karşılığı (Gider kartı) */
+  .card .value .oz-deger-eur { font-size: 10.5px; font-weight: 400; color: var(--ink-soft); white-space: nowrap; }
   section.panel { display: none; }
   section.panel.active { display: block; }
   .block { background: var(--surface); border: 1px solid var(--border); margin-bottom: 20px; }
@@ -5158,12 +5160,12 @@ Dikkat edilmesi gereken 2 nokta:
     var fg = null; try { if (sekmeIzinli('faturalar')) fg = ozetFaturaGelir(); } catch(e){ renderHatasi('Fatura geliri', e); }
     var cards = [];
     try { cards.push(ozetStokKart()); } catch(e){ renderHatasi('Stok kartı', e); }
-    // r392: alt satır alt alta: Faturalı / Kira / Maaş (tahmini olan işaretli), en altta € karşılığı
+    // r392: alt satır alt alta: Faturalı / Kira / Maaş (tahmini olan işaretli); € karşılığı toplamın yanında
     var gg = ozetGiderGruplari();
-    cards.push({label:'Gider', value: '₺'+fmt(gider), cls:'yetki-maliyet', detay:'gider', sub: [['fatura', 'Faturalı', 'Giderler + alış faturaları (kira ve maaş hariç)'], ['kira', 'Kira', 'Giderler / alış faturasında Kira; yoksa Aylık Kapasite\'deki kira (tahmini)'], ['maas', 'Maaş', 'Bordro Özeti + Giderler\'de Maaş / SGK; bordro yoksa personel kartından (tahmini)']].map(function(r){
+    cards.push({label:'Gider', value: '₺'+fmt(gider) + (kur ? ' <span class="oz-deger-eur">' + eurYazi(gider) + '</span>' : ''), cls:'yetki-maliyet', detay:'gider', sub: [['fatura', 'Faturalı', 'Giderler + alış faturaları (kira ve maaş hariç)'], ['kira', 'Kira', 'Giderler / alış faturasında Kira; yoksa Aylık Kapasite\'deki kira (tahmini)'], ['maas', 'Maaş', 'Bordro Özeti + Giderler\'de Maaş / SGK; bordro yoksa personel kartından (tahmini)']].map(function(r){
       var k = gg[r[0]], tah = k.tahmini > 0.5 ? (Math.abs(k.tl - k.tahmini) > 0.5 ? ' (₺' + fmt(k.tahmini) + ' tahmini)' : ' (tahmini)') : '';
       return '<div class="oz-kirilim" title="' + escAttr(r[2]) + '"><span>' + r[1] + tah + '</span><b>' + tlY(k.tl) + '</b></div>';
-    }).join('') + (kur ? eurYazi(gider) : '')});
+    }).join('')});
     if (fg) try { cards.push(ozetFaturaKart(fg)); } catch(e){ renderHatasi('Fatura kartı', e); }
     if (fg){
       var kazF = fg.net - gider, isr = function(v){ return v < -0.004 ? 'neg' : 'pos'; };
