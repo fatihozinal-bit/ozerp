@@ -2068,7 +2068,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r393</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r394</div>
     </div>
   </nav>
   <main>
@@ -6167,7 +6167,7 @@ Dikkat edilmesi gereken 2 nokta:
       eskiden: function(v){ var l = []; if (v.yetkili) l.push({ ad: v.yetkili, telefon: v.telefon || '', eposta: v.eposta || '', varsayilan: true });
         satirlariAyir(v.kisiler).forEach(function(x){ var p = x.split(/\s*[·|,;]\s*/); if (p[0] && !l.some(function(y){ return y.ad === p[0]; })) l.push({ ad: p[0], gorev: p[1] || '', telefon: p[2] || '', eposta: p[3] || '' }); }); return l; }},
     {type:'section', label:'Ticari koşullar'},
-    {key:'paraBirimi', label:'Para birimi', type:'select', options:['EUR','TRY','USD']},
+    {key:'paraBirimi', label:'Para birimi', type:'select', options:['EUR','TRY','USD'], hint:'yeni teklif / siparişe önerilir; cari ekstresinde açık alacak / borç bu para biriminde gösterilir'},
     {key:'odemeVadesiGun', label:'Ödeme vadesi (gün)', type:'number'},
     {key:'odemeSekli', label:'Ödeme şekli', type:'select', options: ODEME_SEKILLERI},
     {key:'iskontoOrani', label:'Cari iskontosu (%)', type:'number', hint:'yeni teklif / sipariş satırlarına önerilir'},
@@ -18028,7 +18028,7 @@ Dikkat edilmesi gereken 2 nokta:
     var kalanEur = {}, serbestEur = {}, e = muhKur(todayISO()) || 1;
     Object.keys(kalanB).forEach(function(id){ var f = fats.find(function(x){ return x.id === id; }); kalanB[id] = Math.round(kalanB[id] * 100) / 100; kalanEur[id] = muhR2(belgedenEur(f, kalanB[id])); });
     Object.keys(serbestTL).forEach(function(k){ serbestEur[k] = muhR2(serbestTL[k] / e); });
-    var sonuc = { kalanB: kalanB, kalanEur: kalanEur, serbestEur: serbestEur, dagilim: dagilim };
+    var sonuc = { kalanB: kalanB, kalanEur: kalanEur, serbestEur: serbestEur, serbestTL: serbestTL, dagilim: dagilim };
     _dagCache[yon] = { refs: refs, s: sonuc };
     return sonuc;
   }
@@ -18040,6 +18040,26 @@ Dikkat edilmesi gereken 2 nokta:
   function cariAcikBakiye(cariId, yon){
     var d = cariDagitim(yon), fl = yon === 'Satış' ? state.faturalar.filter(function(f){ return f.musteriId === cariId; }) : (state.alisFaturalari || []).filter(function(f){ return f.tedarikciId === cariId; });
     return muhR2(toplamla(fl, function(f){ return d.kalanEur[f.id] || 0; }) - (d.serbestEur[cariId] || 0));
+  }
+  // r394: carinin takip para birimi (cari kartı › Para birimi; boşsa €). Açık bakiye bu para biriminde: faturanın açık kısmı kendi para biriminde
+  // izlenir (cariDagitim); başka para birimindeki fatura ve faturaya düşmeyen ödeme bugünkü kurla çevrilir (cevrildi: tutarın başına ≈).
+  function cariPB(c){ return (c && c.paraBirimi) || 'EUR'; }
+  function pbCevir(x, kaynak, hedef, tarih){ x = Number(x) || 0; if ((kaynak || 'EUR') === (hedef || 'EUR')) return x; var t = tarih || todayISO(), h = pbKur(hedef, t); return h ? x * pbKur(kaynak, t) / h : 0; }
+  function cariAcikPB(cariId, yon, pb){
+    var d = cariDagitim(yon), fl = yon === 'Satış' ? state.faturalar.filter(function(f){ return f.musteriId === cariId; }) : (state.alisFaturalari || []).filter(function(f){ return f.tedarikciId === cariId; });
+    var top = 0, cev = false;
+    fl.forEach(function(f){ var k = d.kalanB[f.id]; if (!(k > 0)) return; var fp = belgePB(f); if (fp !== pb) cev = true; top += pbCevir(k, fp, pb); });
+    var sb = d.serbestTL[cariId] || 0; if (sb > 0.004){ if (pb !== 'TRY') cev = true; top -= pbCevir(sb, 'TRY', pb); }
+    return { tutar: muhR2(top), cevrildi: cev && Math.abs(top) >= 0.005 };
+  }
+  function cariTutarYazi(a, pb){ return (a.cevrildi ? '≈ ' : '') + pbFmt(a.tutar, pb); }
+  // Belge tutarı (araToplam, genelToplam…) istenen para biriminde: aynı para birimindeyse belgedeki tutar, ₺'ye belge kuruyla, başkasına belge tarihindeki kurla
+  function belgeTutarPB(f, alan, pb){
+    var fp = belgePB(f);
+    if (fp === pb) return fp !== 'EUR' && f.belgeTutar && typeof f.belgeTutar === 'object' ? Number(f.belgeTutar[alan]) || 0 : Number(f[alan]) || 0;
+    if (pb === 'EUR') return Number(f[alan]) || 0;
+    var tl = belgeTL(f, alan, alan); if (pb === 'TRY') return tl;
+    var k = pbKur(pb, f.tarih); return k ? muhR2(tl / k) : 0;
   }
   function faturaOdemeDurumuHtml(f){
     if (f.durum !== 'Kesildi') return '';
@@ -26667,10 +26687,12 @@ Dikkat edilmesi gereken 2 nokta:
     return out.sort(function(a, b){ return String(a.f.vadeTarihi || a.f.tarih).localeCompare(String(b.f.vadeTarihi || b.f.tarih)); });
   }
   function ckOzetKartlar(c){
-    var bugun = todayISO(), yil = bugun.slice(0, 4), acik = ckAcikBelgeler(c);
-    var alacak = cariAcikBakiye(c.id, 'Satış'), borc = cariAcikBakiye(c.id, 'Alış');
-    var gecA = toplamla(acik.filter(function(x){ return x.yon === 'Alacak' && x.f.vadeTarihi && x.f.vadeTarihi < bugun; }), function(x){ return x.ke; });
-    var gecB = toplamla(acik.filter(function(x){ return x.yon === 'Borç' && x.f.vadeTarihi && x.f.vadeTarihi < bugun; }), function(x){ return x.ke; });
+    // r394: açık alacak / borç, vadesi geçen ve yıllık satış / alış carinin para biriminde (cari kartı › Para birimi); risk limiti € kalır
+    var bugun = todayISO(), yil = bugun.slice(0, 4), acik = ckAcikBelgeler(c), pb = cariPB(c);
+    var alacakA = cariAcikPB(c.id, 'Satış', pb), borcA = cariAcikPB(c.id, 'Alış', pb), alacak = alacakA.tutar, borc = borcA.tutar, alacakEur = cariAcikBakiye(c.id, 'Satış');
+    var gec = function(yon){ var l = acik.filter(function(x){ return x.yon === yon && x.f.vadeTarihi && x.f.vadeTarihi < bugun; });
+      return { tutar: muhR2(toplamla(l, function(x){ return pbCevir(x.kb, belgePB(x.f), pb); })), cevrildi: l.some(function(x){ return belgePB(x.f) !== pb; }) }; };
+    var gecA = gec('Alacak'), gecB = gec('Borç'), odemeYazi = function(o){ var op = belgePB(o); return pbFmt(op !== 'EUR' && o.belgeTutar != null ? o.belgeTutar : o.tutar, op); };
     var satis = state.faturalar.filter(function(f){ return f.musteriId === c.id && f.durum === 'Kesildi' && String(f.tarih).slice(0, 4) === yil; });
     var alis = (state.alisFaturalari || []).filter(function(f){ return f.tedarikciId === c.id && String(f.tarih).slice(0, 4) === yil; });
     var sonT = state.tahsilatlar.filter(function(t){ return t.musteriId === c.id; }).sort(function(a, b){ return String(b.tarih).localeCompare(String(a.tarih)); })[0];
@@ -26680,14 +26702,14 @@ Dikkat edilmesi gereken 2 nokta:
     var limit = Number(c.riskLimiti) || 0, kart = function(l, v, sub, cls){ return '<div class="card ' + (cls || '') + '"><div class="label">' + l + '</div><div class="value">' + v + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>'; };
     var musteri = musteriMi(c) || satis.length || Math.abs(alacak) >= 0.01, tedarikci = tedarikciMi(c) || alis.length || Math.abs(borc) >= 0.01;
     return '<div class="cards">' +
-      (musteri ? kart('Açık alacak', euro(alacak), gecA >= 0.01 ? '<span class="neg">vadesi geçen ' + euro(gecA) + '</span>' : 'vadesi geçen yok', alacak > 0.01 ? 'accent' : '') : '') +
-      (tedarikci ? kart('Açık borç (tedarikçiye)', euro(borc), gecB >= 0.01 ? '<span class="neg">vadesi geçen ' + euro(gecB) + '</span>' : 'vadesi geçen yok') : '') +
-      (musteri ? kart(yil + ' satış (KDV hariç)', euro(toplamla(satis, function(f){ return f.araToplam; })), satis.length + ' fatura') : '') +
-      (tedarikci ? kart(yil + ' alış (KDV hariç)', euro(toplamla(alis, function(f){ return f.araToplam; })), alis.length + ' fatura') : '') +
-      (musteri ? kart('Son tahsilat', sonT ? kvTarihTR(sonT.tarih) : '—', sonT ? euro(sonT.tutar) : 'tahsilat yok') : '') +
-      (tedarikci && sonO ? kart('Son ödeme', kvTarihTR(sonO.tarih), euro(sonO.tutar)) : '') +
+      (musteri ? kart('Açık alacak', cariTutarYazi(alacakA, pb), gecA.tutar >= 0.01 ? '<span class="neg">vadesi geçen ' + cariTutarYazi(gecA, pb) + '</span>' : 'vadesi geçen yok', alacak > 0.01 ? 'accent' : '') : '') +
+      (tedarikci ? kart('Açık borç (tedarikçiye)', cariTutarYazi(borcA, pb), gecB.tutar >= 0.01 ? '<span class="neg">vadesi geçen ' + cariTutarYazi(gecB, pb) + '</span>' : 'vadesi geçen yok') : '') +
+      (musteri ? kart(yil + ' satış (KDV hariç)', pbFmt(toplamla(satis, function(f){ return belgeTutarPB(f, 'araToplam', pb); }), pb), satis.length + ' fatura') : '') +
+      (tedarikci ? kart(yil + ' alış (KDV hariç)', pbFmt(toplamla(alis, function(f){ return belgeTutarPB(f, 'araToplam', pb); }), pb), alis.length + ' fatura') : '') +
+      (musteri ? kart('Son tahsilat', sonT ? kvTarihTR(sonT.tarih) : '—', sonT ? odemeYazi(sonT) : 'tahsilat yok') : '') +
+      (tedarikci && sonO ? kart('Son ödeme', kvTarihTR(sonO.tarih), odemeYazi(sonO)) : '') +
       (acikSip.length ? kart('Açık sipariş', String(acikSip.length), 'sevk edilmemiş ' + euro(sipKalan)) : '') +
-      (limit ? kart('Risk limiti', euro(limit), 'kullanılan ' + euro(alacak + sipKalan) + ' (%' + fmt(Math.max(0, alacak + sipKalan) / limit * 100) + ')', alacak + sipKalan > limit ? 'accent' : '') : '') +
+      (limit ? kart('Risk limiti', euro(limit), 'kullanılan ' + euro(alacakEur + sipKalan) + ' (%' + fmt(Math.max(0, alacakEur + sipKalan) / limit * 100) + ')', alacakEur + sipKalan > limit ? 'accent' : '') : '') +
       '</div>';
   }
   function ckBilgiHtml(c){
@@ -26725,9 +26747,9 @@ Dikkat edilmesi gereken 2 nokta:
   function ckCarilerHtml(){
     var l = state.musteriler.slice().sort(function(a, b){ return String(a.ad || '').localeCompare(String(b.ad || ''), 'tr'); });
     if (!l.length) return '<div class="empty">Cari kartı yok — Kartlar › Cari Kartları\'ndan açın.</div>';
-    return '<div class="block"><div class="block-head"><h3>Cariler</h3></div><div class="block-body tablewrap"><table id="ckCariler"><thead><tr><th>Kod</th><th>Cari</th><th>Tip</th><th class="num">Açık alacak</th><th class="num">Açık borç</th><th></th></tr></thead><tbody>' +
-      l.map(function(c){ var a = cariAcikBakiye(c.id, 'Satış'), b = cariAcikBakiye(c.id, 'Alış');
-        return '<tr class="ck-satir" data-cariekstre="' + c.id + '"><td>' + esc(c.kod || '') + '</td><td>' + esc(c.ad) + '</td><td>' + esc(c.cariTipi || 'Müşteri') + '</td><td class="num">' + (Math.abs(a) >= 0.01 ? euro(a) : '') + '</td><td class="num">' + (Math.abs(b) >= 0.01 ? euro(b) : '') + '</td><td><button type="button" class="btn small" data-cariekstre="' + c.id + '">Ekstre</button></td></tr>'; }).join('') +
+    return '<div class="block"><div class="block-head"><h3>Cariler ' + infoIco('Açık alacak / borç her carinin kendi para biriminde (cari kartı › Para birimi). Başka para birimindeki fatura ya da faturaya düşmeyen ödeme varsa bugünkü kurla çevrilir, tutarın başında ≈ yazar.') + '</h3></div><div class="block-body tablewrap"><table id="ckCariler"><thead><tr><th>Kod</th><th>Cari</th><th>Tip</th><th class="num">Açık alacak</th><th class="num">Açık borç</th><th></th></tr></thead><tbody>' +
+      l.map(function(c){ var pb = cariPB(c), a = cariAcikPB(c.id, 'Satış', pb), b = cariAcikPB(c.id, 'Alış', pb); // r394
+        return '<tr class="ck-satir" data-cariekstre="' + c.id + '"><td>' + esc(c.kod || '') + '</td><td>' + esc(c.ad) + '</td><td>' + esc(c.cariTipi || 'Müşteri') + '</td><td class="num">' + (Math.abs(a.tutar) >= 0.01 ? cariTutarYazi(a, pb) : '') + '</td><td class="num">' + (Math.abs(b.tutar) >= 0.01 ? cariTutarYazi(b, pb) : '') + '</td><td><button type="button" class="btn small" data-cariekstre="' + c.id + '">Ekstre</button></td></tr>'; }).join('') +
       '</tbody></table></div></div>';
   }
   function ckDonemSecici(){
@@ -26749,6 +26771,7 @@ Dikkat edilmesi gereken 2 nokta:
       '<datalist id="ckCariListe">' + state.musteriler.map(function(m){ return '<option value="' + escAttr(ckEtiket(m)) + '">'; }).join('') + '</datalist></div>';
     if (!c){ host.innerHTML = '<div class="ut-ust">' + secici + '</div>' + ckCarilerHtml(); return; }
     var gruplar = cariEkstreHesapla(c, CK.bas, CK.bit, CK.para), acik = ckAcikBelgeler(c), bugun = todayISO();
+    var cpb = cariPB(c), karsilik = acik.some(function(x){ return belgePB(x.f) !== cpb; }); // r394: ≈ sütunu carinin para biriminde, yalnız başka para birimli fatura varsa
     host.innerHTML = '<div class="ut-ust">' + secici + '<div class="ut-dugmeler">' +
         (sekmeIzinli('musteriler') ? '<button type="button" class="btn secondary small" id="ckDuzenle">Kartı düzenle</button>' : '') +
         '<button type="button" class="btn secondary small" id="ckListe">← Cariler</button></div>' +
@@ -26760,12 +26783,12 @@ Dikkat edilmesi gereken 2 nokta:
         (gruplar.length ? gruplar.map(function(g){ return (gruplar.length > 1 || CK.para === 'doviz' ? '<h4 class="ck-grup">' + esc(ckGrupBaslik(g)) + ' — bakiye ' + ckBakiye(g.bakiye, g.pb) + '</h4>' : '') + '<div class="tablewrap">' + ckEkstreTablo(g, c) + '</div>'; }).join('')
           : '<div class="empty">Bu cari için ' + (CK.bas ? kvTarihTR(CK.bas) + ' – ' : '') + kvTarihTR(CK.bit) + ' arasında muhasebeleşmiş hareket yok (taslak fatura ekstreye girmez).</div>') +
       '</div></div>' +
-      '<div class="block"><div class="block-head"><h3>Açık faturalar ' + infoIco('Tahsilat ve ödemeler önce bağlı faturaya, yoksa en eski faturadan düşülür (Cari Hesap ve yaşlandırmayla aynı). Tutarlar faturanın para birimindedir; € karşılığı bugünkü kurla.') + '</h3></div><div class="block-body tablewrap">' +
-        (acik.length ? '<table><thead><tr><th>Yön</th><th>Fatura</th><th>Tarih</th><th>Vade</th><th class="num">Tutar</th><th class="num">Kalan</th><th class="num">≈ €</th><th class="num">Gecikme (gün)</th><th></th></tr></thead><tbody>' +
+      '<div class="block"><div class="block-head"><h3>Açık faturalar ' + infoIco('Tahsilat ve ödemeler önce bağlı faturaya, yoksa en eski faturadan düşülür (Cari Hesap ve yaşlandırmayla aynı). Tutarlar faturanın para birimindedir; carinin para biriminden (' + pbSembol(cpb) + ') farklı faturalarda karşılığı bugünkü kurla.') + '</h3></div><div class="block-body tablewrap">' +
+        (acik.length ? '<table><thead><tr><th>Yön</th><th>Fatura</th><th>Tarih</th><th>Vade</th><th class="num">Tutar</th><th class="num">Kalan</th>' + (karsilik ? '<th class="num">≈ ' + pbSembol(cpb) + '</th>' : '') + '<th class="num">Gecikme (gün)</th><th></th></tr></thead><tbody>' +
           acik.map(function(x){ var pb = belgePB(x.f), gec = x.f.vadeTarihi && x.f.vadeTarihi < bugun ? gunFarki(x.f.vadeTarihi, bugun) : 0;
             // "Tahsil et": satış faturası, müşteri kartı ve € karşılığı tahsilat formundaki listeye girecek kadar açık (> 0,01)
             var tahsil = x.yon === 'Alacak' && x.ke > 0.01 && musteriMi(c) && sekmeIzinli('carihesap');
-            return '<tr class="ck-satir" data-git="' + x.tab + '|' + x.f.id + '"><td>' + x.yon + '</td><td>' + esc(x.no || '') + '</td><td>' + kvTarihTR(x.f.tarih) + '</td><td' + (gec ? ' class="neg"' : '') + '>' + kvTarihTR(x.f.vadeTarihi || '') + '</td><td class="num">' + pbFmt(faturaBelgeGenel(x.f), pb) + '</td><td class="num"><b>' + pbFmt(x.kb, pb) + '</b></td><td class="num">' + euro(x.ke) + '</td><td class="num' + (gec ? ' neg' : '') + '">' + (gec || '') + '</td><td>' + (tahsil ? tahsilDugmesi(x.f.id) : '') + '</td></tr>'; }).join('') + '</tbody></table>'
+            return '<tr class="ck-satir" data-git="' + x.tab + '|' + x.f.id + '"><td>' + x.yon + '</td><td>' + esc(x.no || '') + '</td><td>' + kvTarihTR(x.f.tarih) + '</td><td' + (gec ? ' class="neg"' : '') + '>' + kvTarihTR(x.f.vadeTarihi || '') + '</td><td class="num">' + pbFmt(faturaBelgeGenel(x.f), pb) + '</td><td class="num"><b>' + pbFmt(x.kb, pb) + '</b></td>' + (karsilik ? '<td class="num">' + (pb === cpb ? '' : pbFmt(pbCevir(x.kb, pb, cpb), cpb)) + '</td>' : '') + '<td class="num' + (gec ? ' neg' : '') + '">' + (gec || '') + '</td><td>' + (tahsil ? tahsilDugmesi(x.f.id) : '') + '</td></tr>'; }).join('') + '</tbody></table>'
           : '<div class="empty">Açık fatura yok.</div>') + '</div></div>' +
       ckIliskiliHtml(c);
   };
