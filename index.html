@@ -2068,7 +2068,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r394</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r395</div>
     </div>
   </nav>
   <main>
@@ -8583,7 +8583,7 @@ Dikkat edilmesi gereken 2 nokta:
   }
   document.getElementById('cariEkleBtn').addEventListener('click', function(){
     openNewRecordFormOtoKod('musteri', 'musteriler', 'Yeni cari aç', MUSTERI_FIELDS,
-      {kod:'', ad:'', cariTipi:'Müşteri', yetkili:'', telefon:'', eposta:'', adres:'', sehir:'', vergiDairesi:'', vergiNo:'', iban:'', odemeVadesiGun:0, paraBirimi:'EUR', riskLimiti:0, sevkAdresi:'', kisiler:'', onayliTedarikci:'-', aktif:'Aktif'}, 'Cari açıldı',
+      {kod:'', ad:'', cariTipi:'Müşteri', yetkili:'', telefon:'', eposta:'', adres:'', sehir:'', vergiDairesi:'', vergiNo:'', iban:'', odemeVadesiGun:0, paraBirimi:'TRY', riskLimiti:0, sevkAdresi:'', kisiler:'', onayliTedarikci:'-', aktif:'Aktif'}, 'Cari açıldı',
       function(v, eski, devam){ kayitKontrolu(cariKartKontrolu(v, eski), devam); });
   });
   var STOK_TIPLERI = ['Hammadde','Yarı Mamul','Mamul','Müşteri Malı','Sarf','Yedek Parça','Ambalaj'];
@@ -24855,8 +24855,11 @@ Dikkat edilmesi gereken 2 nokta:
       tgK('vergiNo', 'Vergi no', function(c){ return c.vergiNo; }, 'metin', { gizli: true }),
       tgK('vade', 'Vade (gün)', function(c){ return c.odemeVadesiGun; }, 'sayi', { gizli: true }),
       tgK('risk', 'Risk limiti', function(c){ return Number(c.riskLimiti) || ''; }, 'sayi', { gizli: true }),
-      tgK('alacak', 'Alacak (€)', function(c){ return cariAcikBakiye(c.id, 'Satış'); }, 'eur', { toplam: true }),
-      tgK('borc', 'Borç (€)', function(c){ return cariAcikBakiye(c.id, 'Alış'); }, 'eur', { toplam: true }),
+      tgK('pb', 'Para birimi', function(c){ return cariPB(c); }), // r395
+      tgK('alacakPb', 'Açık alacak', function(c){ var v = cariAcikPB(c.id, 'Satış', cariPB(c)).tutar; return Math.abs(v) < 0.005 ? '' : v; }, 'para', { pb: cariPB, toplam: true }),
+      tgK('borcPb', 'Açık borç', function(c){ var v = cariAcikPB(c.id, 'Alış', cariPB(c)).tutar; return Math.abs(v) < 0.005 ? '' : v; }, 'para', { pb: cariPB, toplam: true }),
+      tgK('alacak', 'Alacak (€)', function(c){ return cariAcikBakiye(c.id, 'Satış'); }, 'eur', { toplam: true, gizli: true }),
+      tgK('borc', 'Borç (€)', function(c){ return cariAcikBakiye(c.id, 'Alış'); }, 'eur', { toplam: true, gizli: true }),
       tgK('aktif', 'Durum', function(c){ return c.aktif || 'Aktif'; }, 'durum', { gizli: true })
     ] },
     stokListe: { kaynak: 'stok', kolonlar: [
@@ -25302,12 +25305,16 @@ Dikkat edilmesi gereken 2 nokta:
     cubuk.style.display = '';
     var turler = (TOPLU_CIKTI[el.id] || []).filter(function(t){ return !!ciktiTuru(t); });
     var silinir = secili.filter(function(x){ return topluSilDugmesi(tgKartEl(el, x.rid)); }).length; // r392
+    var islemler = document.body.classList.contains('no-edit') ? [] : (TOPLU_ISLEM[el.id] || []).filter(function(x){ return !x.izin || izinVar(x.izin); }); // r395
     cubuk.innerHTML = '<b>' + secili.length + ' seçili</b>' + (top ? ' &nbsp; ' + top : '') +
       ' <button class="btn secondary small tg-sec-excel" type="button">⇩ Seçilenleri Excel\'e</button>' +
       turler.map(function(t){ return '<button class="btn small" type="button" data-tgyaz="' + escAttr(t) + '">🖨 ' + esc(t) + ' (' + secili.length + ')</button><button class="btn secondary small" type="button" data-tgpdf="' + escAttr(t) + '" title="Seçilenleri tek PDF olarak indir">⇩ PDF</button>'; }).join('') +
+      (islemler.length ? '<select class="tg-sec-islem" title="Seçilenlere toplu işlem"><option value="">Toplu işlem…</option>' + islemler.map(function(x, i){ return '<option value="' + i + '">' + esc(x.ad) + '</option>'; }).join('') + '</select>' : '') +
       (silinir ? '<button class="btn danger small tg-sec-sil" type="button" title="' + escAttr(silinir < secili.length ? (secili.length - silinir) + ' seçili kaydın kartında Sil yok (ör. kesilmiş fatura iptal edilir, silinmez); onlar kalır.' : 'Seçilen kayıtları sil (Delete tuşu da siler)') + '">🗑 Seçilenleri sil (' + silinir + ')</button>' : '') +
       '<button class="btn secondary small tg-sec-temizle" type="button">Seçimi kaldır</button>';
     var sb = cubuk.querySelector('.tg-sec-sil'); if (sb) sb.addEventListener('click', function(){ topluSil(el, secili.map(function(x){ return x.rid; })); });
+    var si = cubuk.querySelector('.tg-sec-islem'); if (si) si.addEventListener('change', function(){ var x = islemler[+si.value]; si.value = ''; if (!x) return;
+      x.fn(el, secili.map(function(s){ return tgKayitBul(s.rid) || s.o; }).filter(Boolean)); });
     cubuk.querySelector('.tg-sec-excel').addEventListener('click', function(){ tgExcel(el, secili); });
     cubuk.querySelectorAll('[data-tgyaz], [data-tgpdf]').forEach(function(b){ b.addEventListener('click', function(){
       var tad = b.dataset.tgyaz || b.dataset.tgpdf, tur = ciktiTuru(tad); if (!tur) return;
@@ -25371,6 +25378,28 @@ Dikkat edilmesi gereken 2 nokta:
         (engel.length > 40 ? '<li class="muted">… ve ' + (engel.length - 40) + ' kayıt daha</li>' : '') + '</ul>');
     })();
   }
+  // ---------- r395: Toplu işlem (seçim çubuğundaki "Toplu işlem…" menüsü): TOPLU_ISLEM[liste id] = [{ ad, izin, fn(el, kayitlar) }] ----------
+  var TOPLU_ISLEM = {};
+  // Seçilen kayıtlarda aynı alanları aynı değere çeker (zaten öyle olanlara dokunmaz); onay bir kez, sonunda özet
+  function topluAlanGuncelle(col, kayitlar, alanlar, baslik, ekNot){
+    if (!izinVar('duzenle')){ uyariGoster(esc(izinYokMesaji('duzenle'))); return; }
+    var degisen = kayitlar.filter(function(k){ return Object.keys(alanlar).some(function(a){ return String(k[a] == null ? '' : k[a]) !== String(alanlar[a]); }); }), ayni = kayitlar.length - degisen.length;
+    if (!degisen.length){ toast('Seçilen ' + kayitlar.length + ' kayıt zaten böyle; değişiklik yok.'); return; }
+    var ornek = degisen.slice(0, 8).map(function(k){ return '• ' + (kayitTamEtiket(col, k) || k.ad || k.id); }).join('\n') + (degisen.length > 8 ? '\n… ve ' + (degisen.length - 8) + ' kayıt daha' : '');
+    confirmSil(degisen.length + ' kayıtta ' + baslik + ':\n\n' + ornek + (ayni ? '\n\n' + ayni + ' seçili kayıt zaten böyle, dokunulmaz.' : '') + (ekNot ? '\n\n' + ekNot : ''), function(){
+      Promise.all(degisen.map(function(k){ return kayitGuncelle(col, k.id, alanlar).then(function(){ return null; }, function(e){ return { k: k, e: e }; }); })).then(function(l){
+        var hata = l.filter(Boolean), ok = degisen.length - hata.length;
+        if (!hata.length){ toast('✓ ' + ok + ' kayıt güncellendi'); return; }
+        uyariGoster((ok ? '✓ ' + ok + ' kayıt güncellendi.<br><br>' : '') + '<b>' + hata.length + ' kayıt güncellenemedi:</b><ul style="margin:8px 0 0;padding-left:18px">' +
+          hata.slice(0, 30).map(function(x){ return '<li><b>' + esc(kayitTamEtiket(col, x.k) || x.k.id) + '</b>: ' + esc(dbErrMsg(x.e)) + '</li>'; }).join('') + '</ul>');
+      });
+    }, 'Evet, ' + degisen.length + ' kaydı güncelle');
+  }
+  TOPLU_ISLEM.cariListe = [['TRY', '₺ (TRY)'], ['EUR', '€ (EUR)'], ['USD', '$ (USD)']].map(function(p){
+    return { ad: 'Para birimi → ' + p[1], izin: 'duzenle', fn: function(el, l){ topluAlanGuncelle('musteriler', l, { paraBirimi: p[0] }, 'para birimi ' + p[1] + ' olacak',
+      'Cari ekstresinde açık alacak / borç bu para biriminde görünür; yeni teklif ve siparişe bu para birimi önerilir. Kesilmiş faturalar ve tutarları değişmez.\n\n' +
+      'Muhasebe: faturaya bağlanmamış ödeme / tahsilat, carinin faturaları tek para biriminde değilse carinin bu para birimindeki alt hesabına yazılır.'); } };
+  });
   function tgAyarDegistir(el, fn){ var a = tgAyar(el.id); fn(a); if (a.gorunum) a.gorunum = ''; tgAyarYaz(el.id, a); }
   // r300: sütun genişliği elle — başlığın sağ kenarı sürüklenir; genişlik bu tarayıcıda tablo tablo saklanır (a.genislik), çift tık siler.
   // Hücre içeriği .tg-g ile sarılı; genişlik verilen sütunda sığmayan yazı "…" ile kısalır, tamamı ipucunda.
