@@ -2073,7 +2073,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r397</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r398</div>
     </div>
   </nav>
   <main>
@@ -5215,17 +5215,22 @@ Dikkat edilmesi gereken 2 nokta:
   // o siparişin sevkleri ürün ürün eskiden yeniye. Tutar: faturanın KDV hariç ₺ tutarı kalemlere tutarları oranında dağıtılır (iskonto ve
   // döviz kuru dahil), gönderime düşen adet kadarı yazılır. Gönderime bağlanamayan kısım (sevkten önce faturalanan adet, irsaliyesiz /
   // hizmet faturası) fatura tarihinin ayında ayrı satırdır; böylece ayların fatura toplamı kesilen faturaların toplamına eşittir.
+  // r398: KDV dahil tutar (tahsil edilecek: faturanın genel toplamı, tevkifatlıda ödenecek tutar) aynı yolla yanında taşınır (tlK);
+  // kalemlere KDV hariç tutarı × (1 + kalemin KDV oranı) oranında dağıtılır. Aylar kapalı gelir; aya tıklayınca açılır.
   var _sfAcikAy = null; // { 'YYYY-MM': true/false } — elle açılıp kapanan aylar (null: varsayılan)
   function sevkFaturaGorunur(){ return sekmeIzinli('sevkiyat') || sekmeIzinli('faturalar') || sekmeIzinli('irsaliyeler'); }
   function sfAnahtar(k){ return k.stokId || ('ad:' + String(k.ad || '').trim()); }
   function sfUrunAdi(k){ var st = k.stokId ? stokKart(k.stokId) : null; return String(k.ad || (st && st.ad) || '—'); }
   function sfFaturaTL(f){ return belgeTL(f, 'araToplam', 'araToplam'); }
+  function sfFaturaGenelTL(f){ return belgeTL(f, 'genelToplam', 'genelToplam'); } // r398: KDV dahil (tevkifatlıda ödenecek)
   // Faturanın KDV hariç ₺ tutarı kalemlere tutarları oranında (iskonto ve kur dahil); adetsiz kalem (nakliye, hizmet) da kendi payını alır
   function sfFaturaKalemTL(f){
-    var mat = sfFaturaTL(f);
-    var kl = (f.kalemler || []).map(function(k){ var m = Number(k.miktar) || 0; return { k: sfAnahtar(k), stokId: k.stokId || '', ad: sfUrunAdi(k), miktar: m, t: Math.abs(Number(k.tutar) || m * (Number(k.birimFiyat) || 0)), kaynak: k.kaynakIrsaliyeId || '' }; });
-    var topT = toplamla(kl, function(x){ return x.t; });
-    kl.forEach(function(x){ x.tl = topT > 0 ? mat * x.t / topT : (kl.length ? mat / kl.length : 0); });
+    var mat = sfFaturaTL(f), gen = sfFaturaGenelTL(f), fo = Number(f.kdvOrani) || 0;
+    var kl = (f.kalemler || []).map(function(k){ var m = Number(k.miktar) || 0; return { k: sfAnahtar(k), stokId: k.stokId || '', ad: sfUrunAdi(k), miktar: m, t: Math.abs(Number(k.tutar) || m * (Number(k.birimFiyat) || 0)), kaynak: k.kaynakIrsaliyeId || '',
+      o: k.kdvOrani != null && k.kdvOrani !== '' ? Number(k.kdvOrani) || 0 : fo }; });
+    var topT = toplamla(kl, function(x){ return x.t; }), topW = toplamla(kl, function(x){ return x.t * (1 + x.o / 100); });
+    kl.forEach(function(x){ x.tl = topT > 0 ? mat * x.t / topT : (kl.length ? mat / kl.length : 0);
+      x.tlK = topW > 0 ? gen * x.t * (1 + x.o / 100) / topW : (kl.length ? gen / kl.length : 0); });
     return kl;
   }
   // Kesilmiş faturanın tahsil edilmemiş kısmı ₺ (fatura günü kuruyla; KDV dahil)
@@ -5236,8 +5241,8 @@ Dikkat edilmesi gereken 2 nokta:
   function sevkFaturaVerisi(){
     var gonderimler = [], gid = {}, ayrik = [];
     function gEkle(g, kalemler){
-      g.kalemler = (kalemler || []).map(function(k){ return { k: sfAnahtar(k), ad: sfUrunAdi(k), miktar: Number(k.miktar) || 0, ftr: 0, tl: 0 }; }).filter(function(x){ return x.miktar > 0; });
-      g.miktar = toplamla(g.kalemler, function(x){ return x.miktar; }); g.ftr = 0; g.tl = 0; g.fat = [];
+      g.kalemler = (kalemler || []).map(function(k){ return { k: sfAnahtar(k), ad: sfUrunAdi(k), miktar: Number(k.miktar) || 0, ftr: 0, tl: 0, tlK: 0 }; }).filter(function(x){ return x.miktar > 0; });
+      g.miktar = toplamla(g.kalemler, function(x){ return x.miktar; }); g.ftr = 0; g.tl = 0; g.tlK = 0; g.fat = [];
       gonderimler.push(g); gid[g.id] = g;
     }
     (state.sevkiyatlar || []).forEach(function(i){ if (i.durum === 'İptal') return;
@@ -5247,7 +5252,7 @@ Dikkat edilmesi gereken 2 nokta:
     var fatlar = (state.faturalar || []).filter(function(f){ return f.durum !== 'İptal'; }).sort(function(a, b){ return String(a.tarih || '').localeCompare(String(b.tarih || '')) || String(a.faturaNo || '').localeCompare(String(b.faturaNo || '')); });
     fatlar.forEach(function(f){ if (f.irsaliyeYerine) gEkle({ id: 'f:' + f.id, tab: 'faturalar', git: f.id, no: f.faturaNo, tarih: f.tarih, cariId: f.musteriId, irsaliyeYerine: true }, f.kalemler); });
     gonderimler.sort(function(a, b){ return String(a.tarih || '').localeCompare(String(b.tarih || '')) || String(a.no || '').localeCompare(String(b.no || '')); });
-    function bagla(g, f, q, tl){ var b = g.fat.filter(function(x){ return x.f === f; })[0]; if (!b){ b = { f: f, miktar: 0, tl: 0 }; g.fat.push(b); } b.miktar += q; b.tl += tl; g.ftr += q; g.tl += tl; }
+    function bagla(g, f, q, tl, tlK){ var b = g.fat.filter(function(x){ return x.f === f; })[0]; if (!b){ b = { f: f, miktar: 0, tl: 0, tlK: 0 }; g.fat.push(b); } b.miktar += q; b.tl += tl; b.tlK += tlK; g.ftr += q; g.tl += tl; g.tlK += tlK; }
     // irsaliyesi belli faturalar önce dağıtılır; siparişten kesilenler kalan sevklere eskiden yeniye düşer
     var irsBagli = {}; gonderimler.forEach(function(g){ if (g.faturaId) irsBagli[g.faturaId] = 1; });
     var belli = function(f){ return !!(f.irsaliyeYerine || (f.irsaliyeIdleri || []).length || irsBagli[f.id]); };
@@ -5263,18 +5268,19 @@ Dikkat edilmesi gereken 2 nokta:
         liste.forEach(function(g){ g.kalemler.forEach(function(gk){
           if (x.kalan <= 1e-9 || gk.k !== x.k) return;
           var bos = gk.miktar - gk.ftr; if (bos <= 1e-9) return;
-          var q = Math.min(bos, x.kalan), tl = x.tl * q / x.miktar;
-          gk.ftr += q; gk.tl += tl; x.kalan -= q; bagla(g, f, q, tl);
+          var q = Math.min(bos, x.kalan), tl = x.tl * q / x.miktar, tlK = x.tlK * q / x.miktar;
+          gk.ftr += q; gk.tl += tl; gk.tlK += tlK; x.kalan -= q; bagla(g, f, q, tl, tlK);
         }); });
       };
       kl.forEach(function(x){ if (!(x.miktar > 0)) return; if (x.kaynak && gid[x.kaynak]) dagit(x, [gid[x.kaynak]]); dagit(x, adaylar); });
       // gönderime düşmeyen: kalan adet (sevkten önce faturalanan) ve adetsiz kalem (nakliye, hizmet)
       var artanAdet = toplamla(kl, function(x){ return x.miktar > 0 ? x.kalan : 0; });
       var artanTl = toplamla(kl, function(x){ return x.miktar > 0 ? x.tl * x.kalan / x.miktar : x.tl; });
-      if (artanAdet <= 1e-9 && Math.abs(artanTl) <= 0.005) return;
+      var artanTlK = toplamla(kl, function(x){ return x.miktar > 0 ? x.tlK * x.kalan / x.miktar : x.tlK; });
+      if (artanAdet <= 1e-9 && Math.abs(artanTl) <= 0.005 && Math.abs(artanTlK) <= 0.005) return;
       var bagli = adaylar.filter(function(g){ return g.fat.some(function(b){ return b.f === f; }); });
-      if (bagli.length && artanAdet <= 1e-9){ bagla(bagli[0], f, 0, artanTl); bagli[0].ekTl = (bagli[0].ekTl || 0) + artanTl; return; } // ek kalem gönderimin faturasında kalır
-      ayrik.push({ f: f, tarih: f.tarih, cariId: f.musteriId, miktar: artanAdet, tl: artanTl, sevkOncesi: artanAdet > 1e-9 && !!(f.siparisId || adaylar.length),
+      if (bagli.length && artanAdet <= 1e-9){ bagla(bagli[0], f, 0, artanTl, artanTlK); bagli[0].ekTl = (bagli[0].ekTl || 0) + artanTl; return; } // ek kalem gönderimin faturasında kalır
+      ayrik.push({ f: f, tarih: f.tarih, cariId: f.musteriId, miktar: artanAdet, tl: artanTl, tlK: artanTlK, sevkOncesi: artanAdet > 1e-9 && !!(f.siparisId || adaylar.length),
         kalemler: kl.filter(function(x){ return x.miktar > 0 ? x.kalan > 1e-9 : Math.abs(x.tl) > 0.005; }).map(function(x){ return { ad: x.ad, miktar: x.miktar > 0 ? x.kalan : 0 }; }) });
     });
     var iadeler = (state.satisIadeleri || []).map(function(x){
@@ -5282,10 +5288,10 @@ Dikkat edilmesi gereken 2 nokta:
       return { id: x.id, no: x.no, tarih: x.tarih, cariId: x.cariId, kalemler: kl, miktar: toplamla(kl, function(k){ return k.miktar; }) };
     }).filter(function(x){ return x.miktar > 0; });
     var aylar = {};
-    var ay = function(t){ var a = String(t || '').slice(0, 7); return aylar[a] = aylar[a] || { ay: a, g: [], ayrik: [], iade: [], sevk: 0, ftr: 0, tl: 0, kesilen: 0, kesilenN: 0, iadeAdet: 0, urun: {} }; };
-    gonderimler.forEach(function(g){ var A = ay(g.tarih); A.g.push(g); A.sevk += g.miktar; A.ftr += g.ftr; A.tl += g.tl; g.kalemler.forEach(function(gk){ A.urun[gk.ad] = (A.urun[gk.ad] || 0) + gk.miktar; }); });
-    ayrik.forEach(function(x){ var A = ay(x.tarih); A.ayrik.push(x); A.tl += x.tl; });
-    fatlar.forEach(function(f){ var A = ay(f.tarih); A.kesilen += sfFaturaTL(f); A.kesilenN++; });
+    var ay = function(t){ var a = String(t || '').slice(0, 7); return aylar[a] = aylar[a] || { ay: a, g: [], ayrik: [], iade: [], sevk: 0, ftr: 0, tl: 0, tlK: 0, kesilen: 0, kesilenK: 0, kesilenN: 0, iadeAdet: 0, urun: {} }; };
+    gonderimler.forEach(function(g){ var A = ay(g.tarih); A.g.push(g); A.sevk += g.miktar; A.ftr += g.ftr; A.tl += g.tl; A.tlK += g.tlK; g.kalemler.forEach(function(gk){ A.urun[gk.ad] = (A.urun[gk.ad] || 0) + gk.miktar; }); });
+    ayrik.forEach(function(x){ var A = ay(x.tarih); A.ayrik.push(x); A.tl += x.tl; A.tlK += x.tlK; });
+    fatlar.forEach(function(f){ var A = ay(f.tarih); A.kesilen += sfFaturaTL(f); A.kesilenK += sfFaturaGenelTL(f); A.kesilenN++; });
     iadeler.forEach(function(x){ var A = ay(x.tarih); A.iade.push(x); A.iadeAdet += x.miktar; });
     var liste = Object.keys(aylar).filter(function(a){ return /^\d{4}-\d{2}$/.test(a); }).sort().reverse().map(function(a){ return aylar[a]; });
     // ne oldu, ne bitti (bugün itibarıyla, dönemden bağımsız)
@@ -5377,7 +5383,7 @@ Dikkat edilmesi gereken 2 nokta:
   // Seçilen Özet dönemi (ay ya da genel toplam) için sevk / fatura toplamı — Özet kartı
   function sfDonemToplam(v){
     var l = ozetGenel() ? v.aylar.filter(function(a){ return a.ay <= thisMonthKey(); }) : v.aylar.filter(function(a){ return a.ay === ozetDonem(); });
-    return { n: toplamla(l, function(a){ return a.g.length; }), sevk: toplamla(l, function(a){ return a.sevk; }), ftr: toplamla(l, function(a){ return a.ftr; }), tl: toplamla(l, function(a){ return a.tl; }),
+    return { n: toplamla(l, function(a){ return a.g.length; }), sevk: toplamla(l, function(a){ return a.sevk; }), ftr: toplamla(l, function(a){ return a.ftr; }), tl: toplamla(l, function(a){ return a.tl; }), tlK: toplamla(l, function(a){ return a.tlK; }),
       faturasiz: toplamla(l, function(a){ return a.sevk - a.ftr; }) };
   }
   // r388: Stok kartı: elimizdeki mamul / yarı mamul (stok kartındaki miktar); altta ürün ürün adet · değer. Değer stok kartı fiyatıyla
@@ -5405,7 +5411,7 @@ Dikkat edilmesi gereken 2 nokta:
       return '<div class="sf-urun"><span title="' + escAttr(x.ad) + '">' + esc(x.ad) + '</span><b>' + fmt2(x.miktar) + (eksik ? ' <em title="Bu üründen faturalanan adet">' + (x.ftr > 1e-6 ? '(' + fmt2(x.ftr) + ' faturalı)' : '(faturasız)') + '</em>' : '') + '</b></div>'; }).join('');
   }
   function sfFaturaChip(f, ekBilgi){
-    var ip = f.faturaNo + ' · ' + kvTarihTR(f.tarih) + (f.resmiFaturaNo ? ' · e-Belge ' + f.resmiFaturaNo : '') + '\nFaturanın tamamı: ₺' + fmt2(sfFaturaTL(f)) + ' KDV hariç, ₺' + fmt2(belgeTL(f, 'genelToplam', 'genelToplam')) + ' genel toplam' + (ekBilgi || '');
+    var ip = f.faturaNo + ' · ' + kvTarihTR(f.tarih) + (f.resmiFaturaNo ? ' · e-Belge ' + f.resmiFaturaNo : '') + '\nFaturanın tamamı: ₺' + fmt2(sfFaturaTL(f)) + ' KDV hariç, ₺' + fmt2(sfFaturaGenelTL(f)) + (Number(f.tevkifatTutar) ? ' ödenecek (KDV dahil, tevkifat düşülmüş)' : ' KDV dahil') + (ekBilgi || '');
     return '<span class="chip" data-git="faturalar|' + escAttr(f.id) + '" title="' + escAttr(ip) + '">' + esc(f.faturaNo) + (f.durum !== 'Kesildi' ? ' <span class="muted">taslak</span>' : '') + '</span>';
   }
   function sfOdemeDurum(fatlar, kalanlar){
@@ -5431,25 +5437,26 @@ Dikkat edilmesi gereken 2 nokta:
         '<td>' + (gitTab ? '<span class="chip" data-git="' + gitTab + '|' + escAttr(g.git) + '" title="Belgeyi aç">' + esc(g.no || '—') + '</span>' : esc(g.no || '—')) + (g.irsaliyeYerine ? '<div class="muted sf-not">irsaliyeli fatura</div>' : '') + '</td>' +
         '<td>' + esc(cariAdi(g.cariId)) + '</td>' +
         '<td class="sf-urunler">' + sfUrunSatirlari(g.kalemler, true) + '</td>' +
-        '<td>' + (g.fat.length ? g.fat.map(function(b){ return sfFaturaChip(b.f, '\nBu gönderime düşen: ' + fmt2(b.miktar) + ' adet · ₺' + fmt2(b.tl)); }).join(' ') : '<span class="muted">—</span>') + '</td>' +
+        '<td>' + (g.fat.length ? g.fat.map(function(b){ return sfFaturaChip(b.f, '\nBu gönderime düşen: ' + fmt2(b.miktar) + ' adet · ₺' + fmt2(b.tl) + ' KDV hariç · ₺' + fmt2(b.tlK) + ' KDV dahil'); }).join(' ') : '<span class="muted">—</span>') + '</td>' +
         '<td class="num yetki-maliyet">' + (g.fat.length ? sfTl(g.tl, true) + (g.ekTl ? '<div class="muted sf-not" title="Adetsiz kalem (nakliye, hizmet vb.)">ek kalem ₺' + fmt(g.ekTl) + ' dahil</div>' : '') : '<span class="muted">—</span>') + '</td>' +
+        '<td class="num yetki-maliyet">' + (g.fat.length ? sfTl(g.tlK, true) : '<span class="muted">—</span>') + '</td>' +
         '<td>' + sfGonderimDurum(g, v.kalanlar) + '</td></tr>' });
     });
     A.ayrik.forEach(function(x){
       satir.push({ t: x.tarih, h: '<tr class="sf-ayrik"><td>' + esc(kvTarihTR(x.tarih)) + '</td><td><span class="muted">' + (x.sevkOncesi ? 'sevk yok' : 'irsaliyesiz') + '</span></td>' +
         '<td>' + esc(cariAdi(x.cariId)) + '</td><td class="sf-urunler">' + x.kalemler.map(function(k){ return '<div class="sf-urun"><span title="' + escAttr(k.ad) + '">' + esc(k.ad) + '</span>' + (k.miktar ? '<b>' + fmt2(k.miktar) + '</b>' : '') + '</div>'; }).join('') + '</td>' +
-        '<td>' + sfFaturaChip(x.f) + '</td><td class="num yetki-maliyet">' + sfTl(x.tl, true) + '</td>' +
+        '<td>' + sfFaturaChip(x.f) + '</td><td class="num yetki-maliyet">' + sfTl(x.tl, true) + '</td><td class="num yetki-maliyet">' + sfTl(x.tlK, true) + '</td>' +
         '<td>' + (x.sevkOncesi ? '<span class="sf-d sf-bekle" title="Fatura kesildi, mal henüz sevk edilmedi (sevk edilince irsaliye bu faturaya bağlanır)">sevk edilmeden faturalandı</span> ' : '<span class="sf-d sf-bilgi" title="Gönderime bağlı olmayan fatura (hizmet, fason işçilik, ek kalem)">irsaliyesiz fatura</span> ') + sfOdemeDurum([x.f], v.kalanlar) + '</td></tr>' });
     });
     A.iade.forEach(function(x){
       var gitTab = sekmeIzinli('satisiade') ? 'satisiade' : '';
       satir.push({ t: x.tarih, h: '<tr class="sf-iade"><td>' + esc(kvTarihTR(x.tarih)) + '</td><td>' + (gitTab ? '<span class="chip" data-git="satisiade|' + escAttr(x.id) + '">' + esc(x.no || 'iade') + '</span>' : esc(x.no || 'iade')) + '</td>' +
         '<td>' + esc(cariAdi(x.cariId)) + '</td><td class="sf-urunler">' + x.kalemler.map(function(k){ return '<div class="sf-urun"><span title="' + escAttr(k.ad) + '">' + esc(k.ad) + '</span><b class="neg">−' + fmt2(k.miktar) + '</b></div>'; }).join('') + '</td>' +
-        '<td></td><td class="num yetki-maliyet"></td><td><span class="sf-d sf-gec">↩ satış iadesi</span></td></tr>' });
+        '<td></td><td class="num yetki-maliyet"></td><td class="num yetki-maliyet"></td><td><span class="sf-d sf-gec">↩ satış iadesi</span></td></tr>' });
     });
     satir.sort(function(a, b){ return String(a.t || '').localeCompare(String(b.t || '')); });
-    var not = Math.abs(A.kesilen - A.tl) > 0.5 ? '<div class="helper">Bu ay kesilen faturaların toplamı (fatura tarihine göre, muhasebe / KDV ile aynı): <b class="yetki-maliyet">₺' + fmt(A.kesilen) + '</b> · ' + A.kesilenN + ' fatura. Farkı: önceki ayın sevkine bu ay kesilen ya da bu ayın sevkine sonraki ay kesilen faturalar.</div>' : '';
-    return '<div class="tablewrap"><table class="sf-ic"><thead><tr><th>Tarih</th><th>İrsaliye</th><th>Müşteri</th><th>Ürün · adet</th><th>Fatura</th><th class="num yetki-maliyet">Tutar (KDV hariç)</th><th>Durum</th></tr></thead><tbody>' +
+    var not = Math.abs(A.kesilen - A.tl) > 0.5 ? '<div class="helper">Bu ay kesilen faturaların toplamı (fatura tarihine göre, muhasebe / KDV ile aynı): <b class="yetki-maliyet">₺' + fmt(A.kesilen) + '</b><span class="yetki-maliyet"> KDV hariç · ₺' + fmt(A.kesilenK) + ' KDV dahil</span> · ' + A.kesilenN + ' fatura. Farkı: önceki ayın sevkine bu ay kesilen ya da bu ayın sevkine sonraki ay kesilen faturalar.</div>' : '';
+    return '<div class="tablewrap"><table class="sf-ic"><thead><tr><th>Tarih</th><th>İrsaliye</th><th>Müşteri</th><th>Ürün · adet</th><th>Fatura</th><th class="num yetki-maliyet">Tutar (KDV hariç)</th><th class="num yetki-maliyet" title="Tahsil edilecek: KDV dahil (tevkifatlı faturada ödenecek tutar)">KDV dahil</th><th>Durum</th></tr></thead><tbody>' +
       satir.map(function(x){ return x.h; }).join('') + '</tbody></table></div>' + not;
   }
   function sfDurumSeritHtml(v){
@@ -5469,12 +5476,11 @@ Dikkat edilmesi gereken 2 nokta:
     if (!v || !v.aylar.length){ host.hidden = true; setHtmlIdle(host, ''); return; }
     host.hidden = false;
     var secAy = ozetGenel() ? '' : ozetDonem(), acik = _sfAcikAy || {};
-    var varsayilanAcik = function(a){ return secAy ? a === secAy : a === v.aylar[0].ay; };
-    var acikMi = function(a){ return acik[a] != null ? acik[a] : varsayilanAcik(a); };
-    var tp = { g: 0, sevk: 0, ftr: 0, tl: 0, iade: 0 }, iadeVar = v.aylar.some(function(a){ return a.iadeAdet > 0; });
-    var kolon = 6 + (iadeVar ? 1 : 0);
+    var acikMi = function(a){ return !!acik[a]; }; // r398: aylar kapalı gelir, tıklayınca açılır
+    var tp = { g: 0, sevk: 0, ftr: 0, tl: 0, tlK: 0, iade: 0 }, iadeVar = v.aylar.some(function(a){ return a.iadeAdet > 0; });
+    var kolon = 7 + (iadeVar ? 1 : 0);
     var govde = v.aylar.map(function(A){
-      tp.g += A.g.length; tp.sevk += A.sevk; tp.ftr += A.ftr; tp.tl += A.tl; tp.iade += A.iadeAdet;
+      tp.g += A.g.length; tp.sevk += A.sevk; tp.ftr += A.ftr; tp.tl += A.tl; tp.tlK += A.tlK; tp.iade += A.iadeAdet;
       var eksik = A.sevk - A.ftr, ac = acikMi(A.ay);
       var urunler = Object.keys(A.urun).sort(function(a, b){ return A.urun[b] - A.urun[a]; });
       return '<tr class="sf-ay' + (ac ? ' acik' : '') + (A.ay === secAy ? ' secili' : '') + '" data-sfay="' + A.ay + '" title="Gönderimleri ' + (ac ? 'gizlemek' : 'görmek') + ' için tıklayın">' +
@@ -5484,18 +5490,19 @@ Dikkat edilmesi gereken 2 nokta:
         '<td class="num">' + fmt2(A.ftr) + '</td>' +
         '<td class="num">' + (eksik > 1e-6 ? '<span class="neg">' + fmt2(eksik) + '</span>' : (A.sevk ? '<span class="pos">✓</span>' : '<span class="muted">—</span>')) + '</td>' +
         (iadeVar ? '<td class="num">' + (A.iadeAdet ? '<span class="neg">−' + fmt2(A.iadeAdet) + '</span>' : '<span class="muted">—</span>') + '</td>' : '') +
-        '<td class="num yetki-maliyet" title="' + escAttr('Bu ayın gönderimlerine düşen fatura tutarı + bu ay kesilen irsaliyesiz faturalar\nFatura tarihine göre bu ay kesilen: ₺' + fmt2(A.kesilen) + ' (' + A.kesilenN + ' fatura)') + '"><b>₺' + fmt(A.tl) + '</b></td></tr>' +
+        '<td class="num yetki-maliyet" title="' + escAttr('Bu ayın gönderimlerine düşen fatura tutarı + bu ay kesilen irsaliyesiz faturalar\nFatura tarihine göre bu ay kesilen: ₺' + fmt2(A.kesilen) + ' (' + A.kesilenN + ' fatura)') + '"><b>₺' + fmt(A.tl) + '</b></td>' +
+        '<td class="num yetki-maliyet" title="' + escAttr('KDV dahil: tahsil edilecek tutar (tevkifatlı faturada ödenecek)\nFatura tarihine göre bu ay kesilen: ₺' + fmt2(A.kesilenK) + ' KDV dahil') + '"><b>₺' + fmt(A.tlK) + '</b></td></tr>' +
         (ac ? '<tr class="sf-detay"><td colspan="' + kolon + '">' + sfAyDetayHtml(A, v) + '</td></tr>' : '');
     }).join('');
-    var bilgi = 'Ay ay: sevk edilen adet (irsaliye tarihine göre; ürün kırılımı altta), faturalanan adet, faturalanmayan adet ve fatura tutarı (KDV hariç ₺). Aya tıklayınca o ayın her gönderimi: irsaliye, ürün / adet, kesilen fatura ve bu gönderime düşen tutarı, tahsilat durumu.\n' +
+    var bilgi = 'Ay ay: sevk edilen adet (irsaliye tarihine göre; ürün kırılımı altta), faturalanan adet, faturalanmayan adet ve fatura tutarı (KDV hariç ve KDV dahil ₺; KDV dahil tahsil edilecek tutardır, tevkifatlı faturada ödenecek tutar). Aylar kapalı gelir; aya tıklayınca o ayın her gönderimi: irsaliye, ürün / adet, kesilen fatura ve bu gönderime düşen tutarı, tahsilat durumu.\n' +
       'Gönderim: Sevkiyat & İrsaliye\'deki sipariş sevkleri, İrsaliyeler\'deki satış sevk irsaliyeleri ve "irsaliye yerine geçer" işaretli faturalar. Fatura gönderime faturada seçilen irsaliyeden; siparişten kesilen faturada o siparişin sevklerine ürün ürün eskiden yeniye bağlanır. Bir fatura birkaç gönderimi kapsıyorsa tutarı adetlerine göre bölünür.\n' +
       'Sevkten önce kesilen ya da irsaliyesiz (hizmet, fason işçilik) faturalar fatura ayında ayrı satırdır. Üstteki şerit bugün itibarıyla ne bitti, ne bekliyor.';
     var html = '<div class="block-head"><h3>Sevkiyat &amp; fatura (ay ay) ' + infoIco(bilgi) + '</h3><div class="bh-actions">' +
       (sekmeIzinli('sevkiyat') ? '<button type="button" class="btn secondary small" data-sfgit="sevkiyat">Sevkiyat</button>' : '') +
       (sekmeIzinli('faturalar') ? '<button type="button" class="btn secondary small" data-sfgit="faturalar">Satış faturaları</button>' : '') + '</div></div>' +
       '<div class="block-body">' + sfDurumSeritHtml(v) +
-      '<div class="tablewrap"><table class="sf-tablo"><thead><tr><th>Ay</th><th class="num">Gönderim</th><th class="num">Sevk edilen (adet)</th><th class="num">Faturalanan</th><th class="num">Faturalanmayan</th>' + (iadeVar ? '<th class="num">İade</th>' : '') + '<th class="num yetki-maliyet">Fatura (KDV hariç)</th></tr></thead><tbody>' +
-        govde + '<tr class="sf-toplam"><td>Toplam</td><td class="num">' + tp.g + '</td><td class="num">' + fmt2(tp.sevk) + '</td><td class="num">' + fmt2(tp.ftr) + '</td><td class="num">' + (tp.sevk - tp.ftr > 1e-6 ? fmt2(tp.sevk - tp.ftr) : '✓') + '</td>' + (iadeVar ? '<td class="num">−' + fmt2(tp.iade) + '</td>' : '') + '<td class="num yetki-maliyet">₺' + fmt(tp.tl) + '</td></tr>' +
+      '<div class="tablewrap"><table class="sf-tablo"><thead><tr><th>Ay</th><th class="num">Gönderim</th><th class="num">Sevk edilen (adet)</th><th class="num">Faturalanan</th><th class="num">Faturalanmayan</th>' + (iadeVar ? '<th class="num">İade</th>' : '') + '<th class="num yetki-maliyet">Fatura (KDV hariç)</th><th class="num yetki-maliyet" title="Tahsil edilecek: KDV dahil (tevkifatlı faturada ödenecek tutar)">Fatura (KDV dahil)</th></tr></thead><tbody>' +
+        govde + '<tr class="sf-toplam"><td>Toplam</td><td class="num">' + tp.g + '</td><td class="num">' + fmt2(tp.sevk) + '</td><td class="num">' + fmt2(tp.ftr) + '</td><td class="num">' + (tp.sevk - tp.ftr > 1e-6 ? fmt2(tp.sevk - tp.ftr) : '✓') + '</td>' + (iadeVar ? '<td class="num">−' + fmt2(tp.iade) + '</td>' : '') + '<td class="num yetki-maliyet">₺' + fmt(tp.tl) + '</td><td class="num yetki-maliyet">₺' + fmt(tp.tlK) + '</td></tr>' +
       '</tbody></table></div></div>';
     if (zorla){ host.innerHTML = html; host.__sonHtml = html; } else setHtmlIdle(host, html);
     if (host.dataset.bagli) return; host.dataset.bagli = '1';
@@ -5515,7 +5522,8 @@ Dikkat edilmesi gereken 2 nokta:
   function sevkFaturaGoster(){
     var host = byId('ozetSevkFatura'); if (!host) return;
     var sar = host.closest('.oz-birim'); if (!sar || !sar.closest('#ozetAlan') || sar.style.display === 'none'){ toast('Sevkiyat & fatura bölümü Özet düzeninde gizli (⚙ Özeti düzenle).', true); return; } // r391: gizli bölüm depoda
-    var v = sevkFaturaVerisi(); if (!ozetGenel()){ _sfAcikAy = _sfAcikAy || {}; _sfAcikAy[ozetDonem()] = true; }
+    var v = sevkFaturaVerisi(), acA = ozetGenel() ? (v.aylar.filter(function(a){ return a.ay <= thisMonthKey(); })[0] || {}).ay : ozetDonem(); // r398: genel toplamda son ay
+    if (acA){ _sfAcikAy = _sfAcikAy || {}; _sfAcikAy[acA] = true; }
     renderOzetSevkFatura(v, true);
     try { host.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch(e){}
     host.classList.remove('flash'); void host.offsetWidth; host.classList.add('flash');
