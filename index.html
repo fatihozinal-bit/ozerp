@@ -2073,7 +2073,7 @@
     <div class="status" id="statusBox">bağlanıyor...</div>
     <div class="status" id="errLog" style="display:none;color:#E2703A;margin-top:6px;"></div>
     <div class="activeuser" id="activeUserBox"></div>
-    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r396</div>
+    <div class="status" id="surumYazi" style="margin-top:6px;color:var(--side-muted)" title="Bu ekranda yüklü OZerp sürümü (güncelleme numarası). Yeni sürüm yayınlanınca sayfayı yenileyin (Cmd+Shift+R).">sürüm: 2026-11-27-r397</div>
     </div>
   </nav>
   <main>
@@ -10509,9 +10509,12 @@ Dikkat edilmesi gereken 2 nokta:
     var metin = aksiyon === 'sil' ? 'Sil' : 'Düzenle';
     if (satir && aksiyon === 'sil') satir.querySelectorAll('details.satir-menu').forEach(function(d){ d.open = true; }); // Sil "⋯" menüsünde
     var btn = satir && Array.prototype.find.call(satir.querySelectorAll('button'), function(b){ return b.offsetParent && b.textContent.trim() === metin; });
+    // r397: tablo görünümünde satır (tr) bulunur, kart gizlidir: kartın kendi düğmesi kullanılır
+    if (!btn && satir && aksiyon !== 'sil'){ var kart = satir.matches('.recordrow') ? satir : document.querySelector('#panel-' + aktifSekme() + ' .recordrow[data-rid="' + String(id).replace(/"/g, '') + '"]');
+      btn = kart && (kart.querySelector(ISLEM_DUZENLE_SEC) || Array.prototype.find.call(kart.querySelectorAll('button'), function(b){ return b.textContent.trim() === metin; })); }
     if (btn) btn.click();
     else if (aksiyon === 'sil') gecmistenDogrudanSil(col, id);
-    else toast('Bu kayıtta "'+metin+'" butonu yok ya da yetkiniz yok; kayıt açıldı.', true);
+    else toast(izinVar('duzenle') ? 'Bu kaydın düzenleme ekranı yok; kayıt açıldı.' : izinYokMesaji('duzenle'), true);
   }
   // Kaydın ekranında "Sil" düğmesi bulunamazsa (liste filtresi, sayfalama vb.): aynı kurallarla doğrudan silinir
   function gecmistenDogrudanSil(col, id){
@@ -13558,57 +13561,121 @@ Dikkat edilmesi gereken 2 nokta:
   }
   function hesapHareketleri(id){
     var h = [], hpb = hesapPB(id);
-    state.tahsilatlar.filter(function(t){ return t.hesapId === id && !cekYontemi(t.yontem); }).forEach(function(t){ h.push({ tarih: t.tarih, tutar: hesapTutari(hpb, t, t.tutar, odemeTL(t), belgePB(t) !== 'EUR' ? t.belgeTutar : t.tutar), aciklama: 'Tahsilat · '+musteriAdiById(t.musteriId) }); });
+    state.tahsilatlar.filter(function(t){ return t.hesapId === id && !cekYontemi(t.yontem); }).forEach(function(t){ h.push({ tarih: t.tarih, tutar: hesapTutari(hpb, t, t.tutar, odemeTL(t), belgePB(t) !== 'EUR' ? t.belgeTutar : t.tutar), aciklama: 'Tahsilat · '+musteriAdiById(t.musteriId), tur: 'Tahsilat', col: 'tahsilatlar', tab: 'carihesap', id: t.id }); });
     (state.cekSenet||[]).filter(function(c){ return c.hesapId === id && ((cekAlinanMi(c) && c.durum === 'Tahsil edildi' && c.tahsilatId) || (!cekAlinanMi(c) && c.durum === 'Ödendi' && c.odemeId)); }).forEach(function(c){
       var t = c.durumTarihi || c.vade, e = cekEur(c, t); if (e == null) return;
       var d = { paraBirimi: c.paraBirimi || 'TRY', tarih: t }, x = hesapTutari(hpb, d, e, (c.paraBirimi || 'TRY') === 'TRY' ? Number(c.tutar) || 0 : null, c.tutar);
-      h.push({ tarih: t, tutar: cekAlinanMi(c) ? x : -x, aciklama: c.tur+' '+(cekAlinanMi(c) ? 'tahsili' : 'ödemesi')+' · '+cariAdi(c.cariId)+(c.seriNo?' · no '+c.seriNo:'') });
+      h.push({ tarih: t, tutar: cekAlinanMi(c) ? x : -x, aciklama: c.tur+' '+(cekAlinanMi(c) ? 'tahsili' : 'ödemesi')+' · '+cariAdi(c.cariId)+(c.seriNo?' · no '+c.seriNo:''), tur: c.tur || 'Çek', col: 'cekSenet', tab: 'ceksenet', id: c.id });
     });
     (state.alisFaturalari||[]).filter(function(f){ return f.gumrukKdvHesapId === id && (Number(f.gumrukKdvTL) > 0 || Number(f.gumrukKdv) > 0); }).forEach(function(f){
       var tl = Number(f.gumrukKdvTL) > 0 ? Number(f.gumrukKdvTL) : Number(f.gumrukKdv) * muhKur(f.tarih, f.kur);
-      h.push({ tarih: f.tarih, tutar: -hesapTutari(hpb, { paraBirimi: 'TRY', tarih: f.tarih }, tl / (muhKur(f.tarih) || 1), tl, tl), aciklama: 'Gümrük KDV · '+(f.faturaNo||'')+(f.gumrukBeyanNo?' · GB '+f.gumrukBeyanNo:'') }); });
-    (state.odemeler||[]).filter(function(o){ return o.hesapId === id && !cekYontemi(o.yontem); }).forEach(function(o){ h.push({ tarih: o.tarih, tutar: -hesapTutari(hpb, o, o.tutar, odemeTL(o), belgePB(o) !== 'EUR' ? o.belgeTutar : o.tutar), aciklama: 'Ödeme · '+cariAdi(o.cariId) }); });
+      h.push({ tarih: f.tarih, tutar: -hesapTutari(hpb, { paraBirimi: 'TRY', tarih: f.tarih }, tl / (muhKur(f.tarih) || 1), tl, tl), aciklama: 'Gümrük KDV · '+(f.faturaNo||'')+(f.gumrukBeyanNo?' · GB '+f.gumrukBeyanNo:''), tur: 'Gümrük KDV', col: 'alisFaturalari', tab: 'alisfatura', id: f.id }); });
+    (state.odemeler||[]).filter(function(o){ return o.hesapId === id && !cekYontemi(o.yontem); }).forEach(function(o){ h.push({ tarih: o.tarih, tutar: -hesapTutari(hpb, o, o.tutar, odemeTL(o), belgePB(o) !== 'EUR' ? o.belgeTutar : o.tutar), aciklama: 'Ödeme · '+cariAdi(o.cariId)+(o.aciklama?' · '+o.aciklama:''), tur: 'Ödeme', col: 'odemeler', tab: 'kasabanka', id: o.id }); });
     (state.giderler||[]).filter(function(g){ return g.hesapId === id && g.odemeDurumu === 'Ödendi'; }).forEach(function(g){
       var eur = (Number(g.tutar)||0) + (Number(g.kdvTutar)||0), yerel = belgePB(g) !== 'EUR' && g.belgeTutar != null, bel = yerel ? (Number(g.belgeTutar)||0) + (Number(g.belgeKdv)||0) : eur;
-      h.push({ tarih: g.tarih, tutar: -hesapTutari(hpb, g, eur, yerel ? muhR2(bel * belgeKur(g)) : null, bel), aciklama: 'Gider · '+g.tur+(g.aciklama?' · '+g.aciklama:'') }); });
+      h.push({ tarih: g.tarih, tutar: -hesapTutari(hpb, g, eur, yerel ? muhR2(bel * belgeKur(g)) : null, bel), aciklama: 'Gider · '+g.tur+(g.aciklama?' · '+g.aciklama:''), tur: 'Gider', col: 'giderler', tab: 'giderler', id: g.id }); });
     // virman tutarı kaynak hesabın para biriminde; hedef hesaba tarihteki kurla çevrilerek girer
     (state.tanimKayitlari||[]).filter(function(t){ return t.tur === 'virman' && (t.kaynakHesapId === id || t.hedefHesapId === id); }).forEach(function(t){
       var kpb = hesapPB(t.kaynakHesapId), d = { paraBirimi: kpb, tarih: t.tarih }, tl = muhR2((Number(t.tutar)||0) * pbKur(kpb, t.tarih)), eur = tl / (muhKur(t.tarih) || 1);
-      h.push({ tarih: t.tarih, tutar: t.hedefHesapId === id ? hesapTutari(hpb, d, eur, tl, t.tutar) : -(Number(t.tutar)||0), aciklama: 'Virman '+(t.hedefHesapId === id ? '← '+hesapAdi(t.kaynakHesapId) : '→ '+hesapAdi(t.hedefHesapId)) }); });
-    bordrolar().forEach(function(b){ var o = b.maasOdeme; if (o && (o.hesapId || '') === id) h.push({ tarih: o.tarih, tutar: -krediTutar(hpb, o.tarih, Number(o.tutar)||0), aciklama: 'Maaş ödemesi · '+muhAyAdi(b.ay) }); });
-    vergiOdemeleri().forEach(function(v){ if (v.hesapId === id) h.push({ tarih: v.tarih, tutar: -krediTutar(hpb, v.tarih, Number(v.tutar)||0), aciklama: v.kalem+' ödemesi · '+vergiDonemAdi(v) }); });
+      h.push({ tarih: t.tarih, tutar: t.hedefHesapId === id ? hesapTutari(hpb, d, eur, tl, t.tutar) : -(Number(t.tutar)||0), aciklama: 'Virman '+(t.hedefHesapId === id ? '← '+hesapAdi(t.kaynakHesapId) : '→ '+hesapAdi(t.hedefHesapId))+(t.aciklama?' · '+t.aciklama:''), tur: 'Virman', col: 'tanimKayitlari', tab: 'kasabanka', id: t.id }); });
+    bordrolar().forEach(function(b){ var o = b.maasOdeme; if (o && (o.hesapId || '') === id) h.push({ tarih: o.tarih, tutar: -krediTutar(hpb, o.tarih, Number(o.tutar)||0), aciklama: 'Maaş ödemesi · '+muhAyAdi(b.ay), tur: 'Maaş', col: 'tanimKayitlari', tab: 'bordro', id: b.id }); });
+    vergiOdemeleri().forEach(function(v){ if (v.hesapId === id) h.push({ tarih: v.tarih, tutar: -krediTutar(hpb, v.tarih, Number(v.tutar)||0), aciklama: v.kalem+' ödemesi · '+vergiDonemAdi(v), tur: 'Vergi / SGK', col: 'tanimKayitlari', tab: 'vergiodeme', id: v.id }); });
     krediler().forEach(function(k){
       var lea = leasingMi(k);
-      if (k.hesapId === id && !lea) h.push({ tarih: k.tarih, tutar: krediTutar(hpb, k.tarih, (Number(k.anapara)||0) - (Number(k.masraf)||0)), aciklama: 'Kredi kullanımı · '+k.ad+(Number(k.masraf) ? ' (masraf düşülmüş)' : '') });
-      if (k.hesapId === id && lea && Number(k.masraf)) h.push({ tarih: k.tarih, tutar: -krediTutar(hpb, k.tarih, Number(k.masraf)), aciklama: 'Leasing masrafı · '+k.ad });
+      if (k.hesapId === id && !lea) h.push({ tarih: k.tarih, tutar: krediTutar(hpb, k.tarih, (Number(k.anapara)||0) - (Number(k.masraf)||0)), aciklama: 'Kredi kullanımı · '+k.ad+(Number(k.masraf) ? ' (masraf düşülmüş)' : ''), tur: 'Kredi', col: 'tanimKayitlari', tab: 'kasabanka', id: k.id });
+      if (k.hesapId === id && lea && Number(k.masraf)) h.push({ tarih: k.tarih, tutar: -krediTutar(hpb, k.tarih, Number(k.masraf)), aciklama: 'Leasing masrafı · '+k.ad, tur: 'Leasing', col: 'tanimKayitlari', tab: 'kasabanka', id: k.id });
       (k.taksitler||[]).filter(function(t){ return t.odendi && (t.odemeHesapId || k.hesapId) === id; }).forEach(function(t){
-        var tt = t.odemeTarihi || t.tarih; h.push({ tarih: tt, tutar: -krediTutar(hpb, tt, krediTaksitToplam(t)), aciklama: (lea ? 'Leasing kirası ' : 'Kredi taksidi ')+t.no+' · '+k.ad }); });
+        var tt = t.odemeTarihi || t.tarih; h.push({ tarih: tt, tutar: -krediTutar(hpb, tt, krediTaksitToplam(t)), aciklama: (lea ? 'Leasing kirası ' : 'Kredi taksidi ')+t.no+' · '+k.ad, tur: lea ? 'Leasing' : 'Kredi taksidi', col: 'tanimKayitlari', tab: 'kasabanka', id: k.id }); });
     });
     return h.sort(function(a,b){ return (b.tarih||'').localeCompare(a.tarih||''); });
   }
   function hesapBakiye(h){ return (Number(h.acilis)||0) + toplamla(hesapHareketleri(h.id), function(x){ return x.tutar; }); }
   // Hesap bakiyesinin € karşılığı (bugünkü kurla) — nakit akışı toplamı için
   function hesapBakiyeEur(h){ var b = hesapBakiye(h), pb = h.paraBirimi || 'EUR'; if (pb === 'EUR') return b; var e = muhKur(todayISO()); return e ? b * pbKur(pb, todayISO()) / e : 0; }
+  // r397: virmanlar kendi listesinde (Kasa & Banka › Virmanlar): düzenlenir, silinir; hesap hareketlerinden ve muhasebe fişinden açılır.
+  // Tutar kaynak hesabın para biriminde; hedef hesaba tarihteki kurla çevrilerek girer.
+  var VIRMAN_TANIM = {
+    key: 'virman', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'virman'; }, listeBaslik: 'Virmanlar (hesaplar arası)', yeniEtiket: '+ Virman',
+    bilgi: 'Bir hesaptan diğerine para aktarımı (bankadan kasaya, kredi kartı ödemesi, hesaplar arası EFT…). Tutar kaynak hesabın para biriminde; farklı para birimli hedefe tarihteki kurla çevrilerek girer.',
+    fields: [ {key:'tarih', label:'Tarih', type:'date'}, {key:'kaynakHesapId', label:'Kaynak hesap (para çıkan)', type:'select', options: hesapSecenekleri, required:true},
+      {key:'hedefHesapId', label:'Hedef hesap (para giren)', type:'select', options: hesapSecenekleri, required:true},
+      {key:'tutar', label:'Tutar (kaynak hesabın para biriminde)', type:'number', para:false, required:true}, {key:'belgeNo', label:'Dekont no', type:'text'}, {key:'aciklama', label:'Açıklama', type:'text'} ],
+    defaults: function(){ return { tur:'virman', tarih: todayISO(), kaynakHesapId:'', hedefHesapId:'', tutar:0, belgeNo:'', aciklama:'' }; },
+    hazirla: function(v){
+      if (!v.kaynakHesapId || !v.hedefHesapId || v.kaynakHesapId === v.hedefHesapId){ toast('Farklı iki hesap seçin.', true); return false; }
+      if (!(Number(v.tutar) > 0)){ toast('Tutarı girin.', true); return false; }
+      v.tur = 'virman'; return v; },
+    rowFn: function(t){ var pb = hesapPB(t.kaynakHesapId), hp = hesapPB(t.hedefHesapId);
+      return { title: esc(hesapAdi(t.kaynakHesapId)) + ' → ' + esc(hesapAdi(t.hedefHesapId)) + ' · <b>' + pbFmt(t.tutar, pb) + '</b>' + (hp !== pb ? ' <span class="muted">(' + pbSembol(hp) + ' hesaba kurla)</span>' : ''),
+        sub: [kvTarihTR(t.tarih), t.belgeNo ? 'dekont ' + t.belgeNo : '', t.aciklama].filter(Boolean).map(esc).join(' · ') }; }
+  };
   var HESAP_TANIM = {
     key: 'hesap', collection: 'tanimKayitlari', state: 'tanimKayitlari', filtre: function(t){ return t.tur === 'hesap'; }, listeBaslik: 'Hesaplar', yeniEtiket: '+ Hesap',
     ekButonlar: '<button class="btn secondary small" id="hesapVirman">Virman</button>',
-    kurulum: function(){ byId('hesapVirman').addEventListener('click', function(){
-      openForm({ title:'Hesaplar arası virman', values:{tur:'virman', tarih: todayISO(), kaynakHesapId:'', hedefHesapId:'', tutar:0}, fields:[{key:'tarih', label:'Tarih', type:'date'},{key:'kaynakHesapId', label:'Kaynak', type:'select', options: hesapSecenekleri},{key:'hedefHesapId', label:'Hedef', type:'select', options: hesapSecenekleri},{key:'tutar', label:'Tutar (kaynak hesabın para biriminde)', para:false, type:'number', required:true}],
-        onSave: function(v){ if (!v.kaynakHesapId || !v.hedefHesapId || v.kaynakHesapId === v.hedefHesapId){ toast('Farklı iki hesap seçin.', true); return; } kayitEkle('tanimKayitlari', Object.assign({tur:'virman'}, v)).then(function(){ toast('✓ Virman yapıldı'); }); } });
-    }); },
+    kurulum: function(){ byId('hesapVirman').addEventListener('click', function(){ crudYeni(VIRMAN_TANIM); }); }, // r397: virman kendi listesinde
     fields: [ {key:'ad', label:'Hesap adı', type:'text', required:true}, {key:'hesapTuru', label:'Tür', type:'select', options:['Kasa','Banka','Kredi kartı','POS']}, {key:'banka', label:'Banka', type:'text'}, {key:'iban', label:'IBAN', type:'text'}, {key:'paraBirimi', label:'Hesabın para birimi', type:'select', options: function(){ return PB_LISTE; }}, {key:'acilis', label:'Açılış bakiyesi (hesabın para biriminde)', type:'number', para:false, eksi:true} ],
     defaults: { tur:'hesap', ad:'', hesapTuru:'Banka', banka:'', iban:'', paraBirimi:'TRY', acilis:0 },
     sirala: function(a,b){ return (a.ad||'').localeCompare(b.ad||'', 'tr'); },
     rowFn: function(h){ var b = hesapBakiye(h), pb = h.paraBirimi || 'EUR'; return { title: esc(h.ad)+' <span class="pill">'+esc(h.hesapTuru||'')+' · '+pb+'</span> · <b class="'+(b<0?'neg':'')+'">'+pbFmt(b, pb)+'</b>'+(pb !== 'EUR' ? ' <span class="muted">≈ '+euro(hesapBakiyeEur(h))+'</span>' : ''), sub: [h.banka, h.iban].filter(Boolean).map(esc).join(' · ')+' · '+hesapHareketleri(h.id).length+' hareket'+kasaEksiHtml(h) }; },
     ekAksiyon: function(h){ return (h.hesapTuru === 'Banka' ? '<button class="btn small" data-hesapekstre="'+h.id+'" title="Bankadan indirilen ekstreyi (Excel / CSV) aktar">Ekstre aktar</button>' : '')+'<button class="btn secondary small" data-hesaphar="'+h.id+'">Hareketler</button>'; },
     sonra: function(host){ host.querySelectorAll('[data-hesapekstre]').forEach(function(b){ if (b.dataset.bagli) return; b.dataset.bagli = 1; b.addEventListener('click', function(){ ekstrePenceresi(b.dataset.hesapekstre); }); });
-      host.querySelectorAll('[data-hesaphar]').forEach(function(b){ if (b.dataset.bagli) return; b.dataset.bagli = 1; b.addEventListener('click', function(){
-      var h = hesaplar().find(function(x){ return x.id === b.dataset.hesaphar; }); var hr = hesapHareketleri(h.id);
-      var hpb = h.paraBirimi || 'EUR';
-      modalAc({ title: h.ad+' — hareketler', kaydetYok:true, genislik:'orta', html: '<div class="kpi-mini">Açılış <b>'+pbFmt(h.acilis, hpb)+'</b></div><div class="kpi-mini">Bakiye <b>'+pbFmt(hesapBakiye(h), hpb)+'</b></div>'+
-        (hr.length ? '<div class="tablewrap"><table><thead><tr><th>Tarih</th><th>Açıklama</th><th class="num">Tutar</th></tr></thead><tbody>'+hr.map(function(x){ return '<tr><td>'+esc(x.tarih)+'</td><td>'+esc(x.aciklama)+'</td><td class="num '+(x.tutar<0?'neg':'pos')+'">'+pbFmt(x.tutar, hpb)+'</td></tr>'; }).join('')+'</tbody></table></div>' : '<div class="empty">Hareket yok.</div>') });
-    }); }); }
+      // r397: "Hareketler" aşağıdaki Hesap hareketleri tablosunu o hesaba süzer
+      host.querySelectorAll('[data-hesaphar]').forEach(function(b){ if (b.dataset.bagli) return; b.dataset.bagli = 1; b.addEventListener('click', function(){ hhSec(b.dataset.hesaphar, true); }); }); },
+    altHtml: function(){ return hhHtml(); }
   };
+  // ---------- r397: Kasa & Banka › Hesap hareketleri ----------
+  // Hesapların (kasa, banka, kredi kartı, POS) tüm hareketleri tek tabloda: hesap seçilince açılış + yürüyen bakiye.
+  // Satıra tıklayınca kaynak kayıt açılır; "Düzenle" kaydın kendi düzenleme ekranını açar (tahsilat, ödeme, gider, virman, çek, maaş, vergi, kredi).
+  var HH = { hesap: '', limit: 200 };
+  function hhHareketler(){
+    var hl = hesaplar(), tek = HH.hesap && hl.find(function(h){ return h.id === HH.hesap; });
+    var l = [];
+    (tek ? [tek] : hl).forEach(function(h){ hesapHareketleri(h.id).forEach(function(x){ l.push(Object.assign({ h: h }, x)); }); });
+    l.sort(function(a, b){ return String(a.tarih || '').localeCompare(String(b.tarih || '')); });
+    if (tek){ var bk = Number(tek.acilis) || 0; l.forEach(function(x){ bk += Number(x.tutar) || 0; x.bakiye = bk; }); }
+    return { tek: tek, l: l.reverse() };
+  }
+  function hhHtml(){
+    var hl = hesaplar(); if (!hl.length) return '';
+    var r = hhHareketler(), tek = r.tek, l = r.l, goster = l.slice(0, HH.limit), duz = izinVar('duzenle');
+    var secici = '<select id="hhHesap" title="Hesap"><option value="">Tüm hesaplar (' + hl.length + ')</option>' +
+      hl.slice().sort(function(a, b){ return String(a.ad || '').localeCompare(String(b.ad || ''), 'tr'); }).map(function(h){ return '<option value="' + h.id + '"' + (h.id === HH.hesap ? ' selected' : '') + '>' + esc(h.ad) + ' (' + esc(h.hesapTuru || '') + ' · ' + (h.paraBirimi || 'EUR') + ')</option>'; }).join('') + '</select>';
+    var ozet = tek ? ' <span class="muted">açılış</span> <b>' + pbFmt(tek.acilis, tek.paraBirimi || 'EUR') + '</b> · <span class="muted">bakiye</span> <b>' + pbFmt(hesapBakiye(tek), tek.paraBirimi || 'EUR') + '</b>' : '';
+    var satir = function(x){
+      var pb = x.h.paraBirimi || 'EUR', git = x.tab && x.id ? x.tab + '|' + x.id : '';
+      return '<tr' + (git ? ' class="ck-satir" data-hhgit="' + escAttr(git) + '" title="Kaydı aç"' : '') + '><td>' + kvTarihTR(x.tarih) + '</td>' + (tek ? '' : '<td>' + esc(x.h.ad) + '</td>') + '<td>' + esc(x.tur || '') + '</td><td>' + esc(x.aciklama || '') + '</td>' +
+        '<td class="num ' + (x.tutar < 0 ? 'neg' : 'pos') + '">' + pbFmt(x.tutar, pb) + '</td>' + (tek ? '<td class="num">' + pbFmt(x.bakiye, pb) + '</td>' : '') +
+        '<td>' + (git && duz ? '<button type="button" class="btn secondary small" data-hhduz="' + escAttr(git) + '">Düzenle</button>' : '') + '</td></tr>';
+    };
+    return '<div class="block" id="hhBlok"><div class="block-head"><h3>Hesap hareketleri ' + infoIco('Kasa, banka, kredi kartı ve POS hesaplarına giren / çıkan her şey: tahsilat, ödeme, ödenmiş gider, virman, çek tahsili / ödemesi, maaş, vergi / SGK, kredi. Satıra tıklayınca kayıt açılır; Düzenle kaydın kendi düzenleme ekranını açar (hareket o kayıttan gelir, kaydı düzeltince hareket de düzelir).') + '</h3>' +
+        '<div class="bh-actions">' + secici + '</div></div><div class="block-body">' +
+      (tek ? '<div style="margin-bottom:6px">' + esc(tek.ad) + ozet + '</div>' : '') +
+      (l.length ? '<div class="tablewrap"><table id="hhTablo"><thead><tr><th>Tarih</th>' + (tek ? '' : '<th>Hesap</th>') + '<th>İşlem</th><th>Açıklama</th><th class="num">Tutar</th>' + (tek ? '<th class="num">Bakiye</th>' : '') + '<th></th></tr></thead><tbody>' +
+        goster.map(satir).join('') + '</tbody></table></div>' +
+        (l.length > goster.length ? '<button type="button" class="btn secondary small" id="hhTumu" style="margin-top:6px">' + (l.length - goster.length) + ' hareket daha — tümünü göster</button>' : '')
+        : '<div class="empty">' + (tek ? 'Bu hesapta hareket yok.' : 'Hareket yok.') + '</div>') + '</div></div>';
+  }
+  function hhYaz(){ var el = byId('hesapAlt'); if (el){ var h = hhHtml(); el.innerHTML = h; el.__sonHtml = h; } listeAraclariniUygula(); }
+  function hhSec(id, kaydir){ HH.hesap = id || ''; HH.limit = 200; hhYaz(); if (kaydir){ var b = byId('hhBlok'); if (b) try { b.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e){} } }
+  // Kaydın kendi ekranında "Düzenle"si (tablo görünümünde kart gizli olsa da) çalıştırılır; yetki, dönem kilidi ve özel düzenleme ekranı aynı kalır
+  function kayitDuzenleAc(tab, id){
+    if (!sekmeIzinli(tab)){ toast('Bu sayfaya erişim yetkiniz yok.', true); return; }
+    if (!izinVar('duzenle')){ toast(izinYokMesaji('duzenle'), true); return; }
+    gitKayit(tab, id, function(){ toast('Kayıt bulunamadı (silinmiş olabilir).', true); });
+    setTimeout(function(){
+      var kart = document.querySelector('#panel-' + tab + ' .recordrow[data-rid="' + String(id).replace(/"/g, '') + '"]');
+      var b = kart && (kart.querySelector(ISLEM_DUZENLE_SEC) || Array.prototype.find.call(kart.querySelectorAll('button'), function(x){ return /^\s*Düzenle\s*$/.test(x.textContent); }));
+      if (b) b.click(); else if (kart) toast('Kayıt açıldı; bu kaydın düzenleme düğmesi yok.', true);
+    }, 300);
+  }
+  document.addEventListener('change', function(e){ if (e.target && e.target.id === 'hhHesap'){ e.target.blur(); hhSec(e.target.value); } });
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    if (e.target.id === 'hhTumu'){ HH.limit = Infinity; hhYaz(); return; }
+    // odak tabloda kalırsa kayıttan sonra tablo yenilenmez (setHtmlIdle): düğmeden alınır
+    var d = e.target.closest('[data-hhduz]'); if (d){ d.blur(); var p = d.dataset.hhduz.split('|'); kayitDuzenleAc(p[0], p[1]); return; }
+    var g = e.target.closest('tr[data-hhgit]'); if (g && !e.target.closest('button, a, input, select')){ var q = g.dataset.hhgit.split('|'); gitKayit(q[0], q[1], function(){ toast('Kayıt bulunamadı (silinmiş olabilir).', true); }); }
+  });
 
   // ---------- Kasa eksi bakiye kontrolü ----------
   // Kasa (nakit) gün sonunda eksi bakiye veremez: elde olmayan para harcanmış görünür; vergi incelemesinde ilk bakılan
@@ -13893,7 +13960,7 @@ Dikkat edilmesi gereken 2 nokta:
           (Number(t.komisyonOrani) ? ' · komisyon %'+fmt2(t.komisyonOrani)+' ≈ '+pbFmt(teminatYillikKomisyon(t), t.paraBirimi || 'TRY')+'/yıl' : '')+(t.aciklama ? ' · '+esc(t.aciklama) : '') };
     }
   };
-  EK_RENDER.kasabanka = function(){ crudBolumler('kasabanka', [HESAP_TANIM, KREDI_TANIM, TEMINAT_TANIM, ODEME_TANIM]); };
+  EK_RENDER.kasabanka = function(){ crudBolumler('kasabanka', [HESAP_TANIM, VIRMAN_TANIM, KREDI_TANIM, TEMINAT_TANIM, ODEME_TANIM]); };
   // ---------- Bordro özeti (müşavirin bordro icmali) ----------
   // Bordroyu müşavir hesaplar; burada ayın toplamları girilir (₺). Tahakkuk fişi ay sonu tarihli:
   // 720/730/760/770 B (brüt + işveren SGK/işsizlik payı, dağılım yüzdesiyle) / 335 net, 361 SGK (işçi + işveren), 360 GV + DV, 196 avans, 369 diğer kesinti A.
